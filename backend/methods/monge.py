@@ -78,7 +78,7 @@ def find_trivial_seats(allocations, p_goals, c_goals):
                 "constituency": C,
                 "party": P,
                 "seats": slack,
-                "reason": "Only one constituency available.",
+                "reason": "Only list available.",
             })
         assert(p_slack == c_slack)
         return trivial_seats
@@ -94,7 +94,7 @@ def find_trivial_seats(allocations, p_goals, c_goals):
                 "constituency": C,
                 "party": P,
                 "seats": slack,
-                "reason": "Only one party available.",
+                "reason": "Only list available.",
             })
         assert(p_slack == c_slack)
         return trivial_seats
@@ -141,7 +141,7 @@ def find_best_Monge_list(
     if considerations:
         determinants = [conion["min_det"] for conion in considerations]
         best = considerations[determinants.index(max(determinants))]
-        best["reason"] = "Maximizes comparison against closest competitor."
+        best["reason"] = "Max compared to nest"
         return best
     return None
 
@@ -237,8 +237,8 @@ def seats_still_available(C, P, c_goals, p_goals, allocations):
 
 def print_seats(rules, adj_seats_info):
     # Return data to print breakdown of adjustment seat apportionment
-    header = ["Adj. seat #", "Constituency", "Party", "Reason",
-        "Closest comparison constituency", "Closest comparison party",
+    header = ["Adj. seat #", "Constituency", "Party", "Criteria",
+        "Closest competitor constituency", "Closest competitor party",
         "Monge ratio",
         # "Determinant", "ad", "bc", "a", "d", "b", "c",
     ]

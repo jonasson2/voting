@@ -16,7 +16,7 @@
           <legend>Allocation of constituency seats</legend>
           <b-form-group
             label="Rule"
-            description="Which rule should be used to allocate constituency seats to lists within each constituency?"
+            description="Basic rule used for allocating constituency seats to party lists within each constituency."
           >
             <b-form-select class="mb-3"
               v-model="rules.primary_divider"
@@ -24,7 +24,7 @@
           </b-form-group>
           <b-form-group
             label="Threshold"
-            description="What threshold are parties required to reach within a particular constituency to qualify for constituency seats?"
+            description="Threshold as percentage of valid votes in a constituency required by a list to qualify for seats in that constituency."
           >
             <b-input-group append="%">
               <b-form-input type="number" min="0" max="100"
@@ -35,10 +35,10 @@
       </b-col>
       <b-col>
         <fieldset>
-          <legend>Division of adjustment seats</legend>
+          <legend>Apportionment of adjustment seats</legend>
           <b-form-group
             label="Rule"
-            description="Which rule should be used to divide adjustment seats between parties nationally?"
+            description="Basic rule used to apportion adjustment seats betwwen parties based on total votes for all lists of the same party."
           >
             <b-form-select class="mb-3"
               v-model="rules.adj_determine_divider"
@@ -46,7 +46,7 @@
           </b-form-group>
           <b-form-group
             label="Threshold"
-            description="What threshold are parties required to reach nationally to qualify for adjustment seats?"
+            description="Threshold as percentage of total votes required by a party to qualify for apportionment of adjustment seats."
           >
             <b-input-group append="%">
               <b-form-input type="number" min="0" max="100"
@@ -57,10 +57,10 @@
       </b-col>
       <b-col>
         <fieldset>
-          <legend>Allocation of adjustment seats</legend>
+          <legend>Allocation of adjustment seats to individual lists</legend>
           <b-form-group
             label="Rule"
-            description="Which rule should be used to allocate adjustment seats to individual lists?"
+            description="Basic rule used in the method for allocating adjustment seats to individual lists."
           >
             <b-form-select class="mb-3"
               v-model="rules.adj_alloc_divider"

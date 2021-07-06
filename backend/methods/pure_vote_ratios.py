@@ -40,7 +40,7 @@ def pure_vote_ratios_apportionment(m_votes, v_desired_row_sums, v_desired_col_su
         m_allocations[c][p] += 1
         allocation_sequence.append({
             "constituency": c, "party": p,
-            "reason": "Highest divided votes",
+            "reason": "Max  eff. percentage (const.)",
             "max_list_share": maximum,
         })
 
@@ -50,7 +50,7 @@ def pure_vote_ratios_apportionment(m_votes, v_desired_row_sums, v_desired_col_su
 
 def present_allocation_sequence(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Reason", "List share"]
+        "Criteria", "Effective percentages of votes (const.)"]
     data = []
     seat_number = 0
 

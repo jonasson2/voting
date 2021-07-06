@@ -95,7 +95,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
                 if item["divided_votes"] > greatest:
                     greatest = item["divided_votes"]
                     first = item
-            first["reason"] = "Can't fill this constituency without this list"
+            first["reason"] = "Only list available"
         elif available:
             # Allocate seat in constituency where the calculated
             #  relative superiority is highest:
@@ -103,7 +103,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
                 if item["superiority"] > greatest:
                     greatest = item["superiority"]
                     first = item
-            first["reason"] = "Greatest relative superiority"
+            first["reason"] = "Max relative superiority"
         else:
             assert violating
             # Allocate violating seats last
@@ -122,7 +122,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
 
 def present_allocation_sequence(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Reason", "Superiority"]
+        "Criteria", "Superiority"]
     data = []
     seat_number = 0
 

@@ -97,7 +97,7 @@ def switching(m_votes, v_desired_row_sums, v_desired_col_sums, m_prior_allocatio
 
 def present_switching_sequence(rules, steps):
     headers = [
-        "Party", "To be achieved", "All as const.", "Off by",
+        "Party", "Seats apportioned nationally", "All as const. seats", "Off by",
         "Switching", "Nr.", "Constituency", "From", "To", "Ratio"]
     data = []
     for party in steps["initial_allocation"]:

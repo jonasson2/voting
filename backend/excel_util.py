@@ -132,9 +132,9 @@ def elections_to_xlsx(elections, filename):
                     "data": rules["constituency_threshold"]},
                 {"label": "Rule for allocating constituency seats:",
                     "data": DRN[rules["primary_divider"]]},
-                {"label": "Threshold for adjustment seats:",
+                {"label": "Threshold for apportioning adjustment seats:",
                     "data": rules["adjustment_threshold"]},
-                {"label": "Rule for dividing adjustment seats:",
+                {"label": "Rule for apportioning adjustment seats:",
                     "data": DRN[rules["adj_determine_divider"]]},
                 {"label": "Method for allocating adjustment seats:",
                     "data": AMN[rules["adjustment_method"]]},
@@ -180,7 +180,7 @@ def elections_to_xlsx(elections, filename):
         )
         col += len(parties)+2
         draw_block(worksheet, row=toprow, col=col,
-            heading="Vote shares", xheaders=parties, yheaders=const_names,
+            heading="Vote percentages", xheaders=parties, yheaders=const_names,
             matrix=xtd_shares
         )
         toprow += len(const_names)+3
@@ -472,7 +472,7 @@ def simulation_to_xlsx(simulation, filename):
             c1 = c2 + group["right_span"]
 
         draw_block(worksheet, row=toprow, col=c1+1,
-            heading="Required number of seats",
+            heading="Specified number of seats",
             xheaders=["Const.", "Adj.", "Total"],
             yheaders=const_names,
             matrix=add_totals([

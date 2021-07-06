@@ -87,7 +87,7 @@ GENERATING_METHOD_NAMES = {
 }
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":     "Refer to vote table",
+    "refer":     "Refer to vote table (see below)",
     "all_const": "Make all seats constituency seats",
     "all_adj":   "Make all seats adjustment seats",
     "one_const": "Combine all constituencies into one",
@@ -97,8 +97,8 @@ SEAT_SPECIFICATION_OPTIONS = {
 MEASURES = {
     "dev_opt":         "Allocation by the optimal method",
     "dev_opt_totals":  "Allocation by the optimal method",
-    "dev_law":         "Allocation by Icelandic Law",
-    "dev_law_totals":  "Allocation by Icelandic Law",
+    "dev_law":         "Allocation by Icelandic law",
+    "dev_law_totals":  "Allocation by Icelandic law",
     "dev_all_adj":     "Allocation as if all seats were adjustment seats",
     "dev_all_adj_totals":
                        "Allocation as if all seats were adjustment seats",
