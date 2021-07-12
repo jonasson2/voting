@@ -103,7 +103,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
                 if item["superiority"] > greatest:
                     greatest = item["superiority"]
                     first = item
-            first["reason"] = "Max relative superiority"
+            first["reason"] = "Max list vote quotient relative to that of substitute list"
         else:
             assert violating
             # Allocate violating seats last
@@ -122,7 +122,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
 
 def present_allocation_sequence(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "Superiority"]
+        "Criteria", "Superiority ratio"]
     data = []
     seat_number = 0
 
