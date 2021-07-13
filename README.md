@@ -22,6 +22,15 @@ It is highly recommended that you use a *Virtualenv* for voting. Python 3 is rec
 
 That should be enough to start using the simulator.
 
+### Docker
+
+To use docker, run in the root directory:
+
+```bash
+docker compose up
+```
+
+Both the backend and frontend run inside the docker container and are available on http://localhost:5000.
 
 ## Command Line Interface
 
