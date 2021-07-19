@@ -4,6 +4,7 @@ RUN mkdir -p /voting
 COPY . /voting
 
 WORKDIR /voting
+RUN chmod +x cleanup.sh
 RUN cleanup.sh
 
 WORKDIR /voting/vue-frontend
