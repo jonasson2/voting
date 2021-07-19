@@ -114,7 +114,7 @@ def check_simulation_rules(sim_rules):
 
     Raises:
         KeyError: If simulation rules are missing a component
-        ValueError: If stability parameter is too low
+        ValueError: If coefficient of variation is too high
     """
     for key in ["simulation_count", "gen_method", "row_constraints", "col_constraints"]:
         if key not in sim_rules:
@@ -122,9 +122,9 @@ def check_simulation_rules(sim_rules):
     if sim_rules["gen_method"] == "beta":
         if "distribution_parameter" not in sim_rules:
             raise KeyError("Missing data ('simulation_rules.distribution_parameter')")
-        stability_parameter = sim_rules["distribution_parameter"]
-        if stability_parameter <= 1:
-            raise ValueError("Stability parameter must be greater than 1.")
+        variance_coefficient = sim_rules["distribution_parameter"]
+        if variance_coefficient >= 0.75:
+            raise ValueError("Coefficient of variation must be less than 0.75")
     for key in ["row_constraints", "col_constraints"]:
         sim_rules[key] = bool(strtobool(str(sim_rules[key])))
     return sim_rules

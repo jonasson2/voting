@@ -28,13 +28,9 @@
         </b-col>
         <b-col>
           <b-form-group
-            label="Stability parameter"
-            description="To influence the standard deviation
-            of the distribution, please provide a number greater than 1
-            (does not need to be an integer,
-            and values close to 1 are allowed, such as 1.0001).
-            This number represents stability, in some sense.
-            Higher values result in lower standard deviation, and vice versa."
+            label="Coefficient of variation"
+            description="This is the standard deviation of simulated votes 
+            divided by their mean. Please provide a number between 0 and 0.75."
           >
             <b-input-group>
               <b-form-input
