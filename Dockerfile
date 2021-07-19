@@ -3,6 +3,9 @@ FROM nikolaik/python-nodejs:latest
 RUN mkdir -p /voting
 COPY . /voting
 
+WORKDIR /voting
+RUN cleanup.sh
+
 WORKDIR /voting/vue-frontend
 RUN npm install
 RUN npm run build-production
