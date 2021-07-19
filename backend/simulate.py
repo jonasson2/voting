@@ -98,7 +98,7 @@ class SimulationRules(Rules):
         self["simulate"] = False
         self["simulation_count"] = 1000
         self["gen_method"] = "beta"
-        self["distribution_parameter"] = 100
+        self["distribution_parameter"] = 0.25
         self["row_constraints"] = True
         self["col_constraints"] = True
 
@@ -120,7 +120,7 @@ class Simulation:
         self.sim_rules = sim_rules
         self.num_total_simulations = self.sim_rules["simulation_count"]
         self.variate = self.sim_rules["gen_method"]
-        self.stbl_param = self.sim_rules["distribution_parameter"]
+        self.var_coeff = self.sim_rules["distribution_parameter"]
         self.iteration = 0
         self.terminate = False
         self.iteration_time = timedelta(0)
@@ -270,7 +270,7 @@ class Simulation:
         """
         gen = dicts.GENERATING_METHODS[self.variate]
         while True:
-            votes = gen(self.base_votes, self.stbl_param)
+            votes = gen(self.base_votes, self.var_coeff)
             yield votes
 
     def test_generated(self):
@@ -279,7 +279,7 @@ class Simulation:
         for c in range(1+self.num_constituencies):
             var_beta_distr.append([])
             for p in range(1+self.num_parties):
-                var_beta_distr[c].append(1/sqrt(self.stbl_param)
+                var_beta_distr[c].append(1/sqrt(self.var_coeff)
                                         *self.xtd_vote_shares[c][p]
                                         *(self.xtd_vote_shares[c][p]-1))
         sim_shares = self.list_data[-1]["sim_shares"]
