@@ -6,7 +6,8 @@
       <b-collapse is-nav id="nav_collapse">
         <b-navbar-nav>
           <b-nav-item href="#/">Instructions</b-nav-item>
-          <b-nav-item href="#/calc">Calculator</b-nav-item>
+          <b-nav-item href="#/calc">Electoral Systems</b-nav-item>
+          <b-nav-item href="#/votes">Votes & Seats</b-nav-item>
         </b-navbar-nav>
       </b-collapse>
     </b-navbar>
