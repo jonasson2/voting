@@ -96,41 +96,27 @@
 </template>
 
 <script>
-import Election from './Election.vue'
-import Simulate from './Simulate.vue'
-import VoteMatrix from './components/VoteMatrix.vue'
 import ElectionSettings from './components/ElectionSettings.vue'
 
 export default {
   components: {
-    VoteMatrix,
     ElectionSettings,
-    Election,
-    Simulate,
   },
 
-  data: function() {
-    return {
-      server: {
+  props: {
+      "server": {default: {
         waitingForData: false,
         errormsg: '',
         error: false,
-      },
-      vote_table: {
-        name: "",
-        parties: [],
-        constituencies: [],
-        votes: [],
-      },
-      election_rules: [{}],
-      activeTabIndex: 0,
-      uploadfile: null,
-      simulation_rules: {
+      }},
+      "election_rules": {default: [{}]},
+      "activeTabIndex": {default: 0},
+      "uploadfile": {default: null},
+      "simulation_rules": {default: {
         simulation_count: 0,
         gen_method: "",
         distribution_parameter: 0,
-      },
-    }
+      }},
   },
   methods: {
     addElectionRules: function() {

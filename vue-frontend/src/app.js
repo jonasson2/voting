@@ -11,14 +11,11 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import App from './App.vue'
 import Main from './Main.vue'
-//import ElectoralSystems from './ElectoralSystems.vue'
-//import VotesAndSeats from './VotesAndSeats.vue'
 import Intro from './Intro.vue'
 
 const routes = [
     { path: '/', component: Intro },
     { path: '/calc', component: Main },
-    //{ path: '/votes', component: VotesAndSeats },
 ]
 
 var router = new VueRouter({ routes })
