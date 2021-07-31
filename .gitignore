@@ -1,6 +1,8 @@
 *.pyc
 *~
 *.swp
+\#*
+.\#*
 /bin
 /include
 /lib

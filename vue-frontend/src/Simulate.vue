@@ -212,6 +212,7 @@ export default {
             this.sid = response.body.sid;
             this.simulation_done = !response.body.started;
             this.server.waitingForData = false;
+            // 300 ms between updating simulation progress bar
             this.checktimer = window.setInterval(this.checkstatus, 300);
           }
         }, response => {

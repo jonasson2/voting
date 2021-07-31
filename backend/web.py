@@ -350,18 +350,20 @@ def check_simulation():
 def stop_simulation():
     data = request.get_json(force=True)
     if "sid" not in data:
-        return jsonify({"error": "Please supply a SID."})
+        return jsonify({"error": "No simulation id supplied to backend."})
     if data["sid"] not in SIMULATIONS:
-        return jsonify({"error": "Please supply a valid SID."})
+        return jsonify({"error": "Unknown simulation id supplied to backend."})
     simulation, thread, expiry = SIMULATIONS[data["sid"]]
 
     simulation.terminate = True
+    thread_done = thread.done # Get done status (thread.join() finishes the thread and
+                              # sets thread.done to True
     thread.join()
     #if thread.done:
     #    del(SIMULATIONS[data["sid"]])
 
     return jsonify({
-            "done": thread.done,
+            "done": thread_done,
             "iteration": simulation.iteration,
             "target": simulation.sim_rules["simulation_count"],
             "results": simulation.get_results_dict()
