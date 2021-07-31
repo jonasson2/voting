@@ -1,7 +1,13 @@
+p {margin-left: 15px}
 
 h2 {
+  margin-left: 15px;
   margin-top: 1em;
   margin-bottom: 1em;
+}
+
+h3 {
+  margin-left: 15px;
 }
 
 .votematrix {

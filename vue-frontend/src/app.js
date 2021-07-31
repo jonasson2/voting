@@ -9,7 +9,7 @@ Vue.use(BootstrapVue);
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
-import App from './App.vue'
+//import App from './App.vue'
 import Main from './Main.vue'
 import Intro from './Intro.vue'
 
@@ -19,4 +19,4 @@ const routes = [
 ]
 
 var router = new VueRouter({ routes })
-var app = new Vue({ router, el: "#app", path: '/', render: h => h(App) })
+var app = new Vue({ router, el: "#app", path: '/', render: h => h(Main) })

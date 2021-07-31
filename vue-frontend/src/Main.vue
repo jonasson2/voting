@@ -1,5 +1,9 @@
 <template>
   <div>
+    <b-navbar toggleable="md" type="dark" variant="info">
+      <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+      <b-navbar-brand href="#/">Voting</b-navbar-brand>
+    </b-navbar>
     <b-alert :show="server.waitingForData">Loading...</b-alert>
     <b-alert :show="server.error" dismissible @dismissed="server.error=false" variant="danger">Server error. Try again in a few seconds...</b-alert>
     <b-alert :show="server.errormsg != ''" dismissible @dismissed="server.errormsg=''" variant="danger">Server error. {{server.errormsg}}</b-alert>
@@ -39,7 +43,11 @@
           :simulation_rules="simulation_rules"
           @update-rules="updateSimulationRules">
         </Simulate>
-      </B-tab>
+      </b-tab>
+      <b-tab title="Help">
+        <Intro>
+        </Intro>
+      </b-tab>
     </b-tabs>
   </div>
 </template>
@@ -49,6 +57,7 @@ import Election from './Election.vue'
 import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
 import VoteMatrix from './components/VoteMatrix.vue'
+import Intro from './Intro.vue'
 
 export default {
   components: {
@@ -56,6 +65,7 @@ export default {
     Election,
     Simulate,
     ElectoralSystems,
+    Intro,
   },
 
   data: function() {

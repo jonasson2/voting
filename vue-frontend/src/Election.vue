@@ -1,7 +1,9 @@
 <template>
 <div>
   <h2>Results</h2>
-  <b-button size="lg" @click="get_xlsx">Download XLSX file</b-button>
+  <b-container style="margin-left:1px; margin-bottom:10px">
+    <b-button size="lg" @click="get_xlsx">Download XLSX file</b-button>
+  </b-container>
   <b-container fluid style="margin-top:5px" v-if="results[activeTabIndex] !== undefined">
     <b-row>
       <ResultMatrix
