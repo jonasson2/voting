@@ -9,7 +9,7 @@
       <p>
         The file provided must be a CSV or an Excel XLSX file
         formatted with parties on the first row
-        and constitution names on the first column.
+        and constituency names on the first column.
       </p>
       <b-img rounded fluid src="/static/img/parties_xlsx.png"/>
       <p>
@@ -95,48 +95,43 @@
 
     <b-button-toolbar key-nav aria-label="Vote tools">
       <b-button-group class="mx-1">
-        <b-button
-          title="Download .xlsx file with vote table"
-          @click="saveVotes()"
-        >
-          Save votes
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button
-          title="Upload vote table file (.xlsx or .csv)"
-          v-b-modal.modalupload
-        >
-          Upload votes
-        </b-button>
-        <b-button
-          title="Load existing vote table from server"
+        <b-button class="mb-10"
+          v-b-tooltip.hoover
+          title="Use preset votes and seat numbers from real or fictional elections"
           v-b-modal.modalpreset
         >
-          Load preset
+          Use preset
         </b-button>
-        <!--b-button
-          title="Paste input from file with csv format"
-          v-b-modal.modalpaste
-        >
-          Paste input
-        </b-button-->
       </b-button-group>
       <b-button-group class="mx-1">
-        <b-btn
-          title="set all vote counts to zero but preserve frame"
-          @click="clearVotes()"
+        <b-button class="mb-10"
+          v-b-tooltip.hoover
+          title="Upload votes and seat numbers from local Excel or CSV file"
+          v-b-modal.modalupload
         >
-          Clear votes
-        </b-btn>
-        <b-btn
-          title="Empty entire table and remove all parties and constituencies"
+          Load from file
+        </b-button>
+      </b-button-group>
+      <b-button-group class="mx-1 mb-10">
+        <b-button class="mb-10"
+          v-b-tooltip.hoover
+          title="Delete vote table"
           @click="clearAll()"
         >
-          Delete table
-        </b-btn>
+          Delete
+        </b-button>
+      </b-button-group>
+      <b-button-group class="mx-1">
+        <b-button class="mb-10"
+          v-b-tooltip.hoover
+          title="Download votes and seat numbers to local Excel file"
+          @click="saveVotes()"
+        >
+          Save
+        </b-button>
       </b-button-group>
     </b-button-toolbar>
+    <br>
     <table class="votematrix">
       <tr class="parties">
         <th class="small-12 medium-1 tablename">
@@ -162,7 +157,7 @@
           <input type="text" v-model="matrix.parties[partyidx]">
         </th>
         <th class="growtable">
-          <b-btn size="sm" @click="addParty()"><b>+</b></b-btn>
+          <b-button size="sm" @click="addParty()"><b>+</b></b-button>
         </th>
       </tr>
       <tr v-for="(constituency, conidx) in matrix.constituencies">
@@ -191,7 +186,7 @@
       </tr>
       <tr>
         <th class="growtable">
-          <b-btn size="sm" @click="addConstituency()"><b>+</b></b-btn>
+          <b-button size="sm" @click="addConstituency()"><b>+</b></b-button>
         </th>
       </tr>
     </table>

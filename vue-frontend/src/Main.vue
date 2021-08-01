@@ -2,14 +2,25 @@
   <div>
     <b-navbar toggleable="md" type="dark" variant="info">
       <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
-      <b-navbar-brand href="#/">Voting</b-navbar-brand>
+      <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
     </b-navbar>
     <b-alert :show="server.waitingForData">Loading...</b-alert>
     <b-alert :show="server.error" dismissible @dismissed="server.error=false" variant="danger">Server error. Try again in a few seconds...</b-alert>
     <b-alert :show="server.errormsg != ''" dismissible @dismissed="server.errormsg=''" variant="danger">Server error. {{server.errormsg}}</b-alert>
 
-    <b-tabs style="margin-top:10px">
-      <b-tab title="Electoral Systems" active>
+    <b-tabs
+      style="margin-top:10px"
+      active-nav-item-class="font-weight-bold"
+      >
+      <b-tab title="Votes and Seats" active>
+        <p>Specify reference votes and seat numbers</p>
+        <VoteMatrix
+          @update-vote-table="updateVoteTable"
+          @server-error="serverError">
+        </VoteMatrix>
+      </b-tab>      
+      <b-tab title="Electoral Systems">
+        <p>Define one or several electoral systems by specifying apportionment rules and modifying seat numbers</p>
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules"
@@ -19,14 +30,8 @@
         >
         </ElectoralSystems>
       </b-tab>
-      <b-tab title="Votes and Seats">
-        <h2>Votes</h2>
-        <VoteMatrix
-          @update-vote-table="updateVoteTable"
-          @server-error="serverError">
-        </VoteMatrix>
-      </b-tab>      
       <b-tab title="Single Election">
+        <p>Calculate results for the reference votes and a selected electoral system</p>
         <Election
           :server="server"
           :vote_table="vote_table"
@@ -36,6 +41,7 @@
         </Election>
       </b-tab>
       <b-tab title="Simulation">
+        <p>Simulate several elections and compute results for each specified electoral system</p>
         <Simulate
           :server="server"
           :vote_table="vote_table"

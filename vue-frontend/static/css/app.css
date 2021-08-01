@@ -10,6 +10,8 @@ h3 {
   margin-left: 15px;
 }
 
+$tooltip-opacity: 1;
+
 .votematrix {
   display: block;
   overflow-x: auto;
@@ -28,7 +30,7 @@ h3 {
 }
 
 .votematrix td, .votematrix th {
-  border:         1px solid #ccc;
+  border:         2px solid #ccc;
 }
 
 .ruleset {
@@ -61,7 +63,7 @@ th.topleft {
   width:          70px;
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        2px;
   text-align:     right;
   background:     none;
 }
@@ -87,7 +89,7 @@ th.topleft {
 }
 
 .resultmatrix td, .resultmatrix th {
-  border:         1px solid #ccc;
+  border:         2px solid #ccc;
 }
 
 .resultmatrix {
@@ -103,7 +105,7 @@ th.topleft {
 }
 
 .demomatrix td, .demomatrix th {
-  border:         1px solid #ccc;
+  border:         2px solid #ccc;
   text-align:     center;
   padding-left:   10px;
   padding-right:  10px;
@@ -116,15 +118,15 @@ th.topleft {
 .constname {
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        2px;
   background:     none;
 }
 
 .partyseats, .partyname {
-  width:          70px;
+  width:          auto;
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        2px;
   text-align:     right;
   background:     none;
 }
@@ -142,7 +144,7 @@ th.topleft {
 }
 
 .simulationdata td, .simulationdata th {
-  border:         1px solid #ccc;
+  border:         2px solid #ccc;
 }
 
 .simulationdata {
