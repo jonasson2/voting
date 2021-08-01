@@ -109,14 +109,16 @@ export default {
         error: false,
       }},
       "election_rules": {default: [{}]},
-      "activeTabIndex": {default: 0},
-      "uploadfile": {default: null},
-      "simulation_rules": {default: {
-        simulation_count: 0,
-        gen_method: "",
-        distribution_parameter: 0,
-      }},
   },
+
+  data: function() {
+    return {
+      activeTabIndex: 0,
+      uploadfile: null,
+    }
+  },
+
+    
   methods: {
     addElectionRules: function() {
       this.election_rules.push({})

@@ -24,9 +24,6 @@
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules"
-          :activeTabIndex="activeTabIndex"
-          :uploadfile="uploadfile"
-          :simulation_rules="simulation_rules"
         >
         </ElectoralSystems>
       </b-tab>
