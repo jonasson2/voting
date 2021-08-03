@@ -27,7 +27,7 @@
         >
         </ElectoralSystems>
       </b-tab>
-      <b-tab title="Single Election">
+      <b-tab title="Single Election" @click:calculate()>
         <p>Calculate results for the reference votes and a selected electoral system</p>
         <Election
           :server="server"
@@ -78,6 +78,7 @@ export default {
         errormsg: '',
         error: false,
       },
+      needsToRefresh: false,
       vote_table: {
         name: "",
         parties: [],
@@ -98,6 +99,10 @@ export default {
   methods: {
     serverError: function(error) {
       this.server.errormsg = error;
+    },
+    calculate: function() {
+      console.log("hi");
+      this.needsToRefresh = true;
     },
     addElectionRules: function() {
       this.election_rules.push({})
