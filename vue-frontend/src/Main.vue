@@ -27,7 +27,7 @@
         >
         </ElectoralSystems>
       </b-tab>
-      <b-tab title="Single Election" @click:calculate()>
+      <b-tab title="Single Election" @click:Election.recalculate()>
         <p>Calculate results for the reference votes and a selected electoral system</p>
         <Election
           :server="server"
