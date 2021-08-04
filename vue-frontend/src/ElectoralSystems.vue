@@ -78,7 +78,7 @@
           <ElectionSettings
             :rulesidx="rulesidx"
             :rules="rules"
-            @update-rules="updateElectionRulesAndActivate">
+            @update-rules="updateElectionRules">
           </ElectionSettings>
         </b-tab>
         <template v-slot:tabs-end>
@@ -127,10 +127,13 @@ export default {
       this.election_rules.splice(idx, 1);
     },
     updateElectionRules: function(rules, idx) {
+      console.log("Call updateElectionRules in ElectoralSystems")
       this.$set(this.election_rules, idx, rules);
+      this.$emit('update-main-election-rules', rules);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
     updateElectionRulesAndActivate: function(rules, idx) {
+      console.log("Call updateElectionRulesAndActivate in ElectoralSystems")
       this.updateElectionRules(rules, idx);
       this.activeTabIndex = idx;
     },

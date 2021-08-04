@@ -18,23 +18,24 @@
           @update-vote-table="updateVoteTable"
           @server-error="serverError">
         </VoteMatrix>
-      </b-tab>      
+      </b-tab>
       <b-tab title="Electoral Systems">
         <p>Define one or several electoral systems by specifying apportionment rules and modifying seat numbers</p>
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules"
-        >
+          @update-main-election-rules="updateMainElectionRules">
         </ElectoralSystems>
       </b-tab>
-      <b-tab title="Single Election" @activate-tab:Election.recalculate()>
+      <b-tab title="Single Election" @click="calculate">
         <p>Calculate results for the reference votes and a selected electoral system</p>
         <Election
+          ref="ElectionRef"
           :server="server"
           :vote_table="vote_table"
           :election_rules="election_rules"
           :activeTabIndex="activeTabIndex"
-          @update-rules="updateElectionRules">
+          @update-rules="updateMainElectionRules">
         </Election>
       </b-tab>
       <b-tab title="Simulation">
@@ -78,7 +79,6 @@ export default {
         errormsg: '',
         error: false,
       },
-      needsToRefresh: false,
       vote_table: {
         name: "",
         parties: [],
@@ -101,70 +101,14 @@ export default {
       this.server.errormsg = error;
     },
     calculate: function() {
-      console.log("hi");
-      this.needsToRefresh = true;
+      this.$refs.ElectionRef.recalculate();
     },
-    addElectionRules: function() {
-      this.election_rules.push({})
-    },
-    deleteElectionRules: function(idx) {
-      this.election_rules.splice(idx, 1);
-    },
-    updateElectionRules: function(rules, idx) {
+    updateMainElectionRules: function(rules, idx) {
       this.$set(this.election_rules, idx, rules);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
-    updateElectionRulesAndActivate: function(rules, idx) {
-      this.updateElectionRules(rules, idx);
-      this.activeTabIndex = idx;
-    },
     updateSimulationRules: function(rules) {
       this.simulation_rules = rules;
-    },
-    saveSettings: function() {
-      this.$http.post('/api/settings/save/', {
-        e_settings: this.election_rules,
-        sim_settings: this.simulation_rules,
-      }).then(response => {
-        if (response.body.error) {
-          this.server.errormsg = response.body.error;
-          //this.$emit('server-error', response.body.error);
-        } else {
-          let link = document.createElement('a')
-          link.href = '/api/downloads/get?id=' + response.data.download_id
-          link.click()
-        }
-      }, response => {
-        console.log("Error:", response);
-      })
-    },
-    uploadSettingsAndAppend: function(evt) {
-      var replace = false;
-      this.uploadSettings(evt, replace);
-      this.$refs['appendFromFile'].reset();
-    },
-    uploadSettingsAndReplace: function(evt) {
-      var replace = true;
-      this.uploadSettings(evt, replace);
-      this.$refs['replaceFromFile'].reset();
-    },
-    uploadSettings: function(evt, replace) {
-      if (!this.uploadfile) {
-        evt.preventDefault();
-      }
-      var formData = new FormData();
-      formData.append('file', this.uploadfile, this.uploadfile.name);
-      this.$http.post('/api/settings/upload/', formData).then(response => {
-        if (replace){
-          this.election_rules = [];
-        }
-        for (const setting of response.data.e_settings){
-          this.election_rules.push(setting);
-        }
-        if (response.data.sim_settings){
-          this.simulation_rules = response.data.sim_settings;
-        }
-      });
     },
     updateVoteTable: function(table) {
       this.vote_table = table;

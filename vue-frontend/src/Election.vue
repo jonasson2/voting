@@ -40,7 +40,6 @@ export default {
     "vote_table": { default: {} },
     "election_rules": { default: [{}] },
     "activeTabIndex": { default: 0 },
-    "needsToRefresh": { default: false },
   },
   components: {
     ResultMatrix,
@@ -66,18 +65,10 @@ export default {
       },
       deep: true
     },
-    'needsToRefresh': {
-      handler: function (val, oldVal) {
-        if(val) {
-          needsToRefresh = false;
-          this.recalculate();
-        }
-      },
-      deep: true
-    },
   },
   methods: {
     recalculate: function() {
+      console.log("recalculate called");
       if (this.election_rules.length > 0
           && this.election_rules.length > this.activeTabIndex
           && this.election_rules[this.activeTabIndex].name) {
