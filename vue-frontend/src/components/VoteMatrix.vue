@@ -196,6 +196,7 @@
 export default {
   data: function () {
     return {
+      ok : 0,
       matrix: {
         name: "My reference votes",
         parties: ["A", "B"],
@@ -225,15 +226,19 @@ export default {
   },
   created: function() {
     this.$http.get('/api/presets').then(response => {
+      this.ok = 1;
       this.presets = response.body;
     }, response => {
+      this.ok = 2;
       this.$emit('server-error', response.body);
     });
     this.$emit('update-vote-table', this.matrix, false);
+    console.log("Created VoteMatrix");
   },
   watch: {
     'matrix': {
       handler: function (val, oldVal) {
+        console.log("matrix watch");
         this.$emit('update-vote-table', val);
       },
       deep: true

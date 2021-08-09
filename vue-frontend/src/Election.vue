@@ -55,12 +55,16 @@ export default {
   watch: {
     'vote_table': {
       handler: function (val, oldVal) {
+        console.log("watching vote_table");
         this.recalculate();
       },
       deep: true
     },
     'election_rules': {
       handler: function (val, oldVal) {
+        console.log("watching election_rules");
+        console.log("oldVal=", oldVal);
+        console.log("val=", val);
         this.recalculate();
       },
       deep: true
@@ -69,9 +73,12 @@ export default {
   methods: {
     recalculate: function() {
       console.log("recalculate called");
+      //var lencons=this.election_rules[0].constituencies.length;
+      console.log(this.election_rules[0].name);
       if (this.election_rules.length > 0
           && this.election_rules.length > this.activeTabIndex
           && this.election_rules[this.activeTabIndex].name) {
+        console.log("here");
         this.server.waitingForData = true;
         this.$http.post('/api/election/',
         {
@@ -89,6 +96,8 @@ export default {
             for (var i=0; i<response.body.length; i++){
               let old_const = this.election_rules[i].constituencies;
               let new_const = response.body[i].rules.constituencies;
+              console.log("old", old_const);
+              console.log("new", new_const);
               let modified = false;
               if (new_const.length == old_const.length) {
                 for (var j=0; j<new_const.length; j++) {
@@ -115,6 +124,7 @@ export default {
           this.server.waitingForData = false;
         });
       }
+      //var lencons=this.election_rules[0].constituencies.length;
     },
 
     get_xlsx: function() {

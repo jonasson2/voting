@@ -118,7 +118,12 @@ export default {
     }
   },
 
-    
+  created: function() {
+    console.log("Created ElectoralSystems");
+  },
+
+  computed: {console: () => console},
+  
   methods: {
     addElectionRules: function() {
       this.election_rules.push({})
@@ -133,7 +138,6 @@ export default {
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
     updateElectionRulesAndActivate: function(rules, idx) {
-      console.log("Call updateElectionRulesAndActivate in ElectoralSystems")
       this.updateElectionRules(rules, idx);
       this.activeTabIndex = idx;
     },

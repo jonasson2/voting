@@ -155,13 +155,13 @@ export default {
     this.$http.get('/api/capabilities').then(response => {
       this.capabilities = response.body.capabilities;
       if (!("name" in this.rules)){
-        console.log("emitting update-rules from created in ElectionSettings");
         this.$emit('update-rules', response.body.election_rules, this.rulesidx);
       }
       this.doneCreating = true;
     }, response => {
       this.serverError = true;
     });
+    console.log("Created ElectionSettings");
   },
 }
 </script>

@@ -421,11 +421,15 @@ def handle_api():
 
 @app.route('/api/capabilities/', methods=["GET"])
 def handle_capabilities():
-    return jsonify(get_capabilities_dict())
+    capabilities_dict = get_capabilities_dict()
+    # print(f'{capabilities_dict=}')
+    return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])
 def get_presets_list():
-    return jsonify(get_presets_dict())
+    presets_dict = get_presets_dict()
+    # print(f'{presets_dict=}')
+    return jsonify(presets_dict)
 
 @app.route('/api/presets/load/', methods=['POST'])
 def get_preset():
