@@ -120,12 +120,14 @@ export default {
 
   created: function() {
     console.log("Created ElectoralSystems");
+    console.log("rules", this.election_rules);
   },
 
   computed: {console: () => console},
   
   methods: {
     addElectionRules: function() {
+      console.log("addElectionRules called");
       this.election_rules.push({})
     },
     deleteElectionRules: function(idx) {
@@ -133,11 +135,13 @@ export default {
     },
     updateElectionRules: function(rules, idx) {
       console.log("Call updateElectionRules in ElectoralSystems")
-      this.$set(this.election_rules, idx, rules);
-      this.$emit('update-main-election-rules', rules);
+      console.log("rules", rules);
+      //this.$set(this.election_rules, idx, rules);
+      this.$emit('update-main-election-rules', rules, idx);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
     updateElectionRulesAndActivate: function(rules, idx) {
+      console.log("updateElectionRulesAndActivate");
       this.updateElectionRules(rules, idx);
       this.activeTabIndex = idx;
     },

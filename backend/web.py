@@ -91,8 +91,9 @@ def get_election_results():
         message = e.args[0]
         print(message)
         return jsonify({"error": message})
-
-    return jsonify([election.get_results_dict() for election in result])
+    result=[election.get_results_dict() for election in result]
+    print("result=", result)
+    return jsonify(result)
 
 @app.route('/api/election/getxlsx/', methods=['POST'])
 def get_election_excel():

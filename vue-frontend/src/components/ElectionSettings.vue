@@ -145,6 +145,8 @@ export default {
       handler: function (val, oldVal) {
         if (this.doneCreating) {
           console.log("emitting update-rules from watch rules in ElectionSettings");
+          console.log("oldVal", oldVal);
+          console.log("val", val);
           this.$emit('update-rules', val, this.rulesidx);
         }
       },
@@ -154,14 +156,19 @@ export default {
   created: function() {
     this.$http.get('/api/capabilities').then(response => {
       this.capabilities = response.body.capabilities;
+      console.log("Created ElectionSettings");
+      console.log("capabilities", this.capabilities);
+      console.log("old rules", this.rules);
       if (!("name" in this.rules)){
+        var rules = response.body.election_rules;
+        console.log("rules", rules);
         this.$emit('update-rules', response.body.election_rules, this.rulesidx);
+        console.log("new rules", this.rules);
       }
       this.doneCreating = true;
     }, response => {
       this.serverError = true;
     });
-    console.log("Created ElectionSettings");
   },
 }
 </script>

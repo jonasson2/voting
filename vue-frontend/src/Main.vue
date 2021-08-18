@@ -106,7 +106,7 @@ export default {
     updateMainElectionRules: function(rules, idx) {
       this.$set(this.election_rules, idx, rules);
       var conslen = this.election_rules[0].constituencies.length;
-      console.log("In Main, conslen= ", conslen)
+      console.log("In Main, rules= ", rules)
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
     updateSimulationRules: function(rules) {
