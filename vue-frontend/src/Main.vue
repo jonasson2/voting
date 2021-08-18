@@ -5,9 +5,22 @@
       <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
     </b-navbar>
     <b-alert :show="server.waitingForData">Loading...</b-alert>
-    <b-alert :show="server.error" dismissible @dismissed="server.error=false" variant="danger">Server error. Try again in a few seconds...</b-alert>
-    <b-alert :show="server.errormsg != ''" dismissible @dismissed="server.errormsg=''" variant="danger">Server error. {{server.errormsg}}</b-alert>
-
+  <b-alert
+    :show="server.error"
+    dismissible
+    @dismissed="server.error=false"
+    variant="danger"
+    >
+    Server error. Try again in a few seconds...
+  </b-alert>
+  <b-alert
+    :show="server.errormsg != ''"
+    dismissible
+    @dismissed="server.errormsg=''"
+    variant="danger"
+    >
+    Server error. {{server.errormsg}}
+  </b-alert>
     <b-tabs
       style="margin-top:10px"
       active-nav-item-class="font-weight-bold"
@@ -20,7 +33,8 @@
         </VoteMatrix>
       </b-tab>
       <b-tab title="Electoral Systems">
-        <p>Define one or several electoral systems by specifying apportionment rules and modifying seat numbers</p>
+      <p>Define one or several electoral systems by specifying apportionment
+        rules and modifying seat numbers</p>
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules"
@@ -85,6 +99,8 @@ export default {
         constituencies: [],
         votes: [],
       },
+      // election_rules contains several rules; see ElectionSettings.vue
+      // and electionRules.py for the member variables of a rule
       election_rules: [{}],
       activeTabIndex: 0,
       uploadfile: null,
@@ -101,13 +117,11 @@ export default {
       this.server.errormsg = error;
     },
     calculate: function() {
-      this.$refs.ElectionRef.recalculate();
+      //this.$refs.ElectionRef.recalculate();
     },
     updateMainElectionRules: function(rules, idx) {
       this.$set(this.election_rules, idx, rules);
-      var conslen = this.election_rules[0].constituencies.length;
-      console.log("In Main, rules= ", rules)
-      //this works too: this.election_rules.splice(idx, 1, rules);
+      // (this works too: this.election_rules.splice(idx, 1, rules))
     },
     updateSimulationRules: function(rules) {
       this.simulation_rules = rules;

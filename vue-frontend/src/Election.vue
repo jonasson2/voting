@@ -57,17 +57,13 @@ export default {
       handler: function (val, oldVal) {
         console.log("watching vote_table");
         this.recalculate();
-        console.log("after recalculate");
       },
       deep: true
     },
     'election_rules': {
       handler: function (val, oldVal) {
         console.log("watching election_rules");
-        console.log("oldVal=", oldVal);
-        console.log("val=", val);
         this.recalculate();
-        console.log("after recalculate");
       },
       deep: true
     },
@@ -75,12 +71,10 @@ export default {
   methods: {
     recalculate: function() {
       console.log("recalculate called");
-      //var lencons=this.election_rules[0].constituencies.length;
-      console.log("rules", this.election_rules[0]);
       if (this.election_rules.length > 0
           && this.election_rules.length > this.activeTabIndex
           && this.election_rules[this.activeTabIndex].name) {
-        //this.server.waitingForData = true;
+        this.server.waitingForData = true;
         this.$http.post('/api/election/',
         {
           vote_table: this.vote_table,
@@ -88,7 +82,7 @@ export default {
         }).then(response => {
           if (response.body.error) {
             this.server.errormsg = response.body.error;
-            //this.server.waitingForData = false;
+            this.server.waitingForData = false;
           } else {
             this.server.errormsg = '';
             this.server.error = false;
@@ -97,8 +91,6 @@ export default {
             for (var i=0; i<response.body.length; i++){
               let old_const = this.election_rules[i].constituencies;
               let new_const = response.body[i].rules.constituencies;
-              console.log("old", old_const);
-              console.log("new", new_const);
               let modified = false;
               if (new_const.length == old_const.length) {
                 for (var j=0; j<new_const.length; j++) {
@@ -118,16 +110,13 @@ export default {
                 this.$emit('update-rules', response.body[i].rules, i);
               }
             }
-            //this.server.waitingForData = false;
+            this.server.waitingForData = false;
           }
         }, response => {
           this.server.error = true;
-          //this.server.waitingForData = false;
+          this.server.waitingForData = false;
         });
       }
-      //var lencons=this.election_rules[0].constituencies.length;
-      console.log("rules", this.election_rules[0]);
-      console.log("end of recalculate");
     },
 
     get_xlsx: function() {

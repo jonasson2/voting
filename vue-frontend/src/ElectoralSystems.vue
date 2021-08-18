@@ -123,8 +123,6 @@ export default {
     console.log("rules", this.election_rules);
   },
 
-  computed: {console: () => console},
-  
   methods: {
     addElectionRules: function() {
       console.log("addElectionRules called");
