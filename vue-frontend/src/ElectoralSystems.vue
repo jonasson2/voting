@@ -120,7 +120,7 @@ export default {
 
   created: function() {
     console.log("Created ElectoralSystems");
-    console.log("rules", this.election_rules);
+    console.log("rules name", this.election_rules[0].name);
   },
 
   methods: {
@@ -132,16 +132,7 @@ export default {
       this.election_rules.splice(idx, 1);
     },
     updateElectionRules: function(rules, idx) {
-      console.log("Call updateElectionRules in ElectoralSystems")
-      console.log("rules", rules);
-      //this.$set(this.election_rules, idx, rules);
       this.$emit('update-main-election-rules', rules, idx);
-      //this works too: this.election_rules.splice(idx, 1, rules);
-    },
-    updateElectionRulesAndActivate: function(rules, idx) {
-      console.log("updateElectionRulesAndActivate");
-      this.updateElectionRules(rules, idx);
-      this.activeTabIndex = idx;
     },
     saveSettings: function() {
       this.$http.post('/api/settings/save/', {

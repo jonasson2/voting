@@ -50,20 +50,26 @@ export default {
   data: function() {
     return {
       results: [],
+      once: false,
     }
   },
   watch: {
     'vote_table': {
       handler: function (val, oldVal) {
-        console.log("watching vote_table");
-        this.recalculate();
+        if (this.once) { // Needed if vote table changed
+          console.log("watching vote_table");
+          this.$emit("do-recalculate");
+          //this.recalculate();
+        }
+        this.once = true;
       },
       deep: true
     },
     'election_rules': {
       handler: function (val, oldVal) {
         console.log("watching election_rules");
-        this.recalculate();
+        //this.recalculate();
+        this.$emit("do-recalculate");
       },
       deep: true
     },
@@ -84,6 +90,7 @@ export default {
             this.server.errormsg = response.body.error;
             this.server.waitingForData = false;
           } else {
+            console.log("**************** SUCCESS **************");
             this.server.errormsg = '';
             this.server.error = false;
             this.results = response.body;

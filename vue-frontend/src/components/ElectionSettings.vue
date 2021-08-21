@@ -140,28 +140,25 @@ export default {
       capabilities: {},
     }
   },
-  watch: {
-    'rules': {
-      handler: function (val, oldVal) {
-        if (this.doneCreating) {
-          console.log("emitting update-rules from watch rules in ElectionSettings");
-          this.$emit('update-rules', val, this.rulesidx);
-        }
-      },
-      deep: true
-    }
-  },
+  // watch: {
+  //   'rules': {
+  //     handler: function (val, oldVal) {
+  //       if (this.doneCreating) {
+  //         console.log("emitting update-rules from watch rules in ElectionSettings");
+  //         this.$emit('update-rules', val, this.rulesidx);
+  //       }
+  //     },
+  //     deep: true
+  //   }
+  // },
   created: function() {
     console.log("Created ElectionSettings");
     this.$http.get('/api/capabilities').then(response => {
       this.capabilities = response.body.capabilities;
-      console.log("capabilities", this.capabilities);
-      console.log("old rules", this.rules);
       if (!("name" in this.rules)){
         var rules = response.body.election_rules;
-        console.log("rules", rules);
+        console.log("updating rules in created");
         this.$emit('update-rules', response.body.election_rules, this.rulesidx);
-        console.log("new rules", this.rules);
       }
       this.doneCreating = true;
     }, response => {
