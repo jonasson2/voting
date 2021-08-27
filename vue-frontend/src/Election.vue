@@ -38,6 +38,7 @@ export default {
   props: {
     "server": { default: {} },
     "vote_table": { default: {} },
+    "results": {default: [] },
     "election_rules": { default: [{}] },
     "activeTabIndex": { default: 0 },
   },
@@ -47,85 +48,7 @@ export default {
     ResultDemonstration,
   },
 
-  data: function() {
-    return {
-      results: [],
-      once: false,
-    }
-  },
-  watch: {
-    'vote_table': {
-      handler: function (val, oldVal) {
-        if (this.once) { // Needed if vote table changed
-          console.log("watching vote_table");
-          this.$emit("do-recalculate");
-          //this.recalculate();
-        }
-        this.once = true;
-      },
-      deep: true
-    },
-    'election_rules': {
-      handler: function (val, oldVal) {
-        console.log("watching election_rules");
-        //this.recalculate();
-        this.$emit("do-recalculate");
-      },
-      deep: true
-    },
-  },
   methods: {
-    recalculate: function() {
-      console.log("recalculate called");
-      if (this.election_rules.length > 0
-          && this.election_rules.length > this.activeTabIndex
-          && this.election_rules[this.activeTabIndex].name) {
-        this.server.waitingForData = true;
-        this.$http.post('/api/election/',
-        {
-          vote_table: this.vote_table,
-          rules: this.election_rules,
-        }).then(response => {
-          if (response.body.error) {
-            this.server.errormsg = response.body.error;
-            this.server.waitingForData = false;
-          } else {
-            console.log("**************** SUCCESS **************");
-            this.server.errormsg = '';
-            this.server.error = false;
-            this.results = response.body;
-            console.log("results", this.results);
-            for (var i=0; i<response.body.length; i++){
-              let old_const = this.election_rules[i].constituencies;
-              let new_const = response.body[i].rules.constituencies;
-              let modified = false;
-              if (new_const.length == old_const.length) {
-                for (var j=0; j<new_const.length; j++) {
-                  let old_c = old_const[j];
-                  let new_c = new_const[j];
-                  if (old_c.name != new_c.name
-                      || old_c.num_const_seats != new_c.num_const_seats
-                      || old_c.num_adj_seats != new_c.num_adj_seats) {
-                    modified = true;
-                  }
-                }
-              }
-              else if (new_const.length>0) {
-                modified = true;
-              }
-              if (modified){
-                this.$emit('update-rules', response.body[i].rules, i);
-              }
-            }
-            this.server.waitingForData = false;
-          }
-        }, response => {
-          this.server.error = true;
-          this.server.waitingForData = false;
-        });
-      }
-    },
-
     get_xlsx: function() {
       this.$http.post('/api/election/getxlsx/', {
         vote_table: this.vote_table,

@@ -4,7 +4,7 @@
       <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
       <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
     </b-navbar>
-    <b-alert :show="server.waitingForData">Loading...</b-alert>
+    <!-- <b-alert :show="server.waitingForData">Loading...</b-alert> -->
   <b-alert
     :show="server.error"
     dismissible
@@ -28,7 +28,7 @@
       <b-tab title="Votes and Seats" active>
         <p>Specify reference votes and seat numbers</p>
         <VoteMatrix
-          @update-vote-table="updateVoteTable"
+          :matrix="vote_table"
           @server-error="serverError">
         </VoteMatrix>
       </b-tab>
@@ -37,8 +37,7 @@
         rules and modifying seat numbers</p>
         <ElectoralSystems
           :server="server"
-          :election_rules="election_rules"
-          @update-main-election-rules="updateMainElectionRules">
+          :election_rules="election_rules">
         </ElectoralSystems>
       </b-tab>
       <b-tab title="Single Election" @click="calculate">
@@ -47,10 +46,10 @@
           ref="ElectionRef"
           :server="server"
           :vote_table="vote_table"
+          :results="results"
           :election_rules="election_rules"
           :activeTabIndex="activeTabIndex"
-          @do-recalculate="mainrecalculate"
-          @update-rules="updateMainElectionRules">
+          @do-recalculate="recalculate">
         </Election>
       </b-tab>
       <b-tab title="Simulation">
@@ -95,17 +94,21 @@ export default {
         error: false,
       },
       vote_table: {
-        name: "",
-        parties: [],
-        constituencies: [],
-        votes: [],
+        name: "My reference votes",
+        parties: ["A", "B"],
+        votes: [[1500, 2000],
+                [2500, 1700]],
+        constituencies: [
+          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
+          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
+        ],
       },
+      results: [],
       // election_rules contains several rules; see ElectionSettings.vue
       // and electionRules.py for the member variables of a rule
       election_rules: [{}],
       activeTabIndex: 0,
       uploadfile: null,
-      results: [],
       simulation_rules: {
         simulation_count: 0,
         gen_method: "",
@@ -113,35 +116,35 @@ export default {
       },
     }
   },
+  watch: {
+    'vote_table': {
+      handler: function (val, oldVal) {
+        console.log("watching vote_table");
+        this.recalculate();
+      },
+      deep: true
+    },
+    'election_rules': {
+      handler: function (val, oldVal) {
+        console.log("watching election_rules");
+        this.recalculate();
+      },
+      deep: true
+    },
+  },
   
   methods: {
     serverError: function(error) {
       this.server.errormsg = error;
     },
     calculate: function() {
-      //this.$refs.ElectionRef.recalculate();
-    },
-    updateMainElectionRules: function(rules, idx) {
-      var old = this.election_rules[0];
-      console.log("Updated main election rules:");
-      console.log("old name:", this.election_rules[0].name);
-      if (old.constituencies != null && old.constituencies.length > 0)
-        console.log(old.constituencies[0].name)
-      console.log("new name:", rules.name);
-      if (rules.constituencies != null && rules.constituencies.length > 0)
-        console.log(rules.constituencies[0].name)
-      this.$set(this.election_rules, idx, rules);
-      // (this works too: this.election_rules.splice(idx, 1, rules))
+
     },
     updateSimulationRules: function(rules) {
       this.simulation_rules = rules;
     },
-    updateVoteTable: function(table) {
-      this.vote_table = table;
-    },
-
-    mainrecalculate: function() {
-      console.log("mainrecalculate called");
+    recalculate: function() {
+      console.log("recalculate called");
       if (this.election_rules.length > 0
           && this.election_rules.length > this.activeTabIndex
           && this.election_rules[this.activeTabIndex].name) {
@@ -152,16 +155,13 @@ export default {
           rules: this.election_rules,
         }).then(response => {
           if (response.body.error) {
-            console.log("**************** ERROR-1 **************");
             this.server.errormsg = response.body.error;
             this.server.waitingForData = false;
           } else {
-            console.log("**************** SUCCESS **************");
             this.server.errormsg = '';
             this.server.error = false;
             this.results = response.body;
             console.log("results", this.results);
-            console.log("length", response.body.length);
             for (var i=0; i<response.body.length; i++){
               let old_const = this.election_rules[i].constituencies;
               let new_const = response.body[i].rules.constituencies;
@@ -180,21 +180,19 @@ export default {
               else if (new_const.length>0) {
                 modified = true;
               }
-              console.log("modified", modified);
               if (modified){
-                this.updateMainElectionRules(response.body[i].rules, i);
-                //this.$emit('update-rules', response.body[i].rules, i);
+                this.$set(this.election_rules, i, response.body[i].rules);
               }
             }
             this.server.waitingForData = false;
           }
         }, response => {
-          console.log("**************** ERROR-2 **************");
           this.server.error = true;
           this.server.waitingForData = false;
         });
       }
     },
+
   }  
 }
 </script>

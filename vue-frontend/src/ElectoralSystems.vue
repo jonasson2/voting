@@ -120,7 +120,7 @@ export default {
 
   created: function() {
     console.log("Created ElectoralSystems");
-    console.log("rules name", this.election_rules[0].name);
+    console.log("rules", this.election_rules);
   },
 
   methods: {
@@ -132,7 +132,10 @@ export default {
       this.election_rules.splice(idx, 1);
     },
     updateElectionRules: function(rules, idx) {
-      this.$emit('update-main-election-rules', rules, idx);
+      console.log("Call updateElectionRules in ElectoralSystems")
+      console.log("rules", rules);
+      this.$set(this.election_rules, idx, rules);
+      //this works too: this.election_rules.splice(idx, 1, rules);
     },
     saveSettings: function() {
       this.$http.post('/api/settings/save/', {

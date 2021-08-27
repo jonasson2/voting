@@ -194,18 +194,11 @@
 </template>
 <script>
 export default {
+  props: {
+    "matrix": { default: {} },
+  },
   data: function () {
     return {
-      matrix: {
-        name: "My reference votes",
-        parties: ["A", "B"],
-        votes: [[1500, 2000],
-                [2500, 1700]],
-        constituencies: [
-          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
-          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
-        ],
-      },
       presets: [],
       presetfields: [
         { key: 'name', sortable: true },
@@ -229,17 +222,7 @@ export default {
     }, response => {
       this.$emit('server-error', response.body);
     });
-    this.$emit('update-vote-table', this.matrix, false);
     console.log("Created VoteMatrix");
-  },
-  watch: {
-    'matrix': {
-      handler: function (val, oldVal) {
-        this.$emit('update-vote-table', val);
-        console.log('emitting update-vote-table');
-      },
-      deep: true
-    },
   },
   methods: {
     deleteParty: function(index) {
