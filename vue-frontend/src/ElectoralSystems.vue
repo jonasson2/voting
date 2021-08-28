@@ -73,7 +73,7 @@
             >
               x
             </b-button>
-            {{rulesidx+1}}-{{rules.name}}
+            {{rules.name}}
           </div>
           <ElectionSettings
             :rulesidx="rulesidx"
@@ -120,7 +120,6 @@ export default {
 
   created: function() {
     console.log("Created ElectoralSystems");
-    console.log("rules", this.election_rules);
   },
 
   methods: {
@@ -133,7 +132,8 @@ export default {
     },
     updateElectionRules: function(rules, idx) {
       console.log("Call updateElectionRules in ElectoralSystems")
-      console.log("rules", rules);
+      if (rules.name == "System") rules.name += "-" + (idx+1).toString();
+      this.activeTabIndex = idx;
       this.$set(this.election_rules, idx, rules);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },

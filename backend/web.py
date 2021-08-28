@@ -89,10 +89,10 @@ def get_election_results():
         result = handle_election().elections
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("A",message)
         return jsonify({"error": message})
     result=[election.get_results_dict() for election in result]
-    print("result=", result)
+    # print("result=", result)
     return jsonify(result)
 
 @app.route('/api/election/getxlsx/', methods=['POST'])
@@ -120,7 +120,7 @@ def save_settings():
         result = prepare_to_save_settings()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("B", message)
         return jsonify({"error": message})
 
     did = get_new_download_id()
@@ -212,7 +212,7 @@ def save_votes():
         result = prepare_to_save_vote_table()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("C", message)
         return jsonify({"error": message})
 
     DOWNLOADS[did] = result
@@ -311,7 +311,7 @@ def start_simulation():
         simulation = set_up_simulation()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("D", message)
         return jsonify({"started": False, "error": message})
 
     # Simulation cache expires in 3 hours = 3*3600 = 10800 seconds

@@ -47,9 +47,7 @@
           :server="server"
           :vote_table="vote_table"
           :results="results"
-          :election_rules="election_rules"
-          :activeTabIndex="activeTabIndex"
-          @do-recalculate="recalculate">
+          :election_rules="election_rules">
         </Election>
       </b-tab>
       <b-tab title="Simulation">
@@ -107,7 +105,6 @@ export default {
       // election_rules contains several rules; see ElectionSettings.vue
       // and electionRules.py for the member variables of a rule
       election_rules: [{}],
-      activeTabIndex: 0,
       uploadfile: null,
       simulation_rules: {
         simulation_count: 0,
@@ -145,9 +142,7 @@ export default {
     },
     recalculate: function() {
       console.log("recalculate called");
-      if (this.election_rules.length > 0
-          && this.election_rules.length > this.activeTabIndex
-          && this.election_rules[this.activeTabIndex].name) {
+      if (this.election_rules.length > 0) {
         this.server.waitingForData = true;
         this.$http.post('/api/election/',
         {
@@ -161,7 +156,6 @@ export default {
             this.server.errormsg = '';
             this.server.error = false;
             this.results = response.body;
-            console.log("results", this.results);
             for (var i=0; i<response.body.length; i++){
               let old_const = this.election_rules[i].constituencies;
               let new_const = response.body[i].rules.constituencies;
