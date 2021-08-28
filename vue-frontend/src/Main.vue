@@ -13,14 +13,16 @@
     >
     Server error. Try again in a few seconds...
   </b-alert>
-  <b-alert
-    :show="server.errormsg != ''"
-    dismissible
-    @dismissed="server.errormsg=''"
-    variant="danger"
-    >
-    Server error. {{server.errormsg}}
-  </b-alert>
+  <!-- TODO: Sýna þess villu, en ekki bara blikka með henni. -->
+  <!-- Auk þess kemur villa ("constituencies") sem á ekki að koma. -->
+  <!-- <b-alert -->
+  <!--   :show="server.errormsg != ''" -->
+  <!--   dismissible -->
+  <!--   @dismissed="server.errormsg=''" -->
+  <!--   variant="danger" -->
+  <!--   > -->
+  <!--   Server error. {{server.errormsg}} -->
+  <!-- </b-alert> -->
     <b-tabs
       style="margin-top:10px"
       active-nav-item-class="font-weight-bold"

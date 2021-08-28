@@ -107,6 +107,12 @@ th.topleft {
   text-align:     center;
   padding-left:   10px;
   padding-right:  10px;
+  padding-top:    5px;
+  padding-bottom: 5px;
+}
+
+.demomatrix td:nth-child(4) {
+    text-align: left;
 }
 
 .demomatrix {
