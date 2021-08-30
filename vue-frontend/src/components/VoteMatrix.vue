@@ -139,53 +139,67 @@
                  v-autowidth="{maxWidth: '400px', minWidth:'50px'}"
                  v-model="matrix.name">
         </th>
-        <th class="seatnumberheading">
-          <abbr title="Constituency seats"># Constit.</abbr>
+        <th class="seatnumberheading"
+            v-b-tooltip.hoover.bottom.v-primary.ds500
+            title="Constituency seats">
+          # Cons.
         </th>
-        <th class="seatnumberheading">
-          <abbr title="Adjustment seats"  ># Adjustm.</abbr>
+        <th class="seatnumberheading"
+            v-b-tooltip.hoover.bottom.v-primary.ds500
+            title="Adjustment seats">
+          # Adj.
         </th>
         <th
           v-for="(party, partyidx) in matrix.parties"
           class="partyname"
         >
-          <b-button class=xbutton style="padding-left"
-            size="sm"
-            variant="link"
-            @click="deleteParty(partyidx)"
-          >
+          <b-button class=xbutton style="padding:0"
+                    size="sm"
+                    variant="link"
+                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    title="Remove Party"
+                    @click="deleteParty(partyidx)"
+                    >
             X
           </b-button>
           <input type="text"
                  style="text-align:center"
-                 v-autowidth="{maxWidth: '300px', minWidth:'40px'}"
+                 v-autowidth="{maxWidth: '300px', minWidth:'60px'}"
                  v-model="matrix.parties[partyidx]">
         </th>
         <th class="growtable">
-          <b-button size="sm" @click="addParty()"><b>+</b></b-button>
+          <b-button size="sm"
+                    @click="addParty()"
+                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    title="Add party"
+                    >
+            <b>+</b>
+          </b-button>
         </th>
       </tr>
       <tr v-for="(constituency, conidx) in matrix.constituencies">
         <th class="constname">
-          <b-button class=xbutton
-            size="sm"
-            variant="link"
-            @click="deleteConstituency(conidx)"
-          >
+          <b-button style="padding:0"
+                    size="sm"
+                    variant="link"
+                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    title="Remove constituency"
+                    @click="deleteConstituency(conidx)"
+                    >
             X
           </b-button>
           <input type="text"
-                 v-autowidth="{maxWidth: '300px', minWidth:'40px'}"
+                 v-autowidth="{maxWidth: '300px', minWidth:'50px'}"
                  v-model="constituency['name']">
         </th>
         <td class="partyseats">
           <input type="text"
-                 v-autowidth="{maxWidth: '200px', minWidth:'70px'}"
+                 v-autowidth="{maxWidth: '200px', minWidth:'45px'}"
                  v-model.number="constituency['num_const_seats']">
         </td>
         <td class="partyseats">
           <input type="text"
-                 v-autowidth="{maxWidth: '200px', minWidth:'70px'}"
+                 v-autowidth="{maxWidth: '200px', minWidth:'40px'}"
                  v-model.number="constituency['num_adj_seats']">
         </td>
         <td
@@ -193,13 +207,19 @@
           class="partyvotes"
         >
           <input type="text"
-                 v-autowidth="{maxWidth: '300px', minWidth:'65px'}"
+                 v-autowidth="{maxWidth: '300px', minWidth:'75px'}"
                  v-model.number="matrix.votes[conidx][partyidx]">
         </td>
       </tr>
       <tr>
         <th class="growtable">
-          <b-button size="sm" @click="addConstituency()"><b>+</b></b-button>
+          <b-button size="sm"
+                    @click="addConstituency()"
+                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    title="Add constituency"
+                    >
+            <b>+</b>
+          </b-button>
         </th>
       </tr>
     </table>
