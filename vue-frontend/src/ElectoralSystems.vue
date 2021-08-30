@@ -54,6 +54,8 @@
         >
           Upload
         </b-button>
+      </b-button-group>
+      <b-button-group class="mx-1">
         <b-button
           title="Upload new settings from file (.json), replacing the current settings"
           v-b-modal.modaluploadesettingsreplace

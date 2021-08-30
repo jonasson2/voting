@@ -91,7 +91,7 @@
       <b-col>
         <table class="votematrix">
           <tr class="parties">
-            <th class="small-12 medium-1 topleft"></th>
+            <th class="topleft"></th>
             <th>
               <abbr title="Constituency seats"># Cons.</abbr>
             </th>
@@ -100,10 +100,10 @@
             </th>
           </tr>
           <tr v-for="(constituency, conidx) in rules.constituencies">
-            <th class="small-12 medium-1 column constname">
+            <th class="constname">
               {{ constituency['name'] }}
             </th>
-            <td class="small-12 medium-2 column partyvotes">
+            <td class="partyvotes">
               <span v-if="rules.seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
@@ -112,7 +112,7 @@
                   v-model.number="constituency['num_const_seats']">
               </span>
             </td>
-            <td class="small-12 medium-2 column partyvotes">
+            <td class="partyvotes">
               <span v-if="rules.seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>

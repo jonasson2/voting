@@ -12,23 +12,34 @@ h3 {
 
 .votematrix {
   display: block;
-  overflow-x: auto;
+  table-layout: auto;
+  /* overflow-x: auto; */
   white-space: nowrap;
-  min-width: 100px;
-  min-height: 100px;
+  /* min-width: 100px; */
+  /* min-height: 100px; */
   margin-top: 0.7em;
 }
 
 .votematrix tr:nth-child(even) {
-    background-color: #f2f2f2;
+  background-color: #f2f2f2;
 }
 
 .votematrix th input {
-  font-weight:    700;
+  font-weight: 700;
+  background-color: #ff0000;
+  padding: 3px;
 }
 
-.votematrix td, .votematrix th {
-  border:         1px solid #ccc;
+.votematrix td input {
+  border:  1px solid #ccc;
+  background-color: #007700;
+  padding: 3px;
+}
+
+.votematrix th {
+  border:  1px solid #ccc;
+  background-color: #0000ee;
+  padding: 3px;
 }
 
 .ruleset {
@@ -46,24 +57,34 @@ th.topleft {
   background-color: #fff;
 }
 
-.tablename {
-  text-align: center;
-}
-
 .constname input, .tablename input {
   border:         0;
   outline:        0;
-  padding:        8px;
-  background:     none;
+}
+
+.seatnumberheading {
+  text-align:     center;
+}
+
+.partyseats input {
+  border:         0;
+  outline:        0;
+  text-align:     right;
 }
 
 .partyvotes input, .partyname input {
-  width:          70px;
+  /* width:          70px; */
   border:         0;
   outline:        0;
-  padding:        8px;
   text-align:     right;
-  background:     none;
+}
+
+.xbutton {
+  text-align:  left;
+  padding-left: 0px;
+  padding-right: 0px;
+  padding-top: 0px;
+  padding-bottom: 5px;
 }
 
 .partyvotes input:hover, .partyvotes input:focus,
@@ -112,31 +133,43 @@ th.topleft {
 }
 
 .demomatrix td:nth-child(4) {
-    text-align: left;
+  text-align: left;
 }
 
 .demomatrix {
   margin-bottom: 1em;
 }
 
-.constname {
+.displaytablename {
+  text-align: center;
+}
+
+.displaypartyname {
+  /* width:          70px; */
+  min-width:      50px;
   border:         0;
   outline:        0;
   padding:        8px;
+  text-align:     center;
   background:     none;
 }
 
-.partyseats, .partyname {
-  width:          70px;
+.displayconstname {
   border:         0;
   outline:        0;
   padding:        8px;
+  text-align:     left;
+  min-width:      60px;
+  background:     none;
+}
+
+.displaypartyseats {
+  /* width:          70px; */
+  border:         0;
+  outline:        0;
+  padding:        5px;
   text-align:     right;
   background:     none;
-}
-
-.partyname {
-  text-align: center;
 }
 
 .simulationdata tr:nth-child(even) {
@@ -158,7 +191,7 @@ th.topleft {
 .measurename {
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        5px;
   background:     none;
 }
 
@@ -166,7 +199,7 @@ th.topleft {
   width:          150px;
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        5px;
   text-align:     center;
   background:     none;
 }

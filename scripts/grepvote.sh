@@ -7,3 +7,7 @@ echo In vue files:
 echo
 echo In Python files
 (cd $rootdir/backend && grep -s "$@" {.,methods,distributions}/*.py)
+
+echo
+echo In app.css
+(cd $rootdir/vue-frontend/static/css && grep -s "$@" app.css)

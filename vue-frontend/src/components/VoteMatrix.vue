@@ -56,21 +56,21 @@
         value="true"
         unchecked-value="false"
       >
-        First column contains constituency names.
+        First contains constituency names.
       </b-form-checkbox>
       <b-form-checkbox
         v-model="paste.has_constituency_seats"
         value="true"
         unchecked-value="false"
       >
-        Second column contains constituency seats.
+        Second contains constituency seats.
       </b-form-checkbox>
       <b-form-checkbox
         v-model="paste.has_constituency_adjustment_seats"
         value="true"
         unchecked-value="false"
       >
-        Third column contains adjustment seats.
+        Third contains adjustment seats.
       </b-form-checkbox>
     </b-modal>
 
@@ -92,11 +92,11 @@
         </template>
       </b-table>
     </b-modal>
-
+    <p></p>
     <b-button-toolbar key-nav aria-label="Vote tools">
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hoover.bottom.v-primary.ds500
           title="Use preset votes and seat numbers from real or fictional elections"
           v-b-modal.modalpreset
         >
@@ -105,7 +105,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hoover.bottom.v-primary.ds500
           title="Upload votes and seat numbers from local Excel or CSV file"
           v-b-modal.modalupload
         >
@@ -114,7 +114,7 @@
       </b-button-group>
       <b-button-group class="mx-1 mb-10">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hoover.bottom.v-primary.ds500
           title="Delete vote table"
           @click="clearAll()"
         >
@@ -123,7 +123,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hoover.bottom.v-primary.ds500
           title="Download votes and seat numbers to local Excel file"
           @click="saveVotes()"
         >
@@ -133,55 +133,68 @@
     </b-button-toolbar>
     <br>
     <table class="votematrix">
-      <tr class="parties">
-        <th class="small-12 medium-1 tablename">
-          <input type="text" v-model="matrix.name">
+      <tr>
+        <th class="tablename">
+          <input type="text"
+                 v-autowidth="{maxWidth: '400px', minWidth:'50px'}"
+                 v-model="matrix.name">
         </th>
-        <th>
-          <abbr title="Constituency seats"># Cons.</abbr>
+        <th class="seatnumberheading">
+          <abbr title="Constituency seats"># Constit.</abbr>
         </th>
-        <th>
-          <abbr title="Adjustment seats"># Adj.</abbr>
+        <th class="seatnumberheading">
+          <abbr title="Adjustment seats"  ># Adjustm.</abbr>
         </th>
         <th
           v-for="(party, partyidx) in matrix.parties"
-          class="small-12 medium-1 column partyname"
+          class="partyname"
         >
-          <b-button
+          <b-button class=xbutton style="padding-left"
             size="sm"
             variant="link"
             @click="deleteParty(partyidx)"
           >
-            ×
+            X
           </b-button>
-          <input type="text" v-model="matrix.parties[partyidx]">
+          <input type="text"
+                 style="text-align:center"
+                 v-autowidth="{maxWidth: '300px', minWidth:'40px'}"
+                 v-model="matrix.parties[partyidx]">
         </th>
         <th class="growtable">
           <b-button size="sm" @click="addParty()"><b>+</b></b-button>
         </th>
       </tr>
       <tr v-for="(constituency, conidx) in matrix.constituencies">
-        <th class="small-12 medium-1 column constname">
-          <b-button
+        <th class="constname">
+          <b-button class=xbutton
             size="sm"
             variant="link"
             @click="deleteConstituency(conidx)"
           >
-            ×
+            X
           </b-button>
-          <input type="text" v-model="constituency['name']">
+          <input type="text"
+                 v-autowidth="{maxWidth: '300px', minWidth:'40px'}"
+                 v-model="constituency['name']">
         </th>
-        <td class="small-12 medium-2 column partyvotes">
-          <input type="text" v-model.number="constituency['num_const_seats']">
+        <td class="partyseats">
+          <input type="text"
+                 v-autowidth="{maxWidth: '200px', minWidth:'70px'}"
+                 v-model.number="constituency['num_const_seats']">
         </td>
-        <td class="small-12 medium-2 column partyvotes">
-          <input type="text" v-model.number="constituency['num_adj_seats']">
+        <td class="partyseats">
+          <input type="text"
+                 v-autowidth="{maxWidth: '200px', minWidth:'70px'}"
+                 v-model.number="constituency['num_adj_seats']">
         </td>
         <td
           v-for="(party, partyidx) in matrix.parties"
-          class="small-12 medium-2 column partyvotes"
+          class="partyvotes"
         >
-          <input type="text" v-model.number="matrix.votes[conidx][partyidx]">
+          <input type="text"
+                 v-autowidth="{maxWidth: '300px', minWidth:'65px'}"
+                 v-model.number="matrix.votes[conidx][partyidx]">
         </td>
       </tr>
       <tr>
@@ -193,6 +206,10 @@
   </b-container>
 </template>
 <script>
+  import Vue from "vue"
+  import VueInputAutowidth from 'vue-input-autowidth'
+  Vue.use(VueInputAutowidth)
+
 export default {
   props: {
     "matrix": { default: {} },

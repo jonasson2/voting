@@ -27,23 +27,23 @@
       style="margin-top:10px"
       active-nav-item-class="font-weight-bold"
       >
-      <b-tab title="Votes and Seats" active>
-        <p>Specify reference votes and seat numbers</p>
+      <b-tab title="Votes and seats" active>
+        <!-- <p>Specify reference votes and seat numbers</p> -->
         <VoteMatrix
           :matrix="vote_table"
           @server-error="serverError">
         </VoteMatrix>
       </b-tab>
-      <b-tab title="Electoral Systems">
-      <p>Define one or several electoral systems by specifying apportionment
-        rules and modifying seat numbers</p>
+      <b-tab title="Electoral systems">
+      <!-- <p>Define one or several electoral systems by specifying apportionment -->
+      <!--   rules and modifying seat numbers</p> -->
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules">
         </ElectoralSystems>
       </b-tab>
-      <b-tab title="Single Election" @click="calculate">
-        <p>Calculate results for the reference votes and a selected electoral system</p>
+      <b-tab title="Single election" @click="calculate">
+        <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
         <Election
           ref="ElectionRef"
           :server="server"
@@ -52,8 +52,8 @@
           :election_rules="election_rules">
         </Election>
       </b-tab>
-      <b-tab title="Simulation">
-        <p>Simulate several elections and compute results for each specified electoral system</p>
+      <b-tab title="Simulate elections">
+        <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
         <Simulate
           :server="server"
           :vote_table="vote_table"

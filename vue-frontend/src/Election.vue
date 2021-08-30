@@ -8,7 +8,7 @@
           {{rules.name}}
         </div>
         <b-container style="margin-left:1px; margin-bottom:10px">
-          <b-button size="lg" @click="get_xlsx">Download XLSX file</b-button>
+          <b-button @click="get_xlsx">Download XLSX file</b-button>
         </b-container>
         <b-container fluid style="margin-top:5px" v-if="results[idx] !== undefined">
           <b-row>
@@ -19,12 +19,12 @@
               :stddev="false">
             </ResultMatrix>
           </b-row>
-          <b-row>
-            <ResultChart
-              :parties="vote_table.parties"
-              :seats="results[idx].seat_allocations">
-            </ResultChart>
-          </b-row>
+          <!-- <b-row> -->
+          <!--   <ResultChart -->
+          <!--     :parties="vote_table.parties" -->
+          <!--     :seats="results[idx].seat_allocations"> -->
+          <!--   </ResultChart> -->
+          <!-- </b-row> -->
           <b-row>
             <ResultDemonstration
               :table="results[idx].step_by_step_demonstration">
