@@ -127,19 +127,19 @@
               {{ constituency['name'] }}
             </th>
             <td class="partyvotes">
-              <span v-if="rules.seat_spec_option != 'custom'">
+              <span v-if="rules.seat_spec_option != '2-custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
-              <span v-if="rules.seat_spec_option == 'custom'">
+              <span v-if="rules.seat_spec_option == '2-custom'">
                 <input type="text"
                   v-model.number="constituency['num_const_seats']">
               </span>
             </td>
             <td class="partyvotes">
-              <span v-if="rules.seat_spec_option != 'custom'">
+              <span v-if="rules.seat_spec_option != '2-custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
-              <span v-if="rules.seat_spec_option == 'custom'">
+              <span v-if="rules.seat_spec_option == '2-custom'">
                 <input type="text"
                   v-model.number="constituency['num_adj_seats']">
               </span>

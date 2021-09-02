@@ -43,20 +43,20 @@ class ElectionHandler:
             rules["parties"] = self.parties
             votes = self.votes
             option = electoral_system["seat_spec_option"]
-            if option == "refer":
+            if option == "1-refer":
                 rules["constituencies"] = self.constituencies
-            elif option == "all_const":
+            elif option == "3-all_const":
                 rules["constituencies"] = self.constituencies
                 rules = rules.generate_ind_const_ruleset()
-            elif option == "all_adj":
+            elif option == "4-all_adj":
                 rules["constituencies"] = self.constituencies
                 rules = rules.generate_all_adj_ruleset()
-            elif option == "one_const":
+            elif option == "5-one_const":
                 rules = rules.generate_one_const_ruleset()
                 total_votes = self.xtd_votes[-1][:-1]
                 votes = [total_votes]
             else:
-                assert option == "custom", (
+                assert option == "2-custom", (
                     f"unexpected seat_spec_option encountered: {option}")
                 rules["constituencies"] = []
                 for const in self.constituencies:

@@ -342,9 +342,9 @@ class Simulation:
         self.deviation(ruleset, "opt", None, election.results, opt_results)
         self.deviation(ruleset, "law", election.m_votes, election.results)
         self.deviation(ruleset, "ind_const", election.m_votes, election.results)
-        self.deviation(ruleset, "all_adj", election.m_votes, election.results)
+        self.deviation(ruleset, "4-all_adj", election.m_votes, election.results)
         v_results = [sum(x) for x in zip(*election.results)]
-        self.deviation(ruleset, "one_const", [election.v_votes], [v_results])
+        self.deviation(ruleset, "5-one_const", [election.v_votes], [v_results])
 
     def other_measures(self, ruleset, election):
         ideal_seats = self.calculate_ideal_seats(election)
@@ -359,7 +359,7 @@ class Simulation:
             results = voting.Election(rules, votes).run()
         deviation = dev(reference_results, results)
         self.aggregate_measure(ruleset, "dev_"+option, deviation)
-        if option != "one_const":
+        if option != "5-one_const":
             ref_totals = [sum(x) for x in zip(*reference_results)]
             comp_totals = [sum(x) for x in zip(*results)]
             deviation = dev([ref_totals], [comp_totals])

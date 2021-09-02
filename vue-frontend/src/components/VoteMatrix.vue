@@ -115,7 +115,7 @@
       <b-button-group class="mx-1 mb-10">
         <b-button class="mb-10"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Delete vote table"
+          title="Delete all vote and seat numbers"
           @click="clearAll()"
         >
           Delete
