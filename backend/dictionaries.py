@@ -88,8 +88,8 @@ GENERATING_METHOD_NAMES = {
 SEAT_SPECIFICATION_OPTIONS = {
     "1-refer":     'Use values from "Votes and seats" tab (see on right)',
     "2-custom":    "Specify seat numbers by changing individual values",
-    "3-all_const": "Make all seats constituency seats",
-    "4-all_adj":   "Make all seats adjustment seats",
+    "all_const": "Make all seats constituency seats",
+    "all_adj":   "Make all seats adjustment seats",
     "5-one_const": "Combine all constituencies into one",
 }
 
@@ -118,7 +118,7 @@ LIST_DEVIATION_MEASURES = [
     "dev_law",
     "dev_all_adj",
     "dev_ind_const",
-    # "dev_one_const", #skipped, because already measured by 4-all_adj (party sums)
+    # "dev_one_const", #skipped, because already measured by all_adj (party sums)
 ]
 TOTALS_DEVIATION_MEASURES = [
     #"dev_opt_totals",

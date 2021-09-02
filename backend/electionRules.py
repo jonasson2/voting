@@ -79,7 +79,7 @@ class ElectionRules(Rules):
             return self.generate_ind_const_ruleset()
         if option == "5-one_const":
             return self.generate_one_const_ruleset()
-        if option == "4-all_adj":
+        if option == "all_adj":
             return self.generate_all_adj_ruleset()
         if option == "all":
             return {
@@ -87,7 +87,7 @@ class ElectionRules(Rules):
                 "law":       self.generate_law_ruleset(),
                 "ind_const": self.generate_ind_const_ruleset(),
                 "5-one_const": self.generate_one_const_ruleset(),
-                "4-all_adj":   self.generate_all_adj_ruleset()
+                "all_adj":   self.generate_all_adj_ruleset()
             }
         return None
 

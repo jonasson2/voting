@@ -45,10 +45,10 @@ class ElectionHandler:
             option = electoral_system["seat_spec_option"]
             if option == "1-refer":
                 rules["constituencies"] = self.constituencies
-            elif option == "3-all_const":
+            elif option == "all_const":
                 rules["constituencies"] = self.constituencies
                 rules = rules.generate_ind_const_ruleset()
-            elif option == "4-all_adj":
+            elif option == "all_adj":
                 rules["constituencies"] = self.constituencies
                 rules = rules.generate_all_adj_ruleset()
             elif option == "5-one_const":
