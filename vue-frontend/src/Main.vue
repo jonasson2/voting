@@ -2,7 +2,7 @@
   <div>
     <b-navbar toggleable="md" type="dark" variant="info">
       <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
-      <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
+      <b-navbar-brand href="#/"><large>Election simulator</large></b-navbar-brand>
     </b-navbar>
     <!-- <b-alert :show="server.waitingForData">Loading...</b-alert> -->
   <b-alert

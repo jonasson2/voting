@@ -1,5 +1,10 @@
 p {margin-left: 15px}
 
+.navbar-brand {
+  font-size:1.5rem !important;
+  padding: 0px     !important;
+}
+
 h2 {
   margin-left: 15px;
   margin-top: 1em;
@@ -9,6 +14,8 @@ h2 {
 h3 {
   margin-left: 15px;
 }
+
+/***************************************************/
 
 .votematrix {
   display: block;
@@ -93,9 +100,7 @@ th.topleft {
   background-color: #fff;
 }
 
-.v-tooltip__content {
-  font-size: 100px !important;
-}
+/*********************************************************/
 
 .resultmatrix tr:nth-child(even) {
     background-color: #f2f2f2;

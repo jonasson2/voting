@@ -96,7 +96,7 @@
     <b-button-toolbar key-nav aria-label="Vote tools">
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover.bottom.v-primary.ds500
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Use preset votes and seat numbers from real or fictional elections"
           v-b-modal.modalpreset
         >
@@ -105,7 +105,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover.bottom.v-primary.ds500
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Upload votes and seat numbers from local Excel or CSV file"
           v-b-modal.modalupload
         >
@@ -114,7 +114,7 @@
       </b-button-group>
       <b-button-group class="mx-1 mb-10">
         <b-button class="mb-10"
-          v-b-tooltip.hoover.bottom.v-primary.ds500
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Delete vote table"
           @click="clearAll()"
         >
@@ -123,7 +123,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover.bottom.v-primary.ds500
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Download votes and seat numbers to local Excel file"
           @click="saveVotes()"
         >
@@ -140,12 +140,12 @@
                  v-model="matrix.name">
         </th>
         <th class="seatnumberheading"
-            v-b-tooltip.hoover.bottom.v-primary.ds500
+            v-b-tooltip.hover.bottom.v-primary.ds500
             title="Constituency seats">
           # Cons.
         </th>
         <th class="seatnumberheading"
-            v-b-tooltip.hoover.bottom.v-primary.ds500
+            v-b-tooltip.hover.bottom.v-primary.ds500
             title="Adjustment seats">
           # Adj.
         </th>
@@ -156,7 +156,7 @@
           <b-button class=xbutton style="padding:0"
                     size="sm"
                     variant="link"
-                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    v-b-tooltip.hover.bottom.v-primary.ds500
                     title="Remove Party"
                     @click="deleteParty(partyidx)"
                     >
@@ -170,7 +170,7 @@
         <th class="growtable">
           <b-button size="sm"
                     @click="addParty()"
-                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    v-b-tooltip.hover.bottom.v-primary.ds500
                     title="Add party"
                     >
             <b>+</b>
@@ -182,7 +182,7 @@
           <b-button style="padding:0"
                     size="sm"
                     variant="link"
-                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    v-b-tooltip.hover.bottom.v-primary.ds500
                     title="Remove constituency"
                     @click="deleteConstituency(conidx)"
                     >
@@ -215,7 +215,7 @@
         <th class="growtable">
           <b-button size="sm"
                     @click="addConstituency()"
-                    v-b-tooltip.hoover.bottom.v-primary.ds500
+                    v-b-tooltip.hover.bottom.v-primary.ds500
                     title="Add constituency"
                     >
             <b>+</b>
