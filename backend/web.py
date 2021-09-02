@@ -43,7 +43,10 @@ CORS(app)
 
 @app.route('/')
 def serve_index():
-    return render_template('index.html')
+    digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
+    indexfile = "index-digital-ocean.html" if digoce else "index.html"
+    print("Calling serve_index with indexfile", indexfile)
+    return render_template(indexfile)
 
 @app.route('/static/<path:path>')
 def send_static(path):
