@@ -89,10 +89,11 @@ def get_election_results():
         result = handle_election().elections
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("A",message)
         return jsonify({"error": message})
-
-    return jsonify([election.get_results_dict() for election in result])
+    result=[election.get_results_dict() for election in result]
+    # print("result=", result)
+    return jsonify(result)
 
 @app.route('/api/election/getxlsx/', methods=['POST'])
 def get_election_excel():
@@ -119,7 +120,7 @@ def save_settings():
         result = prepare_to_save_settings()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("B", message)
         return jsonify({"error": message})
 
     did = get_new_download_id()
@@ -211,7 +212,7 @@ def save_votes():
         result = prepare_to_save_vote_table()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("C", message)
         return jsonify({"error": message})
 
     DOWNLOADS[did] = result
@@ -310,7 +311,7 @@ def start_simulation():
         simulation = set_up_simulation()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("D", message)
         return jsonify({"started": False, "error": message})
 
     # Simulation cache expires in 3 hours = 3*3600 = 10800 seconds
@@ -350,18 +351,20 @@ def check_simulation():
 def stop_simulation():
     data = request.get_json(force=True)
     if "sid" not in data:
-        return jsonify({"error": "Please supply a SID."})
+        return jsonify({"error": "No simulation id supplied to backend."})
     if data["sid"] not in SIMULATIONS:
-        return jsonify({"error": "Please supply a valid SID."})
+        return jsonify({"error": "Unknown simulation id supplied to backend."})
     simulation, thread, expiry = SIMULATIONS[data["sid"]]
 
     simulation.terminate = True
+    thread_done = thread.done # Get done status (thread.join() finishes the thread and
+                              # sets thread.done to True
     thread.join()
     #if thread.done:
     #    del(SIMULATIONS[data["sid"]])
 
     return jsonify({
-            "done": thread.done,
+            "done": thread_done,
             "iteration": simulation.iteration,
             "target": simulation.sim_rules["simulation_count"],
             "results": simulation.get_results_dict()
@@ -419,11 +422,15 @@ def handle_api():
 
 @app.route('/api/capabilities/', methods=["GET"])
 def handle_capabilities():
-    return jsonify(get_capabilities_dict())
+    capabilities_dict = get_capabilities_dict()
+    # print(f'{capabilities_dict=}')
+    return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])
 def get_presets_list():
-    return jsonify(get_presets_dict())
+    presets_dict = get_presets_dict()
+    # print(f'{presets_dict=}')
+    return jsonify(presets_dict)
 
 @app.route('/api/presets/load/', methods=['POST'])
 def get_preset():

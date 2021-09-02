@@ -66,17 +66,17 @@ ADJUSTMENT_METHODS = {
     "pure-vote-ratios": pure_vote_ratios_apportionment,
 }
 ADJUSTMENT_METHOD_NAMES = {
-    "alternating-scaling": "Optimal method (Alternating-Scaling)",
-    "relative-superiority": "Relative Superiority Method",
-    "relative-superiority-simple": "Relative Superiority Method - Simple version",
-    "nearest-neighbor": "Nearest Neighbor Method",
-    "monge": "Monge algorithm",
-    "icelandic-law": "Icelandic law 24/2000 (Kosningar til Alþingis)",
-    "ice-shares": "Icelandic law modified to use seat shares",
-    "norwegian-law": "Norwegian law",
-    "norwegian-icelandic": "Norwegian-Icelandic variant",
-    "switching": "Switching Method",
-    "pure-vote-ratios": "Pure Vote Ratios"
+    "alternating-scaling": "Optimal divisor method",
+    "relative-superiority": "Relative superiority",
+    "relative-superiority-simple": "Relative superiority, simplified",
+    "nearest-neighbor": "Nearest neighbor",
+    "monge": "Monge",
+    "icelandic-law": "Method of Icelandic law 24/2000",
+    "ice-shares": "Method of Icelandic law based on seat shares",
+    "norwegian-law": "Method of Norwegian law 20/2003",
+    "norwegian-icelandic": "Method of Norwegian law based on seat shares",
+    "switching": "Switching of seats",
+    "pure-vote-ratios": "Vote percentage"
 }
 
 GENERATING_METHODS = {
@@ -87,11 +87,11 @@ GENERATING_METHOD_NAMES = {
 }
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":     "Refer to vote table (see below)",
+    "refer":     'Use values from "Votes and seats" tab (see on right)',
     "all_const": "Make all seats constituency seats",
     "all_adj":   "Make all seats adjustment seats",
     "one_const": "Combine all constituencies into one",
-    "custom":    "Specify seat distribution manually for this particular electoral system",
+    "custom":    "Specify seat numbers by changing individual values"
 }
 
 MEASURES = {

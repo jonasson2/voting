@@ -1,97 +1,120 @@
 <template>
   <b-form>
+    <br>
     <b-row>
-      <b-col>
+      <legend style = "margin-left:16px">Allocation of constituency seats</legend>
+      <b-col cols="7">
         <b-form-group
-          label="Name"
-          description="Give this electoral system a name."
-        >
-          <b-form-input type="text" class="mb-3" v-model="rules.name"/>
+          label="Rule"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Basic rule used for allocating constituency seats to party lists within each constituency."
+          >
+          <b-form-select
+            v-model="rules.primary_divider"
+            :options="capabilities.rules"
+            />
+        </b-form-group>
+      </b-col>
+      <b-col cols="5">
+        <b-form-group
+          label="Threshold"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Threshold as percentage of valid votes in a constituency required by a list to qualify for seats in that constituency."
+          >
+          <b-input-group append="%">
+            <b-form-input
+              type="number" min="0" max="100"
+              v-model.number="rules.constituency_threshold"/>
+          </b-input-group>
         </b-form-group>
       </b-col>
     </b-row>
+    <br>
     <b-row>
-      <b-col>
-        <fieldset>
-          <legend>Allocation of constituency seats</legend>
-          <b-form-group
-            label="Rule"
-            description="Basic rule used for allocating constituency seats to party lists within each constituency."
+      <legend style = "margin-left:16px">Apportionment of adjustment seats to parties</legend>
+      <b-col cols="7">
+        <b-form-group
+          label="Rule"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Basic rule used to apportion adjustment seats betwwen parties based on total votes for all lists of the same party."
           >
-            <b-form-select class="mb-3"
-              v-model="rules.primary_divider"
-              :options="capabilities.rules"/>
-          </b-form-group>
-          <b-form-group
-            label="Threshold"
-            description="Threshold as percentage of valid votes in a constituency required by a list to qualify for seats in that constituency."
-          >
-            <b-input-group append="%">
-              <b-form-input type="number" min="0" max="100"
-                v-model.number="rules.constituency_threshold"/>
-            </b-input-group>
-          </b-form-group>
-        </fieldset>
+          <b-form-select
+            v-model="rules.adj_determine_divider"
+            :options="capabilities.rules"/>
+        </b-form-group>
       </b-col>
-      <b-col>
-        <fieldset>
-          <legend>Apportionment of adjustment seats</legend>
-          <b-form-group
-            label="Rule"
-            description="Basic rule used to apportion adjustment seats betwwen parties based on total votes for all lists of the same party."
-          >
-            <b-form-select class="mb-3"
-              v-model="rules.adj_determine_divider"
-              :options="capabilities.rules"/>
-          </b-form-group>
-          <b-form-group
-            label="Threshold"
-            description="Threshold as percentage of total votes required by a party to qualify for apportionment of adjustment seats."
-          >
-            <b-input-group append="%">
-              <b-form-input type="number" min="0" max="100"
-                v-model.number="rules.adjustment_threshold"/>
-            </b-input-group>
-          </b-form-group>
-        </fieldset>
-      </b-col>
-      <b-col>
-        <fieldset>
-          <legend>Allocation of adjustment seats to individual lists</legend>
-          <b-form-group
-            label="Rule"
-            description="Basic rule used in the method for allocating adjustment seats to individual lists."
-          >
-            <b-form-select class="mb-3"
-              v-model="rules.adj_alloc_divider"
-              :options="capabilities.divider_rules"/>
-          </b-form-group>
-          <b-form-group
-            label="Method"
-            description="Which method should be used to allocate adjustment seats?"
-          >
-            <b-form-select class="mb-3"
-              v-model="rules.adjustment_method"
-              :options="capabilities.adjustment_methods"/>
-          </b-form-group>
-        </fieldset>
-      </b-col>
-    </b-row>
-    <b-row>
       <b-col cols="5">
         <b-form-group
-          label="Seat specification option"
-          description="Which seat distribution should this electoral system use?"
-        >
-          <b-form-select class="mb-3"
+          label="Threshold"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Threshold as percentage of total votes required by a party to qualify for apportionment of adjustment seats."
+          >
+          <b-input-group append="%">
+            <b-form-input
+              type="number"
+              min="0" max="100"
+              v-model.number="rules.adjustment_threshold"/>
+          </b-input-group>
+        </b-form-group>
+      </b-col>
+    </b-row>
+    <br>
+    <b-row>
+      <legend style = "margin-left:16px">Allocation of adjustment seats to lists</legend>
+      <b-col cols="5">
+        <b-form-group
+          label="Basic rule"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Rule to allocate adjustment seats to individual party lists within the constituencies."
+          >
+          <b-form-select
+            v-model="rules.adj_alloc_divider"
+            :options="capabilities.divider_rules"/>
+        </b-form-group>
+      </b-col>
+      <b-col cols="7">
+        <b-form-group
+          label="Allocation method"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Method to allocate adjustment seats to party lists based on the given basic rule."
+          >
+          <b-form-select
+            v-model="rules.adjustment_method"
+            :options="capabilities.adjustment_methods"/>
+        </b-form-group>
+      </b-col>
+    </b-row>
+    <br>
+    <b-row>
+      <b-col cols="6">
+        <legend>Specification of seat numbers</legend>
+        <b-form-group
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Numbers of constituency and adjustment seats in each constituency in this particular electoral system"
+          >
+          <b-form-select
             v-model="rules.seat_spec_option"
             :options="capabilities.seat_spec_options"/>
         </b-form-group>
       </b-col>
-      <b-col>
+      <b-col cols="6">
         <table class="votematrix">
           <tr class="parties">
-            <th class="small-12 medium-1 topleft"></th>
+            <th class="topleft"></th>
             <th>
               <abbr title="Constituency seats"># Cons.</abbr>
             </th>
@@ -100,10 +123,10 @@
             </th>
           </tr>
           <tr v-for="(constituency, conidx) in rules.constituencies">
-            <th class="small-12 medium-1 column constname">
+            <th class="constname">
               {{ constituency['name'] }}
             </th>
-            <td class="small-12 medium-2 column partyvotes">
+            <td class="partyvotes">
               <span v-if="rules.seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
@@ -112,7 +135,7 @@
                   v-model.number="constituency['num_const_seats']">
               </span>
             </td>
-            <td class="small-12 medium-2 column partyvotes">
+            <td class="partyvotes">
               <span v-if="rules.seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
@@ -140,17 +163,8 @@ export default {
       capabilities: {},
     }
   },
-  watch: {
-    'rules': {
-      handler: function (val, oldVal) {
-        if (this.doneCreating) {
-          this.$emit('update-rules', val, this.rulesidx);
-        }
-      },
-      deep: true
-    }
-  },
   created: function() {
+    console.log("Created ElectionSettings");
     this.$http.get('/api/capabilities').then(response => {
       this.capabilities = response.body.capabilities;
       if (!("name" in this.rules)){

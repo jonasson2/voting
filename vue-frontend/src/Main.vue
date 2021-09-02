@@ -1,118 +1,59 @@
 <template>
   <div>
-    <h2>Electoral system settings</h2>
-    <b-modal
-      size="lg"
-      id="modaluploadesettings"
-      title="Upload JSON file"
-      @ok="uploadSettingsAndAppend"
+    <b-navbar toggleable="md" type="dark" variant="info">
+      <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+      <b-navbar-brand href="#/"><large>Election simulator</large></b-navbar-brand>
+    </b-navbar>
+    <!-- <b-alert :show="server.waitingForData">Loading...</b-alert> -->
+  <b-alert
+    :show="server.error"
+    dismissible
+    @dismissed="server.error=false"
+    variant="danger"
     >
-      <p>
-        The file provided must be a JSON file
-        formatted like a file downloaded from here, using the Save button.
-        The electoral systems contained in the file
-        will be added to those you have already specified.
-      </p>
-      <b-form-file
-        ref="appendFromFile"
-        v-model="uploadfile"
-        :state="Boolean(uploadfile)"
-        placeholder="Choose a file..."
-      ></b-form-file>
-    </b-modal>
-    <b-modal
-      size="lg"
-      id="modaluploadesettingsreplace"
-      title="Upload JSON file"
-      @ok="uploadSettingsAndReplace"
-    >
-      <p>
-        The file provided must be a JSON file
-        formatted like a file downloaded from here, using the Save button.
-        The electoral systems contained in the file
-        will replace those you have already specified.
-      </p>
-      <b-form-file
-        ref="replaceFromFile"
-        v-model="uploadfile"
-        :state="Boolean(uploadfile)"
-        placeholder="Choose a file..."
-      ></b-form-file>
-    </b-modal>
-    <b-button-toolbar key-nav aria-label="Electoral settings tools">
-      <b-button-group class="mx-1">
-        <b-button
-          title="Save current settings to file"
-          @click="saveSettings()"
-        >
-          Save all
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button
-          title="Upload additional settings from file (.json)"
-          v-b-modal.modaluploadesettings
-        >
-          Upload
-        </b-button>
-        <b-button
-          title="Upload new settings from file (.json), replacing the current settings"
-          v-b-modal.modaluploadesettingsreplace
-        >
-          Replace
-        </b-button>
-      </b-button-group>
-    </b-button-toolbar>
-    <b-card no-body>
-      <b-tabs v-model="activeTabIndex" card>
-        <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
-          <div slot="title">
-            <b-button
-              size="sm"
-              variant="link"
-              @click="deleteElectionRules(rulesidx)"
-            >
-              x
-            </b-button>
-            {{rulesidx+1}}-{{rules.name}}
-          </div>
-          <ElectionSettings
-            :rulesidx="rulesidx"
-            :rules="rules"
-            @update-rules="updateElectionRulesAndActivate">
-          </ElectionSettings>
-        </b-tab>
-        <template v-slot:tabs-end>
-          <b-button size="sm" @click="addElectionRules"><b>+</b></b-button>
-        </template>
-        <div slot="empty">
-          There are no electoral systems specified.
-          Use the <b>+</b> button to create a new electoral system.
-        </div>
-      </b-tabs>
-    </b-card>
-
-    <h2>Votes</h2>
-    <VoteMatrix
-      @update-vote-table="updateVoteTable"
-      @server-error="serverError">
-    </VoteMatrix>
-
-    <b-alert :show="server.waitingForData">Loading...</b-alert>
-    <b-alert :show="server.error" dismissible @dismissed="server.error=false" variant="danger">Server error. Try again in a few seconds...</b-alert>
-    <b-alert :show="server.errormsg != ''" dismissible @dismissed="server.errormsg=''" variant="danger">Server error. {{server.errormsg}}</b-alert>
-
-    <b-tabs style="margin-top:10px">
-      <b-tab title="Single Election" active>
+    Server error. Try again in a few seconds...
+  </b-alert>
+  <!-- TODO: Sýna þess villu, en ekki bara blikka með henni. -->
+  <!-- Auk þess kemur villa ("constituencies") sem á ekki að koma. -->
+  <!-- <b-alert -->
+  <!--   :show="server.errormsg != ''" -->
+  <!--   dismissible -->
+  <!--   @dismissed="server.errormsg=''" -->
+  <!--   variant="danger" -->
+  <!--   > -->
+  <!--   Server error. {{server.errormsg}} -->
+  <!-- </b-alert> -->
+    <b-tabs
+      style="margin-top:10px"
+      active-nav-item-class="font-weight-bold"
+      >
+      <b-tab title="Votes and seats" active>
+        <!-- <p>Specify reference votes and seat numbers</p> -->
+        <VoteMatrix
+          :matrix="vote_table"
+          @server-error="serverError">
+        </VoteMatrix>
+      </b-tab>
+      <b-tab title="Electoral systems">
+      <!-- <p>Define one or several electoral systems by specifying apportionment -->
+      <!--   rules and modifying seat numbers</p> -->
+        <ElectoralSystems
+          :server="server"
+          :election_rules="election_rules">
+        </ElectoralSystems>
+      </b-tab>
+      <b-tab title="Single election" @click="calculate">
+        <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
         <Election
+          ref="ElectionRef"
           :server="server"
           :vote_table="vote_table"
-          :election_rules="election_rules"
-          :activeTabIndex="activeTabIndex"
-          @update-rules="updateElectionRules">
+          :results="results"
+          :election_rules="election_rules">
         </Election>
       </b-tab>
-      <b-tab title="Simulation">
+      <b-tab title="Simulate elections">
+        <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
         <Simulate
           :server="server"
           :vote_table="vote_table"
@@ -121,22 +62,28 @@
           @update-rules="updateSimulationRules">
         </Simulate>
       </b-tab>
+      <b-tab title="Help">
+        <Intro>
+        </Intro>
+      </b-tab>
     </b-tabs>
   </div>
 </template>
 
 <script>
 import Election from './Election.vue'
+import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
 import VoteMatrix from './components/VoteMatrix.vue'
-import ElectionSettings from './components/ElectionSettings.vue'
+import Intro from './Intro.vue'
 
 export default {
   components: {
     VoteMatrix,
-    ElectionSettings,
     Election,
     Simulate,
+    ElectoralSystems,
+    Intro,
   },
 
   data: function() {
@@ -147,13 +94,19 @@ export default {
         error: false,
       },
       vote_table: {
-        name: "",
-        parties: [],
-        constituencies: [],
-        votes: [],
+        name: "My reference votes",
+        parties: ["A", "B"],
+        votes: [[1500, 2000],
+                [2500, 1700]],
+        constituencies: [
+          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
+          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
+        ],
       },
+      results: [],
+      // election_rules contains several rules; see ElectionSettings.vue
+      // and electionRules.py for the member variables of a rule
       election_rules: [{}],
-      activeTabIndex: 0,
       uploadfile: null,
       simulation_rules: {
         simulation_count: 0,
@@ -162,75 +115,80 @@ export default {
       },
     }
   },
+  watch: {
+    'vote_table': {
+      handler: function (val, oldVal) {
+        console.log("watching vote_table");
+        this.recalculate();
+      },
+      deep: true
+    },
+    'election_rules': {
+      handler: function (val, oldVal) {
+        console.log("watching election_rules");
+        this.recalculate();
+      },
+      deep: true
+    },
+  },
+  
   methods: {
     serverError: function(error) {
       this.server.errormsg = error;
     },
-    addElectionRules: function() {
-      this.election_rules.push({})
-    },
-    deleteElectionRules: function(idx) {
-      this.election_rules.splice(idx, 1);
-    },
-    updateElectionRules: function(rules, idx) {
-      this.$set(this.election_rules, idx, rules);
-      //this works too: this.election_rules.splice(idx, 1, rules);
-    },
-    updateElectionRulesAndActivate: function(rules, idx) {
-      this.updateElectionRules(rules, idx);
-      this.activeTabIndex = idx;
+    calculate: function() {
+
     },
     updateSimulationRules: function(rules) {
       this.simulation_rules = rules;
     },
-    saveSettings: function() {
-      this.$http.post('/api/settings/save/', {
-        e_settings: this.election_rules,
-        sim_settings: this.simulation_rules,
-      }).then(response => {
-        if (response.body.error) {
-          this.server.errormsg = response.body.error;
-          //this.$emit('server-error', response.body.error);
-        } else {
-          let link = document.createElement('a')
-          link.href = '/api/downloads/get?id=' + response.data.download_id
-          link.click()
-        }
-      }, response => {
-        console.log("Error:", response);
-      })
-    },
-    uploadSettingsAndAppend: function(evt) {
-      var replace = false;
-      this.uploadSettings(evt, replace);
-      this.$refs['appendFromFile'].reset();
-    },
-    uploadSettingsAndReplace: function(evt) {
-      var replace = true;
-      this.uploadSettings(evt, replace);
-      this.$refs['replaceFromFile'].reset();
-    },
-    uploadSettings: function(evt, replace) {
-      if (!this.uploadfile) {
-        evt.preventDefault();
+    recalculate: function() {
+      console.log("recalculate called");
+      if (this.election_rules.length > 0) {
+        this.server.waitingForData = true;
+        this.$http.post('/api/election/',
+        {
+          vote_table: this.vote_table,
+          rules: this.election_rules,
+        }).then(response => {
+          if (response.body.error) {
+            this.server.errormsg = response.body.error;
+            this.server.waitingForData = false;
+          } else {
+            this.server.errormsg = '';
+            this.server.error = false;
+            this.results = response.body;
+            for (var i=0; i<response.body.length; i++){
+              let old_const = this.election_rules[i].constituencies;
+              let new_const = response.body[i].rules.constituencies;
+              let modified = false;
+              if (new_const.length == old_const.length) {
+                for (var j=0; j<new_const.length; j++) {
+                  let old_c = old_const[j];
+                  let new_c = new_const[j];
+                  if (old_c.name != new_c.name
+                      || old_c.num_const_seats != new_c.num_const_seats
+                      || old_c.num_adj_seats != new_c.num_adj_seats) {
+                    modified = true;
+                  }
+                }
+              }
+              else if (new_const.length>0) {
+                modified = true;
+              }
+              if (modified){
+                this.$set(this.election_rules, i, response.body[i].rules);
+              }
+            }
+            this.server.waitingForData = false;
+          }
+        }, response => {
+          this.server.error = true;
+          this.server.waitingForData = false;
+        });
       }
-      var formData = new FormData();
-      formData.append('file', this.uploadfile, this.uploadfile.name);
-      this.$http.post('/api/settings/upload/', formData).then(response => {
-        if (replace){
-          this.election_rules = [];
-        }
-        for (const setting of response.data.e_settings){
-          this.election_rules.push(setting);
-        }
-        if (response.data.sim_settings){
-          this.simulation_rules = response.data.sim_settings;
-        }
-      });
     },
-    updateVoteTable: function(table) {
-      this.vote_table = table;
-    },
-  }
+
+  }  
 }
 </script>

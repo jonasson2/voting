@@ -1,0 +1,217 @@
+<template>
+  <div>
+    <b-modal
+      size="lg"
+      id="modaluploadesettings"
+      title="Upload JSON file"
+      @ok="uploadSettingsAndAppend"
+    >
+      <p>
+        The file provided must be a JSON file
+        formatted like a file downloaded from here, using the Save button.
+        The electoral systems contained in the file
+        will be added to those you have already specified.
+      </p>
+      <b-form-file
+        ref="appendFromFile"
+        v-model="uploadfile"
+        :state="Boolean(uploadfile)"
+        placeholder="Choose a file..."
+      ></b-form-file>
+    </b-modal>
+    <b-modal
+      size="lg"
+      id="modaluploadesettingsreplace"
+      title="Upload JSON file"
+      @ok="uploadSettingsAndReplace"
+    >
+      <p>
+        The file provided must be a JSON file
+        formatted like a file downloaded from here, using the Save button.
+        The electoral systems contained in the file
+        will replace those you have already specified.
+      </p>
+      <b-form-file
+        ref="replaceFromFile"
+        v-model="uploadfile"
+        :state="Boolean(uploadfile)"
+        placeholder="Choose a file..."
+      ></b-form-file>
+    </b-modal>
+    <p></p>
+    <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
+      <b-button-group class="mx-1">
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Remove all electoral systems"
+          @click="DeleteAllElectionRules()"
+          v-b-modal.modalpreset
+        >
+          Clear
+        </b-button>
+      </b-button-group>
+      <b-button-group class="mx-1">
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title = "Add electoral systems by uploading settings from local file"
+          v-b-modal.modaluploadesettings
+        >
+          Add from file
+        </b-button>
+      </b-button-group>
+      <b-button-group class="mx-1">
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Download settings for all electoral systems to local file"
+          @click="saveSettings()"
+        >
+          Save
+        </b-button>
+      </b-button-group>
+    </b-button-toolbar>
+    <br>
+    <b-card no-body>
+      <b-tabs v-model="activeTabIndex" card>
+        <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
+          <template v-slot:title>
+            {{rules.name}}
+          </template>
+          <b-input-group>
+            <template>
+              <b-button
+                style="margin-bottom:10px;margin-left:-5px"
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                title = "Remove electoral system"
+                size="sm"
+                variant="link"
+                @click="deleteElectionRules(rulesidx)">
+                X
+              </b-button>
+            </template>
+            <b-input
+              class="mb-3"
+              v-model="rules.name"
+              v-b-tooltip.hover.bottom.v-primary.ds500
+              title="Enter electoral system name"
+              />
+          </b-input-group>
+          <ElectionSettings
+            :rulesidx="rulesidx"
+            :rules="rules"
+            @update-rules="updateElectionRules">
+          </ElectionSettings>
+        </b-tab>
+        <template v-slot:tabs-end>
+          <b-button
+            size="sm"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Add electoral system"
+            @click="addElectionRules">
+            <b>+</b>
+          </b-button>
+        </template>
+        <div slot="empty">
+          There are no electoral systems specified.
+          Use the <b>+</b> button to create a new electoral system.
+        </div>
+      </b-tabs>
+    </b-card>
+
+  </div>
+</template>
+
+<script>
+import ElectionSettings from './components/ElectionSettings.vue'
+
+export default {
+  components: {
+    ElectionSettings,
+  },
+
+  props: {
+      "server": {default: {
+        waitingForData: false,
+        errormsg: '',
+        error: false,
+      }},
+      "election_rules": {default: [{}]},
+  },
+
+  data: function() {
+    return {
+      activeTabIndex: 0,
+      uploadfile: null,
+    }
+  },
+
+  created: function() {
+    console.log("Created ElectoralSystems");
+  },
+
+  methods: {
+    addElectionRules: function() {
+      console.log("addElectionRules called");
+      this.election_rules.push({})
+    },
+    deleteAllElectionRules: function() {
+      for (var i=0; i<this.election_rules.length; i++)
+        deleteElectionRules(i)      
+    },
+    deleteElectionRules: function(idx) {
+      this.election_rules.splice(idx, 1);
+    },
+    updateElectionRules: function(rules, idx) {
+      console.log("Call updateElectionRules in ElectoralSystems")
+      if (rules.name == "System") rules.name += "-" + (idx+1).toString();
+      this.activeTabIndex = idx;
+      this.$set(this.election_rules, idx, rules);
+      //this works too: this.election_rules.splice(idx, 1, rules);
+    },
+    saveSettings: function() {
+      this.$http.post('/api/settings/save/', {
+        e_settings: this.election_rules,
+        sim_settings: this.simulation_rules,
+      }).then(response => {
+        if (response.body.error) {
+          this.server.errormsg = response.body.error;
+          //this.$emit('server-error', response.body.error);
+        } else {
+          let link = document.createElement('a')
+          link.href = '/api/downloads/get?id=' + response.data.download_id
+          link.click()
+        }
+      }, response => {
+        console.log("Error:", response);
+      })
+    },
+    uploadSettingsAndAppend: function(evt) {
+      var replace = false;
+      this.uploadSettings(evt, replace);
+      this.$refs['appendFromFile'].reset();
+    },
+    uploadSettingsAndReplace: function(evt) {
+      var replace = true;
+      this.uploadSettings(evt, replace);
+      this.$refs['replaceFromFile'].reset();
+    },
+    uploadSettings: function(evt, replace) {
+      if (!this.uploadfile) {
+        evt.preventDefault();
+      }
+      var formData = new FormData();
+      formData.append('file', this.uploadfile, this.uploadfile.name);
+      this.$http.post('/api/settings/upload/', formData).then(response => {
+        if (replace){
+          this.election_rules = [];
+        }
+        for (const setting of response.data.e_settings){
+          this.election_rules.push(setting);
+        }
+        if (response.data.sim_settings){
+          this.simulation_rules = response.data.sim_settings;
+        }
+      });
+    },
+  }
+}
+</script>

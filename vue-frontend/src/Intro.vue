@@ -1,18 +1,11 @@
 <template>
-<b-container>
-  <h1>Voting system simulator</h1>
+<div>
+  <h2>About</h2>
 
-  <span>
-    Version: 1.1.25a Time of release: 2021-08-18
-  </span>
 
   <p>
-    Hello! This is a voting system simulator.
-    Above, you can go to <b><a href="#/calc">Calculator</a></b>.
-    For instructions on how to use it, read below.
+    Election Simulator, version: 1.1.26 Time of release: 2021-07-31
   </p>
-
-  <h2>About</h2>
   <p>
     The aim of this software is to help people understand
     how certain types of electoral systems work under various conditions.
@@ -178,5 +171,5 @@
     <li><a href="https://github.com/smari/voting/raw/master/doc/2018-09-10-kosningakerfishermir-kynning.pdf">Presentation at Reykjavík University 2018-09-10. (In Icelandic)</a></li>
   </ul>
 
-</b-container>
+</div>
 </template>

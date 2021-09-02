@@ -96,7 +96,7 @@ class SimulationRules(Rules):
             "col_constraints": {True, False},
         }
         self["simulate"] = False
-        self["simulation_count"] = 1000
+        self["simulation_count"] = 100
         self["gen_method"] = "beta"
         self["distribution_parameter"] = 0.25
         self["row_constraints"] = True

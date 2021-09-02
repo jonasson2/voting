@@ -10,7 +10,7 @@
       <tr v-for="(step, stepidx) in table.steps">
         <template v-for="(col, colidx) in step">
           <td>
-            {{ col }}
+            <span style="white-space: pre-wrap;">{{col}}</span>
           </td>
         </template>
       </tr>

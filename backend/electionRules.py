@@ -1,4 +1,3 @@
-
 import json
 from copy import copy, deepcopy
 
@@ -27,7 +26,7 @@ class ElectionRules(Rules):
             "constituencies", "parties"
         ]
 
-        self["name"] = "My electoral system"
+        self["name"] = "System"
 
         # Election rules
         self["primary_divider"] = "dhondt"

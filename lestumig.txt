@@ -1,0 +1,59 @@
+AÐALEININGARNAR ERU:
+
+Main – Birtir valmynd og kallar á:
+     Votes and Seats (VotesAndSeats.vue)
+     Electoral Systems (ElectoralSystems.vue)
+     Single Election (Election.vue)
+     Simulation (Simulate.vue)
+     Help (Intro.vue)
+
+     Geymir:
+        election_rules (mörg eintök)
+        vote_table
+        activeTabIndex (valið kosningakerfi í ElectoralSystems)
+        simulation_rules
+
+     Aðgerðir ("actions" sem viðbrögð við "emit"):
+        update-vote-table
+        update-election-rules (bara eitt eintak í einu) [Þarf að laga]
+        update-simulation-rules
+        update-active-tab-index [vantar]
+
+VotesAndSeats – Sér um val/innslátt atkvæðatöflu og kallar á:
+     VoteMatrix (components/VoteMatrix.vue)
+
+ElectoralSystems – sér um val/innslátt kosningakerfa og kallar á:
+     ElectionSettings (components/ElectionSettings.vue)
+
+SingleElection – birtir reiknaðar niðurstöður kosninga og kallar á:
+     ResultMatrix (components/ResultMatrix.vue)
+     ResultChart (components/ResultChart.vue)
+     ResultDemonstration (components/ResultDemonstration.vue)
+
+Simulate – hermir kosningar og kallar á:
+     ResultMatrix (components/ResultMatrix.vue)
+     SimulationSettings (components/SimulationSettings.vue)
+     SimulationData (components/SimulationData.vue)
+
+SKIPULAG
+     Þegar atkvæðatafla í VoteMatrix breytist er hún uppfærð í Main (með emit)
+     Þegar smellt er á Electoral Systems er kallað á Python (...post('/api/election'...)
+        og þá fást til baka ný kerfi (með uppfærðum tölum í rules.constituencies),
+        sem eru látin uppfæra election_rules í Main og líka lókal útgáfuna (tölurnar
+        í rules.constituencies birtir ElectionSettings neðan við valið á reglum)
+     Þegar kosningakerfi breytast í ElectionSettings (eða ElectoralSystems) eru
+        þau uppfærð í main.
+     Þegar smellt er á SingleElection er kallað á Python (...post('/api/election'...)
+        til að reikna úrslitin fyrir öll kerfin [þetta Python-fall hefur sem sé
+        tvennskonar tilgang]
+
+AFLÚSUN
+  Til að aflúsa er ágætt að nota console.log í JavaScript. Það er líka hægt í
+  html með {{console.log(...)}} ef "computed: {console: () => console}" er sett
+  inn í export-section í vue-skrá. Niðurstaðan kemur í developer console í vafra
+  (fæst t.d. með More Tools–Developer Tools í Chrome).
+
+  Í Python má setja inn print-skipanir sem prenta í gluggann þar sem Python er
+  keyrt. Sjá m.a. ...2str föll í util.py.
+  
+https://forum.vuejs.org/t/solved-delay-vue-action-until-a-state-variable-is-set/9063/6
