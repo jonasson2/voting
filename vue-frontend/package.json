@@ -5,7 +5,6 @@
   "main": "src/app.js",
   "scripts": {
       "prebuild": "copyfiles -f ./index-dev/index.html .",
-      "prebuild-producion": "copyfiles -f ./index-prod/index.html .",
       "build": "webpack --config webpack.config.dev.js",
       "build-production": "NODE_ENV=production webpack --config webpack.config.prod.js"
   },

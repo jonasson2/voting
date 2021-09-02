@@ -12,7 +12,6 @@
 /pip-selfcheck.json
 venv/
 backend/logs/*.log
-/vue-frontend/index.html
 /vue-frontend/node_modules
 /vue-frontend/package-lock.json
 /vue-frontend/static/js/bundle.js
