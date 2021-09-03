@@ -82,10 +82,10 @@ def check_rules(electoral_systems):
         # option = electoral_system["seat_spec_option"]
         # assert option in SEAT_SPECIFICATION_OPTIONS.keys(), (
         #     f"Unexpected seat specification option encountered: {option}.")
-        # if option == "2-custom":
-        # We only really need to check input if option is "2-custom",
+        # if option == "custom":
+        # We only really need to check input if option is "custom",
         # because in case of the other options this won't be evaluated anyway,
-        # except for option "5-one_const", and even then,
+        # except for option "one_const", and even then,
         # the frontend can't reach a state where that option would be corrupted.
         # But let's just check all, to be helpful also
         # in case POST data does not come from frontend but elsewhere.

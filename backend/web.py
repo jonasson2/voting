@@ -195,7 +195,7 @@ def upload_settings():
             if info not in item:
                 raise KeyError(f"{info} is missing from a setting in file.")
         if item["seat_spec_option"] == "defer":
-            item["seat_spec_option"] = "1-refer"
+            item["seat_spec_option"] = "refer"
         setting = ElectionRules()
         setting.update(item)
         setting["primary_divider"] = item["constituency_allocation_rule"]
