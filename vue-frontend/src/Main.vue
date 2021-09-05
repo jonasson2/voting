@@ -30,6 +30,7 @@
     <b-tab title="Votes and seats" active>
       <!-- <p>Specify reference votes and seat numbers</p> -->
         <VoteMatrix
+          :vote_table="vote_table"
           @update-vote-table="updateVoteTable"
           @server-error="serverError">
         </VoteMatrix>
