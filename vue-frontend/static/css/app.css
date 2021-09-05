@@ -1,5 +1,10 @@
 p {margin-left: 15px}
 
+.navbar-brand {
+  font-size:1.5rem !important;
+  padding: 0px     !important;
+}
+
 h2 {
   margin-left: 15px;
   margin-top: 1em;
@@ -10,25 +15,39 @@ h3 {
   margin-left: 15px;
 }
 
+/***************************************************/
+
 .votematrix {
   display: block;
-  overflow-x: auto;
+  table-layout: auto;
+  /* overflow-x: auto; */
   white-space: nowrap;
-  min-width: 100px;
-  min-height: 100px;
+  /* min-width: 100px; */
+  /* min-height: 100px; */
   margin-top: 0.7em;
 }
 
 .votematrix tr:nth-child(even) {
-    background-color: #f2f2f2;
+  background-color: #f2f2f2;
+}
+
+.votematrix th, .votematrix td {
+  border:   1px solid #ccc;
+  padding:  2px 4px;
+}
+
+.votematrix th input, .votematrix td input {
+  padding: 2px;
+  background: none;
 }
 
 .votematrix th input {
-  font-weight:    700;
+  font-weight: bold;
 }
 
-.votematrix td, .votematrix th {
-  border:         1px solid #ccc;
+th.seatnumberheading {
+  padding: 4px 6px; /* to match padding of input + padding of cell */
+  font-weight:    bold;
 }
 
 .ruleset {
@@ -41,34 +60,37 @@ h3 {
 th.topleft {
   border-top: 0px !important;
   border-left: 0px !important;
-  border-bottom: 0px !important;
+  /* border-bottom: 0px !important; */
   text-align: center;
   background-color: #fff;
 }
 
 .tablename {
-  text-align: center;
+  border: 0;
 }
 
 .constname input, .tablename input {
   border:         0;
   outline:        0;
-  padding:        8px;
-  background:     none;
+}
+
+.partyseats input {
+  border:         0;
+  outline:        0;
+  text-align:     right;
 }
 
 .partyvotes input, .partyname input {
-  width:          70px;
+  /* width:          70px; */
   border:         0;
   outline:        0;
-  padding:        8px;
   text-align:     right;
-  background:     none;
 }
 
-.partyvotes input:hover, .partyvotes input:focus,
 .partyname input:hover, .partyname input:focus,
 .constname input:hover, .constname input:focus,
+.partyseats input:hover, .partyseats input:focus,
+.partyvotes input:hover, .partyvotes input:focus,
 .tablename input:hover, .tablename input:focus {
   background:     #ddd;
 }
@@ -78,12 +100,14 @@ th.topleft {
   background-color: #fff;
 }
 
+/*********************************************************/
+
 .resultmatrix tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
 .resultmatrix th {
-  font-weight:    700;
+  font-weight:    bold;
 }
 
 .resultmatrix td, .resultmatrix th {
@@ -107,30 +131,48 @@ th.topleft {
   text-align:     center;
   padding-left:   10px;
   padding-right:  10px;
+  padding-top:    5px;
+  padding-bottom: 5px;
+}
+
+.demomatrix td:nth-child(4) {
+  text-align: left;
 }
 
 .demomatrix {
   margin-bottom: 1em;
 }
 
-.constname {
+.displaytablename {
+  text-align: center;
+}
+
+.displaypartyname {
+  /* width:          70px; */
+  min-width:      50px;
   border:         0;
   outline:        0;
   padding:        8px;
+  text-align:     center;
   background:     none;
 }
 
-.partyseats, .partyname {
-  width:          70px;
+.displayconstname {
   border:         0;
   outline:        0;
   padding:        8px;
+  text-align:     left;
+  min-width:      60px;
+  background:     none;
+}
+
+.displaypartyseats {
+  /* width:          70px; */
+  border:         0;
+  outline:        0;
+  padding:        5px;
   text-align:     right;
   background:     none;
-}
-
-.partyname {
-  text-align: center;
 }
 
 .simulationdata tr:nth-child(even) {
@@ -152,7 +194,7 @@ th.topleft {
 .measurename {
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        5px;
   background:     none;
 }
 
@@ -160,7 +202,7 @@ th.topleft {
   width:          150px;
   border:         0;
   outline:        0;
-  padding:        8px;
+  padding:        5px;
   text-align:     center;
   background:     none;
 }

@@ -96,7 +96,7 @@
     <b-button-toolbar key-nav aria-label="Vote tools">
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Use preset votes and seat numbers from real or fictional elections"
           v-b-modal.modalpreset
         >
@@ -105,7 +105,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Upload votes and seat numbers from local Excel or CSV file"
           v-b-modal.modalupload
         >
@@ -114,8 +114,8 @@
       </b-button-group>
       <b-button-group class="mx-1 mb-10">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
-          title="Delete vote table"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Delete all vote and seat numbers"
           @click="clearAll()"
         >
           Delete
@@ -123,7 +123,7 @@
       </b-button-group>
       <b-button-group class="mx-1">
         <b-button class="mb-10"
-          v-b-tooltip.hoover
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Download votes and seat numbers to local Excel file"
           @click="saveVotes()"
         >
@@ -133,79 +133,109 @@
     </b-button-toolbar>
     <br>
     <table class="votematrix">
-      <tr class="parties">
-        <th class="small-12 medium-1 tablename">
-          <input type="text" v-model="matrix.name">
+      <tr>
+        <th class="tablename">
+          <input type="text"
+                 v-autowidth="{maxWidth: '400px', minWidth:'50px'}"
+                 v-model="matrix.name">
         </th>
-        <th>
-          <abbr title="Constituency seats"># Cons.</abbr>
+        <th class="seatnumberheading"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Constituency seats">
+          # Cons.
         </th>
-        <th>
-          <abbr title="Adjustment seats"># Adj.</abbr>
+        <th class="seatnumberheading"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Adjustment seats">
+          # Adj.
         </th>
         <th
           v-for="(party, partyidx) in matrix.parties"
-          class="small-12 medium-1 column partyname"
+          class="partyname"
         >
-          <b-button
+          <b-button class=xbutton style="padding:0"
             size="sm"
             variant="link"
+                    v-b-tooltip.hover.bottom.v-primary.ds500
+                    title="Remove Party"
             @click="deleteParty(partyidx)"
           >
-            ×
+            X
           </b-button>
-          <input type="text" v-model="matrix.parties[partyidx]">
+          <input type="text"
+                 style="text-align:center"
+                 v-autowidth="{maxWidth: '300px', minWidth:'60px'}"
+                 v-model="matrix.parties[partyidx]">
         </th>
         <th class="growtable">
-          <b-button size="sm" @click="addParty()"><b>+</b></b-button>
+          <b-button size="sm"
+                    @click="addParty()"
+                    v-b-tooltip.hover.bottom.v-primary.ds500
+                    title="Add party"
+                    >
+            <b>+</b>
+          </b-button>
         </th>
       </tr>
       <tr v-for="(constituency, conidx) in matrix.constituencies">
-        <th class="small-12 medium-1 column constname">
-          <b-button
+        <th class="constname">
+          <b-button style="padding:0"
             size="sm"
             variant="link"
+                    v-b-tooltip.hover.bottom.v-primary.ds500
+                    title="Remove constituency"
             @click="deleteConstituency(conidx)"
           >
-            ×
+            X
           </b-button>
-          <input type="text" v-model="constituency['name']">
+          <input type="text"
+                 v-autowidth="{maxWidth: '300px', minWidth:'50px'}"
+                 v-model="constituency['name']">
         </th>
-        <td class="small-12 medium-2 column partyvotes">
-          <input type="text" v-model.number="constituency['num_const_seats']">
+        <td class="partyseats">
+          <input type="text"
+                 v-autowidth="{maxWidth: '200px', minWidth:'45px'}"
+                 v-model.number="constituency['num_const_seats']">
         </td>
-        <td class="small-12 medium-2 column partyvotes">
-          <input type="text" v-model.number="constituency['num_adj_seats']">
+        <td class="partyseats">
+          <input type="text"
+                 v-autowidth="{maxWidth: '200px', minWidth:'40px'}"
+                 v-model.number="constituency['num_adj_seats']">
         </td>
         <td
           v-for="(party, partyidx) in matrix.parties"
-          class="small-12 medium-2 column partyvotes"
+          class="partyvotes"
         >
-          <input type="text" v-model.number="matrix.votes[conidx][partyidx]">
+          <input type="text"
+                 v-autowidth="{maxWidth: '300px', minWidth:'75px'}"
+                 v-model.number="matrix.votes[conidx][partyidx]">
         </td>
       </tr>
       <tr>
         <th class="growtable">
-          <b-button size="sm" @click="addConstituency()"><b>+</b></b-button>
+          <b-button size="sm"
+                    @click="addConstituency()"
+                    v-b-tooltip.hover.bottom.v-primary.ds500
+                    title="Add constituency"
+                    >
+            <b>+</b>
+          </b-button>
         </th>
       </tr>
     </table>
   </b-container>
 </template>
 <script>
+import Vue from "vue"
+import VueInputAutowidth from 'vue-input-autowidth'
+Vue.use(VueInputAutowidth)
+
 export default {
+  props: {
+    "vote_table": { default: {} },
+  },
   data: function () {
     return {
-      matrix: {
-        name: "My reference votes",
-        parties: ["A", "B"],
-        votes: [[1500, 2000],
-                [2500, 1700]],
-        constituencies: [
-          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
-          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
-        ],
-      },
       presets: [],
       presetfields: [
         { key: 'name', sortable: true },
@@ -213,6 +243,7 @@ export default {
         { key: 'country', sortable: true },
         { key: 'actions' },
       ],
+      matrix: this.vote_table,
       uploadfile: null,
       paste: { csv: '',
                has_name: false,
@@ -293,6 +324,7 @@ export default {
     },
     loadPreset: function(eid) {
       this.$http.post('/api/presets/load/', {'eid': eid}).then(response => {
+        console.log("calling update-matrix");
         this.matrix = response.data;
       })
     },

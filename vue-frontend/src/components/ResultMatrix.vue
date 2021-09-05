@@ -2,48 +2,47 @@
   <b-container fluid>
     <table class="resultmatrix" v-if="values.length > 0">
       <tr v-if="title">
-        <th class="small-12 medium-1 topleft"></th>
+        <th class="topleft"></th>
         <th :colspan="stddev?2*parties.length:parties.length">
           {{title}}
         </th>
       </tr>
-      <tr class="parties">
-        <th class="small-12 medium-1 topleft"></th>
-        <th
+      <tr>
+        <th class="topleft"></th>
+        <th class="displaypartyname"
           :colspan="stddev?2:1"
           v-for="(party, partyidx) in parties"
-          class="small-12 medium-1 column partyname"
         >
-          {{ parties[partyidx] }}
+          {{parties[partyidx]}}
         </th>
       </tr>
       <tr v-if="stddev" class="parties">
-        <th class="small-12 medium-1 topleft"></th>
+        <th class="topleft"></th>
         <template v-for="(party, partyidx) in parties">
-          <td class="small-12 medium-1 column partyseats">Average</td>
-          <td class="small-12 medium-1 column partyseats">Stddev</td>
+          <td class="partyseats">Average</td>
+          <td class="partyseats">Stddev</td>
         </template>
       </tr>
       <tr v-for="(constituency, conidx) in constituencies">
-        <th class="small-12 medium-1 column constname">
+        <th class="constname">
           {{ constituency["name"] }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td class="small-12 medium-2 column partyseats">
+          <td class="partyseats">
             {{ values[conidx][partyidx].toFixed(round) }}
           </td>
-          <td v-if="stddev" class="small-12 medium-2 column partyseats">
+          <td v-if="stddev" class="partyseats">
             {{ stddev[conidx][partyidx].toFixed(round) }}
           </td>
         </template>
       </tr>
       <tr>
-        <th class="small-12 medium-1 column bottomleft">Total</th>
+        <th class="constname">Total</th>
         <template v-for="(party, partyidx) in parties">
-          <td class="small-12 medium-1 column partyseats">
+          <td class="partyseats">
             {{ values[constituencies.length][partyidx].toFixed(round) }}
           </td>
-          <td v-if="stddev" class="small-12 medium-1 column partyseats">
+          <td v-if="stddev" class="partyseats">
             {{ stddev[constituencies.length][partyidx].toFixed(round) }}
           </td>
         </template>

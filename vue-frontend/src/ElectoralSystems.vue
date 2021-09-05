@@ -38,43 +38,63 @@
         placeholder="Choose a file..."
       ></b-form-file>
     </b-modal>
-    <b-button-toolbar key-nav aria-label="Electoral settings tools">
+    <p></p>
+    <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
       <b-button-group class="mx-1">
-        <b-button
-          title="Save current settings to file"
-          @click="saveSettings()"
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Remove all electoral systems"
+          @click="DeleteAllElectionRules()"
+          v-b-modal.modalpreset
         >
-          Save all
+          Clear
         </b-button>
       </b-button-group>
       <b-button-group class="mx-1">
-        <b-button
-          title="Upload additional settings from file (.json)"
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title = "Add electoral systems by uploading settings from local file"
           v-b-modal.modaluploadesettings
         >
-          Upload
+          Add from file
         </b-button>
-        <b-button
-          title="Upload new settings from file (.json), replacing the current settings"
-          v-b-modal.modaluploadesettingsreplace
+      </b-button-group>
+      <b-button-group class="mx-1">
+        <b-button class="mb-10"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Download settings for all electoral systems to local file"
+          @click="saveSettings()"
         >
-          Replace
+          Save
         </b-button>
       </b-button-group>
     </b-button-toolbar>
+    <br>
     <b-card no-body>
       <b-tabs v-model="activeTabIndex" card>
         <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
-          <div slot="title">
+          <template v-slot:title>
+            {{rules.name}}
+          </template>
+          <b-input-group>
+            <template>
             <b-button
+                style="margin-bottom:10px;margin-left:-5px"
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                title = "Remove electoral system"
               size="sm"
               variant="link"
-              @click="deleteElectionRules(rulesidx)"
-            >
-              x
+                @click="deleteElectionRules(rulesidx)">
+                X
             </b-button>
-            {{rulesidx+1}}-{{rules.name}}
-          </div>
+            </template>
+            <b-input
+              class="mb-3"
+              v-model="rules.name"
+              v-b-tooltip.hover.bottom.v-primary.ds500
+              title="Enter electoral system name"
+              />
+          </b-input-group>
           <ElectionSettings
             :rulesidx="rulesidx"
             :rules="rules"
@@ -82,7 +102,13 @@
           </ElectionSettings>
         </b-tab>
         <template v-slot:tabs-end>
-          <b-button size="sm" @click="addElectionRules"><b>+</b></b-button>
+          <b-button
+            size="sm"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Add electoral system"
+            @click="addElectionRules">
+            <b>+</b>
+          </b-button>
         </template>
         <div slot="empty">
           There are no electoral systems specified.
@@ -128,11 +154,17 @@ export default {
       console.log("addElectionRules called");
       this.election_rules.push({})
     },
+    deleteAllElectionRules: function() {
+      for (var i=0; i<this.election_rules.length; i++)
+        deleteElectionRules(i)      
+    },
     deleteElectionRules: function(idx) {
       this.election_rules.splice(idx, 1);
     },
     updateElectionRules: function(rules, idx) {
       console.log("Call updateElectionRules in ElectoralSystems")
+      if (rules.name == "System") rules.name += "-" + (idx+1).toString();
+      this.activeTabIndex = idx;
       console.log("rules", rules);
       //this.$set(this.election_rules, idx, rules);
       this.$emit('update-main-election-rules', rules, idx);

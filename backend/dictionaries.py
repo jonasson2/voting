@@ -20,63 +20,62 @@ from methods.switching import switching
 from distributions.beta_distribution import beta_distribution
 
 DIVIDER_RULES = {
-    "dhondt": dhondt_gen,
-    "sainte-lague": sainte_lague_gen,
-    "nordic": nordic_sainte_lague_gen,
-    "imperiali": imperiali_gen,
-    "danish": danish_gen,
-    "huntington-hill": huntington_hill_gen,
+    "1-dhondt": dhondt_gen,
+    "2-sainte-lague": sainte_lague_gen,
+    "3-nordic": nordic_sainte_lague_gen,
+    # "imperiali": imperiali_gen,
+    "4-danish": danish_gen,
+    "5-huntington-hill": huntington_hill_gen,
 }
 DIVIDER_RULE_NAMES = {
-    "dhondt": "D'Hondt's method",
-    "sainte-lague": "Sainte-Laguë method",
-    "nordic": "Nordic Sainte-Laguë variant",
-    #"imperiali": "Imperiali method",
-    "danish": "Danish method",
-    "huntington-hill": "Huntington-Hill method",
+    "1-dhondt": "D'Hondt",
+    "2-sainte-lague": "Sainte-Laguë",
+    "3-nordic": "Nordic Sainte-Laguë variant",
+    "4-danish": "Danish",
+    "5-huntington-hill": "Huntington-Hill",
 }
 QUOTA_RULES = {
-    "droop": droop,
-    "hare": hare,
+    "6-hare": hare,
+    "7-droop": droop,
 }
 RULE_NAMES = {
-    "dhondt": "D'Hondt's method",
-    "sainte-lague": "Sainte-Laguë method",
-    "nordic": "Nordic Sainte-Laguë variant",
+    "1-dhondt":          "D'Hondt",
+    "2-sainte-lague":    "Sainte-Laguë",
+    "3-nordic":          "Nordic Sainte-Laguë variant",
+    "4-danish":          "Danish",
+    "5-huntington-hill": "Huntington-Hill",
+    "6-hare":            "Hare quota",
+    "7-droop":           "Droop quota",
     #"imperiali": "Imperiali method",
-    "danish": "Danish method",
-    "huntington-hill": "Huntington-Hill method",
-    "droop": "Droop quota",
-    "hare": "Hare quota",
 }
 
 ADJUSTMENT_METHODS = {
-    "var-alt-scal": var_alt_scal,
-    "alternating-scaling": alternating_scaling,
-    "relative-superiority": relative_superiority,
-    "relative-superiority-simple": relative_superiority_simple,
-    "nearest-neighbor": nearest_neighbor,
-    "monge": monge,
-    "icelandic-law": icelandic_apportionment,
-    "ice-shares": icelandic_share_apportionment,
-    "norwegian-law": norwegian_apportionment,
-    "norwegian-icelandic": norw_ice_apportionment,
-    "opt-entropy": opt_entropy,
-    "switching": switching,
-    "pure-vote-ratios": pure_vote_ratios_apportionment,
+    # "var-alt-scal": var_alt_scal,
+    "1-icelandic-law": icelandic_apportionment,
+    "2-ice-shares": icelandic_share_apportionment,
+    "3-norwegian-law": norwegian_apportionment,
+    "4-norwegian-icelandic": norw_ice_apportionment,
+    "5-pure-vote-ratios": pure_vote_ratios_apportionment,
+    "6-relative-superiority": relative_superiority,
+    "7-relative-sup-simple": relative_superiority_simple,
+    "8-nearest-neighbor": nearest_neighbor,
+    "9-monge": monge,
+    # "opt-entropy": opt_entropy,
+    "A-switching": switching,
+    "B-alternating-scaling": alternating_scaling,
 }
 ADJUSTMENT_METHOD_NAMES = {
-    "alternating-scaling": "Optimal method (Alternating-Scaling)",
-    "relative-superiority": "Relative Superiority Method",
-    "relative-superiority-simple": "Relative Superiority Method - Simple version",
-    "nearest-neighbor": "Nearest Neighbor Method",
-    "monge": "Monge algorithm",
-    "icelandic-law": "Icelandic law 24/2000 (Kosningar til Alþingis)",
-    "ice-shares": "Icelandic law modified to use seat shares",
-    "norwegian-law": "Norwegian law",
-    "norwegian-icelandic": "Norwegian-Icelandic variant",
-    "switching": "Switching Method",
-    "pure-vote-ratios": "Pure Vote Ratios"
+    "1-icelandic-law":        "Icelandic law 24/2000",
+    "2-ice-shares":           "Icelandic law based on seat shares",
+    "3-norwegian-law":        "Norwegian law 20/2002",
+    "4-norwegian-icelandic":  "Norwegian law based on seat shares",
+    "5-pure-vote-ratios":     "Vote percentage",
+    "6-relative-superiority": "Relative superiority",
+    "7-relative-sup-simple":  "Relative superiority, simplified",
+    "8-nearest-neighbor":     "Nearest neighbor",
+    "9-monge":                "Monge",
+    "A-switching":            "Switching of seats",
+    "B-alternating-scaling":  "Optimal divisor method",
 }
 
 GENERATING_METHODS = {
@@ -87,11 +86,11 @@ GENERATING_METHOD_NAMES = {
 }
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":     "Refer to vote table (see below)",
+    "refer":     'Use values from "Votes and seats" tab (see on right)',
+    "custom":    "Specify seat numbers by changing individual values",
     "all_const": "Make all seats constituency seats",
     "all_adj":   "Make all seats adjustment seats",
     "one_const": "Combine all constituencies into one",
-    "custom":    "Specify seat distribution manually for this particular electoral system",
 }
 
 MEASURES = {

@@ -43,7 +43,10 @@ CORS(app)
 
 @app.route('/')
 def serve_index():
-    return render_template('index.html')
+    digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
+    indexfile = "index-digital-ocean.html" if digoce else "index.html"
+    print("Calling serve_index with indexfile", indexfile)
+    return render_template(indexfile)
 
 @app.route('/static/<path:path>')
 def send_static(path):
@@ -89,10 +92,10 @@ def get_election_results():
         result = handle_election().elections
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("Error-1:",message)
         return jsonify({"error": message})
     result=[election.get_results_dict() for election in result]
-    print("result=", result)
+    # print("result=", result)
     return jsonify(result)
 
 @app.route('/api/election/getxlsx/', methods=['POST'])
@@ -120,7 +123,7 @@ def save_settings():
         result = prepare_to_save_settings()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("Error-2:", message)
         return jsonify({"error": message})
 
     did = get_new_download_id()
@@ -212,7 +215,7 @@ def save_votes():
         result = prepare_to_save_vote_table()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("Error-3", message)
         return jsonify({"error": message})
 
     DOWNLOADS[did] = result
@@ -311,7 +314,7 @@ def start_simulation():
         simulation = set_up_simulation()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
-        print(message)
+        print("Error-4", message)
         return jsonify({"started": False, "error": message})
 
     # Simulation cache expires in 3 hours = 3*3600 = 10800 seconds

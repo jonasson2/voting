@@ -63,7 +63,7 @@ def relative_superiority(m_votes, v_desired_row_sums, v_desired_col_sums,
             v_slacks = [v_col_slacks[p] if m_votes[c][p]>0 else 0 for p in range(num_parties)]
             v_slacks[next_in] = 0
             if sum(v_slacks) < v_row_slacks[c]:
-                # top list must get a seat, else it's impossible to man all seats in this constituency
+                # top list must get a seat, else it's impossible to fill all seats in this constituency
                 necessary.append({
                     "constituency": c,
                     "party": next_in,

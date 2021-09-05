@@ -95,7 +95,7 @@ def icelandic_apportionment(
             num_allocated += 1
             seats_info.append({
                 "constituency": const[0], "party": idx,
-                "reason": "i) Max active national vote quotient, ii) Max active list vote quotient as share",
+                "reason": "i) Max active national vote quotient\nii) Max active list vote quotient as share",
                 "country_num": country_num,
                 "list_share": v_proportions[const[0]],
             })

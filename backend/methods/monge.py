@@ -78,7 +78,7 @@ def find_trivial_seats(allocations, p_goals, c_goals):
                 "constituency": C,
                 "party": P,
                 "seats": slack,
-                "reason": "Only list available.",
+                "reason": "Only list available",
             })
         assert(p_slack == c_slack)
         return trivial_seats
@@ -94,7 +94,7 @@ def find_trivial_seats(allocations, p_goals, c_goals):
                 "constituency": C,
                 "party": P,
                 "seats": slack,
-                "reason": "Only list available.",
+                "reason": "Only list available",
             })
         assert(p_slack == c_slack)
         return trivial_seats

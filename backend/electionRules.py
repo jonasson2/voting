@@ -26,15 +26,15 @@ class ElectionRules(Rules):
             "constituencies", "parties"
         ]
 
-        self["name"] = "My electoral system"
+        self["name"] = "System"
 
         # Election rules
-        self["primary_divider"] = "dhondt"
-        self["adj_determine_divider"] = "dhondt"
-        self["adj_alloc_divider"] = "dhondt"
+        self["primary_divider"] = "1-dhondt"
+        self["adj_determine_divider"] = "1-dhondt"
+        self["adj_alloc_divider"] = "1-dhondt"
         self["adjustment_threshold"] = 5
         self["constituency_threshold"] = 0
-        self["adjustment_method"] = "icelandic-law"
+        self["adjustment_method"] = "1-icelandic-law"
         self["seat_spec_option"] = "refer"
         self["constituencies"] = []
         self["parties"] = []
@@ -94,16 +94,16 @@ class ElectionRules(Rules):
     def generate_opt_ruleset(self):
         ref_rs = ElectionRules()
         ref_rs.update(self)
-        ref_rs["adjustment_method"] = "alternating-scaling"
+        ref_rs["adjustment_method"] = "B-alternating-scaling"
         return ref_rs
 
     def generate_law_ruleset(self):
         ref_rs = ElectionRules()
         ref_rs.update(self)
-        ref_rs["adjustment_method"] = "icelandic-law"
-        ref_rs["primary_divider"] = "dhondt"
-        ref_rs["adj_determine_divider"] = "dhondt"
-        ref_rs["adj_alloc_divider"] = "dhondt"
+        ref_rs["adjustment_method"] = "1-icelandic-law"
+        ref_rs["primary_divider"] = "1-dhondt"
+        ref_rs["adj_determine_divider"] = "1-dhondt"
+        ref_rs["adj_alloc_divider"] = "1-dhondt"
         ref_rs["adjustment_threshold"] = 5
         return ref_rs
 
