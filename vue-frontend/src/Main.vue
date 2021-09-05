@@ -30,7 +30,6 @@
     <b-tab title="Votes and seats" active>
       <!-- <p>Specify reference votes and seat numbers</p> -->
         <VoteMatrix
-          :vote_table="vote_table"
           @update-vote-table="updateVoteTable"
           @server-error="serverError">
         </VoteMatrix>
@@ -44,13 +43,12 @@
           @update-main-election-rules="updateMainElectionRules">
         </ElectoralSystems>
       </b-tab>
-    <b-tab title="Single election" @click="recalculate">
+    <b-tab title="Single election" @click="calculate">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
         <Election
           ref="ElectionRef"
           :server="server"
           :vote_table="vote_table"
-          :results="results"
           :election_rules="election_rules"
           :activeTabIndex="activeTabIndex"
           @update-rules="updateMainElectionRules">
@@ -98,16 +96,11 @@ export default {
         error: false,
       },
       vote_table: {
-        name: "My reference votes",
-        parties: ["A", "B"],
-        votes: [[1500, 2000],
-                [2500, 1700]],
-        constituencies: [
-          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
-          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
-        ],
+        name: "",
+        parties: [],
+        constituencies: [],
+        votes: [],
       },
-      results: [],
       // election_rules contains several rules; see ElectionSettings.vue
       // and electionRules.py for the member variables of a rule
       election_rules: [{}],
@@ -120,31 +113,13 @@ export default {
       },
     }
   },
-  watch: {
-    'vote_table': {
-      handler: function (val, oldVal) {
-        console.log("watching vote_table");
-        this.recalculate();
-      },
-      deep: true
-    },
-    'election_rules': {
-      handler: function (val, oldVal) {
-        console.log("watching election_rules");
-        this.recalculate();
-      },
-      deep: true
-    },
-  },
   
   methods: {
     serverError: function(error) {
       this.server.errormsg = error;
     },
-    updateVoteMatrix: function(matrix) {
-      console.log("updating matrix");
-      console.log(matrix);
-      this.VoteMatrix = matrix;
+    calculate: function() {
+      //this.$refs.ElectionRef.recalculate();
     },
     updateMainElectionRules: function(rules, idx) {
       this.$set(this.election_rules, idx, rules);
@@ -153,51 +128,8 @@ export default {
     updateSimulationRules: function(rules) {
       this.simulation_rules = rules;
     },
-    recalculate: function() {
-      console.log("recalculate called");
-      if (this.election_rules.length > 0) {
-        this.server.waitingForData = true;
-        this.$http.post('/api/election/',
-                        {
-                          vote_table: this.vote_table,
-                          rules: this.election_rules,
-                        }).then(response => {
-                          if (response.body.error) {
-                            this.server.errormsg = response.body.error;
-                            this.server.waitingForData = false;
-                          } else {
-                            this.server.errormsg = '';
-                            this.server.error = false;
-                            this.results = response.body;
-                            for (var i=0; i<response.body.length; i++){
-                              let old_const = this.election_rules[i].constituencies;
-                              let new_const = response.body[i].rules.constituencies;
-                              let modified = false;
-                              if (new_const.length == old_const.length) {
-                                for (var j=0; j<new_const.length; j++) {
-                                  let old_c = old_const[j];
-                                  let new_c = new_const[j];
-                                  if (old_c.name != new_c.name
-                                      || old_c.num_const_seats != new_c.num_const_seats
-                                      || old_c.num_adj_seats != new_c.num_adj_seats) {
-                                    modified = true;
-                                  }
-                                }
-              }
-              else if (new_const.length>0) {
-                modified = true;
-              }
-              if (modified){
-                this.$set(this.election_rules, i, response.body[i].rules);
-              }
-            }
-            this.server.waitingForData = false;
-          }
-        }, response => {
-          this.server.error = true;
-          this.server.waitingForData = false;
-        });
-      }
+    updateVoteTable: function(table) {
+      this.vote_table = table;
     },
   }  
 }

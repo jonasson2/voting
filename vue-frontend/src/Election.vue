@@ -3,31 +3,31 @@
   <h2>Results</h2>
   <b-card no-body>
     <b-tabs v-model="resultIndex" card>
-      <b-tab v-for="(rules, idx) in election_rules" :key="idx">
+      <b-tab v-for="(rules, activeTabIndex) in election_rules" :key="activeTabIndex">
         <div slot="title">
           {{rules.name}}
         </div>
   <b-container style="margin-left:1px; margin-bottom:10px">
           <b-button @click="get_xlsx">Download XLSX file</b-button>
   </b-container>
-        <b-container fluid style="margin-top:5px" v-if="results[idx] !== undefined">
+        <b-container fluid style="margin-top:5px" v-if="results[activeTabIndex] !== undefined">
     <b-row>
       <ResultMatrix
         :parties="vote_table.parties"
-              :constituencies="results[idx].rules.constituencies"
-              :values="results[idx].seat_allocations"
+              :constituencies="results[activeTabIndex].rules.constituencies"
+              :values="results[activeTabIndex].seat_allocations"
         :stddev="false">
       </ResultMatrix>
     </b-row>
           <!-- <b-row> -->
           <!--   <ResultChart -->
           <!--     :parties="vote_table.parties" -->
-          <!--     :seats="results[idx].seat_allocations"> -->
+          <!--     :seats="results[activeTabIndex].seat_allocations"> -->
           <!--   </ResultChart> -->
           <!-- </b-row> -->
     <b-row>
       <ResultDemonstration
-              :table="results[idx].step_by_step_demonstration">
+              :table="results[activeTabIndex].step_by_step_demonstration">
       </ResultDemonstration>
     </b-row>
   </b-container>
@@ -50,12 +50,12 @@ export default {
   props: {
     "server": { default: {} },
     "vote_table": { default: {} },
-    "results": {default: [] },
     "election_rules": { default: [{}] },
   },
   data: function() {
     return {
       resultIndex: 0,
+      results: [],
     }
   },
   components: {
@@ -64,11 +64,6 @@ export default {
     ResultDemonstration,
   },
 
-  data: function() {
-    return {
-      results: [],
-    }
-  },
   watch: {
     'vote_table': {
       handler: function (val, oldVal) {
@@ -88,9 +83,9 @@ export default {
   methods: {
     recalculate: function() {
       console.log("recalculate called");
-      if (this.election_rules.length > 0
-          && this.election_rules.length > this.activeTabIndex
-          && this.election_rules[this.activeTabIndex].name) {
+      if (this.election_rules.length > 0) {
+          // && this.election_rules.length > this.activeTabIndex
+          // && this.election_rules[this.activeTabIndex].name) {
         this.server.waitingForData = true;
         this.$http.post('/api/election/',
         {

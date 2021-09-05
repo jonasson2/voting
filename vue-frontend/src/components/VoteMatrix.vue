@@ -231,11 +231,18 @@ import VueInputAutowidth from 'vue-input-autowidth'
 Vue.use(VueInputAutowidth)
 
 export default {
-  props: {
-    "vote_table": { default: {} },
-  },
   data: function () {
     return {
+      matrix: {
+        name: "My reference votes",
+        parties: ["A", "B"],
+        votes: [[1500, 2000],
+                [2500, 1700]],
+        constituencies: [
+          {"name": "I",  "num_const_seats": 10, "num_adj_seats": 2},
+          {"name": "II", "num_const_seats": 10, "num_adj_seats": 3}
+        ],
+      },
       presets: [],
       presetfields: [
         { key: 'name', sortable: true },
@@ -243,7 +250,6 @@ export default {
         { key: 'country', sortable: true },
         { key: 'actions' },
       ],
-      matrix: this.vote_table,
       uploadfile: null,
       paste: { csv: '',
                has_name: false,
@@ -324,7 +330,6 @@ export default {
     },
     loadPreset: function(eid) {
       this.$http.post('/api/presets/load/', {'eid': eid}).then(response => {
-        console.log("calling update-matrix");
         this.matrix = response.data;
       })
     },
