@@ -44,8 +44,7 @@
         <b-button class="mb-10"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Remove all electoral systems"
-          @click="DeleteAllElectionRules()"
-          v-b-modal.modalpreset
+          @click="deleteAllElectionRules()"
         >
           Clear
         </b-button>
@@ -154,12 +153,16 @@ export default {
       console.log("addElectionRules called");
       this.election_rules.push({})
     },
-    deleteAllElectionRules: function() {
-      for (var i=0; i<this.election_rules.length; i++)
-        deleteElectionRules(i)      
-    },
     deleteElectionRules: function(idx) {
+      console.log("deleting election rules", idx);
       this.election_rules.splice(idx, 1);
+    },
+    deleteAllElectionRules: function() {
+      console.log("deleting all rules");
+      for (var i=this.election_rules.length-1; i>=0; i--) {
+        console.log("deleting rules #", i);
+        this.deleteElectionRules(i);
+      }
     },
     updateElectionRules: function(rules, idx) {
       console.log("Call updateElectionRules in ElectoralSystems")
