@@ -321,7 +321,13 @@ export default {
           this.$emit('server-error', response.body.error);
         } else {
           let link = document.createElement('a')
+          console.log("response=", response);
+          console.log("response.data", response.data);
+          console.log("filename", response.data.filename)
           link.href = '/api/downloads/get?id=' + response.data.download_id
+          link.setAttribute('download', response.data.filename);
+          console.log("link.href=",link.href);
+          console.log("link=",link);
           link.click()
         }
       }, response => {

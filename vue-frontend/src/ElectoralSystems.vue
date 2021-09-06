@@ -1,122 +1,156 @@
 <template>
-  <div>
-    <b-modal
-      size="lg"
-      id="modaluploadesettings"
-      title="Upload JSON file"
-      @ok="uploadSettingsAndAppend"
+<div>
+  <b-modal
+    size="lg"
+    id="modaluploadesettings"
+    title="Upload JSON file"
+    @ok="uploadSettingsAndAppend"
     >
-      <p>
-        The file provided must be a JSON file
-        formatted like a file downloaded from here, using the Save button.
-        The electoral systems contained in the file
-        will be added to those you have already specified.
-      </p>
-      <b-form-file
-        ref="appendFromFile"
-        v-model="uploadfile"
-        :state="Boolean(uploadfile)"
-        placeholder="Choose a file..."
-      ></b-form-file>
-    </b-modal>
-    <b-modal
-      size="lg"
-      id="modaluploadesettingsreplace"
-      title="Upload JSON file"
-      @ok="uploadSettingsAndReplace"
+    <p>
+      The file provided must be a JSON file
+      formatted like a file downloaded from here, using the Save button.
+      The electoral systems contained in the file
+      will be added to those you have already specified.
+    </p>
+    <b-form-file
+      ref="appendFromFile"
+      v-model="uploadfile"
+      :state="Boolean(uploadfile)"
+      placeholder="Choose a file..."
+      >
+    </b-form-file>
+  </b-modal>
+  <b-modal
+    size="lg"
+    id="modaluploadesettingsreplace"
+    title="Upload JSON file"
+    @ok="uploadSettingsAndReplace"
     >
-      <p>
-        The file provided must be a JSON file
-        formatted like a file downloaded from here, using the Save button.
-        The electoral systems contained in the file
-        will replace those you have already specified.
-      </p>
-      <b-form-file
-        ref="replaceFromFile"
-        v-model="uploadfile"
-        :state="Boolean(uploadfile)"
-        placeholder="Choose a file..."
-      ></b-form-file>
-    </b-modal>
-    <p></p>
-    <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
-      <b-button-group class="mx-1">
-        <b-button class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Remove all electoral systems"
-          @click="deleteAllElectionRules()"
+    <p>
+      The file provided must be a JSON file
+      formatted like a file downloaded from here, using the Save button.
+      The electoral systems contained in the file
+      will replace those you have already specified.
+    </p>
+    <b-form-file
+      ref="replaceFromFile"
+      v-model="uploadfile"
+      :state="Boolean(uploadfile)"
+      placeholder="Choose a file..."
+      >
+    </b-form-file>
+  </b-modal>
+  <b-modal
+    size="lg"
+    id="modalsaveesettings"
+    title="Download JSON file"
+    @ok="newSaveESettings"
+    >
+    <p>
+      All current electoral system settings will be saved to a
+      JSON file.
+    </p>
+    <b-form-file
+      :directory=true
+      ref="saveToFile"
+      v-model="savefolder"
+      :state="Boolean()"
+      placeholder="Select folder..."
+      >
+    </b-form-file>
+  </b-modal>
+  <p></p>
+  <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Remove all electoral systems"
+        @click="deleteAllElectionRules()"
         >
-          Clear
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title = "Add electoral systems by uploading settings from local file"
-          v-b-modal.modaluploadesettings
+        Clear
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title = "Add electoral systems by uploading settings from local file"
+        v-b-modal.modaluploadesettings
         >
-          Add from file
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Download settings for all electoral systems to local file"
-          @click="saveSettings()"
+        Add from file
+      </b-button>
+    </b-button-group>
+    <!-- <b-button-group class="mx-1"> -->
+    <!--   <b-button -->
+    <!--     class="mb-10" -->
+    <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
+    <!--     title = "Download settings for all electoral systems to local file" -->
+    <!--     v-b-modal.modalsaveesettings -->
+    <!--     > -->
+    <!--     Save -->
+    <!--   </b-button> -->
+    <!-- </b-button-group> -->
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Download settings for all electoral systems to local file"
+        @click="saveSettings()"
         >
-          Save
-        </b-button>
-      </b-button-group>
-    </b-button-toolbar>
-    <br>
-    <b-card no-body>
-      <b-tabs v-model="activeTabIndex" card>
-        <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
-          <template v-slot:title>
-            {{rules.name}}
-          </template>
-          <b-input-group>
-            <template>
+        Save
+      </b-button>
+    </b-button-group>
+  </b-button-toolbar>
+  <br>
+  <b-card no-body>
+    <b-tabs v-model="activeTabIndex" card>
+      <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
+        <template v-slot:title>
+          {{rules.name}}
+        </template>
+        <b-input-group>
+          <template>
             <b-button
-                style="margin-bottom:10px;margin-left:-5px"
-                v-b-tooltip.hover.bottom.v-primary.ds500
-                title = "Remove electoral system"
+              style="margin-bottom:10px;margin-left:-5px"
+              v-b-tooltip.hover.bottom.v-primary.ds500
+              title = "Remove electoral system"
               size="sm"
               variant="link"
-                @click="deleteElectionRules(rulesidx)">
-                X
+              @click="deleteElectionRules(rulesidx)">
+              X
             </b-button>
-            </template>
-            <b-input
-              class="mb-3"
-              v-model="rules.name"
-              v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Enter electoral system name"
-              />
-          </b-input-group>
-          <ElectionSettings
-            :rulesidx="rulesidx"
-            :rules="rules"
-            @update-rules="updateElectionRules">
-          </ElectionSettings>
-        </b-tab>
-        <template v-slot:tabs-end>
-          <b-button
-            size="sm"
+          </template>
+          <b-input
+            class="mb-3"
+            v-model="rules.name"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Add electoral system"
-            @click="addElectionRules">
-            <b>+</b>
-          </b-button>
-        </template>
-        <div slot="empty">
-          There are no electoral systems specified.
-          Use the <b>+</b> button to create a new electoral system.
-        </div>
-      </b-tabs>
-    </b-card>
-
-  </div>
+            title="Enter electoral system name"
+            />
+        </b-input-group>
+        <ElectionSettings
+          :rulesidx="rulesidx"
+          :rules="rules"
+          @update-rules="updateElectionRules">
+        </ElectionSettings>
+      </b-tab>
+      <template v-slot:tabs-end>
+        <b-button
+          size="sm"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Add electoral system"
+          @click="addElectionRules">
+          <b>+</b>
+        </b-button>
+      </template>
+      <div slot="empty">
+        There are no electoral systems specified.
+        Use the <b>+</b> button to create a new electoral system.
+      </div>
+    </b-tabs>
+  </b-card>
+  
+</div>
 </template>
 
 <script>
@@ -126,28 +160,29 @@ export default {
   components: {
     ElectionSettings,
   },
-
+  
   props: {
-      "server": {default: {
-        waitingForData: false,
-        errormsg: '',
-        error: false,
-      }},
-      "election_rules": {default: [{}]},
+    "server": {default: {
+      waitingForData: false,
+      errormsg: '',
+      error: false,
+    }},
+    "election_rules": {default: [{}]},
   },
-
+  
   data: function() {
     return {
       activeTabIndex: 0,
       uploadfile: null,
+      savefolder: null,
     }
   },
-
+  
   created: function() {
     console.log("Created ElectoralSystems");
     console.log("rules", this.election_rules);
   },
-
+  
   methods: {
     addElectionRules: function() {
       console.log("addElectionRules called");
@@ -205,6 +240,10 @@ export default {
       this.uploadSettings(evt, replace);
       this.$refs['replaceFromFile'].reset();
     },
+    newSaveESettings: function(evt) {
+      console.log("newSaveESettings called");
+      console.log("evt=", evt);
+    },    
     uploadSettings: function(evt, replace) {
       if (!this.uploadfile) {
         evt.preventDefault();

@@ -76,7 +76,7 @@ def get_download():
         directory=os.path.dirname(tmpfilename),
         filename=os.path.basename(tmpfilename),
         attachment_filename=attachment_filename,
-        as_attachment=True
+        as_attachment=False
     )
 
 def handle_election():
@@ -219,7 +219,8 @@ def save_votes():
         return jsonify({"error": message})
 
     DOWNLOADS[did] = result
-    return jsonify({"download_id": did})
+    filename = result[1]
+    return jsonify({"download_id": did, "filename": filename})
 
 def prepare_to_save_vote_table():
     data = request.get_json(force=True)
