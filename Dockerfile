@@ -6,7 +6,7 @@ COPY . /voting
 WORKDIR /voting/vue-frontend
 RUN npm install
 RUN npm run build-production
-RUN sed -i 's/http:/https:/g' static/js/bundle.js
+# RUN sed -i 's/http:/https:/g' static/js/bundle.js
 
 WORKDIR /voting/backend
 ENV FLASK_DIGITAL_OCEAN=True
