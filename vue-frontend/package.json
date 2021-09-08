@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/app.js",
+  "serve": "vue-cli-service serve --https true",
   "scripts": {
+      "start": "HTTPS=true SSL_CRT_FILE=localhost.pem SSL_KEY_FILE=localhost-key.pem react-scripts start",
       "build": "NODE_ENV=dev webpack --config webpack.config.dev.js",
       "build-production": "NODE_ENV=production webpack --config webpack.config.prod.js"
   },
@@ -22,7 +24,6 @@
     "bootstrap-vue": "^2.0.3",
     "chart.js": "^2.7.2",
     "vue-input-autowidth": "^1.0.11",
-    "copyfiles": "^2.4.1",
     "vue": "^2.6.10",
     "vue-chartjs": "^3.3.2",
     "vue-resource": "^1.5.1",

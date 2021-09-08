@@ -244,7 +244,6 @@ def prepare_to_save_vote_table():
     save_votes_to_xlsx(file_matrix, tmpfilename)
     filename = secure_filename(vote_table['name'])
     attachment_filename=f"{filename}.xlsx"
-
     return tmpfilename, attachment_filename
 
 @app.route('/api/votes/upload/', methods=['POST'])
