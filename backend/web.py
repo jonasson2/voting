@@ -220,7 +220,7 @@ def save_votes():
 
     DOWNLOADS[did] = result
     filename = result[1]
-    return jsonify({"download_id": did, "filename": filename})
+    return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
 
 def prepare_to_save_vote_table():
     data = request.get_json(force=True)
@@ -244,7 +244,6 @@ def prepare_to_save_vote_table():
     save_votes_to_xlsx(file_matrix, tmpfilename)
     filename = secure_filename(vote_table['name'])
     attachment_filename=f"{filename}.xlsx"
-
     return tmpfilename, attachment_filename
 
 @app.route('/api/votes/upload/', methods=['POST'])
