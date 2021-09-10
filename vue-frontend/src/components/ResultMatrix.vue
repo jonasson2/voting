@@ -24,11 +24,11 @@
         </template>
       </tr>
       <tr v-for="(constituency, conidx) in constituencies">
-        <th class="constname">
+        <th class="displayconstname">
           {{ constituency["name"] }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td class="partyseats">
+          <td class="displaypartyseats">
             {{ values[conidx][partyidx].toFixed(round) }}
           </td>
           <td v-if="stddev" class="partyseats">
@@ -37,9 +37,9 @@
         </template>
       </tr>
       <tr>
-        <th class="constname">Total</th>
+        <th class="displayconstname">Total</th>
         <template v-for="(party, partyidx) in parties">
-          <td class="partyseats">
+          <td class="displaypartyseats">
             {{ values[constituencies.length][partyidx].toFixed(round) }}
           </td>
           <td v-if="stddev" class="partyseats">

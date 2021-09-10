@@ -80,6 +80,10 @@ th.topleft {
   text-align:     right;
 }
 
+.partyvotes {
+  text-align: right;
+}
+
 .partyvotes input, .partyname input {
   /* width:          70px; */
   border:         0;

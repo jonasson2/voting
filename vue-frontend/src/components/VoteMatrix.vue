@@ -124,7 +124,7 @@
       <b-button-group class="mx-1">
         <b-button class="mb-10"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Download votes and seat numbers to local Excel file"
+          title="Download votes and seat numbers to local Excel file. You may need to change browser settings; see Help for details"
           @click="saveVotes()"
         >
           Save

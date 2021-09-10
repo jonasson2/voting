@@ -40,6 +40,7 @@
         <ElectoralSystems
           :server="server"
           :election_rules="election_rules"
+          :simulation_rules="simulation_rules"
           @update-main-election-rules="updateMainElectionRules">
         </ElectoralSystems>
       </b-tab>

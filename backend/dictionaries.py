@@ -86,7 +86,7 @@ GENERATING_METHOD_NAMES = {
 }
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":     'Use values from "Votes and seats" tab (see on right)',
+    "refer":     'Use values from "Votes and seats" tab',
     "custom":    "Specify seat numbers by changing individual values",
     "all_const": "Make all seats constituency seats",
     "all_adj":   "Make all seats adjustment seats",

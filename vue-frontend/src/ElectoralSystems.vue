@@ -95,7 +95,7 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download settings for all electoral systems to local file"
+        title="Download settings for all electoral systems to local json-file. You may need to change browser settings; see Help for details"
         @click="saveSettings()"
         >
         Save
@@ -168,6 +168,7 @@ export default {
       error: false,
     }},
     "election_rules": {default: [{}]},
+    "simulation_rules": {default: [{}]},
   },
   
   data: function() {
@@ -224,6 +225,9 @@ export default {
         } else {
           let link = document.createElement('a')
           link.href = '/api/downloads/get?id=' + response.data.download_id
+          console.log("response.data", response.data);
+          link.setAttribute('download', response.data.filename);
+          console.log("link=",link);
           link.click()
         }
       }, response => {

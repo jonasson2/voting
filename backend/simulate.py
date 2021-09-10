@@ -99,9 +99,9 @@ class SimulationRules(Rules):
         self["simulation_count"] = 100
         self["gen_method"] = "beta"
         self["distribution_parameter"] = 0.25
-        self["row_constraints"] = True
-        self["col_constraints"] = True
-
+        self["scaling"] = "both"
+        # self["row_constraints"] = True
+        # self["col_constraints"] = True
 
 class Simulation:
     """Simulate a set of elections."""
@@ -372,9 +372,11 @@ class Simulation:
         rein = 0
         error = 1
         if self.num_parties > 1 and election.num_constituencies > 1:
+            row_constraints = self.sim_rules["scaling"] in {"both","const"}
+            col_constraints = self.sim_rules["scaling"] in {"both","party"}
             while round(error, 5) != 0.0:
                 error = 0
-                if self.sim_rules["row_constraints"]:
+                if row_constraints:
                     for c in range(election.num_constituencies):
                         s = sum(ideal_seats[c])
                         if s != 0:
@@ -383,7 +385,7 @@ class Simulation:
                             mult += rein*(1-mult)
                             for p in range(self.num_parties):
                                 ideal_seats[c][p] *= mult
-                if self.sim_rules["col_constraints"]:
+                if col_constraints:
                     for p in range(self.num_parties):
                         s = sum([c[p] for c in ideal_seats])
                         if s != 0:
@@ -459,10 +461,12 @@ class Simulation:
     def simulate(self):
         """Simulate many elections."""
         gen = self.gen_votes()
-        if self.num_total_simulations == 0:
+        ntot = self.num_total_simulations;
+        if ntot == 0:
             self.collect_measures(self.base_votes)
         self.iterations_with_no_solution = 0
-        for i in range(self.num_total_simulations):
+        begin_time = datetime.now()
+        for i in range(ntot):
             round_start = datetime.now()
             if self.terminate:
                 break
@@ -474,6 +478,8 @@ class Simulation:
                 self.iterations_with_no_solution += 1
                 continue
             round_end = datetime.now()
+            t = (round_end - begin_time)
+            self.time_left = (t.seconds + t.microseconds/1e6)*(ntot - i)/ntot
             self.iteration_time = round_end - round_start
             self.aggregate_measure(-1, "time", self.iteration_time.total_seconds())
         self.analysis()

@@ -116,7 +116,14 @@ def check_simulation_rules(sim_rules):
         KeyError: If simulation rules are missing a component
         ValueError: If coefficient of variation is too high
     """
-    for key in ["simulation_count", "gen_method", "row_constraints", "col_constraints"]:
+    if "row_constraints" in sim_rules and "col_constraints" in sim_rules:
+        for key in ["row_constraints", "col_constraints"]:
+            sim_rules[key] = bool(strtobool(str(sim_rules[key])))
+        if sim_rules["row_constraints"]:
+            sim_rules["scaling"] = "both" if sim_rules["col_constraints"] else "const"
+        else:
+            sim_rules["scaling"] = "party" if sim_rules["col_constraints"] else "total"
+    for key in ["simulation_count", "gen_method", "scaling"]:
         if key not in sim_rules:
             raise KeyError(f"Missing data ('simulation_rules.{key}')")
     if sim_rules["gen_method"] == "beta":
@@ -125,6 +132,4 @@ def check_simulation_rules(sim_rules):
         variance_coefficient = sim_rules["distribution_parameter"]
         if variance_coefficient >= 0.75:
             raise ValueError("Coefficient of variation must be less than 0.75")
-    for key in ["row_constraints", "col_constraints"]:
-        sim_rules[key] = bool(strtobool(str(sim_rules[key])))
     return sim_rules

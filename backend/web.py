@@ -128,7 +128,8 @@ def save_settings():
 
     did = get_new_download_id()
     DOWNLOADS[did] = result
-    return jsonify({"download_id": did})
+    filename = result[1]
+    return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
 
 def prepare_to_save_settings():
     data = request.get_json(force=True)
@@ -343,7 +344,9 @@ def check_simulation():
     return jsonify({
             "done": thread.done,
             "iteration": simulation.iteration,
-            "iteration_time": simulation.iteration_time.seconds + (simulation.iteration_time.microseconds/1000000.0),
+            "time-left": simulation.time_left,
+            "iteration_time": simulation.iteration_time.seconds +
+                              (simulation.iteration_time.microseconds/1000000.0),
             "target": simulation.sim_rules["simulation_count"],
             "results": simulation.get_results_dict(),
             "parties": simulation.parties,

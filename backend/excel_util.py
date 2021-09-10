@@ -415,8 +415,10 @@ def simulation_to_xlsx(simulation, filename):
         }
 
         date_label = "Date:"
-        row_constraints = simulation.sim_rules["row_constraints"] and simulation.num_parties > 1
-        col_constraints = simulation.sim_rules["col_constraints"] and simulation.num_constituencies > 1
+        row_constraints = simulation.sim_rules["scaling"] in {"both","const"} and simulation.num_parties > 1
+        col_constraints = simulation.sim_rules["scaling"] in {"both","party"} and simulation.num_constituencies > 1
+        # row_constraints = simulation.sim_rules["row_constraints"] and simulation.num_parties > 1
+        # col_constraints = simulation.sim_rules["col_constraints"] and simulation.num_constituencies > 1
         info_groups = [
             {"left_span": 2, "right_span": 3, "info": [
                 {"label": date_label,
