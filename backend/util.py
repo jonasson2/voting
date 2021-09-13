@@ -320,7 +320,7 @@ def print_simulation(simulation):
         print("\nSeat shares")
         print_table(simulation.list_data[r]["seat_shares"]["avg"], h, const_names, out, "{:.1%}")
 
-        print("\nStandard deviations from simulation")
+        print("\nStandard errors from simulation")
 
         print("\nVotes")
         print_table(simulation.list_data[-1]["sim_votes"]["std"], h, const_names, out, "{:.3f}")

@@ -49,7 +49,7 @@ def nearest_neighbor(m_votes, v_desired_row_sums, v_desired_col_sums,
         last[idx] = next_used[idx]
         allocation_sequence.append({
             "constituency": idx, "party": first_in[idx],
-            "reason": "Min neighbor ratio",
+            "reason": "Min ratio of last to next quotient of list vote",
             "min": least,
         })
 

@@ -1,5 +1,6 @@
 <template>
 <div>
+  <h3>Results based on values in Votes and seats tab</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"
@@ -8,7 +9,7 @@
       title="Download results to local Excel xlsx-file.
              You may need to change browser settings; see Help for details"
       @click="get_xlsx">
-      Download XLSX file
+      Download Excel file
     </b-button>
   </b-container>
   <b-tabs v-model="resultIndex" card>
@@ -19,7 +20,7 @@
       <b-container fluid
                    v-if="results[activeTabIndex] !== undefined">
         <b-row>
-          <h3>Seat allocation, constituency and adjustment seats combined</h3>
+          <h4>Seat allocation, constituency and adjustment seats combined</h4>
           <ResultMatrix
             :parties="vote_table.parties"
             :constituencies="results[activeTabIndex].rules.constituencies"
@@ -35,7 +36,7 @@
           <!-- </b-row> -->
         <b-row>
           <br>
-          <h3>Allocation of adjustment seats step-by-step</h3>
+          <h4>Allocation of adjustment seats step-by-step</h4>
           <ResultDemonstration
             :table="results[activeTabIndex].step_by_step_demonstration">
           </ResultDemonstration>

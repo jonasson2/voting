@@ -132,6 +132,10 @@
     </b-button-group>
   </b-button-toolbar>
   <br>
+  <h6>
+    These seats and votes are used as basis for allocation in the
+    Single election tab and as expected values in the Simulated elections tab
+  </h6>
   <table class="votematrix">
     <tr>
       <th class="tablename">
@@ -263,7 +267,7 @@ export default {
   data: function () {
     return {
       matrix: {
-        name: "My reference votes",
+        name: "Example values",
         parties: ["A", "B"],
         votes: [[1500, 2000],
                 [2500, 1700]],

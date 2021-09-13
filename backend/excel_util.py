@@ -322,7 +322,7 @@ def simulation_to_xlsx(simulation, filename):
         {"abbr": "min",  "cell_format": fmt["sim"],
          "heading": "Minimum values"},
         {"abbr": "std",  "cell_format": fmt["sim"],
-         "heading": "Standard deviations"},
+         "heading": "Standard errors"},
         {"abbr": "skw",  "cell_format": fmt["sim"],
          "heading": "Skewness"},
         {"abbr": "kur",  "cell_format": fmt["sim"],

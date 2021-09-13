@@ -56,7 +56,7 @@
         @update-rules="updateMainElectionRules">
       </Election>
     </b-tab>
-    <b-tab title="Simulate elections">
+    <b-tab title="Simulated elections">
       <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
       <Simulate
         :server="server"
