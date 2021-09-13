@@ -44,7 +44,7 @@ def norwegian_apportionment(m_votes, v_desired_row_sums, v_desired_col_sums,
         m_allocations[const][party] += 1
         allocation_sequence.append({
             "constituency": const, "party": party,
-            "reason": "Max active const. seat share quotient",
+            "reason": "Max quotient of const. seat shares",
             "max": maximum,
         })
 

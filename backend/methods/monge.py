@@ -141,7 +141,7 @@ def find_best_Monge_list(
     if considerations:
         determinants = [conion["min_det"] for conion in considerations]
         best = considerations[determinants.index(max(determinants))]
-        best["reason"] = "Max active vote quotient compared to next competitor"
+        best["reason"] = "Max vote quotient compared to next competitor"
         return best
     return None
 

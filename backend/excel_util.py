@@ -255,7 +255,7 @@ def simulation_to_xlsx(simulation, filename):
     ):
         if heading.endswith("shares"):
             cformat = fmt["share"]
-        if heading.lower().startswith("ideal"):
+        if heading.lower().startswith("ideal") or heading.lower().startswith("reference"):
             cformat = fmt["cell"]
         if heading == "Votes":
             cformat = fmt["base"]
@@ -303,7 +303,7 @@ def simulation_to_xlsx(simulation, filename):
             normalized_measures["matrix"], fmt["cell"], True)
         row += len(normalized_measures["headers"])
         worksheet.write(row, col+1,
-            "Comparison to ideal seat shares (the lower the better)",
+            "Comparison to reference seat shares (the lower the better)",
             fmt["inter_h"])
         row += 1
         worksheet.write_column(row, col,
@@ -331,7 +331,7 @@ def simulation_to_xlsx(simulation, filename):
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
         {"abbr": "vs", "heading": "Vote shares"       },
-        {"abbr": "id", "heading": "Ideal seat shares" },
+        {"abbr": "id", "heading": "Reference seat shares" },
         {"abbr": "cs", "heading": "Constituency seats"},
         {"abbr": "as", "heading": "Adjustment seats"  },
         {"abbr": "ts", "heading": "Total seats"       },
@@ -449,9 +449,9 @@ def simulation_to_xlsx(simulation, filename):
                     "data": GMN[simulation.variate]},
                 {"label": "Coefficient of variation:",
                     "data": simulation.var_coeff},
-                {"label": "Ideal seat shares scaled by constituencies:",
+                {"label": "Reference seat shares scaled by constituencies:",
                     "data": "Yes" if row_constraints else "No"},
-                {"label": "Ideal seat shares scaled by parties:",
+                {"label": "Reference seat shares scaled by parties:",
                     "data": "Yes" if col_constraints else "No"},
             ]},
         ]

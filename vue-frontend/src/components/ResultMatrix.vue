@@ -1,54 +1,64 @@
 <template>
-  <b-container fluid>
-    <table class="resultmatrix" v-if="values.length > 0">
-      <tr v-if="title">
-        <th class="topleft"></th>
-        <th :colspan="stddev?2*parties.length:parties.length">
-          {{title}}
-        </th>
-      </tr>
-      <tr>
-        <th class="topleft"></th>
-        <th class="displaypartyname"
+<b-container fluid>
+  <table class="resultmatrix" v-if="values.length > 0">
+    <tr v-if="title">
+      <th class="topleft"></th>
+      <th :colspan="stddev?2*parties.length:parties.length">
+        {{title}}
+      </th>
+    </tr>
+    <tr>
+      <th class="topleft"></th>
+      <th v-for="(party, partyidx) in parties"
+          class="displaycenter"
           :colspan="stddev?2:1"
-          v-for="(party, partyidx) in parties"
-        >
-          {{parties[partyidx]}}
-        </th>
-      </tr>
-      <tr v-if="stddev" class="parties">
-        <th class="topleft"></th>
-        <template v-for="(party, partyidx) in parties">
-          <td class="partyseats">Average</td>
-          <td class="partyseats">Stddev</td>
-        </template>
-      </tr>
-      <tr v-for="(constituency, conidx) in constituencies">
-        <th class="displayconstname">
-          {{ constituency["name"] }}
-        </th>
-        <template v-for="(party, partyidx) in parties">
-          <td class="displaypartyseats">
-            {{ values[conidx][partyidx].toFixed(round) }}
-          </td>
-          <td v-if="stddev" class="partyseats">
-            {{ stddev[conidx][partyidx].toFixed(round) }}
-          </td>
-        </template>
-      </tr>
-      <tr>
-        <th class="displayconstname">Total</th>
-        <template v-for="(party, partyidx) in parties">
-          <td class="displaypartyseats">
-            {{ values[constituencies.length][partyidx].toFixed(round) }}
-          </td>
-          <td v-if="stddev" class="partyseats">
-            {{ stddev[constituencies.length][partyidx].toFixed(round) }}
-          </td>
-        </template>
-      </tr>
-    </table>
-  </b-container>
+          >
+        {{parties[partyidx]}}
+      </th>
+      <th class="displaycenter">
+        Total
+      </th>
+    </tr>
+    <tr v-if="stddev" class="parties">
+      <th class="topleft"></th>
+      <template v-for="(party, partyidx) in parties">
+        <td class="displayright">Average</td>
+        <td class="displayright">Stderr</td>
+      </template>
+      <td></td>
+    </tr>
+    <tr v-for="(constituency, conidx) in constituencies">
+      <th class="displayleft">
+        {{ constituency["name"] }}
+      </th>
+      <template v-for="(party, partyidx) in parties">
+        <td class="displayright">
+          {{ values[conidx][partyidx].toFixed(round) }}
+        </td>
+        <td v-if="stddev" class="displayright">
+          {{ stddev[conidx][partyidx].toFixed(round) }}
+        </td>
+      </template>
+      <td class="displayright">
+        {{ values[conidx][parties.length].toFixed(0) }}
+      </td>
+    </tr>
+    <tr>
+      <th class="displayleft">Total</th>
+      <template v-for="(party, partyidx) in parties">
+        <td class="displayright">
+          {{ values[constituencies.length][partyidx].toFixed(round) }}
+        </td>
+        <td v-if="stddev" class="displayright">
+          {{ stddev[constituencies.length][partyidx].toFixed(round) }}
+        </td>
+      </template>
+      <td class="displayright">
+        {{ values[constituencies.length][parties.length].toFixed(0) }}
+      </td>
+    </tr>
+  </table>
+</b-container>
 </template>
 <script>
 export default {

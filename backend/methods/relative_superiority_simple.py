@@ -122,7 +122,7 @@ def relative_superiority_simple(m_votes, v_desired_row_sums, v_desired_col_sums,
 
 def present_allocation_sequence(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Reason", "Superiority"]
+        "Criteria", "Superiority"]
     data = []
     seat_number = 0
 

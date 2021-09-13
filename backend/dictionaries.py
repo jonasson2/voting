@@ -108,7 +108,7 @@ MEASURES = {
     "dev_one_const":   "Allocation as if all constituencies were combined into one",
     "entropy":         "Entropy (product of all seat values used)",
     "entropy_ratio":   "Entropy relative to optimal value",
-    "min_seat_value":  "Mininum seat value used (based on ideal seat shares)",
+    "min_seat_value":  "Mininum seat value used (based on reference seat shares selected)",
     "sum_abs":         "Sum of absolute differences",
     "sum_pos":         "Sum of relative positive differences",
     "sum_sq":          "Sum of relative squared differences",

@@ -1,9 +1,9 @@
 <template>
-  <div>
-    <b-navbar toggleable="md" type="dark" variant="info">
-      <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
-      <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
-    </b-navbar>
+<div>
+  <b-navbar toggleable="md" type="dark" variant="info">
+    <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+    <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
+  </b-navbar>
   <!-- <b-alert :show="server.waitingForData">Loading...</b-alert> -->
   <b-alert
     :show="server.error"
@@ -23,54 +23,55 @@
   <!--   > -->
     <!--   Server error. {{server.errormsg}} -->
     <!-- </b-alert> -->
-    <b-tabs
-      style="margin-top:10px"
-      active-nav-item-class="font-weight-bold"
-      >
+  <b-tabs
+    style="margin-top:10px"
+    active-nav-item-class="font-weight-bold"
+    >
     <b-tab title="Votes and seats" active>
       <!-- <p>Specify reference votes and seat numbers</p> -->
-        <VoteMatrix
-          @update-vote-table="updateVoteTable"
-          @server-error="serverError">
-        </VoteMatrix>
-      </b-tab>
-      <b-tab title="Electoral systems">
+      <VoteMatrix
+        :vote_sums="vote_sums"
+        @update-vote-table="updateVoteTable"
+        @server-error="serverError">
+      </VoteMatrix>
+    </b-tab>
+    <b-tab title="Electoral systems">
       <!-- <p>Define one or several electoral systems by specifying apportionment -->
         <!--   rules and modifying seat numbers</p> -->
-        <ElectoralSystems
-          :server="server"
-          :election_rules="election_rules"
-          :simulation_rules="simulation_rules"
-          @update-main-election-rules="updateMainElectionRules">
-        </ElectoralSystems>
-      </b-tab>
+      <ElectoralSystems
+        :server="server"
+        :election_rules="election_rules"
+        :simulation_rules="simulation_rules"
+        @update-main-election-rules="updateMainElectionRules">
+      </ElectoralSystems>
+    </b-tab>
     <b-tab title="Single election" @click="calculate">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
-        <Election
-          ref="ElectionRef"
-          :server="server"
-          :vote_table="vote_table"
-          :election_rules="election_rules"
-          :activeTabIndex="activeTabIndex"
-          @update-rules="updateMainElectionRules">
-        </Election>
-      </b-tab>
+      <Election
+        ref="ElectionRef"
+        :server="server"
+        :vote_table="vote_table"
+        :election_rules="election_rules"
+        :activeTabIndex="activeTabIndex"
+        @update-rules="updateMainElectionRules">
+      </Election>
+    </b-tab>
     <b-tab title="Simulate elections">
       <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
-        <Simulate
-          :server="server"
-          :vote_table="vote_table"
-          :election_rules="election_rules"
-          :simulation_rules="simulation_rules"
-          @update-rules="updateSimulationRules">
-        </Simulate>
-      </b-tab>
-      <b-tab title="Help">
-        <Intro>
-        </Intro>
-      </b-tab>
-    </b-tabs>
-  </div>
+      <Simulate
+        :server="server"
+        :vote_table="vote_table"
+        :election_rules="election_rules"
+        :simulation_rules="simulation_rules"
+        @update-rules="updateSimulationRules">
+      </Simulate>
+    </b-tab>
+    <b-tab title="Help">
+      <Intro>
+      </Intro>
+    </b-tab>
+  </b-tabs>
+</div>
 </template>
 
 <script>
@@ -88,7 +89,7 @@ export default {
     ElectoralSystems,
     Intro,
   },
-
+  
   data: function() {
     return {
       server: {
@@ -101,6 +102,13 @@ export default {
         parties: [],
         constituencies: [],
         votes: [],
+      },
+      vote_sums: {
+        cseats: 0,
+        aseats: 0,
+        row: [],
+        col: [],
+        tot: 0,
       },
       // election_rules contains several rules; see ElectionSettings.vue
       // and electionRules.py for the member variables of a rule
@@ -131,6 +139,16 @@ export default {
     },
     updateVoteTable: function(table) {
       this.vote_table = table;
+      this.vote_sums.row = table.votes.map(y => y.reduce((a, b) => a+b));
+      this.vote_sums.col = table.votes.reduce((a, b) => a.map((v,i) => v+b[i]));
+      this.vote_sums.tot = this.vote_sums.row.reduce((a, b) => a + b, 0);
+      this.vote_sums.cseats = 0;
+      this.vote_sums.aseats = 0;
+      var c = table.constituencies;
+      for (var i=0; i<c.length; i++) {
+        this.vote_sums.cseats += c[i].num_const_seats;
+        this.vote_sums.aseats += c[i].num_adj_seats;
+      }
     },
   }  
 }

@@ -52,11 +52,11 @@
     </b-col>
   </div>
   
-  <h3>Results</h3>
+  <h3>Simulation results</h3>
   <b-alert :show="results.data.length == 0">
     Run simulation to get results.
   </b-alert>
-  <div v-if="results.data.length > 0">
+  <div v-if="results.data.length > 0" style="margin-left:16px">
     <b-button size="lg" :href="get_xlsx_url()">Download XLSX file</b-button>
     
     <h3>Constituency seats</h3>

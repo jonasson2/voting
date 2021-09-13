@@ -15,6 +15,11 @@
       </tr>
     </table>
   </b-container>
+  <b-container fluid v-else>
+    <p>Table demonstrating the step-by-step allocation of adjustment seats
+      is not applicable as the method finds the solution by iteration
+    </p>
+  </b-container>
 </template>
 <script>
 export default {

@@ -43,7 +43,7 @@ def norw_ice_apportionment(m_votes, v_desired_row_sums, v_desired_col_sums,
         v_allocations[party] += 1
         allocation_sequence.append({
             "constituency": const, "party": party,
-            "reason": "Max active proper seat share quotient",
+            "reason": "Max quotient of proper seat shares",
             "max": maximum,
         })
 
@@ -64,7 +64,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            round(allocation["max"], 3),
+            f'{allocation["max"]:3d}'
         ])
 
     return headers, data

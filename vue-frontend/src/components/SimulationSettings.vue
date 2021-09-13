@@ -61,7 +61,7 @@
       >
       <b-form-radio
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="adjust the vote shares so that they sum to the total number of seats for
+        title="Adjust the vote shares so that they sum to the total number of seats for
                each constituency and each party (scale both rows and columns of vote table)"
         value="both"
         >
@@ -69,7 +69,7 @@
       </b-form-radio><br>
       <b-form-radio
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="adjust the vote shares so that they sum to the total number of seats for
+        title="Adjust the vote shares so that they sum to the total number of seats for
                each constituency (scale rows of vote table)"
         value="const"
         >
@@ -77,14 +77,14 @@
       </b-form-radio><br>
       <b-form-radio
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="adjust the vote shares so that they sum to the total number of seats for
+        title="Adjust the vote shares so that they sum to the total number of seats for
                each party (scale columns of vote table)"
         value="party"
         >by party seats
       </b-form-radio><br>
       <b-form-radio
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="adjust the vote shares so that they sum to the total number of seats
+        title="Adjust the vote shares so that they sum to the total number of seats
                nationally (scales all entries in vote table by the same factor)"
         value="total"
         >

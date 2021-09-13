@@ -71,7 +71,7 @@ def icelandic_share_apportionment(
 def print_seats(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party",
-        "Reason", "Country number", "List share"]
+        "Criteria", "Country number", "List share"]
     data = []
     seat_number = 0
     for allocation in allocation_sequence:
