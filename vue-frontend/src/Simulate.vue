@@ -56,10 +56,19 @@
   <b-alert :show="results.data.length == 0">
     Run simulation to get results.
   </b-alert>
-  <div v-if="results.data.length > 0" style="margin-left:16px">
-    <b-button size="lg" :href="get_xlsx_url()">Download XLSX file</b-button>
-    
-    <h3>Constituency seats</h3>
+  <div v-if="results.data.length > 0" style="margin-left:25px">
+    <b-button
+      class="mb-10"
+      style="margin-left:0px"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Download simulation results to local Excel xlsx-file.
+             You may need to change browser settings; see Help for details"
+      :href="get_xlsx_url()">
+      <!-- size="lg" :href="get_xlsx_url()"> -->
+      Download Excel file
+    </b-button>
+    <p></p>
+    <h4>Constituency seats</h4>
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'const-seats-' + idx"
@@ -71,7 +80,7 @@
       round="2">
     </ResultMatrix>
     
-    <h3>Adjustment seats</h3>
+    <h4>Adjustment seats</h4>
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'adj-seats-' + idx"
@@ -83,7 +92,7 @@
       round="2">
     </ResultMatrix>
     
-    <h3>Total seats</h3>
+    <h4>Total seats</h4>
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'total-seats-' + idx"
@@ -95,7 +104,7 @@
       round="2">
     </ResultMatrix>
     
-    <h3>Quality measures</h3>
+    <h4>Quality measures</h4>
     <SimulationData
       :measures="results.measures"
       :list_deviation_measures="results.list_deviation_measures"

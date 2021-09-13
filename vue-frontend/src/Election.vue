@@ -1,8 +1,15 @@
 <template>
 <div>
-  <b-container style="margin-left:0px; margin-bottom:10px;
-                      margin-top:10px">
-    <b-button @click="get_xlsx">Download XLSX file</b-button>
+  <b-container style="margin-left:0px; margin-bottom:20px">
+    <b-button
+      class="mb-10"
+      style="margin-left:0px"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Download results to local Excel xlsx-file.
+             You may need to change browser settings; see Help for details"
+      @click="get_xlsx">
+      Download XLSX file
+    </b-button>
   </b-container>
   <b-tabs v-model="resultIndex" card>
     <b-tab v-for="(rules, activeTabIndex) in election_rules" :key="activeTabIndex">

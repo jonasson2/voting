@@ -1,8 +1,7 @@
 <template>
-<b-form>
-  <br>
+<b-form style="margin-left:16px">
   <b-row>
-    <legend style = "margin-left:16px">Allocation of constituency seats</legend>
+    <legend style = "margin-left:0px">Allocation of constituency seats</legend>
     <b-col cols="7">
       <b-form-group
         label="Rule"
@@ -33,9 +32,8 @@
       </b-form-group>
     </b-col>
   </b-row>
-  <br>
   <b-row>
-    <legend style = "margin-left:16px">Apportionment of adjustment seats to parties</legend>
+    <legend style = "margin-left:0px">Apportionment of adjustment seats to parties</legend>
     <b-col cols="7">
       <b-form-group
         label="Rule"
@@ -66,9 +64,8 @@
       </b-form-group>
     </b-col>
   </b-row>
-  <br>
   <b-row>
-    <legend style = "margin-left:16px">Allocation of adjustment seats to lists</legend>
+    <legend style = "margin-left:0px">Allocation of adjustment seats to lists</legend>
     <b-col cols="5">
       <b-form-group
         label="Basic rule"
@@ -96,10 +93,9 @@
       </b-form-group>
     </b-col>
   </b-row>
-  <br>
   <b-row>
     <b-col cols="6">
-      <legend>Specification of seat numbers</legend>
+      <legend style="margin-left:-16px">Specification of seat numbers</legend>
       <b-form-group
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"

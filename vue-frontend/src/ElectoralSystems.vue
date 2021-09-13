@@ -59,7 +59,6 @@
       >
     </b-form-file>
   </b-modal>
-  <p></p>
   <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
     <b-button-group class="mx-1">
       <b-button
@@ -82,15 +81,15 @@
       </b-button>
     </b-button-group>
     <!-- <b-button-group class="mx-1"> -->
-    <!--   <b-button -->
-    <!--     class="mb-10" -->
-    <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
-    <!--     title = "Download settings for all electoral systems to local file" -->
-    <!--     v-b-modal.modalsaveesettings -->
-    <!--     > -->
-    <!--     Save -->
-    <!--   </b-button> -->
-    <!-- </b-button-group> -->
+      <!--   <b-button -->
+      <!--     class="mb-10" -->
+      <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
+      <!--     title = "Download settings for all electoral systems to local file" -->
+      <!--     v-b-modal.modalsaveesettings -->
+      <!--     > -->
+        <!--     Save -->
+        <!--   </b-button> -->
+      <!-- </b-button-group> -->
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
@@ -103,53 +102,50 @@
     </b-button-group>
   </b-button-toolbar>
   <br>
-  <b-card no-body>
-    <b-tabs v-model="activeTabIndex" card>
-      <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
-        <template v-slot:title>
-          {{rules.name}}
-        </template>
-        <b-input-group>
-          <template>
-            <b-button
-              style="margin-bottom:10px;margin-left:-5px"
-              v-b-tooltip.hover.bottom.v-primary.ds500
-              title = "Remove electoral system"
-              size="sm"
-              variant="link"
-              @click="deleteElectionRules(rulesidx)">
-              X
-            </b-button>
-          </template>
-          <b-input
-            class="mb-3"
-            v-model="rules.name"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Enter electoral system name"
-            />
-        </b-input-group>
-        <ElectionSettings
-          :rulesidx="rulesidx"
-          :rules="rules"
-          @update-rules="updateElectionRules">
-        </ElectionSettings>
-      </b-tab>
-      <template v-slot:tabs-end>
-        <b-button
-          size="sm"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Add electoral system"
-          @click="addElectionRules">
-          <b>+</b>
-        </b-button>
+  <b-tabs v-model="activeTabIndex" card>
+    <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
+      <template v-slot:title>
+        {{rules.name}}
       </template>
-      <div slot="empty">
-        There are no electoral systems specified.
-        Use the <b>+</b> button to create a new electoral system.
-      </div>
-    </b-tabs>
-  </b-card>
-  
+      <b-input-group>
+        <template>
+          <b-button
+            style="margin-bottom:10px;margin-left:-5px"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title = "Remove electoral system"
+            size="sm"
+            variant="link"
+            @click="deleteElectionRules(rulesidx)">
+            X
+          </b-button>
+        </template>
+        <b-input
+          class="mb-3"
+          v-model="rules.name"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Enter electoral system name"
+          />
+      </b-input-group>
+      <ElectionSettings
+        :rulesidx="rulesidx"
+        :rules="rules"
+        @update-rules="updateElectionRules">
+      </ElectionSettings>
+    </b-tab>
+    <template v-slot:tabs-end>
+      <b-button
+        size="sm"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Add electoral system"
+        @click="addElectionRules">
+        <b>+</b>
+      </b-button>
+    </template>
+    <div slot="empty">
+      There are no electoral systems specified.
+      Use the <b>+</b> button to create a new electoral system.
+    </div>
+  </b-tabs>
 </div>
 </template>
 
@@ -224,8 +220,10 @@ export default {
           //this.$emit('server-error', response.body.error);
         } else {
           let link = document.createElement('a')
-          link.href = '/api/downloads/get?id=' + response.data.download_id
+          console.log("response=", response);
           console.log("response.data", response.data);
+          console.log("filename", response.data.tempfilename)
+          link.href = '/api/downloads/get?id=' + response.data.download_id
           link.setAttribute('download', response.data.filename);
           console.log("link=",link);
           link.click()

@@ -24,8 +24,8 @@
     <!--   Server error. {{server.errormsg}} -->
     <!-- </b-alert> -->
   <b-tabs
-    style="margin-top:10px"
     active-nav-item-class="font-weight-bold"
+    card
     >
     <b-tab title="Votes and seats" active>
       <!-- <p>Specify reference votes and seat numbers</p> -->
@@ -45,7 +45,7 @@
         @update-main-election-rules="updateMainElectionRules">
       </ElectoralSystems>
     </b-tab>
-    <b-tab title="Single election" @click="calculate">
+    <b-tab title="Single election">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
       <Election
         ref="ElectionRef"
@@ -71,6 +71,7 @@
       </Intro>
     </b-tab>
   </b-tabs>
+  </b-card>
 </div>
 </template>
 
@@ -126,9 +127,6 @@ export default {
   methods: {
     serverError: function(error) {
       this.server.errormsg = error;
-    },
-    calculate: function() {
-      //this.$refs.ElectionRef.recalculate();
     },
     updateMainElectionRules: function(rules, idx) {
       this.$set(this.election_rules, idx, rules);
