@@ -44,7 +44,8 @@ CORS(app)
 @app.route('/')
 def serve_index():
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    indexfile = "index-digital-ocean.html" if digoce else "index.html"
+    # indexfile = "index-digital-ocean.html" if digoce else "index.html"
+    indexfile = "index.html"
     print("Calling serve_index with indexfile", indexfile)
     return render_template(indexfile)
 
@@ -499,4 +500,4 @@ if __name__ == '__main__':
     port = os.environ.get("FLASK_RUN_PORT", "5000")
     print(f"Running on {host}:{port}")
     app.debug = debug
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
