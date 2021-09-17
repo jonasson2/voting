@@ -391,15 +391,12 @@ export default {
               var blob = new Blob([response.data], {
                 type: content_type,
               });
-              // console.log("filename", response.data.tempfilename);
-              // link.href = "/api/downloads/get?id=" + response.data.download_id;
-              // link.setAttribute("download", response.data.filename);
               console.log("link=", link);
               console.log("Updated");
               const blobUrl = URL.createObjectURL(blob);
               link.href = blobUrl;
               link.download = "xx.xlsx";
-
+              
               // Append link to the body
               document.body.appendChild(link);
 
@@ -412,18 +409,6 @@ export default {
                   view: window,
                 })
               );
-              // this.$http
-              //   .get("/api/downloads/get?id=" + response.data.download_id, {})
-              //   .then((res) => {
-              //     console.log(res);
-
-              //     const blob = new Blob(res.data, {
-              //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              //     });
-              //     );
-              //   });
-
-              // link.click();
             }
           },
           (response) => {

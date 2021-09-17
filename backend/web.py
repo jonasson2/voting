@@ -228,21 +228,13 @@ def save_votes():
     tmpfilename = result[0]
     attachment_filename = result[1]
 
-    content = send_from_directory(
+    response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
         path=os.path.basename(tmpfilename),
-        attachment_filename=attachment_filename,
+        # attachment_filename=attachment_filename,
         as_attachment=False
     )
-
-
-    ret_dict = {
-        'content': content,
-        'content_type': content.content_type
-    }
-
-    return content
-    return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
+    return response
 
 def prepare_to_save_vote_table():
     data = request.get_json(force=True)
