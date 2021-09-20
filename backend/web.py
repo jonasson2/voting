@@ -230,7 +230,7 @@ def save_votes():
 
     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-    content = send_from_directory(
+    response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
         path=os.path.basename(tmpfilename),
         download_name=attachment_filename,
@@ -238,8 +238,7 @@ def save_votes():
         as_attachment=True
     )
 
-    return content
-    return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
+    return response
 
 def prepare_to_save_vote_table():
     data = request.get_json(force=True)
@@ -517,4 +516,9 @@ if __name__ == '__main__':
     port = os.environ.get("FLASK_RUN_PORT", "5000")
     print(f"Running on {host}:{port}")
     app.debug = debug
-    app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+    # app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+    if os.environ.get("HTTPS", "") == "True":
+        app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+    else:
+        app.run(host=host, port=port, debug=debug)
+        
