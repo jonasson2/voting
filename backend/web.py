@@ -228,18 +228,15 @@ def save_votes():
     tmpfilename = result[0]
     attachment_filename = result[1]
 
+    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
     content = send_from_directory(
         directory=os.path.dirname(tmpfilename),
         path=os.path.basename(tmpfilename),
-        attachment_filename=attachment_filename,
-        as_attachment=False
+        download_name=attachment_filename,
+        mimetype=mimetype,
+        as_attachment=True
     )
-
-
-    ret_dict = {
-        'content': content,
-        'content_type': content.content_type
-    }
 
     return content
     return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
