@@ -381,6 +381,7 @@ export default {
       }).then(
         (response) => {
           const status = response.status;
+          console.log("response: ", response);
 
           if (status != 200) {
             this.$emit("server-error", response.body.error);

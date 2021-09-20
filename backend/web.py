@@ -229,6 +229,13 @@ def save_votes():
     attachment_filename = result[1]
 
     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    import pathlib
+
+    tmp_file = pathlib.Path(tmpfilename).resolve()
+    print(f'tmp file: {tmp_file}')
+    print('tmp file exists:', tmp_file.exists())
+    print('tmp directory:', os.path.dirname(tmpfilename))
+    print('tmp rel path:', os.path.basename(tmpfilename))
 
     response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
@@ -237,6 +244,9 @@ def save_votes():
         mimetype=mimetype,
         as_attachment=True
     )
+
+    print(response)
+    print(response.content_length)
 
     return response
 
