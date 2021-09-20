@@ -24,6 +24,24 @@ from input_util import check_input, check_vote_table, check_rules, check_simulat
 import voting
 import simulate as sim
 
+from logging.config import dictConfig
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
+
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
     jinja_options.update(dict(
@@ -46,6 +64,7 @@ def serve_index():
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     indexfile = "index-digital-ocean.html" if digoce else "index.html"
     #indexfile = "index.html"
+    app.logger.debug('Serving index_file %s', indexfile)
     print("Calling serve_index with indexfile", indexfile)
     return render_template(indexfile)
 
@@ -212,7 +231,7 @@ def upload_settings():
 
 @app.route('/api/votes/save/', methods=['POST'])
 def save_votes():
-    print('Starting the /api/votes/save/ call!')
+    app.logger.debug('Starting the /api/votes/save/ call!')
     global DOWNLOADS
     did = get_new_download_id()
 
@@ -222,22 +241,21 @@ def save_votes():
         message = e.args[0]
         print("Error-3", message)
         return jsonify({"error": message})
-    print('Result', result)
+    app.logger.debug('Result', result)
     DOWNLOADS[did] = result
     filename = result[1]
 
     tmpfilename = result[0]
     attachment_filename = result[1]
 
-    print()
     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     import pathlib
 
     tmp_file = pathlib.Path(tmpfilename).resolve()
-    print(f'tmp file: {tmp_file}')
-    print('tmp file exists:', tmp_file.exists())
-    print('tmp directory:', os.path.dirname(tmpfilename))
-    print('tmp rel path:', os.path.basename(tmpfilename))
+    app.logger.debug(f'tmp file: {tmp_file}')
+    app.logger.debug('tmp file exists:', tmp_file.exists())
+    app.logger.debug('tmp directory:', os.path.dirname(tmpfilename))
+    app.logger.debug('tmp rel path:', os.path.basename(tmpfilename))
 
     response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
@@ -247,8 +265,8 @@ def save_votes():
         as_attachment=True
     )
 
-    print(response)
-    print(response.content_length)
+    app.logger.debug(response)
+    app.logger.debug(response.content_length)
 
     return response
 
