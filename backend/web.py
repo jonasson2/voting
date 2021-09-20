@@ -498,7 +498,7 @@ if __name__ == '__main__':
     port = os.environ.get("FLASK_RUN_PORT", "5000")
     print(f"Running on {host}:{port}")
     app.debug = debug
-    if os.environ.get("HTTPS", "") == "True":
+    if os.environ.get("FLASK_HTTPS", "") == "True":
         app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
     else:
         app.run(host=host, port=port, debug=debug)
