@@ -212,6 +212,7 @@ def upload_settings():
 
 @app.route('/api/votes/save/', methods=['POST'])
 def save_votes():
+    print('Starting the /api/votes/save/ call!')
     global DOWNLOADS
     did = get_new_download_id()
 
@@ -221,13 +222,14 @@ def save_votes():
         message = e.args[0]
         print("Error-3", message)
         return jsonify({"error": message})
-
+    print('Result', result)
     DOWNLOADS[did] = result
     filename = result[1]
 
     tmpfilename = result[0]
     attachment_filename = result[1]
 
+    print()
     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     import pathlib
 
@@ -528,7 +530,9 @@ if __name__ == '__main__':
     app.debug = debug
     # app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
     if os.environ.get("HTTPS", "") == "True":
+        print('Running server using HTTPS!')
         app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
     else:
+        print('Running server using HTTP (not secure)!')
         app.run(host=host, port=port, debug=debug)
         
