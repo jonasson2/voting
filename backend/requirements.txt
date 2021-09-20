@@ -1,11 +1,11 @@
 backports.csv==1.0.5
 click==6.7
-Flask>=1.1
+Flask==2.0.1
 Flask-Cors==3.0.9
-itsdangerous==0.24
+itsdangerous==2.0.0
 six>=1.10.0
 tabulate==0.7.7
-Werkzeug>=1
+Werkzeug==2.0.1
 xlsxwriter
 openpyxl>=3
 configparser
