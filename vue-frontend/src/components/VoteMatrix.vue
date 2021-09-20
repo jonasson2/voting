@@ -373,63 +373,61 @@ export default {
       this.matrix.votes = [];
     },
     saveVotes: function () {
-      this.$http
-        .post("/api/votes/save/", {
-          vote_table: this.matrix,
-        })
-        .then(
-          (response) => {
-            if (response.body.error) {
-              this.$emit("server-error", response.body.error);
-            } else {
-              let link = document.createElement("a");
-              console.log("response=", response);
-              var content_type = response.headers.map["content-type"][0];
+      axios({
+        method: "post",
+        url: "/api/votes/save/",
+        data: { vote_table: this.matrix },
+        responseType: "arraybuffer",
+      }).then(
+        (response) => {
+          const status = response.status;
 
-              console.log(content_type);
+          if (status != 200) {
+            this.$emit("server-error", response.body.error);
+          } else {
+            let link = document.createElement("a");
+            var content_type = response.headers["content-type"];
 
-              var blob = new Blob([response.data], {
-                type: content_type,
-              });
-              // console.log("filename", response.data.tempfilename);
-              // link.href = "/api/downloads/get?id=" + response.data.download_id;
-              // link.setAttribute("download", response.data.filename);
-              console.log("link=", link);
-              console.log("Updated");
-              const blobUrl = URL.createObjectURL(blob);
-              link.href = blobUrl;
-              link.download = "xx.xlsx";
-
-              // Append link to the body
-              document.body.appendChild(link);
-
-              // Dispatch click event on the link
-              // This is necessary as link.click() does not work on the latest firefox
-              link.dispatchEvent(
-                new MouseEvent("click", {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                })
-              );
-              // this.$http
-              //   .get("/api/downloads/get?id=" + response.data.download_id, {})
-              //   .then((res) => {
-              //     console.log(res);
-
-              //     const blob = new Blob(res.data, {
-              //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              //     });
-              //     );
-              //   });
-
-              // link.click();
+            // Get filename from headers.
+            const content_disposition = response.headers["content-disposition"];
+            let parts = content_disposition.split(";");
+            let download_name = "Example";
+            for (var i_part in parts) {
+              let part = parts[i_part];
+              let filename_pos = part.indexOf("filename=");
+              if (filename_pos != -1) {
+                filename_pos += "filename=".length;
+                download_name = part.substring(filename_pos);
+              }
             }
-          },
-          (response) => {
-            console.log("Error:", response);
+
+            var blob = new Blob([response.data], {
+              type: content_type,
+            });
+
+            const blobUrl = URL.createObjectURL(blob);
+            link.href = blobUrl;
+            link.download = download_name;
+
+            // Append link to the body
+            document.body.appendChild(link);
+
+            // Dispatch click event on the link
+            // This is necessary as link.click() does not work on the latest firefox
+            link.dispatchEvent(
+              new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+              })
+            );
+            link.remove();
           }
-        );
+        },
+        (response) => {
+          console.log("Error:", response);
+        }
+      );
     },
     loadPreset: function (eid) {
       this.$http.post("/api/presets/load/", { eid: eid }).then((response) => {
