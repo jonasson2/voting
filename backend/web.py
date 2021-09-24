@@ -24,24 +24,6 @@ from input_util import check_input, check_vote_table, check_rules, check_simulat
 import voting
 import simulate as sim
 
-from logging.config import dictConfig
-
-dictConfig({
-    'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
-    'root': {
-        'level': 'INFO',
-        'handlers': ['wsgi']
-    }
-})
-
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
     jinja_options.update(dict(
@@ -64,7 +46,6 @@ def serve_index():
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     indexfile = "index-digital-ocean.html" if digoce else "index.html"
     #indexfile = "index.html"
-    app.logger.debug('Serving index_file %s', indexfile)
     print("Calling serve_index with indexfile", indexfile)
     return render_template(indexfile)
 
@@ -231,7 +212,6 @@ def upload_settings():
 
 @app.route('/api/votes/save/', methods=['POST'])
 def save_votes():
-    app.logger.debug('Starting the /api/votes/save/ call!')
     global DOWNLOADS
     did = get_new_download_id()
 
@@ -241,7 +221,6 @@ def save_votes():
         message = e.args[0]
         print("Error-3", message)
         return jsonify({"error": message})
-    app.logger.debug('Result', result)
     DOWNLOADS[did] = result
     filename = result[1]
 
@@ -250,13 +229,7 @@ def save_votes():
 
     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     import pathlib
-
     tmp_file = pathlib.Path(tmpfilename).resolve()
-    app.logger.debug(f'tmp file: {tmp_file}')
-    app.logger.debug('tmp file exists:', tmp_file.exists())
-    app.logger.debug('tmp directory:', os.path.dirname(tmpfilename))
-    app.logger.debug('tmp rel path:', os.path.basename(tmpfilename))
-
     response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
         path=os.path.basename(tmpfilename),
@@ -264,10 +237,6 @@ def save_votes():
         mimetype=mimetype,
         as_attachment=True
     )
-
-    app.logger.debug(response)
-    app.logger.debug(response.content_length)
-
     return response
 
 def prepare_to_save_vote_table():
@@ -546,11 +515,9 @@ if __name__ == '__main__':
     port = os.environ.get("FLASK_RUN_PORT", "5000")
     print(f"Running on {host}:{port}")
     app.debug = debug
-    # app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
     if os.environ.get("HTTPS", "") == "True":
         print('Running server using HTTPS!')
         app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
     else:
         print('Running server using HTTP (not secure)!')
         app.run(host=host, port=port, debug=debug)
-        

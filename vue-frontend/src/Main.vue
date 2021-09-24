@@ -31,6 +31,7 @@
       <!-- <p>Specify reference votes and seat numbers</p> -->
       <VoteMatrix
         :vote_sums="vote_sums"
+        @save-votes="saveVotes"
         @update-vote-table="updateVoteTable"
         @server-error="serverError">
       </VoteMatrix>
@@ -148,6 +149,108 @@ export default {
         this.vote_sums.aseats += c[i].num_adj_seats;
       }
     },
-  }  
+    saveVotes: function (matrix, url) {
+      // Thanks to Pétur Helgi Einarsson for this function
+      let use_axios = true;
+      
+      let myPromise;
+      if (use_axios) {
+        myPromise = axios({
+          method: "post",
+          url: url,
+          data: { vote_table: matrix },
+          responseType: "arraybuffer",
+        });
+      } else {
+        myPromise = this.$http.post(
+          url,
+          { vote_table: matrix },
+          {
+            responseType: "arraybuffer",
+          }
+        );
+      }
+      
+      myPromise
+        .then((response) => {
+          if (use_axios) {
+            return response;
+          }
+          
+          let headers = {};
+          for (let key in response.headers.map) {
+            let val = response.headers.map[key];
+            if (Array.isArray(val) && val.length == 1) {
+              headers[key] = val[0];
+            } else {
+              headers[key] = val;
+            }
+          }
+          response.headers = headers;
+          
+          let old_key = "body";
+          let new_key = "data";
+          
+          Object.defineProperty(
+            response,
+            new_key,
+            Object.getOwnPropertyDescriptor(response, old_key)
+          );
+          delete response[old_key];
+          
+          return response;
+        })
+        .then(
+          (response) => {
+            const status = response.status;
+            console.log("response: ", response);
+            
+            if (status != 200) {
+              this.$emit("server-error", response.body.error);
+            } else {
+              let link = document.createElement("a");
+              var content_type = response.headers["content-type"];
+              
+              // Get filename from headers.
+              const content_disposition =
+                    response.headers["content-disposition"];
+              let parts = content_disposition.split(";");
+              let download_name = "Example";
+              for (var i_part in parts) {
+                let part = parts[i_part];
+                let filename_pos = part.indexOf("filename=");
+                if (filename_pos != -1) {
+                  filename_pos += "filename=".length;
+                  download_name = part.substring(filename_pos);
+                }
+              }
+              
+              var blob = new Blob([response.data], {
+                type: content_type,
+              });
+              
+              const blobUrl = URL.createObjectURL(blob);
+              link.href = blobUrl;
+              link.download = download_name;
+              document.body.appendChild(link);
+              
+              // Dispatch click event on the link (this is necessary
+              // as link.click() does not work on the latest Firefox
+              link.dispatchEvent(
+                new MouseEvent("click", {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                })
+              );
+              link.remove();
+            }
+          },
+          (response) => {
+            console.log("Error:", response);
+          }
+        );
+    },
+  }
 }
 </script>

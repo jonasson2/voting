@@ -133,7 +133,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Download votes and seat numbers to local Excel xlsx-file. 
                        You may need to change browser settings; see Help for details"
-          @click="saveVotes()"
+          @click="save()"
         >
           Save
         </b-button>
@@ -372,21 +372,10 @@ export default {
       this.matrix.parties = [];
       this.matrix.votes = [];
     },
-    saveVotes: function () {
-      try {
-        let app_url = process.env.APP_URL;
-        console.log("APP URL: ", app_url);
-      } catch (error) {
-        console.log("Could not resolve App URL!");
-      }
-
-      try {
-        let hostname = process.env.HOSTNAME;
-        console.log("HOSTNAME: ", hostname);
-      } catch (error) {
-        console.log("Could not resolve HOSTNAME!");
-      }
-
+    save: function () {
+      this.$emit("save-votes", this.matrix, "/api/votes/save/");
+    },
+    saveVotes1: function () {
       let use_axios = false;
 
       let myPromise;
