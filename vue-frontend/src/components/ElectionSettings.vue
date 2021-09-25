@@ -8,7 +8,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Basic rule used for allocating constituency seats to party lists within each constituency."
+        title="Basic rule used for allocating constituency seats to 
+               party lists within each constituency."
         >
         <b-form-select
           v-model="rules.primary_divider"
@@ -22,7 +23,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Threshold as percentage of valid votes in a constituency required by a list to qualify for seats in that constituency."
+        title="Threshold as percentage of valid votes in a constituency 
+               required by a list to qualify for seats in that constituency."
         >
         <b-input-group append="%">
           <b-form-input
@@ -40,7 +42,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Basic rule used to apportion adjustment seats betwwen parties based on total votes for all lists of the same party."
+        title="Basic rule used to apportion adjustment seats betwwen parties 
+               based on total votes for all lists of the same party."
         >
         <b-form-select
           v-model="rules.adj_determine_divider"

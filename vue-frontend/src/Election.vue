@@ -6,9 +6,8 @@
       class="mb-10"
       style="margin-left:0px"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Download results to local Excel xlsx-file.
-             You may need to change browser settings; see Help for details"
-      @click="get_xlsx">
+      title="Download results to local Excel xlsx-file"
+      @click="saveResults">
       Download Excel file
     </b-button>
   </b-container>
@@ -141,17 +140,14 @@ export default {
       }
     },
     
-    get_xlsx: function() {
-      this.$http.post('/api/election/getxlsx/', {
-        vote_table: this.vote_table,
-        rules: this.election_rules,
-      }).then(response => {
-        let link = document.createElement('a')
-        link.href = '/api/downloads/get?id=' + response.data.download_id
-        link.click()
-      }, response => {
-        this.server.error = true;
-      })
+    saveResults: function() {
+      let promise = axios({
+        method: "post",
+        url: "/api/election/save",
+        data: { vote_table: this.vote_table, rules: this.election_rules },
+        responseType: "arraybuffer",
+      });
+      this.$emit("download-file", promise);
     }
   },
 }

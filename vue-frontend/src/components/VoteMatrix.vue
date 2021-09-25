@@ -321,7 +321,6 @@ export default {
         this.$emit("server-error", response.body);
       }
     );
-    console.log(this.matrix.name);
     this.$emit("update-vote-table", this.matrix, false);
     console.log("Created VoteMatrix");
   },
@@ -373,110 +372,14 @@ export default {
       this.matrix.votes = [];
     },
     save: function () {
-      this.$emit("save-votes", this.matrix, "/api/votes/save/");
-    },
-    saveVotes1: function () {
-      let use_axios = false;
-
-      let myPromise;
-      if (use_axios) {
-        myPromise = axios({
-          method: "post",
-          url: "/api/votes/save/",
-          data: { vote_table: this.matrix },
-          responseType: "arraybuffer",
-        });
-      } else {
-        myPromise = this.$http.post(
-          "/api/votes/save/",
-          { vote_table: this.matrix },
-          {
-            responseType: "arraybuffer",
-          }
-        );
-      }
-
-      myPromise
-        .then((response) => {
-          if (use_axios) {
-            return response;
-          }
-
-          let headers = {};
-          for (let key in response.headers.map) {
-            let val = response.headers.map[key];
-            if (Array.isArray(val) && val.length == 1) {
-              headers[key] = val[0];
-            } else {
-              headers[key] = val;
-            }
-          }
-          response.headers = headers;
-
-          let old_key = "body";
-          let new_key = "data";
-
-          Object.defineProperty(
-            response,
-            new_key,
-            Object.getOwnPropertyDescriptor(response, old_key)
-          );
-          delete response[old_key];
-
-          return response;
-        })
-        .then(
-          (response) => {
-            const status = response.status;
-            console.log("response: ", response);
-
-            if (status != 200) {
-              this.$emit("server-error", response.body.error);
-            } else {
-              let link = document.createElement("a");
-              var content_type = response.headers["content-type"];
-
-              // Get filename from headers.
-              const content_disposition =
-                response.headers["content-disposition"];
-              let parts = content_disposition.split(";");
-              let download_name = "Example";
-              for (var i_part in parts) {
-                let part = parts[i_part];
-                let filename_pos = part.indexOf("filename=");
-                if (filename_pos != -1) {
-                  filename_pos += "filename=".length;
-                  download_name = part.substring(filename_pos);
-                }
-              }
-
-              var blob = new Blob([response.data], {
-                type: content_type,
-              });
-
-              const blobUrl = URL.createObjectURL(blob);
-              link.href = blobUrl;
-              link.download = download_name;
-
-              // Append link to the body
-              document.body.appendChild(link);
-
-              // Dispatch click event on the link
-              // This is necessary as link.click() does not work on the latest firefox
-              link.dispatchEvent(
-                new MouseEvent("click", {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                })
-              );
-              link.remove();
-            }
-          },
-          (response) => {
-            console.log("Error:", response);
-          }
-        );
+      let promise;
+      promise = axios({
+        method: "post",
+        url: "/api/votes/save",
+        data: { vote_table: this.matrix },
+        responseType: "arraybuffer",
+      });      
+      this.$emit("download-file", promise);
     },
     loadPreset: function (eid) {
       this.$http.post("/api/presets/load/", { eid: eid }).then((response) => {

@@ -211,26 +211,16 @@ export default {
       this.activeTabIndex = idx;
     },
     saveSettings: function() {
-      this.$http.post('/api/settings/save/', {
-        e_settings: this.election_rules,
-        sim_settings: this.simulation_rules,
-      }).then(response => {
-        if (response.body.error) {
-          this.server.errormsg = response.body.error;
-          //this.$emit('server-error', response.body.error);
-        } else {
-          let link = document.createElement('a')
-          console.log("response=", response);
-          console.log("response.data", response.data);
-          console.log("filename", response.data.tempfilename)
-          link.href = '/api/downloads/get?id=' + response.data.download_id
-          link.setAttribute('download', response.data.filename);
-          console.log("link=",link);
-          link.click()
-        }
-      }, response => {
-        console.log("Error:", response);
-      })
+      let promise = axios({
+        method: "post",
+        url: "/api/settings/save",
+        data: {
+          e_settings: this.election_rules,
+          sim_settings: this.simulation_rules
+        },
+        responseType: "arraybuffer",
+      });
+      this.$emit("download-file", promise);
     },
     uploadSettingsAndAppend: function(evt) {
       var replace = false;

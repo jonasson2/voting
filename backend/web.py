@@ -46,7 +46,6 @@ def serve_index():
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     indexfile = "index-digital-ocean.html" if digoce else "index.html"
     #indexfile = "index.html"
-    print("Calling serve_index with indexfile", indexfile)
     return render_template(indexfile)
 
 @app.route('/static/<path:path>')
@@ -82,6 +81,18 @@ def get_download():
 
     return content
 
+def save_file(tmpfilename, download_name):
+    import mimetypes
+    (mimetype, encoding) = mimetypes.guess_type(download_name)
+    response = send_from_directory(
+        directory=os.path.dirname(tmpfilename),
+        path=os.path.basename(tmpfilename),
+        download_name=download_name,
+        mimetype=mimetype,
+        as_attachment=True
+    )
+    return response
+
 def handle_election():
     data = request.get_json(force=True)
     data = check_input(data, ["vote_table", "rules"])
@@ -98,43 +109,19 @@ def get_election_results():
         print("Error-1:",message)
         return jsonify({"error": message})
     result=[election.get_results_dict() for election in result]
-    # print("result=", result)
     return jsonify(result)
 
-@app.route('/api/election/getxlsx/', methods=['POST'])
+@app.route('/api/election/save/', methods=['POST'])
 def get_election_excel():
-    global DOWNLOADS
-    did = get_new_download_id()
-
-    try:
-        handler = handle_election()
-    except (KeyError, TypeError, ValueError) as e:
-        return jsonify({"error": e.args[0]})
-
+    handler = handle_election()
     tmpfilename = tempfile.mktemp(prefix='election-')
     handler.to_xlsx(tmpfilename)
-    date = datetime.now().strftime('%Y.%m.%d %H.%M.%S')
-    attachment_filename=f"election {date}.xlsx"
-    DOWNLOADS[did] = tmpfilename, attachment_filename
-    return jsonify({"download_id": did})
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    download_name=f"Election-{date}.xlsx"
+    return save_file(tmpfilename, download_name)
 
 @app.route('/api/settings/save/', methods=['POST'])
 def save_settings():
-    global DOWNLOADS
-
-    try:
-        result = prepare_to_save_settings()
-    except (KeyError, TypeError, ValueError) as e:
-        message = e.args[0]
-        print("Error-2:", message)
-        return jsonify({"error": message})
-
-    did = get_new_download_id()
-    DOWNLOADS[did] = result
-    filename = result[1]
-    return jsonify({"download_id": did, "filename": filename, "tempfilename": result[0]})
-
-def prepare_to_save_settings():
     data = request.get_json(force=True)
     check_input(data, ["e_settings", "sim_settings"])
 
@@ -170,9 +157,9 @@ def prepare_to_save_settings():
     with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
         json.dump(file_content, jsonfile, ensure_ascii=False, indent=2)
     filename = secure_filename(".".join(names))
-    date = datetime.now().strftime('%Y.%m.%d %H.%M.%S')
-    attachment_filename=f"{filename} {date}.json"
-    return tmpfilename, attachment_filename
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    download_filename=f"{filename}-{date}.json"
+    return save_file(tmpfilename, download_filename)
 
 @app.route('/api/settings/upload/', methods=['POST'])
 def upload_settings():
@@ -212,40 +199,8 @@ def upload_settings():
 
 @app.route('/api/votes/save/', methods=['POST'])
 def save_votes():
-    global DOWNLOADS
-    did = get_new_download_id()
-
-    try:
-        result = prepare_to_save_vote_table()
-    except (KeyError, TypeError, ValueError) as e:
-        message = e.args[0]
-        print("Error-3", message)
-        return jsonify({"error": message})
-    DOWNLOADS[did] = result
-    filename = result[1]
-
-    tmpfilename = result[0]
-    attachment_filename = result[1]
-
-    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    import pathlib
-    tmp_file = pathlib.Path(tmpfilename).resolve()
-    response = send_from_directory(
-        directory=os.path.dirname(tmpfilename),
-        path=os.path.basename(tmpfilename),
-        download_name=attachment_filename,
-        mimetype=mimetype,
-        as_attachment=True
-    )
-    return response
-
-def prepare_to_save_vote_table():
-    data = request.get_json(force=True)
-    if "vote_table" not in data or not data["vote_table"]:
-        raise KeyError(f"Missing data (vote_table)")
-
+    data = request.get_json(force=True)    
     vote_table = check_vote_table(data["vote_table"])
-
     file_matrix = [
         [vote_table["name"], "cons", "adj"] + vote_table["parties"],
     ] + [
@@ -255,13 +210,11 @@ def prepare_to_save_vote_table():
             vote_table["constituencies"][c]["num_adj_seats"],
         ] + vote_table["votes"][c]
         for c in range(len(vote_table["constituencies"]))
-    ]
-
+    ]    
     tmpfilename = tempfile.mktemp(prefix='vote_table-')
     save_votes_to_xlsx(file_matrix, tmpfilename)
-    filename = secure_filename(vote_table['name'])
-    attachment_filename=f"{filename}.xlsx"
-    return tmpfilename, attachment_filename
+    download_name = secure_filename(vote_table['name']) + ".xlsx"
+    return save_file(tmpfilename, download_name);
 
 @app.route('/api/votes/upload/', methods=['POST'])
 def upload_votes():
@@ -386,32 +339,11 @@ def stop_simulation():
     #    del(SIMULATIONS[data["sid"]])
 
     return jsonify({
-            "done": thread_done,
-            "iteration": simulation.iteration,
-            "target": simulation.sim_rules["simulation_count"],
-            "results": simulation.get_results_dict()
-        })
-
-
-@app.route('/api/simulate/getxlsx/', methods=['GET'])
-def get_xlsx():
-    if "sid" not in request.args:
-        return jsonify({'error': 'Please supply a SID.'})
-    if request.args["sid"] not in SIMULATIONS:
-        return jsonify({"error": "Please supply a valid SID."})
-
-    tmpfilename = tempfile.mktemp(prefix='votesim-%s-' % request.args["sid"][:6])
-    simulation, thread, expiry = SIMULATIONS[request.args["sid"]]
-    simulation.to_xlsx(tmpfilename)
-    date = datetime.now().strftime('%Y.%m.%d %H.%M.%S')
-    return send_from_directory(
-        directory=os.path.dirname(tmpfilename),
-        filename=os.path.basename(tmpfilename),
-        attachment_filename=
-            f"simulation {date}.xlsx",
-        as_attachment=True
-    )
-
+        "done": thread_done,
+        "iteration": simulation.iteration,
+        "target": simulation.sim_rules["simulation_count"],
+        "results": simulation.get_results_dict()
+    })
 
 def set_up_simulation():
     data = request.get_json(force=True)
@@ -445,13 +377,11 @@ def handle_api():
 @app.route('/api/capabilities/', methods=["GET"])
 def handle_capabilities():
     capabilities_dict = get_capabilities_dict()
-    # print(f'{capabilities_dict=}')
     return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])
 def get_presets_list():
     presets_dict = get_presets_dict()
-    # print(f'{presets_dict=}')
     return jsonify(presets_dict)
 
 @app.route('/api/presets/load/', methods=['POST'])
@@ -466,6 +396,16 @@ def get_preset():
             res = util.load_votes_from_stream(open('../data/elections/%s' % p['filename'], "r"), p['filename'])
             return jsonify(res)
 
+@app.route('/api/simdownload/', methods=['GET','POST'])
+def save_simulation():
+    data = request.get_json(force=True)
+    sid = data["sid"]
+    tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
+    (simulation, thread, expiry) = SIMULATIONS[sid]
+    simulation.to_xlsx(tmpfilename)
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    download_name = f"simulation-{date}.xlsx"
+    return save_file(tmpfilename, download_name);
 
 def get_capabilities_dict():
     return {
@@ -507,7 +447,6 @@ def run_script(rules):
 
     else:
         return sim.run_script_simulation(rules)
-
 
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"

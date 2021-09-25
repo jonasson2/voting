@@ -57,16 +57,16 @@
     Run simulation to get results.
   </b-alert>
   <div v-if="results.data.length > 0" style="margin-left:25px">
-    <b-button
-      class="mb-10"
-      style="margin-left:0px"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Download simulation results to local Excel xlsx-file.
-             You may need to change browser settings; see Help for details"
-      :href="get_xlsx_url()">
-      <!-- size="lg" :href="get_xlsx_url()"> -->
-      Download Excel file
-    </b-button>
+    <b-container style="margin-left:0px; margin-bottom:20px">
+      <b-button
+        class="mb-10"
+        style="margin-left:0px"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Download simulation results to local Excel xlsx-file"
+        @click="saveSimulationResults">
+        Download Excel file
+      </b-button>
+    </b-container>
     <p></p>
     <h4>Constituency seats</h4>
     <ResultMatrix
@@ -152,93 +152,95 @@ export default {
       this.$emit('update-rules', rules);
     },
     stop_simulation: function() {
-      this.$http.post('/api/simulate/stop/',
-                      {
-                        sid: this.sid
-                      }).then(response => {
-                        if (response.body.error) {
-                          this.server.errormsg = response.body.error;
-                          this.server.waitingForData = false;
-                        } else {
-                          this.server.errormsg = '';
-                          this.server.error = false;
-                          this.simulation_done = response.body.done;
-                          this.current_iteration = response.body.iteration;
-                          let remaining = response.body.iteration_time
-                          this.iteration_time = response.body.iteration_time;
-                          this.results = response.body.results;
-                          this.server.waitingForData = false;
-                          if (this.simulation_done) {
-                            window.clearInterval(this.checktimer);
-                          }
-                        }
-                      }, response => {
-                        this.server.error = true;
-                        this.server.waitingForData = false;
-                      });
+      this.$http.post('/api/simulate/stop/', {
+        sid: this.sid
+      }).then(response => {
+        if (response.body.error) {
+          this.server.errormsg = response.body.error;
+          this.server.waitingForData = false;
+        } else {
+          this.server.errormsg = '';
+          this.server.error = false;
+          this.simulation_done = response.body.done;
+          this.current_iteration = response.body.iteration;
+          let remaining = response.body.iteration_time
+          this.iteration_time = response.body.iteration_time;
+          this.results = response.body.results;
+          this.server.waitingForData = false;
+          if (this.simulation_done) {
+            window.clearInterval(this.checktimer);
+          }
+        }
+      }, response => {
+        this.server.error = true;
+        this.server.waitingForData = false;
+      });
     },
     checkstatus: function() {
       this.inflight++;
-      this.$http.post('/api/simulate/check/',
-                      {
-                        sid: this.sid
-                      }).then(response => {
-                        this.inflight--;
-                        if (response.body.error) {
-                          this.server.errormsg = response.body.error;
-                          this.server.waitingForData = false;
-                        } else {
-                          this.server.errormsg = '';
-                          this.server.error = false;
-                          this.simulation_done = response.body.done;
-                          this.current_iteration = response.body.iteration;
-                          this.iteration_time = response.body.iteration_time;
-                          this.time_left = response.body.time_left;
-                          this.results = response.body.results;
-                          this.results.parties = response.body.parties;
-                          this.results.e_rules = response.body.e_rules;
-                          console.log(this.results);
-                          this.server.waitingForData = false;
-                          if (this.simulation_done) {
-                            window.clearInterval(this.checktimer);
-                          }
-                        }
-                      }, response => {
-                        this.server.error = true;
-                        this.server.waitingForData = false;
-                      });
+      this.$http.post('/api/simulate/check/', {
+        sid: this.sid
+      }).then(response => {
+        this.inflight--;
+        if (response.body.error) {
+          this.server.errormsg = response.body.error;
+          this.server.waitingForData = false;
+        } else {
+          this.server.errormsg = '';
+          this.server.error = false;
+          this.simulation_done = response.body.done;
+          this.current_iteration = response.body.iteration;
+          this.iteration_time = response.body.iteration_time;
+          this.time_left = response.body.time_left;
+          this.results = response.body.results;
+          this.results.parties = response.body.parties;
+          this.results.e_rules = response.body.e_rules;
+          this.server.waitingForData = false;
+          if (this.simulation_done) {
+            window.clearInterval(this.checktimer);
+          }
+        }
+      }, response => {
+        this.server.error = true;
+        this.server.waitingForData = false;
+      });
     },
     recalculate: function() {
       this.current_iteration = 0;
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
       this.server.waitingForData = true;
-      this.$http.post('/api/simulate/',
-                      {
-                        vote_table: this.vote_table,
-                        election_rules: this.election_rules,
-                        simulation_rules: this.simulation_rules,
-                      }).then(response => {
-                        if (response.body.error) {
-                          this.server.errormsg = response.body.error;
-                          this.server.waitingForData = false;
-                        } else {
-                          this.server.errormsg = '';
-            this.server.error = false;
-            this.sid = response.body.sid;
-            this.simulation_done = !response.body.started;
-            this.server.waitingForData = false;
-            // 300 ms between updating simulation progress bar
-            this.checktimer = window.setInterval(this.checkstatus, 300);
-          }
-        }, response => {
-          this.server.error = true;
+      this.$http.post('/api/simulate/', {
+        vote_table: this.vote_table,
+        election_rules: this.election_rules,
+        simulation_rules: this.simulation_rules,
+      }).then(response => {
+        if (response.body.error) {
+          this.server.errormsg = response.body.error;
           this.server.waitingForData = false;
-        });
+        } else {
+          this.server.errormsg = '';
+          this.server.error = false;
+          this.sid = response.body.sid;
+          this.simulation_done = !response.body.started;
+          this.server.waitingForData = false;
+          // 300 ms between updating simulation progress bar
+          this.checktimer = window.setInterval(this.checkstatus, 300);
+        }
+      }, response => {
+        this.server.error = true;
+        this.server.waitingForData = false;
+      });
     },
-
-    get_xlsx_url: function() {
-      return "/api/simulate/getxlsx/?sid=" + this.sid + "&time=" + new Date();
+    
+    saveSimulationResults: function() {
+      let promise = axios({
+        method: "post",
+        url: "/api/simdownload/",
+        data: { sid: this.sid },
+        responseType: "arraybuffer",
+      });
+      this.$emit("download-file", promise);
     }
   },
 }
