@@ -24,7 +24,7 @@ with open("flokkar.csv") as fl:
     for (skst,flokkur) in csv.reader(fl, delimiter="\t"):
         flo[flokkur] = skst
 
-with open("hagstofa-87-99.csv") as ha:
+with open("hagstofa.csv") as ha:
     reader = csv.reader(ha, quoting=csv.QUOTE_NONNUMERIC, delimiter=";")
     kjördæmi = next(reader)[2:]
     for L in reader:
@@ -40,8 +40,13 @@ with open("hagstofa-87-99.csv") as ha:
 print(kjd.values())
             
 for y in ár.values():
+    l = [len(f) for f in flokkar[y]]
+    print(l)
+    with open("island-" + y + ".csv") as f:
+    print()
+    print(f'{y:15}
     for k in range(nkjördæmi):
         kd = list(kjd.values())[k]
-        print(f'{y}  {kd:15}  ',end='')
+        print(f'{kd:15}  ',end='')
         for a in tafla[y][k]: print(f'{a:6.0f} ', end='')
         print()
