@@ -43,13 +43,20 @@
   },
   {
     "id": 7,
+    "name": "Alþingi elections",
+    "country": "Iceland",
+    "year": "2021",
+    "filename": "iceland_2021.csv"
+  },
+  {
+    "id": 8,
     "name": "Finland elections",
     "country": "Finland",
     "year": "2015",
     "filename": "finland_2015.csv"
   },
   {
-    "id": 8,
+    "id": 9,
     "name": "21st century average",
     "country": "Iceland",
     "year": "2003–2017",
