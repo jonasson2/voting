@@ -149,16 +149,20 @@ export default {
   },
   methods: {
     updateSimulationRules: function(rules) {
+      console.log("Updating rules")
       this.$emit('update-rules', rules);
     },
     stop_simulation: function() {
+      console.log("Stopping simulation")
       this.$http.post('/api/simulate/stop/', {
         sid: this.sid
       }).then(response => {
         if (response.body.error) {
+          console.log("Setting server errormsg 1")
           this.server.errormsg = response.body.error;
           this.server.waitingForData = false;
         } else {
+          console.log("Simulation stopped");
           this.server.errormsg = '';
           this.server.error = false;
           this.simulation_done = response.body.done;
@@ -172,6 +176,7 @@ export default {
           }
         }
       }, response => {
+        console.log("Setting server error 1")
         this.server.error = true;
         this.server.waitingForData = false;
       });
@@ -183,6 +188,8 @@ export default {
       }).then(response => {
         this.inflight--;
         if (response.body.error) {
+          console.log("Setting server errormsg 2")
+          console.log("errormsg:", response.body.error);
           this.server.errormsg = response.body.error;
           this.server.waitingForData = false;
         } else {
@@ -201,11 +208,15 @@ export default {
           }
         }
       }, response => {
+        console.log("Setting server error 2")
+        console.log("response.body", response.body)
         this.server.error = true;
+        this.server.errormsg = 
         this.server.waitingForData = false;
       });
     },
     recalculate: function() {
+      console.log("Starting simulation")
       this.current_iteration = 0;
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
@@ -216,6 +227,8 @@ export default {
         simulation_rules: this.simulation_rules,
       }).then(response => {
         if (response.body.error) {
+          console.log("Setting server errormsg 3")
+          this.server.error = true;
           this.server.errormsg = response.body.error;
           this.server.waitingForData = false;
         } else {
@@ -225,9 +238,10 @@ export default {
           this.simulation_done = !response.body.started;
           this.server.waitingForData = false;
           // 300 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.checkstatus, 300);
+          this.checktimer = window.setInterval(this.checkstatus, 300); // was 300
         }
       }, response => {
+        console.log("Setting server error 3")
         this.server.error = true;
         this.server.waitingForData = false;
       });

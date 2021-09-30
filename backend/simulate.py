@@ -124,7 +124,8 @@ class Simulation:
         self.iteration = 0
         self.terminate = False
         self.iteration_time = timedelta(0)
-
+        self.time_left = 0
+        self.iterations_with_no_solution = 0
         self.data = []
         self.list_data = []
         for ruleset in range(self.num_rulesets):
@@ -296,7 +297,7 @@ class Simulation:
                 self.aggregate_list(-1, "sim_votes", c, p, xtd_votes[c][p])
                 self.aggregate_list(-1, "sim_shares", c, p, xtd_shares[c][p])
 
-    def collect_measures(self, votes):
+    def collect_measures(self, votes):        
         self.e_handler.set_votes(votes)
         self.collect_votes(votes)
         for ruleset in range(self.num_rulesets):
@@ -484,7 +485,6 @@ class Simulation:
             self.aggregate_measure(-1, "time", self.iteration_time.total_seconds())
         self.analysis()
         self.test_generated()
-
 
     def get_results_dict(self):
         self.analysis()

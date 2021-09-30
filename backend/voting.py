@@ -162,10 +162,8 @@ class Election:
             self.demonstration_table = {"headers": headers, "steps": steps}
         else:
             self.demonstration_table = {"headers": ["Not available"], "steps": []}
-
         if self.rules["show_entropy"]:
             print("\nEntropy: %s" % self.entropy())
-
 
 def run_script_election(rules):
     rs = ElectionRules()

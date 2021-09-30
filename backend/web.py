@@ -281,6 +281,7 @@ def start_simulation():
     thread = threading.Thread(target=run_simulation, args=(sid,))
 
     try:
+        print("trying set_up_simulation")
         simulation = set_up_simulation()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
@@ -301,26 +302,46 @@ def start_simulation():
 
 @app.route('/api/simulate/check/', methods=['GET', 'POST'])
 def check_simulation():
+    global SIMULATIONS
     data = request.get_json(force=True)
+    msg = ""
     if "sid" not in data:
-        return jsonify({"error": "Please supply a SID."})
-    if data["sid"] not in SIMULATIONS:
-        return jsonify({"error": "Please supply a valid SID."})
-    simulation, thread, expiry = SIMULATIONS[data["sid"]]
-    #if thread.done:
-    #    del(SIMULATIONS[data["sid"]])
-
-    return jsonify({
-            "done": thread.done,
-            "iteration": simulation.iteration,
-            "time-left": simulation.time_left,
-            "iteration_time": simulation.iteration_time.seconds +
-                              (simulation.iteration_time.microseconds/1000000.0),
-            "target": simulation.sim_rules["simulation_count"],
-            "results": simulation.get_results_dict(),
-            "parties": simulation.parties,
-            "e_rules": simulation.e_rules,
-        })
+        print("sid not in data")
+        msg = "Please supply a SID."
+    elif data["sid"] not in SIMULATIONS:
+        print("sid not valid")
+        msg = "Please supply a valid SID."
+    else:
+        # print(f"{SIMULATIONS=}")
+        # print(f'{data["sid"] in SIMULATIONS=}')
+        # print(f'{SIMULATIONS[data["sid"]]=}')
+        simulation, thread, expiry = SIMULATIONS[data["sid"]]
+        #if thread.done:
+        #    del(SIMULATIONS[data["sid"]])
+        if not hasattr(simulation,"iteration_time"):
+            print("no iteration_time in result")
+            simulation.iteration_time = 0
+        try:
+            #print("simulation contents:")
+            #print(simulation.__dict__.keys())
+            simulation.iteration -= simulation.iterations_with_no_solution
+            return_dict = {
+                "done": thread.done,
+                "iteration": simulation.iteration,
+                "time_left": simulation.time_left,
+                "iteration_time": simulation.iteration,
+                "target": simulation.sim_rules["simulation_count"],
+                "results": simulation.get_results_dict(),
+                "parties": simulation.parties,
+                "e_rules": simulation.e_rules
+            }
+        except Exception as e:           
+            msg = "Error in check_simulation: " + str(e)
+    if len(msg) > 0:
+        print("Error; message = ", msg)
+        return jsonify({"error": msg})
+    else:
+        return jsonify(return_dict)
 
 @app.route('/api/simulate/stop/', methods=['GET', 'POST'])
 def stop_simulation():
@@ -350,16 +371,13 @@ def set_up_simulation():
     data = check_input(data,
         ["vote_table", "election_rules", "simulation_rules"])
     vote_table = data["vote_table"]
-
     rulesets = []
     for rs in data["election_rules"]:
         election_rules = ElectionRules()
         election_rules.update(rs)
         rulesets.append(election_rules)
-
     simulation_rules = sim.SimulationRules()
     simulation_rules.update(check_simulation_rules(data["simulation_rules"]))
-
     simulation = sim.Simulation(simulation_rules, rulesets, vote_table)
     return simulation
 
