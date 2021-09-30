@@ -281,7 +281,6 @@ def start_simulation():
     thread = threading.Thread(target=run_simulation, args=(sid,))
 
     try:
-        print("trying set_up_simulation")
         simulation = set_up_simulation()
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
@@ -306,10 +305,8 @@ def check_simulation():
     data = request.get_json(force=True)
     msg = ""
     if "sid" not in data:
-        print("sid not in data")
         msg = "Please supply a SID."
     elif data["sid"] not in SIMULATIONS:
-        print("sid not valid")
         msg = "Please supply a valid SID."
     else:
         # print(f"{SIMULATIONS=}")

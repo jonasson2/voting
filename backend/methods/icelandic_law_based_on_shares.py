@@ -24,6 +24,7 @@ def icelandic_share_apportionment(
 
     invalid = []
     seats_info = []
+    adj_seat = adj_seat_gen()
     while num_allocated < total_seats:
         #if all parties are either invalid or below threshold,
         #then no more seats can be allocated

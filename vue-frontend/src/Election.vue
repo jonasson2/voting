@@ -90,7 +90,7 @@ export default {
   },
   methods: {
     recalculate: function() {
-      console.log("recalculate called");
+      console.log("Election recalculate called");
       if (this.election_rules.length > 0) {
         // && this.election_rules.length > this.activeTabIndex
         // && this.election_rules[this.activeTabIndex].name) {
@@ -102,6 +102,7 @@ export default {
             rules: this.election_rules,
           }).then(response => {
             if (response.body.error) {
+              console.log("error-return 1")
               this.server.errormsg = response.body.error;
               this.server.waitingForData = false;
             } else {
@@ -134,6 +135,8 @@ export default {
               this.server.waitingForData = false;
             }
           }, response => {
+            console.log("error-return 2")
+            console.log("response", response.body)
             this.server.error = true;
             this.server.waitingForData = false;
           });

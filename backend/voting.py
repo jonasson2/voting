@@ -133,7 +133,6 @@ class Election:
             row_constraints=self.v_desired_row_sums,
             col_constraints=self.v_desired_col_sums,
             prior_allocations=self.m_const_seats_alloc)
-
         #Some methods return a solution violating the constraints if necessary
         try:
             self.results, self.adj_seats_info = method(
@@ -151,6 +150,9 @@ class Election:
         except (ZeroDivisionError, RuntimeError):
             self.results = self.m_const_seats_alloc
             self.adj_seats_info = None
+        except Exception as e:
+            print("Unknown error in voting.py")
+            return
 
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]
