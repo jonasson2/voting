@@ -90,11 +90,11 @@ GENERATING_METHOD_NAMES = {
 }
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":     'Use values from "Votes and seats" tab',
-    "custom":    "Specify seat numbers by changing individual values",
-    "all_const": "Make all seats constituency seats",
-    "all_adj":   "Make all seats adjustment seats",
-    "one_const": "Combine all constituencies into one",
+    "refer":          'Use values from "Votes and seats" tab',
+    "custom":         "Specify seat numbers by changing individual values",
+    "make_all_const": "Make all seats constituency seats",
+    "make_all_adj":   "Make all seats adjustment seats",
+    "one_const":      "Combine all constituencies into one",
 }
 
 MEASURES = {
@@ -105,9 +105,11 @@ MEASURES = {
     "dev_all_adj":     "Allocation as if all seats were adjustment seats",
     "dev_all_adj_totals":
                        "Allocation as if all seats were adjustment seats",
-    "dev_ind_const":   "Allocation as if all seats were constituency seats",
-    "dev_ind_const_totals":
+    "dev_all_const":   "Allocation as if all seats were constituency seats",
+    "dev_all_const_totals":
                        "Allocation as if all seats were constituency seats",
+    "dev_ref":         "Allocation based on reference votes",
+    "dev_ref_totals":  "Allocation based on reference votes",
     "adj_dev":         "Desired apportionment of adjustment seats",
     "dev_one_const":   "Allocation as if all constituencies were combined into one",
     "entropy":         "Entropy (product of all seat values used)",
@@ -121,14 +123,16 @@ LIST_DEVIATION_MEASURES = [
     "dev_opt",
     "dev_law",
     "dev_all_adj",
-    "dev_ind_const",
+    "dev_all_const",
+    "dev_ref",
     # "dev_one_const", #skipped, because already measured by all_adj (party sums)
 ]
 TOTALS_DEVIATION_MEASURES = [
     #"dev_opt_totals",
     #"dev_law_totals",
     "dev_all_adj_totals",
-    "dev_ind_const_totals",
+    "dev_all_const_totals",
+    "dev_ref_totals",
     "adj_dev",
 ]
 STANDARDIZED_MEASURES = [
@@ -148,7 +152,7 @@ LIST_MEASURES = {
     "ideal_seats":   "ideal seat shares",
     # "dev_opt":       "deviation from optimal solution",
     # "dev_law":       "deviation from official law method",
-    # "dev_ind_const": "deviation from Independent Constituencies",
+    # "dev_all_const": "deviation from Independent Constituencies",
     # "dev_one_const": "deviation from Single Constituency",
     # "dev_all_adj":   "deviation from All Adjustment Seats"
 }

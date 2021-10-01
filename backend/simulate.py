@@ -130,6 +130,7 @@ class Simulation:
         self.iterations_with_no_solution = 0
         self.data = []
         self.list_data = []
+        self.reference = []
         print("A")
         print("selected_rand_constit" in sim_rules)
         sel_rand_const = sim_rules["selected_rand_constit"]
@@ -143,6 +144,7 @@ class Simulation:
             self.apply_random = constit.index(sel_rand_const)
         print(self.apply_random)
         for ruleset in range(self.num_rulesets):
+            self.reference.append([])
             self.data.append({})
             for measure in MEASURES.keys():
                 self.data[ruleset][measure] = {
@@ -171,6 +173,7 @@ class Simulation:
                     self.list_data[-1][measure][aggr].append([0]*(self.num_parties+1))
 
         self.run_initial_elections()
+        self.find_reference()
 
     def aggregate_list(self, ruleset, measure, const, party, value):
         self.list_data[ruleset][measure]["cnt"][const][party] += 1
@@ -280,10 +283,8 @@ class Simulation:
 
     def gen_votes(self):
         """
-        Generate votes similar to given votes using the given
-        distribution
+        Generate votes similar to given votes using selected distribution
         """
-        #gen = dicts.GENERATING_METHODS[self.variate]
         while True:
             votes = generate_votes(self.base_votes, self.var_coeff,
                                    self.variate,    self.apply_random)
@@ -312,7 +313,23 @@ class Simulation:
                 self.aggregate_list(-1, "sim_votes", c, p, xtd_votes[c][p])
                 self.aggregate_list(-1, "sim_shares", c, p, xtd_shares[c][p])
 
-    def collect_measures(self, votes):        
+    # def find_reference_optimal(self, votes):       
+    #     self.e_handler.set_votes(votes)
+    #     self.collect_votes(votes)
+    #     for ruleset in range(self.num_rulesets):
+    #         election = self.e_handler.elections[ruleset]
+    #         self.reference_optimal
+
+    def find_reference(self):
+        self.e_handler.set_votes(self.base_votes)
+        for ruleset in range(self.num_rulesets):
+            election = self.e_handler.elections[ruleset]
+            print("results=", election.results)
+            self.reference[ruleset] = election.results
+            #self.reference[ruleset] = election.results
+
+    def collect_measures(self, votes):
+        # votes are simulated; this function allocates seats
         self.e_handler.set_votes(votes)
         self.collect_votes(votes)
         for ruleset in range(self.num_rulesets):
@@ -324,7 +341,7 @@ class Simulation:
         const_seats_alloc = add_totals(election.m_const_seats_alloc)
         total_seats_alloc = add_totals(election.results)
         ideal_seats = add_totals(self.calculate_ideal_seats(election))
-        for c in range(1+election.num_constituencies):
+        for c in range(1 + election.num_constituencies):
             for p in range(1+self.num_parties):
                 cs  = const_seats_alloc[c][p]
                 ts  = total_seats_alloc[c][p]
@@ -340,27 +357,36 @@ class Simulation:
     def collect_general_measures(self, ruleset, election):
         """Various tests to determine the quality of the given method."""
         self.aggregate_measure(ruleset, "adj_dev", election.adj_dev)
-        opt_results = self.entropy(ruleset, election)
+        opt_results = self.opt_results_and_entropy(ruleset, election)
         self.deviation_measures(ruleset, election, opt_results)
         self.other_measures(ruleset, election)
 
-    def entropy(self, ruleset, election):
+    def opt_results_and_entropy(self, ruleset, election):
         opt_rules = election.rules.generate_opt_ruleset()
+        print("opt_rules:", opt_rules)
         opt_election = voting.Election(opt_rules, election.m_votes)
         opt_results = opt_election.run()
+        print("opt_results=", opt_results)
         entropy = election.entropy()
-        self.aggregate_measure(ruleset, "entropy", entropy)
         entropy_ratio = exp(entropy - opt_election.entropy())
+        self.aggregate_measure(ruleset, "entropy", entropy)
         self.aggregate_measure(ruleset, "entropy_ratio", entropy_ratio)
         return opt_results
 
     def deviation_measures(self, ruleset, election, opt_results):
-        self.deviation(ruleset, "opt", None, election.results, opt_results)
-        self.deviation(ruleset, "law", election.m_votes, election.results)
-        self.deviation(ruleset, "ind_const", election.m_votes, election.results)
-        self.deviation(ruleset, "all_adj", election.m_votes, election.results)
-        v_results = [sum(x) for x in zip(*election.results)]
-        self.deviation(ruleset, "one_const", [election.v_votes], [v_results])
+        print("el-results", election.results)
+        print("ref-reslts", self.reference)
+        self.deviation(ruleset, "opt",       election, opt_results)
+        self.deviation(ruleset, "law",       election)
+        self.deviation(ruleset, "all_adj",   election)
+        self.deviation(ruleset, "all_const", election)
+        self.deviation(ruleset, "ref",       election, self.reference[ruleset])
+        # self.deviation(ruleset, "one_const", [election.v_votes], [v_results])
+        # should be:
+        #   v_results = [sum(x) for x in zip(*election.results)]
+        #   election.results = v_results
+        #   self.deviation(ruleset, "one_const", election)
+        # excep that destroys election...
 
     def other_measures(self, ruleset, election):
         ideal_seats = self.calculate_ideal_seats(election)
@@ -369,15 +395,20 @@ class Simulation:
         self.sum_sq(ruleset, election, ideal_seats)
         self.min_seat_value(ruleset, election, ideal_seats)
 
-    def deviation(self, ruleset, option, votes, reference_results, results=None):
-        if results == None:
+    def deviation(self, ruleset, option, election, comparison_results = None):
+        votes = election.m_votes
+        results = election.results
+        print("option", option)
+        if comparison_results == None:
             rules = self.e_rules[ruleset].generate_comparison_rules(option)
-            results = voting.Election(rules, votes).run()
-        deviation = dev(reference_results, results)
+            comparison_results = voting.Election(rules, votes).run()
+        print("results", results)
+        print("cmp-reslts", comparison_results)
+        deviation = dev(results, comparison_results)
         self.aggregate_measure(ruleset, "dev_"+option, deviation)
         if option != "one_const":
-            ref_totals = [sum(x) for x in zip(*reference_results)]
-            comp_totals = [sum(x) for x in zip(*results)]
+            ref_totals = [sum(x) for x in zip(*results)]
+            comp_totals = [sum(x) for x in zip(*comparison_results)]
             deviation = dev([ref_totals], [comp_totals])
             self.aggregate_measure(ruleset, f"dev_{option}_totals", deviation)
 

@@ -75,8 +75,8 @@ class ElectionRules(Rules):
             return self.generate_opt_ruleset()
         if option == "law":
             return self.generate_law_ruleset()
-        if option == "ind_const":
-            return self.generate_ind_const_ruleset()
+        if option == "all_const":
+            return self.generate_all_const_ruleset()
         if option == "one_const":
             return self.generate_one_const_ruleset()
         if option == "all_adj":
@@ -85,7 +85,7 @@ class ElectionRules(Rules):
             return {
                 "opt":       self.generate_opt_ruleset(),
                 "law":       self.generate_law_ruleset(),
-                "ind_const": self.generate_ind_const_ruleset(),
+                "all_const": self.generate_all_const_ruleset(),
                 "one_const": self.generate_one_const_ruleset(),
                 "all_adj":   self.generate_all_adj_ruleset()
             }
@@ -107,7 +107,7 @@ class ElectionRules(Rules):
         ref_rs["adjustment_threshold"] = 5
         return ref_rs
 
-    def generate_ind_const_ruleset(self):
+    def generate_all_const_ruleset(self):
         ref_rs = ElectionRules()
         ref_rs.update(self)
         ref_rs["constituencies"] = deepcopy(self["constituencies"])
