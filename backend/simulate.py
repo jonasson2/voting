@@ -131,18 +131,13 @@ class Simulation:
         self.data = []
         self.list_data = []
         self.reference = []
-        print("A")
-        print("selected_rand_constit" in sim_rules)
         sel_rand_const = sim_rules["selected_rand_constit"]
-        print(sel_rand_const)
-        print(self.constituencies)
         if sel_rand_const == "All":
             self.apply_random = -1
         else:
             constit = [c["name"] for c in self.constituencies]
             assert sel_rand_const in constit
             self.apply_random = constit.index(sel_rand_const)
-        print(self.apply_random)
         for ruleset in range(self.num_rulesets):
             self.reference.append([])
             self.data.append({})
@@ -324,7 +319,6 @@ class Simulation:
         self.e_handler.set_votes(self.base_votes)
         for ruleset in range(self.num_rulesets):
             election = self.e_handler.elections[ruleset]
-            print("results=", election.results)
             self.reference[ruleset] = election.results
             #self.reference[ruleset] = election.results
 
@@ -363,10 +357,8 @@ class Simulation:
 
     def opt_results_and_entropy(self, ruleset, election):
         opt_rules = election.rules.generate_opt_ruleset()
-        print("opt_rules:", opt_rules)
         opt_election = voting.Election(opt_rules, election.m_votes)
         opt_results = opt_election.run()
-        print("opt_results=", opt_results)
         entropy = election.entropy()
         entropy_ratio = exp(entropy - opt_election.entropy())
         self.aggregate_measure(ruleset, "entropy", entropy)
@@ -374,8 +366,6 @@ class Simulation:
         return opt_results
 
     def deviation_measures(self, ruleset, election, opt_results):
-        print("el-results", election.results)
-        print("ref-reslts", self.reference)
         self.deviation(ruleset, "opt",       election, opt_results)
         self.deviation(ruleset, "law",       election)
         self.deviation(ruleset, "all_adj",   election)
@@ -398,12 +388,9 @@ class Simulation:
     def deviation(self, ruleset, option, election, comparison_results = None):
         votes = election.m_votes
         results = election.results
-        print("option", option)
         if comparison_results == None:
             rules = self.e_rules[ruleset].generate_comparison_rules(option)
             comparison_results = voting.Election(rules, votes).run()
-        print("results", results)
-        print("cmp-reslts", comparison_results)
         deviation = dev(results, comparison_results)
         self.aggregate_measure(ruleset, "dev_"+option, deviation)
         if option != "one_const":
