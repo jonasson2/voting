@@ -2,8 +2,7 @@
 <div>
   <h3>Simulation settings</h3>
   <SimulationSettings
-    :num_parties="vote_table.parties.length"
-    :num_constituencies="vote_table.constituencies.length"
+    :constituencies="vote_table.constituencies"
     :rules="simulation_rules"
     @update-rules="updateSimulationRules">
   </SimulationSettings>

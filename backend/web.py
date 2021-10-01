@@ -364,6 +364,7 @@ def stop_simulation():
     })
 
 def set_up_simulation():
+    # TODO make following settable in vue
     data = request.get_json(force=True)
     data = check_input(data,
         ["vote_table", "election_rules", "simulation_rules"])

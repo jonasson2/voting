@@ -347,7 +347,7 @@ export default {
     addParty: function () {
       this.matrix.parties.push("");
       for (let con in this.matrix.votes) {
-        this.matrix.votes[con].push(0);
+        this.matrix.votes[con].push(1);
       }
     },
     addConstituency: function () {

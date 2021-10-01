@@ -18,6 +18,7 @@ from methods.opt_entropy import opt_entropy
 from methods.switching import switching
 
 from distributions.beta_distribution import beta_distribution
+from distributions.uniform_distribution import uniform_distribution
 
 DIVIDER_RULES = {
     "1-dhondt": dhondt_gen,
@@ -79,10 +80,13 @@ ADJUSTMENT_METHOD_NAMES = {
 }
 
 GENERATING_METHODS = {
-    "beta": beta_distribution
+    "beta": beta_distribution,
+    "uniform": uniform_distribution
 }
+
 GENERATING_METHOD_NAMES = {
-    "beta": "Beta distribution"
+    "beta": "Beta distribution",
+    "uniform": "Uniform distribution"
 }
 
 SEAT_SPECIFICATION_OPTIONS = {

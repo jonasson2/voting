@@ -1,7 +1,7 @@
 <template>
 <b-form style = "margin-left:16px;margin-right:16px">
   <b-row>
-    <b-col cols="4">
+    <b-col cols="3">
       <b-form-group
         label="Number of simulations"
         style="font-size:110%"
@@ -16,15 +16,14 @@
           min="0"/>
       </b-form-group>
     </b-col>
-    <b-col cols="4">
+    <b-col cols="3">
       <b-form-group
         label="Generating method"
         style="font-size:110%"
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input"
         title="Method used to generate random votes
-               (based on the supplied vote table). Currently the only 
-               possibility is beta distribution."
+               (based on the supplied vote table)."
         >
         <b-form-select
           v-model="rules.gen_method"
@@ -32,14 +31,14 @@
           class="mb-3"/>
       </b-form-group>
     </b-col>
-    <b-col cols="4">
+    <b-col cols="3">
       <b-form-group
         label="Coefficient of variation"
         style="font-size:110%"
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input"
         title="This is the standard deviation of simulated votes
-               divided by their mean. Provide a number between 0 and 0.75."
+               divided by their mean. Valid range 0–0.75 (beta), 0–0.577 (uniform)."
         >
         <b-input-group>
           <b-form-input
@@ -48,12 +47,31 @@
         </b-input-group>
       </b-form-group>
     </b-col>
+    <b-col cols="3">
+      <b-form-group
+        label="Apply randomness to"
+        style="font-size:110%"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        label-for="input"
+        title="Only the specified constituency will have its votes drawn 
+               at random, the remaining constituencies will use the 
+               reference votes on all replications. Default is to draw 
+               all votes at random."
+        >
+        <b-input-group>
+          <b-form-select
+            v-model="rules.selected_rand_constit"
+            :options="rand_constit"
+            />
+        </b-input-group>
+      </b-form-group>
+    </b-col>
   </b-row>
   <b-form-group
     label='Scaling of reference seat shares'
     style="font-size:110%"
-    description='Scaled seat shares are used as reference in quality measurements;
-                 "Help" for more details'
+    description='Scaled seat shares are used as reference in quality 
+                 measurements; "Help" for more details'
     >
     <b-form-radio-group
       id="A"
@@ -98,8 +116,7 @@
 <script>
 export default {
   props: [
-    "num_parties",
-    "num_constituencies",
+    "constituencies",
     "rules",
   ],
   data: function () {
@@ -107,9 +124,22 @@ export default {
       doneCreating: false,
       capabilities: {},
       selected: '',
+      rand_constit: [],
     }
   },
   watch: {
+    'constituencies': {
+      handler: function (val, oldVal) {
+        this.rand_constit = ["All"]
+        console.log("val=", val)
+        for (var con in val) {
+          console.log("con=", con)
+          console.log("val[con].name=", val[con].name)
+          this.rand_constit.push(val[con].name)
+        }
+        console.log("rand_constit=", this.rand_constit)
+      }
+    },
     'rules': {
       handler: function (val, oldVal) {
         if (this.doneCreating) {

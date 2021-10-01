@@ -10,6 +10,7 @@ from excel_util import simulation_to_xlsx
 from rules import Rules
 import dictionaries as dicts
 from dictionaries import MEASURES, LIST_MEASURES, VOTE_MEASURES, AGGREGATES
+from generate_votes import generate_votes
 import voting
 from electionHandler import ElectionHandler
 
@@ -100,6 +101,7 @@ class SimulationRules(Rules):
         self["gen_method"] = "beta"
         self["distribution_parameter"] = 0.25
         self["scaling"] = "both"
+        self["selected_rand_constit"] = "All"
         # self["row_constraints"] = True
         # self["col_constraints"] = True
 
@@ -128,6 +130,18 @@ class Simulation:
         self.iterations_with_no_solution = 0
         self.data = []
         self.list_data = []
+        print("A")
+        print("selected_rand_constit" in sim_rules)
+        sel_rand_const = sim_rules["selected_rand_constit"]
+        print(sel_rand_const)
+        print(self.constituencies)
+        if sel_rand_const == "All":
+            self.apply_random = -1
+        else:
+            constit = [c["name"] for c in self.constituencies]
+            assert sel_rand_const in constit
+            self.apply_random = constit.index(sel_rand_const)
+        print(self.apply_random)
         for ruleset in range(self.num_rulesets):
             self.data.append({})
             for measure in MEASURES.keys():
@@ -267,26 +281,27 @@ class Simulation:
     def gen_votes(self):
         """
         Generate votes similar to given votes using the given
-        generating method.
+        distribution
         """
-        gen = dicts.GENERATING_METHODS[self.variate]
+        #gen = dicts.GENERATING_METHODS[self.variate]
         while True:
-            votes = gen(self.base_votes, self.var_coeff)
+            votes = generate_votes(self.base_votes, self.var_coeff,
+                                   self.variate,    self.apply_random)
             yield votes
 
     def test_generated(self):
         """Analysis of generated votes."""
-        var_beta_distr = []
+        var_distr = []
         for c in range(1+self.num_constituencies):
-            var_beta_distr.append([])
+            var_distr.append([])
             for p in range(1+self.num_parties):
-                var_beta_distr[c].append(1/sqrt(self.var_coeff)
+                var_distr[c].append(1/sqrt(self.var_coeff)
                                         *self.xtd_vote_shares[c][p]
                                         *(self.xtd_vote_shares[c][p]-1))
         sim_shares = self.list_data[-1]["sim_shares"]
         self.data[-1]["sim_shares"] = {
             "err_avg": error(sim_shares["avg"], self.xtd_vote_shares),
-            "err_var": error(sim_shares["var"], var_beta_distr)
+            "err_var": error(sim_shares["var"], var_distr)
         }
 
     def collect_votes(self, votes):
