@@ -120,7 +120,7 @@
 
 <script>
 import ResultMatrix from './components/ResultMatrix.vue'
-import SimulationSettings from './components/SimulationSettings.vue'
+import SimulationSettings from './SimulationSettings.vue'
 import SimulationData from './components/SimulationData.vue'
 
 export default {

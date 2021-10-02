@@ -83,7 +83,7 @@
 import Election from './Election.vue'
 import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
-import VoteMatrix from './components/VoteMatrix.vue'
+import VoteMatrix from './VoteMatrix.vue'
 import Intro from './Intro.vue'
 
 export default {

@@ -1,7 +1,7 @@
 from random import uniform
 from math import sqrt
 
-def uniform_distribution(mu, var_coef):
+def uniform_distribution(mu, var_coeff):
     # The uniform distribution is parameterized with its mean and coefficient of variation
     # (standard deviation divided by mean). 
 

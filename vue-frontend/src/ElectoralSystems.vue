@@ -150,7 +150,7 @@
 </template>
 
 <script>
-import ElectionSettings from './components/ElectionSettings.vue'
+import ElectionSettings from './ElectionSettings.vue'
 
 export default {
   components: {
