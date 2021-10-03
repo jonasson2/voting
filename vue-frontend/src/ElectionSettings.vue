@@ -56,7 +56,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Threshold as percentage of total votes required by a party to qualify for apportionment of adjustment seats."
+        title="Threshold as percentage of total votes required by a party 
+               to qualify for apportionment of adjustment seats."
         >
         <b-input-group append="%">
           <b-form-input
@@ -75,7 +76,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Rule to allocate adjustment seats to individual party lists within the constituencies."
+        title="Rule to allocate adjustment seats to individual party lists within 
+               the constituencies."
         >
         <b-form-select
           v-model="rules.adj_alloc_divider"
@@ -125,7 +127,7 @@
             # Adj.
           </th>
         </tr>
-        <tr v-for="(constituency, conidx) in rules.constituencies">
+        <tr v-for="(constituency, conidx) in constituencies">
           <th class="displayleft">
             {{ constituency['name'] }}
           </th>
@@ -158,12 +160,14 @@
 export default {
   props: [
     "rulesidx",
-    "rules",
+    "single_rules",
+    "constituencies"
   ],
   data: function () {
     return {
       doneCreating: false,
       capabilities: {},
+      rules: this.single_rules
     }
   },
   watch: {
@@ -171,23 +175,29 @@ export default {
       handler: function (val, oldVal) {
         if (this.doneCreating) {
           console.log("watching rules");
-          this.$emit('update-rules', val, this.rulesidx);
+          this.$emit('update-single-rules', val, this.rulesidx);
         }
       },
       deep: true
     }
   },
   created: function() {
-    console.log("Created ElectionSettings");
-    this.$http.get('/api/capabilities').then(response => {
-      this.capabilities = response.body.capabilities;
-      if (!("name" in this.rules)){
-        this.$emit('update-rules', response.body.election_rules, this.rulesidx);
-      }
+    console.log("constituencies:", this.constituencies)
+    this.$http.post(
+      '/api/capabilities',
+      this.constituencies,
+    ).then(response => {
+      this.capabilities = response.body.capabilities;      
+      console.log("Created ElectionSettings");
+      console.log("constituencies:", this.constituencies)
+      console.log("constituencies:", response.body.election_rules.constituencies)
+      this.rules = response.body.election_rules;
+      this.$emit('update-single-rules', response.body.election_rules, this.rulesidx);
+      //this.$emit('update-simulation-rules', response.body.simulation_rules)
       this.doneCreating = true;
     }, response => {
       this.serverError = true;
-    });
-  },
+    })
+  }
 }
 </script>

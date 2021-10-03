@@ -41,10 +41,12 @@
         <!--   rules and modifying seat numbers</p> -->
       <ElectoralSystems
         :server="server"
-        :election_rules="election_rules"
-        :simulation_rules="simulation_rules"
+        :main_rules="rules"
+        :constituencies="constituencies"
         @update-main-election-rules="updateMainElectionRules"
-        @download-file="downloadFile">
+        @update-main-simulation-rules="updateSimulationRules"
+        @download-file="downloadFile"
+        @save-settings="saveSettings">
       </ElectoralSystems>
     </b-tab>
     <b-tab title="Single election">
@@ -53,8 +55,8 @@
         ref="ElectionRef"
         :server="server"
         :vote_table="vote_table"
-        :election_rules="election_rules"
-        :activeTabIndex="activeTabIndex"
+        :main_election_rules="rules.election_rules"
+        :results="results"
         @download-file="downloadFile"
         @update-rules="updateMainElectionRules">
       </Election>
@@ -63,10 +65,9 @@
       <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
       <Simulate
         :server="server"
+        :main_rules="rules"
         :vote_table="vote_table"
-        :election_rules="election_rules"
-        :simulation_rules="simulation_rules"
-        @update-rules="updateSimulationRules"
+        @update-main-rules="updateSimulationRules"
         @download-file="downloadFile">
       </Simulate>
     </b-tab>
@@ -97,17 +98,13 @@ export default {
   
   data: function() {
     return {
+      constituencies: [],
       server: {
         waitingForData: false,
         errormsg: '',
         error: false,
       },
-      vote_table: {
-        name: "",
-        parties: [],
-        constituencies: [],
-        votes: [],
-      },
+      vote_table: {},
       vote_sums: {
         cseats: 0,
         aseats: 0,
@@ -117,14 +114,18 @@ export default {
       },
       // election_rules contains several rules; see ElectionSettings.vue
       // and electionRules.py for the member variables of a rule
-      election_rules: [{}],
+      rules: {
+        election_rules: [{}],
+        simulation_rules: {}
+      },
       activeTabIndex: 0,
       uploadfile: null,
-      simulation_rules: {
-        simulation_count: 0,
-        gen_method: "",
-        distribution_parameter: 0,
-      },
+      results: {},
+      // simulation_rules: {
+      //   simulation_count: 0,
+      //   gen_method: "",
+      //   distribution_parameter: 0,
+      // },
     }
   },
   
@@ -132,25 +133,30 @@ export default {
     serverError: function(error) {
       this.server.errormsg = error;
     },
-    updateMainElectionRules: function(rules, idx) {
-      this.$set(this.election_rules, idx, rules);
-      // (this works too: this.election_rules.splice(idx, 1, rules))
+    updateMainElectionRules: function(rules) {
+      this.rules.election_rules = rules
+      this.recalculate();
     },
     updateSimulationRules: function(rules) {
-      this.simulation_rules = rules;
+      console.log("updateSimulationRules in Main")
+      console.log("rules=", rules)
+      this.rules.simulation_rules = rules;
+      console.log("this.rules.simulation_rules=", this.rules.simulation_rules)
     },
     updateVoteTable: function(table) {
-      this.vote_table = table;
-      this.vote_sums.row = table.votes.map(y => y.reduce((a, b) => a+b));
-      this.vote_sums.col = table.votes.reduce((a, b) => a.map((v,i) => v+b[i]));
-      this.vote_sums.tot = this.vote_sums.row.reduce((a, b) => a + b, 0);
-      this.vote_sums.cseats = 0;
-      this.vote_sums.aseats = 0;
-      var c = table.constituencies;
+      console.log("Updating vote table")
+      this.vote_table = table
+      this.vote_sums.row = table.votes.map(y => y.reduce((a, b) => a+b))
+      this.vote_sums.col = table.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
+      this.vote_sums.tot = this.vote_sums.row.reduce((a, b) => a + b, 0)
+      this.vote_sums.cseats = 0
+      this.vote_sums.aseats = 0
+      var c = table.constituencies
       for (var i=0; i<c.length; i++) {
-        this.vote_sums.cseats += c[i].num_const_seats;
-        this.vote_sums.aseats += c[i].num_adj_seats;
+        this.vote_sums.cseats += c[i].num_const_seats
+        this.vote_sums.aseats += c[i].num_adj_seats
       }
+      this.constituencies = c;
     },
     // Thanks to Pétur Helgi Einarsson for the next two functions
     parse_headers: function (headers) {
@@ -168,6 +174,18 @@ export default {
         }
       }
       return [content_type, download_name]
+    },
+    saveSettings: function() {
+      let promise = axios({
+        method: "post",
+        url: "/api/settings/save",
+        data: {
+          e_settings: this.rules.election_rules,
+          sim_settings: this.rules.simulation_rules
+        },
+        responseType: "arraybuffer",
+      });
+      this.downloadFile(promise);
     },
     downloadFile: function (promise) {
       promise
@@ -200,6 +218,60 @@ export default {
             console.log("Error:", response);
           }
         );
+    },
+    recalculate: function() {
+      console.log("Election recalculate called");
+      if (this.rules.election_rules.length > 0) {
+        // && this.election_rules.length > this.activeTabIndex
+        // && this.election_rules[this.activeTabIndex].name) {
+        this.server.waitingForData = true;
+        this.$http.post(
+          '/api/election/',
+          {
+            vote_table: this.vote_table,
+            rules: this.rules.election_rules,
+          }).then(response => {
+            if (response.body.error) {
+              console.log("error-return 1")
+              this.server.errormsg = response.body.error;
+              this.server.waitingForData = false;
+            } else {
+              this.server.errormsg = '';
+              this.server.error = false;
+              this.results = response.body;
+              console.log("results", this.results);
+              for (var i=0; i<response.body.length; i++){
+                // let old_const = this.election_rules[i].constituencies;
+                // let new_const = response.body[i].rules.constituencies;
+                // let modified = false;
+                // if (new_const.length == old_const.length) {
+                //   for (var j=0; j<new_const.length; j++) {
+                //     let old_c = old_const[j];
+                //     let new_c = new_const[j];
+                //     if (old_c.name != new_c.name
+                //         || old_c.num_const_seats != new_c.num_const_seats
+                //         || old_c.num_adj_seats != new_c.num_adj_seats) {
+                //       modified = true;
+                //     }
+                //   }
+                // }
+                // else if (new_const.length>0) {
+                //   modified = true;
+                // }
+                // if (modified){
+                //   this.$emit('update-rules', response.body[i].rules, i);
+                // }
+                this.updateMainElectionRules(response.body[i].rules, i);
+              }
+              this.server.waitingForData = false;
+            }
+          }, response => {
+            console.log("error-return 2")
+            console.log("response", response.body)
+            this.server.error = true;
+            this.server.waitingForData = false;
+          });
+      }
     },
   }
 }

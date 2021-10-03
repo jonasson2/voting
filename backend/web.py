@@ -390,9 +390,10 @@ def handle_api():
         return jsonify(e)
     return jsonify(e.get_results_dict())
 
-@app.route('/api/capabilities/', methods=["GET"])
+@app.route('/api/capabilities/', methods=["POST"])
 def handle_capabilities():
-    capabilities_dict = get_capabilities_dict()
+    constituencies = request.get_json(force=True)
+    capabilities_dict = get_capabilities_dict(constituencies)
     return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])
@@ -423,9 +424,9 @@ def save_simulation():
     download_name = f"simulation-{date}.xlsx"
     return save_file(tmpfilename, download_name);
 
-def get_capabilities_dict():
+def get_capabilities_dict(constituencies):
     return {
-        "election_rules": ElectionRules(),
+        "election_rules": ElectionRules(constituencies),
         "simulation_rules": sim.SimulationRules(),
         "capabilities": {
             "rules": dictionaries.RULE_NAMES,

@@ -1,64 +1,5 @@
 <template>
 <div>
-  <b-modal
-    size="lg"
-    id="modaluploadesettings"
-    title="Upload JSON file"
-    @ok="uploadSettingsAndAppend"
-    >
-    <p>
-      The file provided must be a JSON file
-      formatted like a file downloaded from here, using the Save button.
-      The electoral systems contained in the file
-      will be added to those you have already specified.
-    </p>
-    <b-form-file
-      ref="appendFromFile"
-      v-model="uploadfile"
-      :state="Boolean(uploadfile)"
-      placeholder="Choose a file..."
-      >
-    </b-form-file>
-  </b-modal>
-  <b-modal
-    size="lg"
-    id="modaluploadesettingsreplace"
-    title="Upload JSON file"
-    @ok="uploadSettingsAndReplace"
-    >
-    <p>
-      The file provided must be a JSON file
-      formatted like a file downloaded from here, using the Save button.
-      The electoral systems contained in the file
-      will replace those you have already specified.
-    </p>
-    <b-form-file
-      ref="replaceFromFile"
-      v-model="uploadfile"
-      :state="Boolean(uploadfile)"
-      placeholder="Choose a file..."
-      >
-    </b-form-file>
-  </b-modal>
-  <b-modal
-    size="lg"
-    id="modalsaveesettings"
-    title="Download JSON file"
-    @ok="newSaveESettings"
-    >
-    <p>
-      All current electoral system settings will be saved to a
-      JSON file.
-    </p>
-    <b-form-file
-      :directory=true
-      ref="saveToFile"
-      v-model="savefolder"
-      :state="Boolean()"
-      placeholder="Select folder..."
-      >
-    </b-form-file>
-  </b-modal>
   <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
     <b-button-group class="mx-1">
       <b-button
@@ -75,6 +16,7 @@
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title = "Add electoral systems by uploading settings from local file"
+        @click="uploadSettings()"
         v-b-modal.modaluploadesettings
         >
         Add from file
@@ -128,8 +70,10 @@
       </b-input-group>
       <ElectionSettings
         :rulesidx="rulesidx"
-        :rules="rules"
-        @update-rules="updateElectionRules">
+        :single_rules="election_rules"
+        :constituencies="constituencies"
+        @update-single-rules="updateSingleElectionRules">
+        @update-simulation-rules="updateSimulationRules">
       </ElectionSettings>
     </b-tab>
     <template v-slot:tabs-end>
@@ -163,23 +107,44 @@ export default {
       errormsg: '',
       error: false,
     }},
-    "election_rules": {default: [{}]},
-    "simulation_rules": {default: [{}]},
+    "main_rules": {},
+    // "main_election_rules": {default: [{}]},
+    // "simulation_rules": {default: [{}]},
+    "constituencies": {}
   },
   
   data: function() {
     return {
+      election_rules: this.main_rules.election_rules,
+      simulation_rules: this.main_rules.simulation_rules,
       activeTabIndex: 0,
       uploadfile: null,
       savefolder: null,
     }
   },
   
-  created: function() {
-    console.log("Created ElectoralSystems");
-    console.log("rules", this.election_rules);
-  },
+  // created: function() {
+  //   console.log("Created ElectoralSystems");
+  //   console.log("rules", this.election_rules);
+  // },
   
+  watch: {
+    'election_rules': {
+      handler: function (val, oldVal) {
+        this.$emit('update-main-election-rules', val);
+        console.log("setting rules:", val)
+      },
+      deep: true
+    },
+    'simulation_rules': {
+      handler: function (val, oldVal) {
+        this.$emit('update-main-simulation-rules', val);
+        console.log("setting rules:", val)
+      },
+      deep: true
+    }
+  },
+
   methods: {
     addElectionRules: function() {
       console.log("addElectionRules called");
@@ -196,31 +161,31 @@ export default {
         this.deleteElectionRules(i);
       }
     },
-    updateElectionRules: function(rules, idx) {
-      console.log("Call updateElectionRules in ElectoralSystems")
+    updateSingleElectionRules: function(rules, idx) {
+      console.log("Call updateSingleElectionRules in ElectoralSystems")
       if (rules.name == "System") rules.name += "-" + (idx+1).toString();
       this.activeTabIndex = idx;
       console.log("rules", rules);
-      //this.$set(this.election_rules, idx, rules);
-      this.$emit('update-main-election-rules', rules, idx);
+      this.$set(this.election_rules, idx, rules);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
-    updateElectionRulesAndActivate: function(rules, idx) {
-      console.log("updateElectionRulesAndActivate");
-      this.updateElectionRules(rules, idx);
-      this.activeTabIndex = idx;
+    updateSimulationRules: function(rules) {
+      this.simulation_rules = rules
     },
     saveSettings: function() {
-      let promise = axios({
-        method: "post",
-        url: "/api/settings/save",
-        data: {
-          e_settings: this.election_rules,
-          sim_settings: this.simulation_rules
-        },
-        responseType: "arraybuffer",
-      });
-      this.$emit("download-file", promise);
+      this.$emit("save-settings")      
+      // console.log("e_settings", this.election_rules)
+      // console.log("sim_settings", this.simulation_rules)
+      // let promise = axios({
+      //   method: "post",
+      //   url: "/api/settings/save",
+      //   data: {
+      //     e_settings: this.election_rules,
+      //     sim_settings: this.simulation_rules
+      //   },
+      //   responseType: "arraybuffer",
+      // });
+      // this.$emit("download-file", promise);
     },
     uploadSettingsAndAppend: function(evt) {
       var replace = false;
@@ -236,7 +201,7 @@ export default {
       console.log("newSaveESettings called");
       console.log("evt=", evt);
     },    
-    uploadSettings: function(evt, replace) {
+    uploadSettings: function(evt, replace=false) {
       if (!this.uploadfile) {
         evt.preventDefault();
       }

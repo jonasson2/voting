@@ -3,7 +3,7 @@
   <h3>Simulation settings</h3>
   <SimulationSettings
     :constituencies="vote_table.constituencies"
-    :rules="simulation_rules"
+    :simulation_rules="simulation_rules"
     @update-rules="updateSimulationRules">
   </SimulationSettings>
   
@@ -40,7 +40,7 @@
     <b-col cols="12">
       <b-progress
         :value="current_iteration"
-        :max="simulation_rules.simulation_count"
+        :max="0"
         :animated="!simulation_done"
         :variant="simulation_done ? 'success':'primary'"
         show-value>
@@ -125,10 +125,11 @@ import SimulationData from './components/SimulationData.vue'
 
 export default {
   props: {
-    "vote_table": { default: {} },
-    "election_rules": { default: [{}] },
-    "simulation_rules": { default: {} },
-    "server": { default: {} },
+    "server": {},
+    "main_rules": {},
+    "vote_table": {},
+    // "election_rules": {},
+    // "simulation_rules": {},
   },
   components: {
     ResultMatrix,
@@ -138,6 +139,8 @@ export default {
   
   data: function() {
     return {
+      election_rules: this.main_rules.election_rules,
+      simulation_rules: this.main_rules.simulation_rules,
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
@@ -149,7 +152,9 @@ export default {
   methods: {
     updateSimulationRules: function(rules) {
       console.log("Updating rules")
-      this.$emit('update-rules', rules);
+      console.log("rules", rules)
+      this.simulation_rules = rules
+      this.$emit('update-main-rules', rules)
     },
     stop_simulation: function() {
       console.log("Stopping simulation")
@@ -216,7 +221,7 @@ export default {
     },
     recalculate: function() {
       console.log("Starting simulation")
-      this.current_iteration = 0;
+      this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
       this.server.waitingForData = true;

@@ -1,5 +1,6 @@
 <template>
-<b-form style = "margin-left:16px;margin-right:16px">
+<!-- <b-form style = "margin-left:16px;margin-right:16px"> -->
+<b-form v-if = "doneCreating" style = "margin-left:16px;margin-right:16px">
   <b-row>
     <b-col cols="3">
       <b-form-group
@@ -117,10 +118,11 @@
 export default {
   props: [
     "constituencies",
-    "rules",
+    "simulation_rules",
   ],
   data: function () {
     return {
+      rules: this.simulation_rules,
       doneCreating: false,
       capabilities: {},
       selected: '',
@@ -138,7 +140,8 @@ export default {
           this.rand_constit.push(val[con].name)
         }
         console.log("rand_constit=", this.rand_constit)
-      }
+      },
+      deep: true
     },
     'rules': {
       handler: function (val, oldVal) {
@@ -150,8 +153,10 @@ export default {
     },
   },
   created: function() {
-    this.$http.get('/api/capabilities').then(response => {
+    this.$http.post('/api/capabilities', {}).then(response => {
       this.capabilities = response.body.capabilities;
+      console.log("sim-rules =",response.body.simulation_rules)
+      this.rules = response.body.simulation_rules
       this.$emit('update-rules', response.body.simulation_rules);
       this.doneCreating = true;
     }, response => {
