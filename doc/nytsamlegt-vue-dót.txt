@@ -1,0 +1,7 @@
+Props Versus Data in Vue: The Subtle Differences You Need to Know:
+https://michaelnthiessen.com/vue-props-vs-data/
+
+How To Pass Data Between Components In Vue.js:
+https://www.smashingmagazine.com/2020/01/data-components-vue-js/
+
+Í watch þarf deep:true til að allur hluturinn sé vaktaður
