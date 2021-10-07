@@ -127,16 +127,13 @@ def check_simulation_rules(sim_rules):
     for key in ["simulation_count", "gen_method", "scaling"]:
         if key not in sim_rules:
             raise KeyError(f"Missing data ('simulation_rules.{key}')")
+    if "distribution_parameter" not in sim_rules:
+        raise KeyError("Missing data ('simulation_rules.distribution_parameter')")
+    variance_coefficient = sim_rules["distribution_parameter"]
     if sim_rules["gen_method"] == "beta":
-        if "distribution_parameter" not in sim_rules:
-            raise KeyError("Missing data ('simulation_rules.distribution_parameter')")
-        variance_coefficient = sim_rules["distribution_parameter"]
         if variance_coefficient >= 0.75:
             raise ValueError("Coefficient of variation must be less than 0.75")
     elif sim_rules["gen_method"] == "uniform":
-        if "distribution_parameter" not in sim_rules:
-            raise KeyError("Missing data ('simulation_rules.distribution_parameter')")
-        variance_coefficient = sim_rules["distribution_parameter"]
         if variance_coefficient >= 1/sqrt(3):
             raise ValueError("Coefficient of variation must be less than 0.57735")
     return sim_rules

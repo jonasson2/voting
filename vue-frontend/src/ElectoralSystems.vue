@@ -109,7 +109,7 @@
       </b-input-group>
       <ElectionSettings
         :rulesidx="rulesidx"
-        :single_rules="election_rules"
+        :single_rules="election_rules[rulesidx]"
         :constituencies="constituencies"
         @update-single-rules="updateSingleElectionRules">
         @update-simulation-rules="updateSimulationRules">
@@ -159,6 +159,7 @@ export default {
       activeTabIndex: 0,
       uploadfile: null,
       savefolder: null,
+      watching: true,
     }
   },
   
@@ -170,15 +171,16 @@ export default {
   watch: {
     'election_rules': {
       handler: function (val, oldVal) {
-        this.$emit('update-main-election-rules', val);
-        console.log("setting rules:", val)
+        if (this.watching)
+          this.$emit('update-main-election-rules', val);
       },
       deep: true
     },
     'simulation_rules': {
       handler: function (val, oldVal) {
-        this.$emit('update-main-simulation-rules', val);
-        console.log("setting rules:", val)
+        if (this.watching)
+          console.log("(3) sim-rules", val.gen_method)
+          this.$emit('update-main-simulation-rules', val);
       },
       deep: true
     }
@@ -204,7 +206,6 @@ export default {
       console.log("Call updateSingleElectionRules in ElectoralSystems")
       if (rules.name == "System") rules.name += "-" + (idx+1).toString();
       this.activeTabIndex = idx;
-      console.log("rules", rules);
       this.$set(this.election_rules, idx, rules);
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
@@ -241,9 +242,9 @@ export default {
       console.log("evt=", evt);
     },    
     uploadSettings: function(evt, replace=false) {
-      // if (!this.uploadfile) {
-      //   evt.preventDefault();
-      // }
+      if (!this.uploadfile) {
+        evt.preventDefault();
+      }
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.$http.post('/api/settings/upload/', formData).then(response => {

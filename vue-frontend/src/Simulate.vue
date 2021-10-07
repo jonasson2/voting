@@ -151,8 +151,8 @@ export default {
   },
   methods: {
     updateSimulationRules: function(rules) {
-      console.log("Updating rules")
-      console.log("rules", rules)
+      // console.log("Updating rules")
+      // console.log("rules", rules)
       this.simulation_rules = rules
       this.$emit('update-main-rules', rules)
     },

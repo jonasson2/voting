@@ -81,12 +81,14 @@ ADJUSTMENT_METHOD_NAMES = {
 
 GENERATING_METHODS = {
     "beta": beta_distribution,
-    "uniform": uniform_distribution
+    "uniform": uniform_distribution,
+    "maxchange": None
 }
 
 GENERATING_METHOD_NAMES = {
     "beta": "Beta distribution",
-    "uniform": "Uniform distribution"
+    "uniform": "Uniform distribution",
+    "maxchange": "Maximum change method"
 }
 
 SEAT_SPECIFICATION_OPTIONS = {

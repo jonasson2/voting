@@ -166,7 +166,7 @@ export default {
   data: function () {
     return {
       doneCreating: false,
-      capabilities: {},
+      capabilities: [{}],
       rules: this.single_rules
     }
   },
@@ -182,18 +182,22 @@ export default {
     }
   },
   created: function() {
-    console.log("constituencies:", this.constituencies)
     this.$http.post(
       '/api/capabilities',
       this.constituencies,
     ).then(response => {
-      this.capabilities = response.body.capabilities;      
-      console.log("Created ElectionSettings");
-      console.log("constituencies:", this.constituencies)
-      console.log("constituencies:", response.body.election_rules.constituencies)
-      this.rules = response.body.election_rules;
-      this.$emit('update-single-rules', response.body.election_rules, this.rulesidx);
-      //this.$emit('update-simulation-rules', response.body.simulation_rules)
+      let r = response.body
+      //console.log("cap=", r.capabilities.rules);
+      // (á að vera ... (sjá https://bootstrap-vue.org/docs/components/form-select)
+      this.capabilities = r.capabilities;
+      //console.log("constituencies:", this.constituencies)
+      //console.log("constituencies:", r.election_rules.constituencies)
+      if (!("name" in this.rules)) {
+        this.rules = r.election_rules;
+        console.log("emitting to main")
+        this.$emit('update-single-rules', r.election_rules, this.rulesidx);
+      }
+      this.$emit('update-simulation-rules', r.simulation_rules)
       this.doneCreating = true;
     }, response => {
       this.serverError = true;

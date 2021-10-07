@@ -33,28 +33,28 @@
       </th>
       <template v-for="(party, partyidx) in parties">
         <td class="displayright">
-          {{ values[conidx][partyidx].toFixed(round) }}
+          {{ values[conidx][partyidx].toFixed() }}
         </td>
         <td v-if="stddev" class="displayright">
-          {{ stddev[conidx][partyidx].toFixed(round) }}
+          {{ stddev[conidx][partyidx].toFixed() }}
         </td>
       </template>
       <td class="displayright">
-        {{ values[conidx][parties.length].toFixed(0) }}
+        {{ values[conidx][parties.length].toFixed() }}
       </td>
     </tr>
     <tr>
       <th class="displayleft">Total</th>
       <template v-for="(party, partyidx) in parties">
         <td class="displayright">
-          {{ values[constituencies.length][partyidx].toFixed(round) }}
+          {{ values[constituencies.length][partyidx].toFixed() }}
         </td>
         <td v-if="stddev" class="displayright">
-          {{ stddev[constituencies.length][partyidx].toFixed(round) }}
+          {{ stddev[constituencies.length][partyidx].toFixed() }}
         </td>
       </template>
       <td class="displayright">
-        {{ values[constituencies.length][parties.length].toFixed(0) }}
+        {{ values[constituencies.length][parties.length].toFixed() }}
       </td>
     </tr>
   </table>

@@ -9,6 +9,7 @@ import voting
 import simulate as sim
 import util
 import web
+import dictionaries as dict
 
 ### Monkey patching CSV output mode into tabulate:
 tabulate.tabulate_formats.append("csv")
@@ -17,7 +18,6 @@ tabulate._table_formats["csv"] = tabulate.TableFormat(
     linebelow=None, headerrow=tabulate.DataRow(begin=u'', sep=u',', end=u''),
     datarow=tabulate.DataRow(begin=u'', sep=u',', end=u''),
     padding=0, with_header_hide=None)
-
 
 @click.group()
 @click.option('--debug/--no-debug', default=False)
@@ -36,7 +36,7 @@ def cli(debug):
 @click.option('--simulation-count', type=click.INT, default=10000,
                 help='Number of simulations to run')
 @click.option('--gen-method',
-                type=click.Choice(sim.GENERATING_METHODS.keys()),
+                type=click.Choice(dict.GENERATING_METHODS.keys()),
                 default="beta", help='Method to generate votes')
 @click.option('--var-param', type=click.FLOAT, default=0.1)
 @click.option('--to-xlsx', type=click.STRING,
@@ -73,7 +73,8 @@ def simulate(votes, constituencies, **kwargs):
                 type=click.Path(exists=True))
 def script(rules, **kwargs):
     """Read from a script file and execute its commands."""
-    election = voting.run_script(rules)
+    election = voting.run_script_election(rules)
+    print(election)
     util.pretty_print_election(election)
 
 

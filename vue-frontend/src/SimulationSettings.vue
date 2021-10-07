@@ -133,13 +133,10 @@ export default {
     'constituencies': {
       handler: function (val, oldVal) {
         this.rand_constit = ["All"]
-        console.log("val=", val)
         for (var con in val) {
-          console.log("con=", con)
-          console.log("val[con].name=", val[con].name)
           this.rand_constit.push(val[con].name)
         }
-        console.log("rand_constit=", this.rand_constit)
+        // console.log("rand_constit=", this.rand_constit)
       },
       deep: true
     },
@@ -153,15 +150,18 @@ export default {
     },
   },
   created: function() {
-    this.$http.post('/api/capabilities', {}).then(response => {
-      this.capabilities = response.body.capabilities;
-      console.log("sim-rules =",response.body.simulation_rules)
-      this.rules = response.body.simulation_rules
-      this.$emit('update-rules', response.body.simulation_rules);
-      this.doneCreating = true;
-    }, response => {
-      this.serverError = true;
-    });
+    if (!this.doneCreating) {
+      this.$http.post('/api/capabilities', {}).then(response => {
+        console.log("XXXXXXXXXXXXXXXXXXX")
+        this.capabilities = response.body.capabilities;
+        // console.log("sim-rules =",response.body.simulation_rules)
+        this.rules = response.body.simulation_rules
+        this.$emit('update-rules', response.body.simulation_rules);
+        this.doneCreating = true;
+      }, response => {
+        this.serverError = true;
+      });
+    }
   },
 }
 </script>

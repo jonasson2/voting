@@ -49,7 +49,7 @@
         @save-settings="saveSettings">
       </ElectoralSystems>
     </b-tab>
-    <b-tab title="Single election">
+    <b-tab title="Single election" @click="recalculate()">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
       <Election
         ref="ElectionRef"
@@ -135,11 +135,10 @@ export default {
     },
     updateMainElectionRules: function(rules) {
       this.rules.election_rules = rules
-      this.recalculate();
+      //this.recalculate();
     },
     updateSimulationRules: function(rules) {
       console.log("updateSimulationRules in Main")
-      console.log("rules=", rules)
       this.rules.simulation_rules = rules;
       console.log("this.rules.simulation_rules=", this.rules.simulation_rules)
     },
@@ -261,7 +260,7 @@ export default {
                 // if (modified){
                 //   this.$emit('update-rules', response.body[i].rules, i);
                 // }
-                this.updateMainElectionRules(response.body[i].rules, i);
+                //this.updateMainElectionRules(response.body[i].rules, i);
               }
               this.server.waitingForData = false;
             }

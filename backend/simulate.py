@@ -10,7 +10,7 @@ from excel_util import simulation_to_xlsx
 from rules import Rules
 import dictionaries as dicts
 from dictionaries import MEASURES, LIST_MEASURES, VOTE_MEASURES, AGGREGATES
-from generate_votes import generate_votes
+from generate_votes import generate_votes, generate_maxchange_votes
 import voting
 from electionHandler import ElectionHandler
 
@@ -281,8 +281,12 @@ class Simulation:
         Generate votes similar to given votes using selected distribution
         """
         while True:
-            votes = generate_votes(self.base_votes, self.var_coeff,
-                                   self.variate,    self.apply_random)
+            if self.variate == "maxchange":
+                votes = generate_maxchange_votes(
+                    self.base_votes, self.var_coeff, self.apply_random)
+            else:
+                votes = generate_votes(
+                    self.base_votes, self.var_coeff, self.variate, self.apply_random)
             yield votes
 
     def test_generated(self):
