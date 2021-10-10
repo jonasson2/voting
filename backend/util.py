@@ -286,59 +286,82 @@ def print_simulation(simulation):
         print_table(simulation.xtd_votes, h, const_names, out)
 
         print("\nVote shares")
-        print_table(simulation.xtd_vote_shares, h, const_names, out, "{:.1%}")
+        print_table(simulation.xtd_vote_shares,
+                    h, const_names, out, "{:.1%}")
 
         print("\nConstituency seats")
-        print_table(simulation.base_allocations[r]["xtd_const_seats"], h, const_names, out)
+        print_table(simulation.base_allocations[r]["xtd_const_seats"],
+                    h, const_names, out)
 
         print("\nAdjustment seats")
-        print_table(simulation.base_allocations[r]["xtd_adj_seats"], h, const_names, out)
+        print_table(simulation.base_allocations[r]["xtd_adj_seats"],
+                    h, const_names, out)
 
         print("\nTotal seats")
-        print_table(simulation.base_allocations[r]["xtd_total_seats"], h, const_names, out)
+        print_table(simulation.base_allocations[r]["xtd_total_seats"],
+                    h, const_names, out)
 
         print("\nSeat shares")
-        print_table(simulation.base_allocations[r]["xtd_seat_shares"], h, const_names, out, "{:.1%}")
+        print_table(simulation.base_allocations[r]["xtd_seat_shares"],
+                    h, const_names, out, "{:.1%}")
 
         print("\nAverages from simulation")
 
         print("\nVotes")
-        print_table(simulation.list_data[-1]["sim_votes"]["avg"], h, const_names, out)
+        print_table(simulation.list_data[-1]["sim_votes"]["avg"],
+                    h, const_names, out)
 
         print("\nVote shares")
-        print_table(simulation.list_data[-1]["sim_shares"]["avg"], h, const_names, out, "{:.1%}")
+        print_table(simulation.list_data[-1]["sim_shares"]["avg"],
+                    h, const_names, out, "{:.1%}")
 
         print("\nConstituency seats")
-        print_table(simulation.list_data[r]["const_seats"]["avg"], h, const_names, out)
+        print_table(simulation.list_data[r]["const_seats"]["avg"],
+                    h, const_names, out)
 
         print("\nAdjustment seats")
-        print_table(simulation.list_data[r]["adj_seats"]["avg"], h, const_names, out)
+        print_table(simulation.list_data[r]["adj_seats"]["avg"],
+                    h, const_names, out)
 
         print("\nTotal seats")
-        print_table(simulation.list_data[r]["total_seats"]["avg"], h, const_names, out)
+        print_table(simulation.list_data[r]["total_seats"]["avg"],
+                    h, const_names, out)
 
         print("\nSeat shares")
-        print_table(simulation.list_data[r]["seat_shares"]["avg"], h, const_names, out, "{:.1%}")
+        print_table(simulation.list_data[r]["seat_shares"]["avg"],
+                    h, const_names, out, "{:.1%}")
 
         print("\nStandard errors from simulation")
 
         print("\nVotes")
-        print_table(simulation.list_data[-1]["sim_votes"]["std"], h, const_names, out, "{:.3f}")
+        print_table(simulation.list_data[-1]["sim_votes"]["std"],
+                    h, const_names, out, "{:.3f}")
 
         print("\nVote shares")
-        print_table(simulation.list_data[-1]["sim_shares"]["std"], h, const_names, out, "{:.1%}")
+        print_table(simulation.list_data[-1]["sim_shares"]["std"],
+                    h, const_names, out, "{:.1%}")
 
         print("\nConstituency seats")
-        print_table(simulation.list_data[r]["const_seats"]["std"], h, const_names, out, "{:.3f}")
+        print_table(simulation.list_data[r]["const_seats"]["std"],
+                    h, const_names, out, "{:.3f}")
 
         print("\nAdjustment seats")
-        print_table(simulation.list_data[r]["adj_seats"]["std"], h, const_names, out, "{:.3f}")
+        print_table(simulation.list_data[r]["adj_seats"]["std"],
+                    h, const_names, out, "{:.3f}")
 
         print("\nTotal seats")
-        print_table(simulation.list_data[r]["total_seats"]["std"], h, const_names, out, "{:.3f}")
+        print_table(simulation.list_data[r]["total_seats"]["std"],
+                    h, const_names, out, "{:.3f}")
 
         print("\nSeat shares")
-        print_table(simulation.list_data[r]["seat_shares"]["std"], h, const_names, out, "{:.1%}")
+        print_table(simulation.list_data[r]["seat_shares"]["std"],
+                    h, const_names, out, "{:.1%}")
 
         #print("\nVotes added to change results")
         #print_table(simulation.votes_to_change, h[:-1], const_names[:-1], out)
+
+def disp(title, value):
+    from pprint import PrettyPrinter
+    pp = PrettyPrinter(compact=False, width=80).pprint
+    print("\n" + title.upper() + ":")
+    pp(value)

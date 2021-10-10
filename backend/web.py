@@ -22,7 +22,8 @@ import util
 from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_rules, check_simulation_rules
 import voting
-import simulate as sim
+import simulate
+from util import disp
 
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
@@ -93,27 +94,28 @@ def save_file(tmpfilename, download_name):
     )
     return response
 
-def handle_election():
-    data = request.get_json(force=True)
-    data = check_input(data, ["vote_table", "rules"])
-
-    handler = ElectionHandler(data["vote_table"], data["rules"])
-    return handler
+def single_election(votes, rules):
+    result = ElectionHandler(votes, rules).elections
+    results = [election.get_results_dict() for election in result]
+    return results
 
 @app.route('/api/election/', methods=["POST"])
 def get_election_results():
     try:
-        result = handle_election().elections
+        data = request.get_json(force=True)
+        data = check_input(data, ["vote_table", "rules"])
+        results = single_election(data["vote_table"], data["rules"])
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
         print("Error-1:",message)
         return jsonify({"error": message})
-    result=[election.get_results_dict() for election in result]
-    return jsonify(result)
+    return jsonify(results)
 
 @app.route('/api/election/save/', methods=['POST'])
 def get_election_excel():
-    handler = handle_election()
+    data = request.get_json(force=True)
+    data = check_input(data, ["vote_table", "rules"])
+    handler = ElectionHandler(data["vote_table"], data["rules"])
     tmpfilename = tempfile.mktemp(prefix='election-')
     handler.to_xlsx(tmpfilename)
     date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
@@ -161,12 +163,12 @@ def save_settings():
     download_filename=f"{filename}-{date}.json"
     return save_file(tmpfilename, download_filename)
 
-@app.route('/api/settings/upload/', methods=['POST'])
-def upload_settings():
-    if 'file' not in request.files:
-        return jsonify({'error': 'must upload a file.'})
-    f = request.files['file']
-    file_content = json.load(f.stream)
+def load_settings(f):
+    if isinstance(f,str):
+        f = os.path.expanduser(f)
+        with open(f) as file: file_content = json.load(file)
+    else:
+        file_content = json.load(f.stream)
     if type(file_content) == dict and "e_settings" in file_content:
         electoral_system_list = file_content["e_settings"]
         assert "sim_settings" in file_content
@@ -195,6 +197,15 @@ def upload_settings():
         settings.append(setting)
 
     settings = check_rules(settings)
+    return settings, sim_settings
+    
+@app.route('/api/settings/upload/', methods=['POST'])
+def upload_settings():
+    if 'file' not in request.files:
+        return jsonify({'error': 'must upload a file.'})
+    f = request.files['file']
+    settings, sim_settings = load_settings(f)
+    
     return jsonify({"e_settings": settings, "sim_settings": sim_settings})
 
 @app.route('/api/votes/save/', methods=['POST'])
@@ -250,58 +261,85 @@ SIMULATION_IDX = 0
 
 def run_simulation(sid):
     global SIMULATIONS
-    SIMULATIONS[sid][1].done = False
-    print("Starting thread %s" % sid)
-    SIMULATIONS[sid][0].simulate()
-    print("Ending thread %s" % sid)
-    SIMULATIONS[sid][1].done = True
-
+    (sim, thread, _) = SIMULATIONS[sid]
+    thread.done=False
+    #print("Starting thread %s" % sid)
+    sim.simulate()
+    #print("Ending thread %s" % sid)
+    thread.done = True
 
 def cleanup_expired_simulations():
     global SIMULATIONS
-    global SIMULATION_IDX
     try:
-        for sid, sim in list(SIMULATIONS.items()):
-            if sim[2] < datetime.now():
+        for sid in SIMULATIONS:
+            expires = SIMULATIONS[sid][2]
+            if expires < datetime.now():
                 del(SIMULATIONS[sid])
     except RuntimeError:
         pass
 
-@app.route('/api/simulate/', methods=['POST'])
-def start_simulation():
+def set_up_simulation(votes, rules, sim_settings):
     global SIMULATIONS
     global SIMULATION_IDX
-
     SIMULATION_IDX += 1
-
     h = sha256()
     sidbytes = (str(SIMULATION_IDX) + ":" + str(random.randint(1, 100000000))).encode('utf-8')
     h.update(sidbytes)
     sid = h.hexdigest()
+    rulesets = []
+    for rs in rules:
+        election_rules = ElectionRules()
+        election_rules.update(rs)
+        rulesets.append(election_rules)
+    simulation_rules = simulate.SimulationRules()
+    simulation_rules.update(check_simulation_rules(sim_settings))
+    simulation = simulate.Simulation(simulation_rules, rulesets, votes)
+    cleanup_expired_simulations()
+    expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
+    # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
     thread = threading.Thread(target=run_simulation, args=(sid,))
-
+    SIMULATIONS[sid] = [simulation, thread, expires]
+    thread.start()
+    return sid
+    
+@app.route('/api/simulate/', methods=['POST'])
+def start_simulation():
+    global SIMULATIONS
+    global SIMULATION_IDX
     try:
-        simulation = set_up_simulation()
+        data = request.get_json(force=True)
+        data = check_input(data, ["vote_table", "election_rules", "simulation_rules"])
+        votes = data["vote_table"]
+        rules = data["election_rules"]
+        sim_settings = data["simulation_rules"]
+        sid = set_up_simulation(votes, rules, sim_settings)
+        return jsonify({"started": True, "sid": sid})
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
         print("Error-4", message)
         return jsonify({"started": False, "error": message})
 
-    # Simulation cache expires in 3 hours = 3*3600 = 10800 seconds
-    expires = datetime.now() + timedelta(seconds=10800)
-    SIMULATIONS[sid] = [simulation, thread, expires]
-
-    # Whenever we start a new simulation, we'll clean up any expired
-    #   simulations first:
-    cleanup_expired_simulations()
-
-    thread.start()
-    return jsonify({"started": True, "sid": sid})
-
-
-@app.route('/api/simulate/check/', methods=['GET', 'POST'])
+def monitor_simulation(sid, stop):
+    (sim, thread, _) = SIMULATIONS[sid]
+    sim.iteration -= sim.iterations_with_no_solution
+    sim_status = {
+        "done": thread.done,
+        "iteration": sim.iteration,
+        "time_left": sim.time_left,
+        "iteration_time": sim.iteration,
+        "target": sim.sim_rules["simulation_count"],
+        "results": sim.get_results_dict(),
+        "parties": sim.parties,
+        "e_rules": sim.e_rules
+    }
+    if stop:
+        sim.terminate = True
+        # thread.join() finishes the thread and sets thread.done to True
+        thread.join()
+    return sim_status
+    
+@app.route('/api/simulate/check/', methods=['POST'])
 def check_simulation():
-    global SIMULATIONS
     data = request.get_json(force=True)
     msg = ""
     if "sid" not in data:
@@ -309,77 +347,46 @@ def check_simulation():
     elif data["sid"] not in SIMULATIONS:
         msg = "Please supply a valid SID."
     else:
-        # print(f"{SIMULATIONS=}")
-        # print(f'{data["sid"] in SIMULATIONS=}')
-        # print(f'{SIMULATIONS[data["sid"]]=}')
-        simulation, thread, expiry = SIMULATIONS[data["sid"]]
-        #if thread.done:
-        #    del(SIMULATIONS[data["sid"]])
-        if not hasattr(simulation,"iteration_time"):
-            print("no iteration_time in result")
-            simulation.iteration_time = 0
         try:
-            #print("simulation contents:")
-            #print(simulation.__dict__.keys())
-            simulation.iteration -= simulation.iterations_with_no_solution
-            return_dict = {
-                "done": thread.done,
-                "iteration": simulation.iteration,
-                "time_left": simulation.time_left,
-                "iteration_time": simulation.iteration,
-                "target": simulation.sim_rules["simulation_count"],
-                "results": simulation.get_results_dict(),
-                "parties": simulation.parties,
-                "e_rules": simulation.e_rules
-            }
+            sid = data["sid"]
+            stop = data["stop"]
+            sim_status = monitor_simulation(sid, stop)
+                
         except Exception as e:           
             msg = "Error in check_simulation: " + str(e)
     if len(msg) > 0:
         print("Error; message = ", msg)
         return jsonify({"error": msg})
     else:
-        return jsonify(return_dict)
+        return jsonify(sim_status)
 
-@app.route('/api/simulate/stop/', methods=['GET', 'POST'])
-def stop_simulation():
-    data = request.get_json(force=True)
-    if "sid" not in data:
-        return jsonify({"error": "No simulation id supplied to backend."})
-    if data["sid"] not in SIMULATIONS:
-        return jsonify({"error": "Unknown simulation id supplied to backend."})
-    simulation, thread, expiry = SIMULATIONS[data["sid"]]
-
-    simulation.terminate = True
-    thread_done = thread.done # Get done status (thread.join() finishes the thread and
-                              # sets thread.done to True
-    thread.join()
-    #if thread.done:
-    #    del(SIMULATIONS[data["sid"]])
-
-    return jsonify({
-        "done": thread_done,
-        "iteration": simulation.iteration,
-        "target": simulation.sim_rules["simulation_count"],
-        "results": simulation.get_results_dict()
-    })
-
-def set_up_simulation():
-    # TODO make following settable in vue
-    data = request.get_json(force=True)
-    data = check_input(data,
-        ["vote_table", "election_rules", "simulation_rules"])
-    vote_table = data["vote_table"]
-    rulesets = []
-    for rs in data["election_rules"]:
-        election_rules = ElectionRules()
-        election_rules.update(rs)
-        rulesets.append(election_rules)
-    simulation_rules = sim.SimulationRules()
-    simulation_rules.update(check_simulation_rules(data["simulation_rules"]))
-    simulation = sim.Simulation(simulation_rules, rulesets, vote_table)
-    return simulation
-
-
+# def end_simulation(sid):
+#     (sim, thread, _) = SIMULATIONS[sid]
+#     sim.terminate = True
+#     done = thread.done
+#     # thread.join() finishes the thread and sets thread.done to True
+#     thread.join()
+#     disp("iteration", sim.iteration)
+#     disp("sim_rules", sim.sim_rules)
+#     disp("results_dict", sim.results_dict)
+#     return sim, done
+    
+# @app.route('/api/simulate/stop/', methods=['GET', 'POST'])
+# def stop_simulation():
+#     data = request.get_json(force=True)
+#     if "sid" not in data:
+#         return jsonify({"error": "No simulation id supplied to backend."})
+#     elif data["sid"] not in SIMULATIONS:
+#         return jsonify({"error": "Unknown simulation id supplied to backend."})
+#     else:
+#         sim, thread_done = end_simulation(data["sid"])
+#         return jsonify({
+#             "done": thread_done,
+#             "iteration": sim.iteration,
+#             "target": sim.sim_rules["simulation_count"],
+#             "results": sim.get_results_dict()
+#         })
+    
 @app.route('/api/script/', methods=["POST"])
 def handle_api():
     script = request.get_json(force=True)
@@ -401,6 +408,10 @@ def get_presets_list():
     presets_dict = get_presets_dict()
     return jsonify(presets_dict)
 
+def load_preset_votes(file):
+    res = util.load_votes_from_stream(open('../data/elections/%s' % file, "r"), file)
+    return res
+
 @app.route('/api/presets/load/', methods=['POST'])
 def get_preset():
     qv = request.get_json(force=True)
@@ -410,7 +421,7 @@ def get_preset():
     # TODO: This is silly but it paves the way to a real database
     for p in prs:
         if p['id'] == qv['eid']:
-            res = util.load_votes_from_stream(open('../data/elections/%s' % p['filename'], "r"), p['filename'])
+            res = load_preset_votes(p['filename'])
             return jsonify(res)
 
 @app.route('/api/simdownload/', methods=['GET','POST'])
@@ -418,7 +429,7 @@ def save_simulation():
     data = request.get_json(force=True)
     sid = data["sid"]
     tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
-    (simulation, thread, expiry) = SIMULATIONS[sid]
+    (simulation, thread, _) = SIMULATIONS[sid]
     simulation.to_xlsx(tmpfilename)
     date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
     download_name = f"simulation-{date}.xlsx"
@@ -427,7 +438,7 @@ def save_simulation():
 def get_capabilities_dict(constituencies):
     return {
         "election_rules": ElectionRules(constituencies),
-        "simulation_rules": sim.SimulationRules(),
+        "simulation_rules": simulate.SimulationRules(),
         "capabilities": {
             "rules": dictionaries.RULE_NAMES,
             "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
@@ -463,7 +474,7 @@ def run_script(rules):
         return voting.run_script_election(rules)
 
     else:
-        return sim.run_script_simulation(rules)
+        return simulate.run_script_simulation(rules)
 
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"

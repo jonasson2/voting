@@ -24,7 +24,7 @@
         size="lg"
         variant="danger"
         :disabled="simulation_done"
-        @click="stop_simulation"
+        @click="checkstatus(true)"
         >
         Stop simulation
       </b-button>
@@ -156,39 +156,43 @@ export default {
       this.simulation_rules = rules
       this.$emit('update-main-rules', rules)
     },
-    stop_simulation: function() {
-      console.log("Stopping simulation")
-      this.$http.post('/api/simulate/stop/', {
-        sid: this.sid
-      }).then(response => {
-        if (response.body.error) {
-          console.log("Setting server errormsg 1")
-          this.server.errormsg = response.body.error;
-          this.server.waitingForData = false;
-        } else {
-          console.log("Simulation stopped");
-          this.server.errormsg = '';
-          this.server.error = false;
-          this.simulation_done = response.body.done;
-          this.current_iteration = response.body.iteration;
-          let remaining = response.body.iteration_time
-          this.iteration_time = response.body.iteration_time;
-          this.results = response.body.results;
-          this.server.waitingForData = false;
-          if (this.simulation_done) {
-            window.clearInterval(this.checktimer);
-          }
-        }
-      }, response => {
-        console.log("Setting server error 1")
-        this.server.error = true;
-        this.server.waitingForData = false;
-      });
+    check_simulation: function() {
+      this.checkstatus(false)
     },
-    checkstatus: function() {
+    // stop_simulation: function() {
+    //   console.log("Stopping simulation")
+    //   this.$http.post('/api/simulate/stop/', {
+    //     sid: this.sid
+    //   }).then(response => {
+    //     if (response.body.error) {
+    //       console.log("Setting server errormsg 1")
+    //       this.server.errormsg = response.body.error;
+    //       this.server.waitingForData = false;
+    //     } else {
+    //       console.log("Simulation stopped");
+    //       this.server.errormsg = '';
+    //       this.server.error = false;
+    //       this.simulation_done = response.body.done;
+    //       this.current_iteration = response.body.iteration;
+    //       let remaining = response.body.iteration_time
+    //       this.iteration_time = response.body.iteration_time;
+    //       this.results = response.body.results;
+    //       this.server.waitingForData = false;
+    //       if (this.simulation_done) {
+    //         window.clearInterval(this.checktimer);
+    //       }
+    //     }
+    //   }, response => {
+    //     console.log("Setting server error 1")
+    //     this.server.error = true;
+    //     this.server.waitingForData = false;
+    //   });
+    // },
+    checkstatus: function(stop) {
       this.inflight++;
       this.$http.post('/api/simulate/check/', {
-        sid: this.sid
+        sid: this.sid,
+        stop: stop
       }).then(response => {
         this.inflight--;
         if (response.body.error) {
@@ -242,7 +246,7 @@ export default {
           this.simulation_done = !response.body.started;
           this.server.waitingForData = false;
           // 300 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.checkstatus, 300); // was 300
+          this.checktimer = window.setInterval(this.check_simulation, 300);
         }
       }, response => {
         console.log("Setting server error 3")
