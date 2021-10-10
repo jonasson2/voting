@@ -75,7 +75,7 @@
     </b-modal>
 
     <b-modal
-      size="lg"
+      size="xl"
       id="modalpreset"
       ref="modalpresetref"
       title="Load preset"

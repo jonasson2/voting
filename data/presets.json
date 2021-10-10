@@ -1,69 +1,76 @@
 [
   {
     "id": 1,
+    "name": "2 by 2 example",
+    "country": "-",
+    "year": "-",
+    "filename": "2-by-2-example.csv"
+  },
+  {
+    "id": 2,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2003",
     "filename": "iceland_2003_hagstofan.csv"
   },
   {
-    "id": 2,
+    "id": 3,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2007",
     "filename": "iceland_2007_hagstofan.csv"
   },
   {
-    "id": 3,
+    "id": 4,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2009",
     "filename": "iceland_2009_hagstofan.csv"
   },
   {
-    "id": 4,
+    "id": 5,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2013",
     "filename": "iceland_2013_hagstofan.csv"
   },
   {
-    "id": 5,
+    "id": 6,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2016",
     "filename": "iceland_2016_hagstofan.csv"
   },
   {
-    "id": 6,
+    "id": 7,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2017",
     "filename": "iceland_2017_hagstofan.csv"
   },
   {
-    "id": 7,
+    "id": 8,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2021 (before recount)",
     "filename": "iceland-2021-first.csv"
   },
   {
-    "id": 8,
+    "id": 9,
     "name": "Alþingi elections",
     "country": "Iceland",
     "year": "2021",
     "filename": "iceland-2021.csv"
   },
   {
-    "id": 9,
+    "id": 10,
     "name": "Finland elections",
     "country": "Finland",
     "year": "2015",
     "filename": "finland_2015.csv"
   },
   {
-    "id": 10,
+    "id": 11,
     "name": "21st century average",
     "country": "Iceland",
     "year": "2003–2017",

@@ -30,7 +30,7 @@
       </b-button>
     </span>
   </div>
-  <div class="row" style="margin-bottom: 0.7em;
+  <div class="row" style="margin-bottom: 0.1em;
                           margin-left:20px; margin-right:20px">
     <b-col cols="12">
       <span v-if="!simulation_done">
@@ -159,35 +159,6 @@ export default {
     check_simulation: function() {
       this.checkstatus(false)
     },
-    // stop_simulation: function() {
-    //   console.log("Stopping simulation")
-    //   this.$http.post('/api/simulate/stop/', {
-    //     sid: this.sid
-    //   }).then(response => {
-    //     if (response.body.error) {
-    //       console.log("Setting server errormsg 1")
-    //       this.server.errormsg = response.body.error;
-    //       this.server.waitingForData = false;
-    //     } else {
-    //       console.log("Simulation stopped");
-    //       this.server.errormsg = '';
-    //       this.server.error = false;
-    //       this.simulation_done = response.body.done;
-    //       this.current_iteration = response.body.iteration;
-    //       let remaining = response.body.iteration_time
-    //       this.iteration_time = response.body.iteration_time;
-    //       this.results = response.body.results;
-    //       this.server.waitingForData = false;
-    //       if (this.simulation_done) {
-    //         window.clearInterval(this.checktimer);
-    //       }
-    //     }
-    //   }, response => {
-    //     console.log("Setting server error 1")
-    //     this.server.error = true;
-    //     this.server.waitingForData = false;
-    //   });
-    // },
     checkstatus: function(stop) {
       this.inflight++;
       this.$http.post('/api/simulate/check/', {
@@ -201,15 +172,14 @@ export default {
           this.server.errormsg = response.body.error;
           this.server.waitingForData = false;
         } else {
+          let status = response.body.status
           this.server.errormsg = '';
           this.server.error = false;
-          this.simulation_done = response.body.done;
-          this.current_iteration = response.body.iteration;
-          this.iteration_time = response.body.iteration_time;
-          this.time_left = response.body.time_left;
+          this.simulation_done = status.done;
+          this.current_iteration = status.iteration;
+          this.iteration_time = status.iteration_time;
+          this.time_left = status.time_left;
           this.results = response.body.results;
-          this.results.parties = response.body.parties;
-          this.results.e_rules = response.body.e_rules;
           this.server.waitingForData = false;
           if (this.simulation_done) {
             window.clearInterval(this.checktimer);
@@ -245,8 +215,8 @@ export default {
           this.sid = response.body.sid;
           this.simulation_done = !response.body.started;
           this.server.waitingForData = false;
-          // 300 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.check_simulation, 300);
+          // 250 ms between updating simulation progress bar
+          this.checktimer = window.setInterval(this.check_simulation, 250);
         }
       }, response => {
         console.log("Setting server error 3")

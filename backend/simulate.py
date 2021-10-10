@@ -16,6 +16,17 @@ from electionHandler import ElectionHandler
 
 logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
+def hms(sec):
+    sec = round(sec)
+    min = sec // 60; sec %= 60
+    hr = min // 60;  min %= 60
+    d = hr // 24; hr %= 24
+    s = f"{min:02}:{sec:02}"
+    if hr > 0: s = f"{hr:02}" + s
+    if d == 1: s = "1 day + " + s
+    elif d > 1: s = f"{d} days + " + s
+    return s
+
 def error(avg, ref):
     """
     Compare average of generated votes to reference votes to test the
@@ -85,6 +96,7 @@ def votes_to_change(election):
             votes[c][p] = ref_votes[c][p]
 
     return votes_to_change
+
 
 
 class SimulationRules(Rules):
@@ -484,17 +496,20 @@ class Simulation:
         """Calculate averages and variances of various quality measures."""
         for ruleset in range(self.num_rulesets):
             for measure in MEASURES.keys():
-                self.analyze_measure(ruleset, measure)
+                pass
+                # self.analyze_measure(ruleset, measure) # buggy
             num_constituencies = len(self.e_rules[ruleset]["constituencies"])
             for c in range(1+num_constituencies):
                 for p in range(1+self.num_parties):
                     for measure in LIST_MEASURES.keys():
-                        self.analyze_list(ruleset, measure, c, p)
-        self.analyze_measure(-1, "time")
+                        pass
+                        #self.analyze_list(ruleset, measure, c, p)
+        # self.analyze_measure(-1, "time") # there is a bug in here 
         for c in range(1+self.num_constituencies):
             for p in range(1+self.num_parties):
                 for measure in VOTE_MEASURES.keys():
-                    self.analyze_list(-1, measure, c, p)
+                    pass
+                    #self.analyze_list(-1, measure, c, p)
 
     def simulate(self):
         """Simulate many elections."""
@@ -505,8 +520,7 @@ class Simulation:
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
         for i in range(ntot):
-            round_start = datetime.now()
-            if self.terminate:
+            if self.terminate and i > 0:
                 break
             self.iteration = i + 1
             votes = next(gen)
@@ -516,16 +530,19 @@ class Simulation:
                 self.iterations_with_no_solution += 1
                 continue
             round_end = datetime.now()
-            t = (round_end - begin_time)
-            self.time_left = (t.seconds + t.microseconds/1e6)*(ntot - i)/ntot
-            self.iteration_time = round_end - round_start
-            self.aggregate_measure(-1, "time", self.iteration_time.total_seconds())
+            elapsed = (round_end - begin_time).total_seconds()
+            time_pr_iter = elapsed/(i+1)
+            self.time_left = hms(time_pr_iter*(ntot - i))
+            self.iteration_time = time_pr_iter
+            self.aggregate_measure(-1, "time", self.iteration_time)
         self.analysis()
         self.test_generated()
 
-    def get_results_dict(self):
+    def get_results(self):
         self.analysis()
         return {
+            "e_rules": self.e_rules,
+            "parties": self.parties,
             "testnames": [rules["name"] for rules in self.e_rules],
             "methods": [rules["adjustment_method"] for rules in self.e_rules],
             "measures": MEASURES,

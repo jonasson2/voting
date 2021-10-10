@@ -326,17 +326,15 @@ def monitor_simulation(sid, stop):
         "done": thread.done,
         "iteration": sim.iteration,
         "time_left": sim.time_left,
-        "iteration_time": sim.iteration,
+        "iteration_time": sim.iteration_time,
         "target": sim.sim_rules["simulation_count"],
-        "results": sim.get_results_dict(),
-        "parties": sim.parties,
-        "e_rules": sim.e_rules
     }
+    sim_results = sim.get_results()
     if stop:
         sim.terminate = True
         # thread.join() finishes the thread and sets thread.done to True
         thread.join()
-    return sim_status
+    return sim_status, sim_results
     
 @app.route('/api/simulate/check/', methods=['POST'])
 def check_simulation():
@@ -350,43 +348,15 @@ def check_simulation():
         try:
             sid = data["sid"]
             stop = data["stop"]
-            sim_status = monitor_simulation(sid, stop)
-                
+            (status, results) = monitor_simulation(sid, stop)
         except Exception as e:           
             msg = "Error in check_simulation: " + str(e)
     if len(msg) > 0:
         print("Error; message = ", msg)
         return jsonify({"error": msg})
     else:
-        return jsonify(sim_status)
+        return jsonify({"status": status, "results": results})
 
-# def end_simulation(sid):
-#     (sim, thread, _) = SIMULATIONS[sid]
-#     sim.terminate = True
-#     done = thread.done
-#     # thread.join() finishes the thread and sets thread.done to True
-#     thread.join()
-#     disp("iteration", sim.iteration)
-#     disp("sim_rules", sim.sim_rules)
-#     disp("results_dict", sim.results_dict)
-#     return sim, done
-    
-# @app.route('/api/simulate/stop/', methods=['GET', 'POST'])
-# def stop_simulation():
-#     data = request.get_json(force=True)
-#     if "sid" not in data:
-#         return jsonify({"error": "No simulation id supplied to backend."})
-#     elif data["sid"] not in SIMULATIONS:
-#         return jsonify({"error": "Unknown simulation id supplied to backend."})
-#     else:
-#         sim, thread_done = end_simulation(data["sid"])
-#         return jsonify({
-#             "done": thread_done,
-#             "iteration": sim.iteration,
-#             "target": sim.sim_rules["simulation_count"],
-#             "results": sim.get_results_dict()
-#         })
-    
 @app.route('/api/script/', methods=["POST"])
 def handle_api():
     script = request.get_json(force=True)
