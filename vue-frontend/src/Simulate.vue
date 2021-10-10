@@ -40,7 +40,7 @@
     <b-col cols="12">
       <b-progress
         :value="current_iteration"
-        :max="0"
+        :max="simulation_rules.simulation_count"
         :animated="!simulation_done"
         :variant="simulation_done ? 'success':'primary'"
         show-value>
