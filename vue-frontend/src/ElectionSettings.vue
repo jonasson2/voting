@@ -200,7 +200,7 @@ export default {
       this.$emit('update-simulation-rules', r.simulation_rules)
       this.doneCreating = true;
     }, response => {
-      this.serverError = true;
+      this.$emit("server-error", "server error in Election settings")
     })
   }
 }

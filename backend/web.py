@@ -326,7 +326,7 @@ def monitor_simulation(sid, stop):
         "done": thread.done,
         "iteration": sim.iteration,
         "time_left": sim.time_left,
-        "iteration_time": sim.iteration_time,
+        "total_time": sim.total_time,
         "target": sim.sim_rules["simulation_count"],
     }
     sim_results = sim.get_results()
@@ -378,8 +378,9 @@ def get_presets_list():
     presets_dict = get_presets_dict()
     return jsonify(presets_dict)
 
-def load_preset_votes(file):
-    res = util.load_votes_from_stream(open('../data/elections/%s' % file, "r"), file)
+def load_votes(file, preset=True):
+    if preset: file = "../data/elections/" + file
+    res = util.load_votes_from_stream(open(file, "r"), file)
     return res
 
 @app.route('/api/presets/load/', methods=['POST'])
@@ -391,7 +392,7 @@ def get_preset():
     # TODO: This is silly but it paves the way to a real database
     for p in prs:
         if p['id'] == qv['eid']:
-            res = load_preset_votes(p['filename'])
+            res = load_votes(p['filename'])
             return jsonify(res)
 
 @app.route('/api/simdownload/', methods=['GET','POST'])

@@ -5,24 +5,24 @@
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
   </b-navbar>
   <!-- <b-alert :show="server.waitingForData">Loading...</b-alert> -->
-  <b-alert
-    :show="server.error"
-    dismissible
-    @dismissed="server.error=false"
-    variant="danger"
-    >
-    Server error. Try again in a few seconds...
-  </b-alert>
-  <!-- TODO: Sýna þess villu, en ekki bara blikka með henni. -->
-  <!-- Auk þess kemur villa ("constituencies") sem á ekki að koma. -->
   <!-- <b-alert -->
-  <!--   :show="server.errormsg != ''" -->
+  <!--   :show="server.error" -->
   <!--   dismissible -->
-  <!--   @dismissed="server.errormsg=''" -->
+  <!--   @dismissed="server.error=false" -->
   <!--   variant="danger" -->
   <!--   > -->
-    <!--   Server error. {{server.errormsg}} -->
-    <!-- </b-alert> -->
+  <!--   Server error. Try again in a few seconds... -->
+  <!-- </b-alert> -->
+  <!-- TODO: Sýna þess villu, en ekki bara blikka með henni. -->
+  <!-- Auk þess kemur villa ("constituencies") sem á ekki að koma. -->
+  <b-alert
+    :show="server.errormsg != ''"
+    dismissible
+    @dismissed="server.errormsg=''"
+    variant="danger"
+    >
+    Server error. {{server.errormsg}}
+  </b-alert>
   <b-tabs
     active-nav-item-class="font-weight-bold"
     card
@@ -31,18 +31,18 @@
       <!-- <p>Specify reference votes and seat numbers</p> -->
       <VoteMatrix
         :vote_sums="vote_sums"
+        @server-error="serverError"
         @download-file="downloadFile"
-        @update-vote-table="updateVoteTable"
-        @server-error="serverError">
+        @update-vote-table="updateVoteTable">
       </VoteMatrix>
     </b-tab>
     <b-tab title="Electoral systems">
       <!-- <p>Define one or several electoral systems by specifying apportionment -->
         <!--   rules and modifying seat numbers</p> -->
       <ElectoralSystems
-        :server="server"
         :main_rules="rules"
         :constituencies="constituencies"
+        @server-error="serverError"
         @update-main-election-rules="updateMainElectionRules"
         @update-main-simulation-rules="updateSimulationRules"
         @download-file="downloadFile"
@@ -53,10 +53,10 @@
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
       <Election
         ref="ElectionRef"
-        :server="server"
         :vote_table="vote_table"
         :main_election_rules="rules.election_rules"
         :results="results"
+        @server-error="serverError"
         @download-file="downloadFile"
         @update-rules="updateMainElectionRules">
       </Election>
@@ -67,6 +67,7 @@
         :server="server"
         :main_rules="rules"
         :vote_table="vote_table"
+        @server-error="serverError"
         @update-main-rules="updateSimulationRules"
         @download-file="downloadFile">
       </Simulate>

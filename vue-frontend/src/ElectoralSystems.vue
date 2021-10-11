@@ -41,24 +41,34 @@
     </b-form-file>
   </b-modal>
   <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
+    <!-- <b-button-group class="mx-1"> -->
+    <!--   <b-button -->
+    <!--     class="mb-10" -->
+    <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
+    <!--     title="Remove all electoral systems" -->
+    <!--     @click="deleteAllElectionRules()" -->
+    <!--     > -->
+    <!--     Clear -->
+    <!--   </b-button> -->
+    <!-- </b-button-group> -->
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Remove all electoral systems"
-        @click="deleteAllElectionRules()"
+        title = "Upload electoral system settings from local file"
+        v-b-modal.modaluploadesettingsreplace
         >
-        Clear
+        Load from file
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title = "Add electoral systems by uploading settings from local file"
+        title = "Append electoral systems by uploading settings from local file"
         v-b-modal.modaluploadesettings
         >
-        Add from file
+        Append from file
       </b-button>
     </b-button-group>
     <!-- <b-button-group class="mx-1"> -->
@@ -141,11 +151,6 @@ export default {
   },
   
   props: {
-    "server": {default: {
-      waitingForData: false,
-      errormsg: '',
-      error: false,
-    }},
     "main_rules": {},
     // "main_election_rules": {default: [{}]},
     // "simulation_rules": {default: [{}]},

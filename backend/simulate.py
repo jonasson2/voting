@@ -137,7 +137,7 @@ class Simulation:
         self.var_coeff = self.sim_rules["distribution_parameter"]
         self.iteration = 0
         self.terminate = False
-        self.iteration_time = timedelta(0)
+        self.total_time = timedelta(0)
         self.time_left = 0
         self.iterations_with_no_solution = 0
         self.data = []
@@ -533,9 +533,9 @@ class Simulation:
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i+1)
             self.time_left = hms(time_pr_iter*(ntot - i))
-            self.iteration_time = time_pr_iter
-            self.aggregate_measure(-1, "time", self.iteration_time)
+            self.total_time = hms(elapsed)
         self.analysis()
+        self.aggregate_measure(-1, "time", elapsed)
         self.test_generated()
 
     def get_results(self):

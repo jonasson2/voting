@@ -33,18 +33,24 @@
   <div class="row" style="margin-bottom: 0.1em;
                           margin-left:20px; margin-right:20px">
     <b-col cols="12">
-      <span v-if="!simulation_done">
-        Time remaining: {{time_left}} s
-      </span>
+      <b-progress
+        height="30px"
+        :max="simulation_rules.simulation_count"
+        :animated="!simulation_done">
+        <b-progress-bar
+          :variant="simulation_done ? 'success':'primary'"
+          :value="current_iteration">
+          <span style="font-size:150%">{{current_iteration}}</span>
+        </b-progress-bar>
+      </b-progress>
     </b-col>
     <b-col cols="12">
-      <b-progress
-        :value="current_iteration"
-        :max="simulation_rules.simulation_count"
-        :animated="!simulation_done"
-        :variant="simulation_done ? 'success':'primary'"
-        show-value>
-      </b-progress>
+      <span v-if="!simulation_done">
+        time remaining: {{time_left}}
+      </span>
+      <span v-if="simulation_done">
+        time remaining: {{time_left}}, simulation time: {{total_time}}
+      </span>
     </b-col>
     <b-col cols="2">
       
@@ -125,7 +131,6 @@ import SimulationData from './components/SimulationData.vue'
 
 export default {
   props: {
-    "server": {},
     "main_rules": {},
     "vote_table": {},
     // "election_rules": {},
@@ -144,7 +149,7 @@ export default {
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
-      iteration_time: 0,
+      total_time: 0,
       inflight: 0,
       results: { measures: [], methods: [], data: [], parties: [], e_rules: [] },
     }
@@ -167,30 +172,21 @@ export default {
       }).then(response => {
         this.inflight--;
         if (response.body.error) {
-          console.log("Setting server errormsg 2")
-          console.log("errormsg:", response.body.error);
-          this.server.errormsg = response.body.error;
-          this.server.waitingForData = false;
+          this.$emit("server-error", response.body.error)
         } else {
           let status = response.body.status
-          this.server.errormsg = '';
-          this.server.error = false;
           this.simulation_done = status.done;
           this.current_iteration = status.iteration;
-          this.iteration_time = status.iteration_time;
+          this.total_time = status.total_time;
           this.time_left = status.time_left;
           this.results = response.body.results;
-          this.server.waitingForData = false;
           if (this.simulation_done) {
             window.clearInterval(this.checktimer);
           }
         }
+        // this.server.waitingForData = false;
       }, response => {
-        console.log("Setting server error 2")
-        console.log("response.body", response.body)
-        this.server.error = true;
-        this.server.errormsg = 
-        this.server.waitingForData = false;
+        this.$emit("server-error", response.body)
       });
     },
     recalculate: function() {
@@ -198,30 +194,24 @@ export default {
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
-      this.server.waitingForData = true;
+      //this.server.waitingForData = true;
       this.$http.post('/api/simulate/', {
         vote_table: this.vote_table,
         election_rules: this.election_rules,
         simulation_rules: this.simulation_rules,
       }).then(response => {
         if (response.body.error) {
-          console.log("Setting server errormsg 3")
-          this.server.error = true;
-          this.server.errormsg = response.body.error;
-          this.server.waitingForData = false;
+          this.$emit("server-error", response.body.error)          
         } else {
-          this.server.errormsg = '';
-          this.server.error = false;
           this.sid = response.body.sid;
           this.simulation_done = !response.body.started;
-          this.server.waitingForData = false;
           // 250 ms between updating simulation progress bar
           this.checktimer = window.setInterval(this.check_simulation, 250);
         }
+        //this.server.waitingForData = false;
       }, response => {
-        console.log("Setting server error 3")
-        this.server.error = true;
-        this.server.waitingForData = false;
+        this.$emit("server-error", response.body)          
+        //this.server.waitingForData = false;
       });
     },
     

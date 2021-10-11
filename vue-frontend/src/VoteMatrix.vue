@@ -315,10 +315,10 @@ export default {
   created: function () {
     this.$http.get("/api/presets").then(
       (response) => {
-        this.presets = response.body;
+        console.log("response.body", response.body)
       },
       (response) => {
-        this.$emit("server-error", response.body);
+        console.log("Error, response.body", response.body)
       }
     );
     this.$emit("update-vote-table", this.matrix, false);
@@ -382,9 +382,14 @@ export default {
       this.$emit("download-file", promise);
     },
     loadPreset: function (eid) {
-      this.$http.post("/api/presets/load/", { eid: eid }).then((response) => {
-        this.matrix = response.data;
-      });
+      this.$http.post("/api/presets/load/", { eid: eid }).then(
+        (response) => {
+          this.matrix = response.data;
+        },
+        (response) => {
+          this.$emit("server-error", "Illegal format of presets file")
+        }
+      );
     },
     uploadVotes: function (evt) {
       if (!this.uploadfile) {
@@ -392,9 +397,15 @@ export default {
       }
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.$http.post("/api/votes/upload/", formData).then((response) => {
-        this.matrix = response.data;
-      });
+      this.$http.post("/api/votes/upload/", formData).then(
+        (response) => {
+          console.log("response", response)
+          this.matrix = response.data;
+        },
+        (response) => {
+          this.$emit("server-error", "Cannot upload votes from this file")
+        }
+      );
     },
     pasteCSV: function (evt) {
       if (!this.paste.csv) {

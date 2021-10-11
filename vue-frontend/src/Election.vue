@@ -56,7 +56,6 @@ import ResultDemonstration from './components/ResultDemonstration.vue'
 
 export default {
   props: [
-    "server",
     "vote_table",
     "main_election_rules",
     "results"
