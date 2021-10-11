@@ -3,7 +3,7 @@
 from electionRules import ElectionRules
 from voting import Election
 from table_util import add_totals
-from input_util import check_vote_table, check_rules
+from input_util import check_vote_table, check_systems
 from excel_util import elections_to_xlsx
 
 class ElectionHandler:
@@ -13,7 +13,7 @@ class ElectionHandler:
         on a common vote table.
     """
     def __init__(self, vote_table, election_rules_list):
-        self.election_rules_list = check_rules(election_rules_list)
+        self.election_rules_list = check_systems(election_rules_list)
         self.vote_table = check_vote_table(vote_table)
         self.name = self.vote_table["name"]
         self.parties = self.vote_table["parties"]

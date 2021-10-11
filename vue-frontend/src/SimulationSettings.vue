@@ -118,11 +118,11 @@
 export default {
   props: [
     "constituencies",
-    "simulation_rules",
+    "simul_settings",
   ],
   data: function () {
     return {
-      rules: this.simulation_rules,
+      rules: this.simul_settings,
       doneCreating: false,
       capabilities: {},
       selected: '',
@@ -154,9 +154,9 @@ export default {
       this.$http.post('/api/capabilities', {}).then(response => {
         console.log("XXXXXXXXXXXXXXXXXXX")
         this.capabilities = response.body.capabilities;
-        // console.log("sim-rules =",response.body.simulation_rules)
-        this.rules = response.body.simulation_rules
-        this.$emit('update-rules', response.body.simulation_rules);
+        // console.log("sim-rules =",response.body.simul_settings)
+        this.rules = response.body.simul_settings
+        this.$emit('update-rules', response.body.simul_settings);
         this.doneCreating = true;
       }, response => {
         this.serverError = true;

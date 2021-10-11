@@ -117,12 +117,12 @@ export default {
       // and electionRules.py for the member variables of a rule
       rules: {
         election_rules: [{}],
-        simulation_rules: {}
+        simul_settings: {}
       },
       activeTabIndex: 0,
       uploadfile: null,
       results: {},
-      // simulation_rules: {
+      // simul_settings: {
       //   simulation_count: 0,
       //   gen_method: "",
       //   distribution_parameter: 0,
@@ -140,8 +140,8 @@ export default {
     },
     updateSimulationRules: function(rules) {
       console.log("updateSimulationRules in Main")
-      this.rules.simulation_rules = rules;
-      console.log("this.rules.simulation_rules=", this.rules.simulation_rules)
+      this.rules.simul_settings = rules;
+      console.log("this.rules.simul_settings=", this.rules.simul_settings)
     },
     updateVoteTable: function(table) {
       console.log("Updating vote table")
@@ -181,7 +181,7 @@ export default {
         url: "/api/settings/save",
         data: {
           e_settings: this.rules.election_rules,
-          sim_settings: this.rules.simulation_rules
+          sim_settings: this.rules.simul_settings
         },
         responseType: "arraybuffer",
       });

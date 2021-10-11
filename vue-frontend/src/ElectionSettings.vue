@@ -197,7 +197,7 @@ export default {
         console.log("emitting to main")
         this.$emit('update-single-rules', r.election_rules, this.rulesidx);
       }
-      this.$emit('update-simulation-rules', r.simulation_rules)
+      this.$emit('update-simulation-rules', r.simul_settings)
       this.doneCreating = true;
     }, response => {
       this.$emit("server-error", "server error in Election settings")

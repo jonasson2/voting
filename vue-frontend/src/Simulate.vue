@@ -3,7 +3,7 @@
   <h3>Simulation settings</h3>
   <SimulationSettings
     :constituencies="vote_table.constituencies"
-    :simulation_rules="simulation_rules"
+    :simul_settings="simul_settings"
     @update-rules="updateSimulationRules">
   </SimulationSettings>
   
@@ -35,7 +35,7 @@
     <b-col cols="12">
       <b-progress
         height="30px"
-        :max="simulation_rules.simulation_count"
+        :max="simul_settings.simulation_count"
         :animated="!simulation_done">
         <b-progress-bar
           :variant="simulation_done ? 'success':'primary'"
@@ -134,7 +134,7 @@ export default {
     "main_rules": {},
     "vote_table": {},
     // "election_rules": {},
-    // "simulation_rules": {},
+    // "simul_settings": {},
   },
   components: {
     ResultMatrix,
@@ -145,7 +145,7 @@ export default {
   data: function() {
     return {
       election_rules: this.main_rules.election_rules,
-      simulation_rules: this.main_rules.simulation_rules,
+      simul_settings: this.main_rules.simul_settings,
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
@@ -158,7 +158,7 @@ export default {
     updateSimulationRules: function(rules) {
       // console.log("Updating rules")
       // console.log("rules", rules)
-      this.simulation_rules = rules
+      this.simul_settings = rules
       this.$emit('update-main-rules', rules)
     },
     check_simulation: function() {
@@ -198,7 +198,7 @@ export default {
       this.$http.post('/api/simulate/', {
         vote_table: this.vote_table,
         election_rules: this.election_rules,
-        simulation_rules: this.simulation_rules,
+        simul_settings: this.simul_settings,
       }).then(response => {
         if (response.body.error) {
           this.$emit("server-error", response.body.error)          

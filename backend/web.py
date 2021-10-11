@@ -16,12 +16,12 @@ from electionRules import ElectionRules
 from electionHandler import ElectionHandler
 import util
 from excel_util import save_votes_to_xlsx
-from input_util import check_input, check_vote_table, check_rules
-from input_util import check_simulation_rules
+from input_util import check_input, check_vote_table, check_systems
+from input_util import check_simul_settings
 import voting
 import simulate
 from util import disp
-from noweb import load_votes, load_settings, single_election
+from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, SIMULATIONS
 
 class CustomFlask(Flask):
@@ -115,7 +115,7 @@ def api_settings_save():
 
     settings = data["e_settings"]
     if type(settings) != list: settings = [settings]
-    settings = check_rules(settings)
+    settings = check_systems(settings)
 
     #no need to expose more than the following keys
     keys = [
@@ -138,7 +138,7 @@ def api_settings_save():
 
     file_content = {
         "e_settings": electoral_system_list,
-        "sim_settings": check_simulation_rules(data["sim_settings"]),
+        "sim_settings": check_simul_settings(data["sim_settings"]),
     }
 
     tmpfilename = tempfile.mktemp(prefix='e_settings-')
@@ -154,8 +154,7 @@ def api_settings_upload():
     if 'file' not in request.files:
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
-    settings, sim_settings = load_settings(f)
-    
+    settings, sim_settings = load_systems(f)
     return jsonify({"e_settings": settings, "sim_settings": sim_settings})
 
 @app.route('/api/votes/save/', methods=['POST'])
@@ -183,6 +182,7 @@ def api_votes_upload():
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
     res = util.load_votes_from_stream(f.stream, f.filename)
+    print("res=",res)
     return jsonify(res)
 
 @app.route('/api/votes/paste/', methods=['POST'])
@@ -209,11 +209,11 @@ def api_votes_paste():
 def api_simulate():
     try:
         data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "election_rules", "simulation_rules"])
+        data = check_input(data, ["vote_table", "election_rules", "simul_settings"])
         votes = data["vote_table"]
-        rules = data["election_rules"]
-        sim_settings = data["simulation_rules"]
-        sid = start_simulation(votes, rules, sim_settings)
+        systems = data["election_rules"]
+        sim_settings = data["simul_settings"]
+        sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
     except (KeyError, TypeError, ValueError) as e:
         message = e.args[0]
@@ -271,7 +271,7 @@ def api_presets_load():
     # TODO: This is silly but it paves the way to a real database
     for p in prs:
         if p['id'] == qv['eid']:
-            res = load_votes(p['filename'])
+            res = load_votes(p['filename'], preset=True)
             return jsonify(res)
 
 @app.route('/api/simdownload/', methods=['GET','POST'])
@@ -288,7 +288,7 @@ def api_simdownload():
 def get_capabilities_dict(constituencies):
     return {
         "election_rules": ElectionRules(constituencies),
-        "simulation_rules": simulate.SimulationRules(),
+        "simul_settings": simulate.SimulationRules(),
         "capabilities": {
             "rules": dictionaries.RULE_NAMES,
             "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
@@ -309,22 +309,22 @@ def get_presets_dict():
 
     return data
 
-def run_script(rules):
-    if type(rules) in ["str", "unicode"]:
-        with open(rules, "r") as read_file:
-            rules = json.load(read_file)
+def run_script(systems):
+    if type(systems) in ["str", "unicode"]:
+        with open(systems, "r") as read_file:
+            systems = json.load(read_file)
 
-    if type(rules) != dict:
+    if type(systems) != dict:
         return {"error": "Incorrect script format."}
 
-    if rules["action"] not in ["simulation", "election"]:
+    if systems["action"] not in ["simulation", "election"]:
         return {"error": "Script action must be election or simulation."}
 
-    if rules["action"] == "election":
-        return voting.run_script_election(rules)
+    if systems["action"] == "election":
+        return voting.run_script_election(systems)
 
     else:
-        return simulate.run_script_simulation(rules)
+        return simulate.run_script_simulation(systems)
 
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"

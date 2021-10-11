@@ -571,7 +571,7 @@ class Simulation:
 
 def run_script_simulation(rules):
     srs = SimulationRules()
-    srs.update(rules["simulation_rules"])
+    srs.update(rules["simul_settings"])
 
     rs = voting.ElectionRules()
     rs.update(rules["election_rules"])

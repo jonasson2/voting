@@ -153,14 +153,14 @@ export default {
   props: {
     "main_rules": {},
     // "main_election_rules": {default: [{}]},
-    // "simulation_rules": {default: [{}]},
+    // "simul_settings": {default: [{}]},
     "constituencies": {}
   },
   
   data: function() {
     return {
       election_rules: this.main_rules.election_rules,
-      simulation_rules: this.main_rules.simulation_rules,
+      simul_settings: this.main_rules.simul_settings,
       activeTabIndex: 0,
       uploadfile: null,
       savefolder: null,
@@ -181,7 +181,7 @@ export default {
       },
       deep: true
     },
-    'simulation_rules': {
+    'simul_settings': {
       handler: function (val, oldVal) {
         if (this.watching)
           console.log("(3) sim-rules", val.gen_method)
@@ -215,18 +215,18 @@ export default {
       //this works too: this.election_rules.splice(idx, 1, rules);
     },
     updateSimulationRules: function(rules) {
-      this.simulation_rules = rules
+      this.simul_settings = rules
     },
     saveSettings: function() {
       this.$emit("save-settings")      
       // console.log("e_settings", this.election_rules)
-      // console.log("sim_settings", this.simulation_rules)
+      // console.log("sim_settings", this.simul_settings)
       // let promise = axios({
       //   method: "post",
       //   url: "/api/settings/save",
       //   data: {
       //     e_settings: this.election_rules,
-      //     sim_settings: this.simulation_rules
+      //     sim_settings: this.simul_settings
       //   },
       //   responseType: "arraybuffer",
       // });
@@ -257,10 +257,11 @@ export default {
           this.election_rules = [];
         }
         for (const setting of response.data.e_settings){
+          console.log("setting=", setting)
           this.election_rules.push(setting);
         }
         if (response.data.sim_settings){
-          this.simulation_rules = response.data.sim_settings;
+          this.simul_settings = response.data.sim_settings;
         }
       });
     },

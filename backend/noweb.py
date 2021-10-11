@@ -7,15 +7,17 @@ from hashlib import sha256
 from electionRules import ElectionRules
 from electionHandler import ElectionHandler
 import util
-from input_util import check_input, check_rules, check_simulation_rules
+from input_util import check_input, check_systems, check_simul_settings
 import simulate
 
-def load_votes(file, preset=True):
-    if preset: file = "../data/elections/" + file
-    res = util.load_votes_from_stream(open(file, "r"), file)
+def load_votes(f, preset=False):
+    '''returns votes (and seats) from excel file f'''
+    if preset: f = "../data/elections/" + f
+    res = util.load_votes_from_stream(open(f, "r"), f)
     return res
 
-def load_settings(f):
+def load_systems(f):
+    '''returns systems, sim_settings from file json-file f'''
     if isinstance(f,str):
         f = os.path.expanduser(f)
         with open(f) as file: file_content = json.load(file)
@@ -24,7 +26,7 @@ def load_settings(f):
     if type(file_content) == dict and "e_settings" in file_content:
         electoral_system_list = file_content["e_settings"]
         assert "sim_settings" in file_content
-        sim_settings = check_simulation_rules(file_content["sim_settings"])
+        sim_settings = check_simul_settings(file_content["sim_settings"])
     else:
         electoral_system_list = file_content
         sim_settings = None
@@ -34,25 +36,27 @@ def load_settings(f):
             "constituency_threshold", "constituency_allocation_rule",
             "adjustment_threshold", "adjustment_division_rule",
             "adjustment_method", "adjustment_allocation_rule"]
-    settings = []
+    systems = []
     for item in electoral_system_list:
         for info in keys:
             if info not in item:
-                raise KeyError(f"{info} is missing from a setting in file.")
+                raise KeyError(f"{info} is missing from a system in file.")
         if item["seat_spec_option"] == "defer":
             item["seat_spec_option"] = "refer"
-        setting = ElectionRules()
-        setting.update(item)
-        setting["primary_divider"] = item["constituency_allocation_rule"]
-        setting["adj_determine_divider"] = item["adjustment_division_rule"]
-        setting["adj_alloc_divider"] = item["adjustment_allocation_rule"]
-        settings.append(setting)
+        system = ElectionRules()
+        system.update(item)
+        system["primary_divider"] = item["constituency_allocation_rule"]
+        system["adj_determine_divider"] = item["adjustment_division_rule"]
+        system["adj_alloc_divider"] = item["adjustment_allocation_rule"]
+        systems.append(system)
 
-    settings = check_rules(settings)
-    return settings, sim_settings
+    systems = check_systems(systems)
+    return systems, sim_settings
     
-def single_election(votes, rules):
-    result = ElectionHandler(votes, rules).elections
+def single_election(votes, systems):
+    '''obtain results from single election for specific votes and a
+    list of electoral systems'''
+    result = ElectionHandler(votes, systems).elections
     results = [election.get_results_dict() for election in result]
     return results
 
@@ -65,7 +69,7 @@ def run_simulation(sid):
     #print("Ending thread %s" % sid)
     thread.done = True
 
-def start_simulation(votes, rules, sim_settings):
+def start_simulation(votes, systems, sim_settings):
     global SIMULATIONS
     global SIMULATION_IDX
     SIMULATION_IDX += 1
@@ -74,13 +78,13 @@ def start_simulation(votes, rules, sim_settings):
     h.update(sidbytes)
     sid = h.hexdigest()
     rulesets = []
-    for rs in rules:
-        election_rules = ElectionRules()
-        election_rules.update(rs)
-        rulesets.append(election_rules)
-    simulation_rules = simulate.SimulationRules()
-    simulation_rules.update(check_simulation_rules(sim_settings))
-    simulation = simulate.Simulation(simulation_rules, rulesets, votes)
+    for rs in systems:
+        election_systems = ElectionRules()
+        election_systems.update(rs)
+        rulesets.append(election_systems)
+    simulation_systems = simulate.SimulationRules()
+    simulation_systems.update(check_simul_settings(sim_settings))
+    simulation = simulate.Simulation(simulation_systems, rulesets, votes)
     cleanup_expired_simulations()
     expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
     # Allt þetta "expiry" þarf eitthvað að skoða og hugsa

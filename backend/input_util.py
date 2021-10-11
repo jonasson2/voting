@@ -66,7 +66,7 @@ def check_vote_table(vote_table):
 
     return vote_table
 
-def check_rules(electoral_systems):
+def check_systems(electoral_systems):
     """Checks election rules constituency input, and translates empty cells to 0
 
     Raises:
@@ -107,7 +107,7 @@ def check_rules(electoral_systems):
                      f"electoral system {electoral_system['name']}.")
     return electoral_systems
 
-def check_simulation_rules(sim_rules):
+def check_simul_settings(sim_rules):
     from math import sqrt
     """Checks simulation rules, and translates checkbox values to bool values
 
@@ -124,9 +124,9 @@ def check_simulation_rules(sim_rules):
             sim_rules["scaling"] = "party" if sim_rules["col_constraints"] else "total"
     for key in ["simulation_count", "gen_method", "scaling"]:
         if key not in sim_rules:
-            raise KeyError(f"Missing data ('simulation_rules.{key}')")
+            raise KeyError(f"Missing data ('simul_settings.{key}')")
     if "distribution_parameter" not in sim_rules:
-        raise KeyError("Missing data ('simulation_rules.distribution_parameter')")
+        raise KeyError("Missing data ('simul_settings.distribution_parameter')")
     variance_coefficient = sim_rules["distribution_parameter"]
     if sim_rules["gen_method"] == "beta":
         if variance_coefficient >= 0.75:
