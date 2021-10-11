@@ -1,4 +1,5 @@
-from web import *
+from noweb import load_votes, load_settings, single_election
+from noweb import start_simulation, check_simulation, SIMULATIONS
 from time import sleep
 import json
 
@@ -19,10 +20,10 @@ if __name__ == "__main__":
     sim_settings["simulation_count"] = 2000
     disp("sim_settings", sim_settings)
     disp("results", results)
-    sid = set_up_simulation(votes, rules, sim_settings)
-    status,_ = monitor_simulation(sid, False)
+    sid = start_simulation(votes, rules, sim_settings)
+    status,_ = check_simulation(sid, False)
     while not status["done"]:
         sleep(1)
-        status, results = monitor_simulation(sid, False)
+        status, results = check_simulation(sid, False)
         disp("status", status)
         disp("results", results, depth=4)

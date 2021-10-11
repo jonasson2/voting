@@ -136,6 +136,6 @@ def check_simulation_rules(sim_rules):
             raise ValueError("Coefficient of variation must be less than 0.57735")
     sim_count = sim_rules["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    if sim_count >= 500 and digoce:
+    if sim_count > 500 and digoce:
         raise ValueError("Maximum iterations in the online version is 500 (see Help)")
     return sim_rules

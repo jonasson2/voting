@@ -315,6 +315,7 @@ export default {
   created: function () {
     this.$http.get("/api/presets").then(
       (response) => {
+        this.presets = response.body;
         console.log("response.body", response.body)
       },
       (response) => {
