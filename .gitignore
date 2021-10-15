@@ -4,6 +4,7 @@
 *.docx
 \#*
 .\#*
+.tmp.driveupload
 /bin
 /include
 /lib
