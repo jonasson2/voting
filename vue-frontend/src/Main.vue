@@ -1,5 +1,5 @@
 <template>
-<div>
+<Div>
   <b-navbar toggleable="md" type="dark" variant="info">
     <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
@@ -31,45 +31,52 @@
       <!-- <p>Specify reference votes and seat numbers</p> -->
       <VoteMatrix
         :vote_sums="vote_sums"
+        :waitingForData="server.waitingForData"
         @server-error="serverError"
         @download-file="downloadFile"
-        @update-vote-table="updateVoteTable">
+        @update-vote-table="updateVoteTable"
+        @set-waiting="setWaiting" 
+        >
       </VoteMatrix>
     </b-tab>
     <b-tab title="Electoral systems">
       <!-- <p>Define one or several electoral systems by specifying apportionment -->
         <!--   rules and modifying seat numbers</p> -->
       <ElectoralSystems
-        :main_rules="rules"
         :constituencies="constituencies"
+        :waitingForData="server.waitingForData"
         @server-error="serverError"
-        @update-main-election-rules="updateMainElectionRules"
-        @update-main-simulation-rules="updateSimulationRules"
+        @update-main-rules="updateRules"
         @download-file="downloadFile"
-        @save-settings="saveSettings">
+        @save-settings="saveSettings"
+        >
       </ElectoralSystems>
     </b-tab>
-    <b-tab title="Single election" @click="recalculate()">
-      <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->
+    <b-tab title="Single election">
+      <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->      
       <Election
         ref="ElectionRef"
         :vote_table="vote_table"
-        :main_election_rules="rules.election_rules"
+        :election_rules="rules.election_rules"
         :results="results"
-        @server-error="serverError"
-        @download-file="downloadFile"
-        @update-rules="updateMainElectionRules">
+        :waitingForData="server.waitingForData"
+        :key="reRender"
+        @download-file="downloadFile">
       </Election>
     </b-tab>
     <b-tab title="Simulated elections">
       <!-- <p>Simulate several elections and compute results for each specified electoral system</p> -->
       <Simulate
-        :server="server"
-        :main_rules="rules"
         :vote_table="vote_table"
+        :rules="rules"
+        :el_rules="rules.election_rules"
+        :doneCreating="doneCreating()"
+        :waitingForData="server.waitingForData"
+        :key="reRender"
         @server-error="serverError"
-        @update-main-rules="updateSimulationRules"
-        @download-file="downloadFile">
+        @update-simulation-rules="updateSimulationRules"
+        @download-file="downloadFile"
+        >
       </Simulate>
     </b-tab>
     <b-tab title="Help">
@@ -122,21 +129,33 @@ export default {
       activeTabIndex: 0,
       uploadfile: null,
       results: {},
+      reRender: 0,
       // simul_settings: {
       //   simulation_count: 0,
       //   gen_method: "",
       //   distribution_parameter: 0,
       // },
+      createdVotes: false,
+      createdSettings: false
     }
   },
   
   methods: {
+    doneCreating: function() {
+      return this.createdVotes && this.createdSettings
+    },
+    setWaiting: function(status) {
+      this.server.waitingForData = status;
+    },
     serverError: function(error) {
       this.server.errormsg = error;
     },
-    updateMainElectionRules: function(rules) {
-      this.rules.election_rules = rules
-      //this.recalculate();
+    updateRules: function(rules) {
+      this.rules = rules
+      console.log("Main rules updated, len=", this.rules.election_rules.length)
+      console.log("sim-rules:", rules.simul_settings)
+      this.createdSettings = true
+      if (this.doneCreating()) this.recalculate()
     },
     updateSimulationRules: function(rules) {
       console.log("updateSimulationRules in Main")
@@ -157,6 +176,8 @@ export default {
         this.vote_sums.aseats += c[i].num_adj_seats
       }
       this.constituencies = c;
+      this.createdVotes = true;
+      if (this.doneCreating()) this.recalculate()
     },
     // Thanks to Pétur Helgi Einarsson for the next two functions
     parse_headers: function (headers) {
@@ -220,7 +241,7 @@ export default {
         );
     },
     recalculate: function() {
-      console.log("Election recalculate called");
+      console.log("recalculate called");
       if (this.rules.election_rules.length > 0) {
         // && this.election_rules.length > this.activeTabIndex
         // && this.election_rules[this.activeTabIndex].name) {
@@ -234,12 +255,10 @@ export default {
             if (response.body.error) {
               console.log("error-return 1")
               this.server.errormsg = response.body.error;
-              this.server.waitingForData = false;
             } else {
               this.server.errormsg = '';
               this.server.error = false;
               this.results = response.body;
-              console.log("results", this.results);
               for (var i=0; i<response.body.length; i++){
                 // let old_const = this.election_rules[i].constituencies;
                 // let new_const = response.body[i].rules.constituencies;
@@ -263,8 +282,10 @@ export default {
                 // }
                 //this.updateMainElectionRules(response.body[i].rules, i);
               }
-              this.server.waitingForData = false;
+              console.log(">>> method:", this.rules.simul_settings.gen_method)
+              this.reRender += 1
             }
+            this.server.waitingForData = false;
           }, response => {
             console.log("error-return 2")
             console.log("response", response.body)
@@ -273,6 +294,9 @@ export default {
           });
       }
     },
+  },
+  created: function() {
+    console.log("**** MAIN CREATED ****")
   }
 }
 </script>

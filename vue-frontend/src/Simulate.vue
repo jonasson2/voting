@@ -1,4 +1,5 @@
 <template>
+<!-- <div v-if="!waitingForData> -->
 <div>
   <h3>Simulation settings</h3>
   <SimulationSettings
@@ -130,12 +131,13 @@ import SimulationSettings from './SimulationSettings.vue'
 import SimulationData from './components/SimulationData.vue'
 
 export default {
-  props: {
-    "main_rules": {},
-    "vote_table": {},
-    // "election_rules": {},
-    // "simul_settings": {},
-  },
+  props: [
+    "vote_table",
+    "rules",
+    "el_rules",
+    "doneCreating",
+    "waitingForData"
+  ],
   components: {
     ResultMatrix,
     SimulationSettings,
@@ -144,8 +146,9 @@ export default {
   
   data: function() {
     return {
-      election_rules: this.main_rules.election_rules,
-      simul_settings: this.main_rules.simul_settings,
+      // election_rules: this.rules.election_rules,
+      election_rules: this.el_rules,
+      simul_settings: this.rules.simul_settings,
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
@@ -159,7 +162,7 @@ export default {
       // console.log("Updating rules")
       // console.log("rules", rules)
       this.simul_settings = rules
-      this.$emit('update-main-rules', rules)
+      this.$emit('update-simulation-rules', rules)
     },
     check_simulation: function() {
       this.checkstatus(false)
@@ -194,6 +197,7 @@ export default {
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
+      console.log("Rule length =", this.election_rules.length)
       //this.server.waitingForData = true;
       this.$http.post('/api/simulate/', {
         vote_table: this.vote_table,

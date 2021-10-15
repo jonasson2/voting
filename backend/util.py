@@ -140,7 +140,7 @@ def parsint(value):
     return int(value) if value else 0
 
 def determine_table_name(first,filename):
-    return first if first else os.path.splitext(filename)[0]
+    return first if first else os.path.basename(os.path.splitext(filename)[0])
 
 def load_votes(votefile, consts):
     """Load votes from a file."""

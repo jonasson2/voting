@@ -90,10 +90,13 @@ def api_election():
     try:
         data = request.get_json(force=True)
         data = check_input(data, ["vote_table", "rules"])
-        results = single_election(data["vote_table"], data["rules"])
-    except (KeyError, TypeError, ValueError) as e:
+        vote_table = data["vote_table"]
+        rules = data["rules"]
+        if len(rules) == 0 or len(rules[0]) == 0:
+            raise Exception("/api/election posted with no electoral system")        
+        results = single_election(vote_table, rules);
+    except Exception as e:
         message = e.args[0]
-        print("Error-1:",message)
         return jsonify({"error": message})
     return jsonify(results)
 
@@ -155,6 +158,7 @@ def api_settings_upload():
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
     settings, sim_settings = load_systems(f)
+    disp("sim_settings", sim_settings)
     return jsonify({"e_settings": settings, "sim_settings": sim_settings})
 
 @app.route('/api/votes/save/', methods=['POST'])
@@ -182,7 +186,6 @@ def api_votes_upload():
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
     res = util.load_votes_from_stream(f.stream, f.filename)
-    print("res=",res)
     return jsonify(res)
 
 @app.route('/api/votes/paste/', methods=['POST'])
@@ -255,6 +258,7 @@ def handle_api():
 def api_capabilities():
     constituencies = request.get_json(force=True)
     capabilities_dict = get_capabilities_dict(constituencies)
+    disp("constituencies", constituencies)
     return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])

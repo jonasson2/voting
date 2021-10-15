@@ -4,7 +4,7 @@
     size="lg"
     id="modaluploadesettings"
     title="Upload JSON file"
-    @ok="uploadSettingsAndAppend"
+    @ok="uploadSettings"
     >
     <p>
       The file provided must be a JSON file
@@ -20,43 +20,15 @@
       >
     </b-form-file>
   </b-modal>
-  <b-modal
-    size="lg"
-    id="modaluploadesettingsreplace"
-    title="Upload JSON file"
-    @ok="uploadSettingsAndReplace"
-    >
-    <p>
-      The file provided must be a JSON file
-      formatted like a file downloaded from here, using the Save button.
-      The electoral systems contained in the file
-      will replace those you have already specified.
-    </p>
-    <b-form-file
-      ref="replaceFromFile"
-      v-model="uploadfile"
-      :state="Boolean(uploadfile)"
-      placeholder="Choose a file..."
-      >
-    </b-form-file>
-  </b-modal>
-  <b-button-toolbar key-nav aria-label="Electoral settings tools" style="margin-left:12px">
-    <!-- <b-button-group class="mx-1"> -->
-    <!--   <b-button -->
-    <!--     class="mb-10" -->
-    <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
-    <!--     title="Remove all electoral systems" -->
-    <!--     @click="deleteAllElectionRules()" -->
-    <!--     > -->
-    <!--     Clear -->
-    <!--   </b-button> -->
-    <!-- </b-button-group> -->
+  <b-button-toolbar key-nav aria-label="Electoral settings tools"
+                    style="margin-left:12px">
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title = "Upload electoral system settings from local file"
-        v-b-modal.modaluploadesettingsreplace
+        v-b-modal.modaluploadesettings
+        @click = setReplace(true)
         >
         Load from file
       </b-button>
@@ -65,27 +37,20 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title = "Append electoral systems by uploading settings from local file"
+        title = "Append electoral systems by uploading settings
+                 from local file"
         v-b-modal.modaluploadesettings
+        @click = setReplace(false)
         >
         Append from file
       </b-button>
     </b-button-group>
-    <!-- <b-button-group class="mx-1"> -->
-      <!--   <b-button -->
-      <!--     class="mb-10" -->
-      <!--     v-b-tooltip.hover.bottom.v-primary.ds500 -->
-      <!--     title = "Download settings for all electoral systems to local file" -->
-      <!--     v-b-modal.modalsaveesettings -->
-      <!--     > -->
-        <!--     Save -->
-        <!--   </b-button> -->
-      <!-- </b-button-group> -->
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download settings for all electoral systems to local json-file. You may need to change browser settings; see Help for details"
+        title="Download settings for all electoral systems to local json-file. 
+               You may need to change browser settings; see Help for details"
         @click="saveSettings()"
         >
         Save
@@ -94,9 +59,9 @@
   </b-button-toolbar>
   <br>
   <b-tabs v-model="activeTabIndex" card>
-    <b-tab v-for="(rules, rulesidx) in election_rules" :key="rulesidx">
+    <b-tab v-for="(election_rule, rulesidx) in rules.election_rules" :key="rulesidx">
       <template v-slot:title>
-        {{rules.name}}
+        {{election_rule.name}}
       </template>
       <b-input-group>
         <template>
@@ -112,17 +77,19 @@
         </template>
         <b-input
           class="mb-3"
-          v-model="rules.name"
+          v-model="election_rule.name"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Enter electoral system name"
           />
       </b-input-group>
       <ElectionSettings
         :rulesidx="rulesidx"
-        :single_rules="election_rules[rulesidx]"
+        :system="election_rule"
         :constituencies="constituencies"
-        @update-single-rules="updateSingleElectionRules">
-        @update-simulation-rules="updateSimulationRules">
+        :waitingForData="waitingForData"
+        :key="reRenderElectionSettings"
+        @update-single-rules="updateSingleRules"
+        >
       </ElectionSettings>
     </b-tab>
     <template v-slot:tabs-end>
@@ -150,121 +117,86 @@ export default {
     ElectionSettings,
   },
   
-  props: {
-    "main_rules": {},
-    // "main_election_rules": {default: [{}]},
-    // "simul_settings": {default: [{}]},
-    "constituencies": {}
-  },
+  props: [
+    "constituencies",
+    "waitingForData"
+  ],
   
   data: function() {
     return {
-      election_rules: this.main_rules.election_rules,
-      simul_settings: this.main_rules.simul_settings,
+      rules: {
+        election_rules: [{}],
+        simul_settings: {}
+      },
       activeTabIndex: 0,
+      replace: false,
       uploadfile: null,
       savefolder: null,
       watching: true,
+      reRenderElectionSettings: 0
     }
   },
   
-  // created: function() {
-  //   console.log("Created ElectoralSystems");
-  //   console.log("rules", this.election_rules);
-  // },
-  
-  watch: {
-    'election_rules': {
-      handler: function (val, oldVal) {
-        if (this.watching)
-          this.$emit('update-main-election-rules', val);
-      },
-      deep: true
-    },
-    'simul_settings': {
-      handler: function (val, oldVal) {
-        if (this.watching)
-          console.log("(3) sim-rules", val.gen_method)
-          this.$emit('update-main-simulation-rules', val);
-      },
-      deep: true
-    }
-  },
-
   methods: {
+    setReplace: function(status) {
+      console.log("CALLED setReplace, status=",status)
+      this.replace = status
+    },
     addElectionRules: function() {
       console.log("addElectionRules called");
-      this.election_rules.push({})
+      this.rules.election_rules.push({})
     },
     deleteElectionRules: function(idx) {
-      console.log("deleting election rules", idx);
-      this.election_rules.splice(idx, 1);
+      console.log("deleting election rule #", idx);
+      this.rules.election_rules.splice(idx, 1);
+      this.$emit("update-main-rules", this.rules);
     },
-    deleteAllElectionRules: function() {
-      console.log("deleting all rules");
-      for (var i=this.election_rules.length-1; i>=0; i--) {
-        console.log("deleting rules #", i);
-        this.deleteElectionRules(i);
-      }
+    addSystem: function(rules) {
+      console.log("addSystem called")
+      this.updateSingleRules(rules, this.rules.election_rules.length);
     },
-    updateSingleElectionRules: function(rules, idx) {
-      console.log("Call updateSingleElectionRules in ElectoralSystems")
+    updateSingleRules: function(rules, idx, simul_settings) {
+      console.log("rules.name=", rules.name)
+      console.log("idx=", idx)
       if (rules.name == "System") rules.name += "-" + (idx+1).toString();
       this.activeTabIndex = idx;
-      this.$set(this.election_rules, idx, rules);
-      //this works too: this.election_rules.splice(idx, 1, rules);
-    },
-    updateSimulationRules: function(rules) {
-      this.simul_settings = rules
+      console.log("rules=",rules)
+      this.$set(this.rules.election_rules, idx, rules);
+      if (simul_settings) this.rules.simul_settings = simul_settings
+      this.$emit("update-main-rules", this.rules);
     },
     saveSettings: function() {
-      this.$emit("save-settings")      
-      // console.log("e_settings", this.election_rules)
-      // console.log("sim_settings", this.simul_settings)
-      // let promise = axios({
-      //   method: "post",
-      //   url: "/api/settings/save",
-      //   data: {
-      //     e_settings: this.election_rules,
-      //     sim_settings: this.simul_settings
-      //   },
-      //   responseType: "arraybuffer",
-      // });
-      // this.$emit("download-file", promise);
+      this.$emit("save-settings")
     },
-    uploadSettingsAndAppend: function(evt) {
-      var replace = false;
-      this.uploadSettings(evt, replace);
-      this.$refs['appendFromFile'].reset();
-    },
-    uploadSettingsAndReplace: function(evt) {
-      var replace = true;
-      this.uploadSettings(evt, replace);
-      this.$refs['replaceFromFile'].reset();
-    },
-    newSaveESettings: function(evt) {
-      console.log("newSaveESettings called");
-      console.log("evt=", evt);
-    },    
-    uploadSettings: function(evt, replace=false) {
+    uploadSettings: function(evt) {
+      console.log("CALLED uploadSettings");
       if (!this.uploadfile) {
         evt.preventDefault();
       }
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.$http.post('/api/settings/upload/', formData).then(response => {
-        if (replace){
-          this.election_rules = [];
+        this.watching = false;
+        console.log("this.replace", this.replace);
+        if (this.replace){
+          console.log("Deleting all rules")
+          this.rules.election_rules.splice(0, this.rules.election_rules.length)
         }
-        for (const setting of response.data.e_settings){
-          console.log("setting=", setting)
-          this.election_rules.push(setting);
+        for (var i=0; i < response.data.e_settings.length; i++) {
+          var setting = response.data.e_settings[i]
+          this.addSystem(setting)
         }
         if (response.data.sim_settings){
-          this.simul_settings = response.data.sim_settings;
+          this.rules.simul_settings = response.data.sim_settings;
         }
+        this.$emit("update-main-rules", this.rules);
+        this.reRenderElectionSettings += 1;
       });
     },
-  }
+  },
+  created: function () {
+    console.log("CreatedElectoralSystems");
+  },
+
 }
 </script>

@@ -1,6 +1,6 @@
 <template>
 <!-- <b-form style = "margin-left:16px;margin-right:16px"> -->
-<b-form v-if = "doneCreating" style = "margin-left:16px;margin-right:16px">
+<b-form style = "margin-left:16px;margin-right:16px">
   <b-row>
     <b-col cols="3">
       <b-form-group
@@ -123,26 +123,32 @@ export default {
   data: function () {
     return {
       rules: this.simul_settings,
-      doneCreating: false,
       capabilities: {},
       selected: '',
       rand_constit: [],
+      doneCreating: false
     }
+  },
+  methods: {
+    make_rand_constit: function(constituencies) {
+      this.rand_constit = ["All"]
+      for (var con in constituencies) {
+        this.rand_constit.push(constituencies[con].name)
+      }
+      console.log("************** rand_constit=", this.rand_constit)      
+    },
   },
   watch: {
     'constituencies': {
       handler: function (val, oldVal) {
-        this.rand_constit = ["All"]
-        for (var con in val) {
-          this.rand_constit.push(val[con].name)
-        }
-        // console.log("rand_constit=", this.rand_constit)
+        this.make_rand_constit(val)
       },
       deep: true
     },
     'rules': {
       handler: function (val, oldVal) {
         if (this.doneCreating) {
+          console.log("updating rules in SimulationSettings")
           this.$emit('update-rules', val);
         }
       },
@@ -152,11 +158,13 @@ export default {
   created: function() {
     if (!this.doneCreating) {
       this.$http.post('/api/capabilities', {}).then(response => {
-        console.log("XXXXXXXXXXXXXXXXXXX")
+        console.log("XXXXXXXXXXXXXXXX");
         this.capabilities = response.body.capabilities;
-        // console.log("sim-rules =",response.body.simul_settings)
+        console.log("sim-rules =",response.body.simul_settings)
         this.rules = response.body.simul_settings
         this.$emit('update-rules', response.body.simul_settings);
+        console.log("constituencies", this.constituencies)
+        this.make_rand_constit(this.constituencies);
         this.doneCreating = true;
       }, response => {
         this.serverError = true;

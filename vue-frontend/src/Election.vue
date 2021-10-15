@@ -1,5 +1,5 @@
 <template>
-<div>
+<div v-if="!waitingForData">
   <h3>Results based on values in Votes and seats tab</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
@@ -57,12 +57,12 @@ import ResultDemonstration from './components/ResultDemonstration.vue'
 export default {
   props: [
     "vote_table",
-    "main_election_rules",
-    "results"
+    "election_rules",
+    "results",
+    "waitingForData",
   ],
   data: function() {
     return {
-      election_rules: this.main_election_rules,
       resultIndex: 0,
     }
   },

@@ -13,6 +13,7 @@ class ElectionHandler:
         on a common vote table.
     """
     def __init__(self, vote_table, election_rules_list):
+        
         self.election_rules_list = check_systems(election_rules_list)
         self.vote_table = check_vote_table(vote_table)
         self.name = self.vote_table["name"]
