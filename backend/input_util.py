@@ -124,9 +124,9 @@ def check_simul_settings(sim_rules):
             sim_rules["scaling"] = "party" if sim_rules["col_constraints"] else "total"
     for key in ["simulation_count", "gen_method", "scaling"]:
         if key not in sim_rules:
-            raise KeyError(f"Missing data ('simul_settings.{key}')")
+            raise KeyError(f"Missing data ('sim_settings.{key}')")
     if "distribution_parameter" not in sim_rules:
-        raise KeyError("Missing data ('simul_settings.distribution_parameter')")
+        raise KeyError("Missing data ('sim_settings.distribution_parameter')")
     variance_coefficient = sim_rules["distribution_parameter"]
     if sim_rules["gen_method"] == "beta":
         if variance_coefficient >= 0.75:

@@ -21,8 +21,8 @@
         <b-row>
           <h4>Seat allocation, constituency and adjustment seats combined</h4>
           <ResultMatrix
-            :parties="vote_table.parties"
             :constituencies="results[activeTabIndex].rules.constituencies"
+            :parties="vote_table.parties"
             :values="results[activeTabIndex].seat_allocations"
             :stddev="false">
           </ResultMatrix>
@@ -59,7 +59,7 @@ export default {
     "vote_table",
     "election_rules",
     "results",
-    "waitingForData",
+    "waitingForData"
   ],
   data: function() {
     return {

@@ -5,3 +5,23 @@ How To Pass Data Between Components In Vue.js:
 https://www.smashingmagazine.com/2020/01/data-components-vue-js/
 
 Í watch þarf deep:true til að allur hluturinn sé vaktaður
+
+Turn on watch after initialization with $watch:
+https://stackoverflow.com/questions/52637936/vuejs-skip-watchers-first-change
+
+Turn off watch:
+resetForm() {
+    this.workbench.isResetting = true
+    value.tier = value.original_tier
+    this.nextTick(()=>{
+        this.workbench.isResetting = false
+    })
+}
+
+watch: {
+    'value.tier'(new_,old) {
+        if (this.workbench.isResetting)
+            return;
+        //...
+    }
+}

@@ -1,5 +1,5 @@
 <template>
-<div>
+<div  v-if="vote_table_constituencies.length > 0">
   <b-modal
     size="lg"
     id="modaluploadesettings"
@@ -59,9 +59,9 @@
   </b-button-toolbar>
   <br>
   <b-tabs v-model="activeTabIndex" card>
-    <b-tab v-for="(election_rule, rulesidx) in rules.election_rules" :key="rulesidx">
+    <b-tab v-for="(system, systemidx) in systems" :key="systemidx">
       <template v-slot:title>
-        {{election_rule.name}}
+        {{system.name}}
       </template>
       <b-input-group>
         <template>
@@ -71,24 +71,24 @@
             title = "Remove electoral system"
             size="sm"
             variant="link"
-            @click="deleteElectionRules(rulesidx)">
+            @click="deleteElectionRules(systemidx)">
             X
           </b-button>
         </template>
         <b-input
           class="mb-3"
-          v-model="election_rule.name"
+          v-model="system.name"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Enter electoral system name"
           />
       </b-input-group>
       <ElectionSettings
-        :rulesidx="rulesidx"
-        :system="election_rule"
-        :constituencies="constituencies"
-        :waitingForData="waitingForData"
-        :key="reRenderElectionSettings"
-        @update-single-rules="updateSingleRules"
+        :newSystem="system"
+        :systemidx="systemidx"
+        :vote_table_constituencies="vote_table_constituencies"
+        ref="systemref"
+        @update-system="updateSystem"
+        @update-sim-settings="updateSimSettings"
         >
       </ElectionSettings>
     </b-tab>
@@ -118,79 +118,75 @@ export default {
   },
   
   props: [
-    "constituencies",
-    "waitingForData"
+    "sim_settings",
+    "vote_table_constituencies",
   ],
   
   data: function() {
     return {
-      rules: {
-        election_rules: [{}],
-        simul_settings: {}
-      },
+      systems: [{}],
       activeTabIndex: 0,
       replace: false,
       uploadfile: null,
       savefolder: null,
-      watching: true,
-      reRenderElectionSettings: 0
     }
   },
   
   methods: {
+    getNewRules: function(election_rules, passToSettings) {
+      this.systems = election_rules
+      if (passToSettings) passToSettings(this.systems[this.activeTabIndex])
+    },
     setReplace: function(status) {
-      console.log("CALLED setReplace, status=",status)
       this.replace = status
     },
     addElectionRules: function() {
-      console.log("addElectionRules called");
-      this.rules.election_rules.push({})
+      // ElectionSettings will fill the rule with data and emit update-system
+      this.systems.push({})
     },
     deleteElectionRules: function(idx) {
       console.log("deleting election rule #", idx);
-      this.rules.election_rules.splice(idx, 1);
-      this.$emit("update-main-rules", this.rules);
+      this.systems.splice(idx, 1);
+      this.$emit("update-rules", this.systems, this.getNewRules);
     },
-    addSystem: function(rules) {
-      console.log("addSystem called")
-      this.updateSingleRules(rules, this.rules.election_rules.length);
+    updateSimSettings: function(sim_settings) {
+      console.log("Sending sim_settings to Main", sim_settings)
+      this.$emit("update-simulation-settings", sim_settings);
     },
-    updateSingleRules: function(rules, idx, simul_settings) {
-      console.log("rules.name=", rules.name)
-      console.log("idx=", idx)
-      if (rules.name == "System") rules.name += "-" + (idx+1).toString();
+    updateSystem: function(system, idx, passToSettings) {
+      if (system.name == "System") system.name += "-" + (idx+1).toString();
       this.activeTabIndex = idx;
-      console.log("rules=",rules)
-      this.$set(this.rules.election_rules, idx, rules);
-      if (simul_settings) this.rules.simul_settings = simul_settings
-      this.$emit("update-main-rules", this.rules);
+      this.systems.splice(idx, 1, system);
+      console.log("In updateSystem in ElectoralSystems")
+      this.$emit("update-rules", this.systems, this.getNewRules, passToSettings);
     },
     saveSettings: function() {
-      this.$emit("save-settings")
+      let promise = axios({
+        method: "post",
+        url: "/api/settings/save",
+        data: {
+          e_settings: this.systems,
+          sim_settings: this.sim_settings
+        },
+        responseType: "arraybuffer",
+      });
+      this.$emit("download-file", promise);
     },
     uploadSettings: function(evt) {
-      console.log("CALLED uploadSettings");
-      if (!this.uploadfile) {
-        evt.preventDefault();
-      }
+      if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.$http.post('/api/settings/upload/', formData).then(response => {
-        this.watching = false;
-        console.log("this.replace", this.replace);
         if (this.replace){
-          console.log("Deleting all rules")
-          this.rules.election_rules.splice(0, this.rules.election_rules.length)
+          this.systems.splice(0, this.systems.length)
         }
         for (var i=0; i < response.data.e_settings.length; i++) {
           var setting = response.data.e_settings[i]
-          this.addSystem(setting)
+          this.systems.push(setting);
+          console.log("Pushing, i=", i, ", name=", this.systems[i].name)
         }
-        if (response.data.sim_settings){
-          this.rules.simul_settings = response.data.sim_settings;
-        }
-        this.$emit("update-main-rules", this.rules);
-        this.reRenderElectionSettings += 1;
+        this.$emit("update-rules", this.systems);
+        this.$emit("update-simulation-settings", response.data.sim_settings);
       });
     },
   },

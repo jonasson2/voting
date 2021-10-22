@@ -279,7 +279,6 @@ Vue.use(VueInputAutowidth);
 export default {
   props: {
     vote_sums: { default: {} },
-    waitingForData: false
   },
   data: function () {
     return {
@@ -314,7 +313,6 @@ export default {
     };
   },
   created: function () {
-    this.$emit("set-waiting", true)
     this.$http.get("/api/presets").then(
       (response) => {
         this.presets = response.body;
@@ -323,8 +321,8 @@ export default {
         console.log("Error, response.body", response.body)
       }
     );
-    this.$emit("set-waiting", false)
     this.$emit("update-vote-table", this.matrix, false);
+    console.log("this.matrix.constituencies",this.matrix.constituencies)
     console.log("Created VoteMatrix");
   },
   watch: {
@@ -384,7 +382,6 @@ export default {
       this.$emit("download-file", promise);
     },
     loadPreset: function (eid) {
-      this.$emit("set-waiting", true)
       this.$http.post("/api/presets/load/", { eid: eid }).then(
         (response) => {
           this.matrix = response.data;
@@ -393,7 +390,6 @@ export default {
           this.$emit("server-error", "Illegal format of presets file")
         }
       )
-      this.$emit("set-waiting", false)
     },
     uploadVotes: function (evt) {
       if (!this.uploadfile) {
@@ -401,7 +397,6 @@ export default {
       }
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.$emit("set-waiting", true)
       this.$http.post("/api/votes/upload/", formData).then(
         (response) => {
           this.matrix = response.data;
@@ -410,7 +405,6 @@ export default {
           this.$emit("server-error", "Cannot upload votes from this file")
         }
       )
-      this.$emit("set-waiting", false)
     },
     pasteCSV: function (evt) {
       if (!this.paste.csv) {

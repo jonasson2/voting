@@ -158,7 +158,6 @@ def api_settings_upload():
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
     settings, sim_settings = load_systems(f)
-    disp("sim_settings", sim_settings)
     return jsonify({"e_settings": settings, "sim_settings": sim_settings})
 
 @app.route('/api/votes/save/', methods=['POST'])
@@ -212,10 +211,10 @@ def api_votes_paste():
 def api_simulate():
     try:
         data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "election_rules", "simul_settings"])
+        data = check_input(data, ["vote_table", "election_rules", "sim_settings"])
         votes = data["vote_table"]
         systems = data["election_rules"]
-        sim_settings = data["simul_settings"]
+        sim_settings = data["sim_settings"]
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
     except (KeyError, TypeError, ValueError) as e:
@@ -258,7 +257,7 @@ def handle_api():
 def api_capabilities():
     constituencies = request.get_json(force=True)
     capabilities_dict = get_capabilities_dict(constituencies)
-    disp("constituencies", constituencies)
+    # print(f"{capabilities_dict=}")
     return jsonify(capabilities_dict)
 
 @app.route('/api/presets/', methods=["GET"])
@@ -292,7 +291,7 @@ def api_simdownload():
 def get_capabilities_dict(constituencies):
     return {
         "election_rules": ElectionRules(constituencies),
-        "simul_settings": simulate.SimulationRules(),
+        "sim_settings": simulate.SimulationRules(),
         "capabilities": {
             "rules": dictionaries.RULE_NAMES,
             "divider_rules": dictionaries.DIVIDER_RULE_NAMES,

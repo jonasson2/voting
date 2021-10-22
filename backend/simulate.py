@@ -496,20 +496,17 @@ class Simulation:
         """Calculate averages and variances of various quality measures."""
         for ruleset in range(self.num_rulesets):
             for measure in MEASURES.keys():
-                pass
-                # self.analyze_measure(ruleset, measure) # buggy
+                self.analyze_measure(ruleset, measure) # buggy
             num_constituencies = len(self.e_rules[ruleset]["constituencies"])
             for c in range(1+num_constituencies):
                 for p in range(1+self.num_parties):
                     for measure in LIST_MEASURES.keys():
-                        pass
-                        #self.analyze_list(ruleset, measure, c, p)
+                        self.analyze_list(ruleset, measure, c, p)
         # self.analyze_measure(-1, "time") # there is a bug in here 
         for c in range(1+self.num_constituencies):
             for p in range(1+self.num_parties):
                 for measure in VOTE_MEASURES.keys():
-                    pass
-                    #self.analyze_list(-1, measure, c, p)
+                    self.analyze_list(-1, measure, c, p)
 
     def simulate(self):
         """Simulate many elections."""
@@ -571,7 +568,7 @@ class Simulation:
 
 def run_script_simulation(rules):
     srs = SimulationRules()
-    srs.update(rules["simul_settings"])
+    srs.update(rules["sim_settings"])
 
     rs = voting.ElectionRules()
     rs.update(rules["election_rules"])

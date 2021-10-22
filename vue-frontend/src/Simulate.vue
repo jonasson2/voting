@@ -1,13 +1,12 @@
 <template>
-<!-- <div v-if="!waitingForData> -->
 <div>
   <h3>Simulation settings</h3>
   <SimulationSettings
-    :constituencies="vote_table.constituencies"
-    :simul_settings="simul_settings"
-    @update-rules="updateSimulationRules">
+    :constituencies="election_rules[0].constituencies"
+    :sim_settings="settings"
+    @update-sim-settings="updateSimSettings"
+    >
   </SimulationSettings>
-  
   <div style="text-align: center; margin-bottom: 0.7em;
               margin-left:16px; margin-right:16px">
     <span v-if="simulation_done">
@@ -36,7 +35,7 @@
     <b-col cols="12">
       <b-progress
         height="30px"
-        :max="simul_settings.simulation_count"
+        :max="settings.simulation_count"
         :animated="!simulation_done">
         <b-progress-bar
           :variant="simulation_done ? 'success':'primary'"
@@ -133,36 +132,39 @@ import SimulationData from './components/SimulationData.vue'
 export default {
   props: [
     "vote_table",
-    "rules",
-    "el_rules",
-    "doneCreating",
-    "waitingForData"
+    "election_rules",
+    "sim_settings",
   ],
-  components: {
-    ResultMatrix,
-    SimulationSettings,
-    SimulationData,
-  },
-  
   data: function() {
     return {
-      // election_rules: this.rules.election_rules,
-      election_rules: this.el_rules,
-      simul_settings: this.rules.simul_settings,
+      settings: {},
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
       total_time: 0,
       inflight: 0,
-      results: { measures: [], methods: [], data: [], parties: [], e_rules: [] },
+      watching: true,
+      results: { measures: [], methods: [], data: [], parties: [], e_rules: [] }
+    }
+  },
+  components: {
+    ResultMatrix,
+    SimulationSettings,
+    SimulationData,
+  },
+  watch: {
+    sim_settings: {
+      handler: function(val) {
+        if (this.watching) this.settings = val
+      },
+      deep: true
     }
   },
   methods: {
-    updateSimulationRules: function(rules) {
-      // console.log("Updating rules")
-      // console.log("rules", rules)
-      this.simul_settings = rules
-      this.$emit('update-simulation-rules', rules)
+    updateSimSettings: function(settings) {
+      this.watching = false
+      this.settings = settings
+      this.$nextTick(()=>{this.watching = true})
     },
     check_simulation: function() {
       this.checkstatus(false)
@@ -187,7 +189,6 @@ export default {
             window.clearInterval(this.checktimer);
           }
         }
-        // this.server.waitingForData = false;
       }, response => {
         this.$emit("server-error", response.body)
       });
@@ -197,12 +198,11 @@ export default {
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
-      console.log("Rule length =", this.election_rules.length)
-      //this.server.waitingForData = true;
+      console.log("Simulate (recalculate): this.settings = ", this.settings)
       this.$http.post('/api/simulate/', {
         vote_table: this.vote_table,
         election_rules: this.election_rules,
-        simul_settings: this.simul_settings,
+        sim_settings: this.settings,
       }).then(response => {
         if (response.body.error) {
           this.$emit("server-error", response.body.error)          
@@ -212,10 +212,8 @@ export default {
           // 250 ms between updating simulation progress bar
           this.checktimer = window.setInterval(this.check_simulation, 250);
         }
-        //this.server.waitingForData = false;
       }, response => {
         this.$emit("server-error", response.body)          
-        //this.server.waitingForData = false;
       });
     },
     

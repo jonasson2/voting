@@ -5,6 +5,7 @@
 \#*
 .\#*
 .tmp.driveupload
+.DS_Store
 /bin
 /include
 /lib

@@ -15,7 +15,7 @@
                  party lists within each constituency."
           >
           <b-form-select
-            v-model="rules.primary_divider"
+            v-model="system.primary_divider"
             :options="capabilities.rules"
             />
         </b-form-group>
@@ -32,7 +32,7 @@
           <b-input-group append="%">
             <b-form-input
               type="number" min="0" max="100"
-              v-model.number="rules.constituency_threshold"/>
+              v-model.number="system.constituency_threshold"/>
           </b-input-group>
         </b-form-group>
       </b-col>
@@ -51,7 +51,7 @@
                  based on total votes for all lists of the same party."
           >
           <b-form-select
-            v-model="rules.adj_determine_divider"
+            v-model="system.adj_determine_divider"
             :options="capabilities.rules"/>
         </b-form-group>
       </b-col>
@@ -68,7 +68,7 @@
             <b-form-input
               type="number"
               min="0" max="100"
-              v-model.number="rules.adjustment_threshold"/>
+              v-model.number="system.adjustment_threshold"/>
           </b-input-group>
         </b-form-group>
       </b-col>
@@ -85,7 +85,7 @@
                  the constituencies."
           >
           <b-form-select
-            v-model="rules.adj_alloc_divider"
+            v-model="system.adj_alloc_divider"
             :options="capabilities.divider_rules"/>
         </b-form-group>
       </b-col>
@@ -98,7 +98,7 @@
           title="Method to allocate adjustment seats to party lists based on the given basic rule."
           >
           <b-form-select
-            v-model="rules.adjustment_method"
+            v-model="system.adjustment_method"
             :options="capabilities.adjustment_methods"/>
         </b-form-group>
       </b-col>
@@ -113,7 +113,7 @@
           title="Numbers of constituency and adjustment seats in each constituency in this particular electoral system"
           >
           <b-form-select
-            v-model="rules.seat_spec_option"
+            v-model="system.seat_spec_option"
             :options="capabilities.seat_spec_options"/>
         </b-form-group>
       </b-col>
@@ -132,24 +132,24 @@
               # Adj.
             </th>
           </tr>
-          <tr v-for="(constituency, conidx) in constituencies">
+          <tr v-for="(constituency, conidx) in system.constituencies">
             <th class="displayleft">
               {{ constituency['name'] }}
             </th>
             <td class="displayright">
-              <span v-if="rules.seat_spec_option != 'custom'">
+              <span v-if="system.seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
-              <span v-if="rules.seat_spec_option == 'custom'">
+              <span v-if="system.seat_spec_option == 'custom'">
                 <input type="text"
                        v-model.number="constituency['num_const_seats']">
               </span>
             </td>
             <td class="displayright">
-              <span v-if="rules.seat_spec_option != 'custom'">
+              <span v-if="system.seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
-              <span v-if="rules.seat_spec_option == 'custom'">
+              <span v-if="system.seat_spec_option == 'custom'">
                 <input type="text"
                        v-model.number="constituency['num_adj_seats']">
               </span>
@@ -165,55 +165,63 @@
 <script>
 export default {
   props: [
-    "rulesidx",
-    "system",
-    "constituencies",
-    "waitingForData"
+    "newSystem",
+    "systemidx",
+    "vote_table_constituencies",
+    "vote_table"
   ],
   data: function () {
     return {
-      rules: this.system, 
-      doneCreating: false,
+      system: {},
       capabilities: [{}],
+      watching: false,
     }
   },
+  methods: {
+    getNewSystem: function(newSystem) {
+      this.system = newSystem
+      this.$nextTick(()=>{this.watching = true})
+    },
+  },
   watch: {
-    'rules': {
-      handler: function (val, oldVal) {
-        if (this.doneCreating) {
-          console.log("watching rules");
-          this.$emit('update-single-rules', val, this.rulesidx);
+    system: {
+      handler: function (val) {
+        if (this.watching) {
+          console.log("Watching system in ElectionSettins, system = ", val)
+          this.watching = false
+          this.$emit('update-system', val, this.systemidx, this.getNewSystem)
         }
       },
       deep: true
     }
   },
+  
   created: function() {
-    console.log("*** In function created in ElectionSettings");
+    console.log("Creating ElectionSettings")
+    console.log("idx=", this.systemidx, ", newSystem=", this.newSystem)
+    console.log("system=", this.system)
+    var isNew = "name" in this.newSystem
+    console.log("isNew: ", isNew)
     this.$http.post(
       '/api/capabilities',
-      this.constituencies,
+      this.vote_table_constituencies,
     ).then(response => {
       let r = response.body
-      //console.log("cap=", r.capabilities.rules);
-      // (á að vera ... (sjá https://bootstrap-vue.org/docs/components/form-select)
       this.capabilities = r.capabilities;
-      //console.log("constituencies:", this.constituencies)
-      //console.log("constituencies:", r.election_rules.constituencies)      
-      if (!("name" in this.rules)) {
-        this.rules = r.election_rules;
-        console.log("emitting from created in ElectionSettings")
-        console.log("r.election_rules", r.election_rules.toString())
-        this.$emit(
-          'update-single-rules',
-          r.election_rules,
-          this.rulesidx,
-          r.simul_settings
-        );
+      if (!("name" in this.newSystem)) {
+        this.system = r.election_rules;
+        console.log("Emitting from created in ElectionSettings")
+        this.$emit('update-system', r.election_rules, this.systemidx)
+        //this.$emit('update-sim-settings', r.sim_settings)
       }
-      this.doneCreating = true;
+      else {
+        this.system = this.newSystem
+        console.log("updated system=", this.system)
+      }
+      this.$nextTick(()=>{this.watching = true})
     }, response => {
       this.$emit("server-error", "server error in Election settings")
+      this.$nextTick(()=>{this.watching = true})
     })
   }
 }
