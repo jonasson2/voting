@@ -5,6 +5,7 @@ from dictionaries import SEAT_SPECIFICATION_OPTIONS
 def check_input(data, sections):
     for section in sections:
         if section not in data or not data[section]:
+            print("raising error")
             raise KeyError(f"Missing data ('{section}')")
     return data
 

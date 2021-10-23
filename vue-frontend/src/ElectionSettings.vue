@@ -212,7 +212,7 @@ export default {
         this.system = r.election_rules;
         console.log("Emitting from created in ElectionSettings")
         this.$emit('update-system', r.election_rules, this.systemidx)
-        //this.$emit('update-sim-settings', r.sim_settings)
+        this.$emit('update-sim-settings', r.sim_settings)
       }
       else {
         this.system = this.newSystem

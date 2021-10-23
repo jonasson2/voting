@@ -32,6 +32,7 @@
       <ElectoralSystems
         :sim_settings="sim_settings"
         :vote_table_constituencies="vote_table_constituencies"
+        :matrix="vote_table"
         @server-error="serverError"
         @update-rules="updateRules"
         @download-file="downloadFile"
@@ -66,7 +67,7 @@
       </Intro>
     </b-tab>
   </b-tabs>
-  </b-card>
+</b-card>
 </div>
 </template>
 
@@ -90,7 +91,6 @@ export default {
     return {
       server: {
         errormsg: '',
-        error: false,
       },
       vote_table_constituencies: [],
       vote_table: {},
@@ -115,8 +115,10 @@ export default {
     doneCreating: function() {
       return this.createdVotes && this.createdSettings
     },
-    serverError: function(error) {
-      this.server.errormsg = error;
+    serverError: function(errormessage) {
+      console.log("SERVER ERROR:", errormessage)
+      console.trace()
+      this.server.errormsg = errormessage
     },
     updateRules: function(election_rules, whenDone, parameter) {
       this.election_rules = election_rules
@@ -165,38 +167,59 @@ export default {
       return [content_type, download_name]
     },
     downloadFile: function (promise) {
-      promise
-        .then(
-          (response) => {
-            const status = response.status;
-            if (status != 200) {
-              this.$emit("server-error", response.body.error);
-            } else {
-              let link = document.createElement("a");
-              const [type, downloadname] = this.parse_headers(response.headers);
-              const blob = new Blob([response.data], {type: type});
-              const blobUrl = URL.createObjectURL(blob);
-              link.href = blobUrl;
-              link.download = downloadname;
-              document.body.appendChild(link);
-              // Dispatch click event on the link (this is necessary
-              // as link.click() does not work in the latest Firefox
-              link.dispatchEvent(
-                new MouseEvent("click", {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                })
-              );
-              link.remove();
-            }
-          },
-          (response) => {
-            console.log("Error:", response);
+      console.log("In download file")
+      console.log(promise)
+      promise.then (
+        (response) => {
+          const status = response.status;
+          if (status != 200) {
+            console.log("Server error", response.body.error)
+            this.serverError(response.body.error)
           }
-        );
+          else {
+            console.log("Inside status==200")
+            console.log("response=", response)
+            console.log("headers=", response.headers)
+            console.log("content-type", response.headers["content-type"])
+            if (response.headers["content-type"] == "application/json") {
+              let s,x
+              s = String.fromCharCode.apply(null, new Uint8Array(response.data))
+              eval("x = " + s)
+              if ("error" in x) {
+                // API returned error instead of actual blob
+                this.serverError(x["error"])
+                return
+              }
+            }
+            console.log("data=", response.data)
+            let link = document.createElement("a");
+            const [type, downloadname] = this.parse_headers(response.headers);
+            const blob = new Blob([response.data], {type: type});
+            const blobUrl = URL.createObjectURL(blob);
+            link.href = blobUrl;
+            link.download = downloadname;
+            document.body.appendChild(link);
+            // Dispatch click event on the link (this is necessary
+            // as link.click() does not work in the latest Firefox
+            link.dispatchEvent(
+              new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+              })
+            );
+            link.remove();
+          }
+        },
+        (response) => {
+          console.log("Error:", response);
+        }
+      );
     },
     recalculate: function(whenDone, parameter) {
+      console.log("this=",this)
+      console.log("this.$options=",this.$options)
+      console.log("this.$options.name=",this.$options.name)
       this.waitingForData = true
       if (this.election_rules.length > 0) {
         this.$http.post(
@@ -207,7 +230,7 @@ export default {
           }).then(response => {
             if (response.body.error) {
               console.log("error-return 1")
-              this.server.errormsg = response.body.error;
+              this.serverError(response.body.error)
             } else {
               this.results = response.body;
               for (var i=0; i<response.body.length; i++){
@@ -217,8 +240,7 @@ export default {
             }
             this.$nextTick(()=>{this.waitingForData = false})
           }, response => {
-            this.server.errormsg = "Error set in recalculate function"
-            this.server.error = true;
+            this.serverError("Error in recalculate function")
             this.$nextTick(()=>{this.waitingForData = false})
           });
       }

@@ -76,12 +76,15 @@ def api_downloads_get():
 def save_file(tmpfilename, download_name):
     import mimetypes
     (mimetype, encoding) = mimetypes.guess_type(download_name)
+    print("mimetype=", mimetype)
+    print("tmpfilename=", tmpfilename)
+    print("download_name=", download_name)
     response = send_from_directory(
         directory=os.path.dirname(tmpfilename),
         path=os.path.basename(tmpfilename),
         download_name=download_name,
         mimetype=mimetype,
-        as_attachment=True
+        as_attachment=False
     )
     return response
 
@@ -102,24 +105,32 @@ def api_election():
 
 @app.route('/api/election/save/', methods=['POST'])
 def api_election_save():
-    data = request.get_json(force=True)
-    data = check_input(data, ["vote_table", "rules"])
-    handler = ElectionHandler(data["vote_table"], data["rules"])
-    tmpfilename = tempfile.mktemp(prefix='election-')
-    handler.to_xlsx(tmpfilename)
-    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-    download_name=f"Election-{date}.xlsx"
+    try:
+        data = request.get_json(force=True)
+        data = check_input(data, ["vote_table", "rules"])
+        handler = ElectionHandler(data["vote_table"], data["rules"])
+        tmpfilename = tempfile.mktemp(prefix='election-')
+        handler.to_xlsx(tmpfilename)
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        download_name=f"Election-{date}.xlsx"
+    except Exception as e:
+        message = e.args[0]
+        return jsonify({"error": message})
     return save_file(tmpfilename, download_name)
 
 @app.route('/api/settings/save/', methods=['POST'])
 def api_settings_save():
     data = request.get_json(force=True)
-    check_input(data, ["e_settings", "sim_settings"])
-
+    try:
+        check_input(data, ["e_settings", "sim_settings"])
+    except Exception as e:
+        print("caught exception")
+        message = e.args[0]
+        return jsonify({"error": message})
     settings = data["e_settings"]
     if type(settings) != list: settings = [settings]
     settings = check_systems(settings)
-
+    
     #no need to expose more than the following keys
     keys = [
         "name", "seat_spec_option", "constituencies",
@@ -143,7 +154,6 @@ def api_settings_save():
         "e_settings": electoral_system_list,
         "sim_settings": check_simul_settings(data["sim_settings"]),
     }
-
     tmpfilename = tempfile.mktemp(prefix='e_settings-')
     with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
         json.dump(file_content, jsonfile, ensure_ascii=False, indent=2)

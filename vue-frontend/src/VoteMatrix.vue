@@ -378,7 +378,7 @@ export default {
         url: "/api/votes/save",
         data: { vote_table: this.matrix },
         responseType: "arraybuffer",
-      });      
+      });
       this.$emit("download-file", promise);
     },
     loadPreset: function (eid) {

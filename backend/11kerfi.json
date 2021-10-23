@@ -1,0 +1,474 @@
+{
+  "e_settings": [
+    {
+      "name": "Íslensk lög",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "1-icelandic-law",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Íslensk lög með sætishlutum",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "2-ice-shares",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Norsk lög",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "3-norwegian-law",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Norsk lög með sætishlutum",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "4-norwegian-icelandic",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Atkvæðahlutfall",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "5-pure-vote-ratios",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Afstæðir yfirburðir",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "6-relative-superiority",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Afstæðir yfirburðir, einfaldaðir",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "7-relative-sup-simple",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Næsti granni",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "8-nearest-neighbor",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Monge",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "9-monge",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Sætavíxlun",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "A-switching",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    },
+    {
+      "name": "Besta skipting",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 7
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 11
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 0,
+      "adjustment_threshold": 5,
+      "adjustment_method": "B-alternating-scaling",
+      "constituency_allocation_rule": "1-dhondt",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    }
+  ],
+  "sim_settings": {
+    "distribution_parameter": 0.0057735,
+    "gen_method": "uniform",
+    "scaling": "both",
+    "selected_rand_constit": "All",
+    "simulate": false,
+    "simulation_count": 10
+  }
+}

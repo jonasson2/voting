@@ -1,4 +1,4 @@
-<template>
+<<template>
 <div  v-if="vote_table_constituencies.length > 0">
   <b-modal
     size="lg"
@@ -120,6 +120,7 @@ export default {
   props: [
     "sim_settings",
     "vote_table_constituencies",
+    "matrix"
   ],
   
   data: function() {
@@ -160,8 +161,9 @@ export default {
       console.log("In updateSystem in ElectoralSystems")
       this.$emit("update-rules", this.systems, this.getNewRules, passToSettings);
     },
-    saveSettings: function() {
-      let promise = axios({
+    saveSettings: function () {
+      let promise;
+      promise = axios({
         method: "post",
         url: "/api/settings/save",
         data: {
@@ -170,6 +172,7 @@ export default {
         },
         responseType: "arraybuffer",
       });
+      console.log("NAME: ",this.$options.name)
       this.$emit("download-file", promise);
     },
     uploadSettings: function(evt) {
