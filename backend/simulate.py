@@ -129,7 +129,7 @@ class Simulation:
         self.total_time = timedelta(0)
         self.time_left = 0
         self.iterations_with_no_solution = 0
-        self.reference = []
+        self.reference = [[] for i in range(self.num_rulesets)]
         sel_rand_const = sim_rules["selected_rand_constit"]
         if sel_rand_const == "All":
             self.apply_random = -1
@@ -138,8 +138,8 @@ class Simulation:
             assert sel_rand_const in constit
             self.apply_random = constit.index(sel_rand_const)
         self.stat = {}
-        self.data = []
-        self.list_data = []
+        self.data = [{} for i in range(self.num_rulesets)]
+        self.list_data = [{} for i in range(self.num_rulesets + 1)]
         self.vote_data = {}
         nr = self.num_rulesets
         nc = self.num_constituencies
@@ -150,8 +150,6 @@ class Simulation:
             self.stat[measure] = Running_stats(nr)
         for measure in LIST_MEASURES:
             self.stat[measure] = Running_stats((nr,nc+1,np+1))
-        for ruleset in range(self.num_rulesets):
-            self.reference.append([])
         self.run_initial_elections()
         self.find_reference()
 
@@ -172,8 +170,6 @@ class Simulation:
                 self.vote_data[m] = dict((s, datadict[m][s]) for s in stat_list)
         else:
             for r in range(self.num_rulesets):
-                self.list_data.append({})
-                self.data.append({})
                 for m in measures:
                     ddm = datadict[m]
                     if type_of_data == "list":
@@ -398,6 +394,7 @@ class Simulation:
         self.analyze(MEASURES, "data")
         self.analyze(LIST_MEASURES, "list")
         self.analyze(VOTE_MEASURES, "vote")
+        self.list_data[-1] = self.vote_data # used by excel_util
         
     def simulate(self):
         """Simulate many elections."""
@@ -423,13 +420,11 @@ class Simulation:
             self.time_left = hms(time_pr_iter*(ntot - i))
             self.total_time = hms(elapsed)
         self.analysis()
-        self.list_data.append({})
-        self.list_data[-1] = self.vote_data
         # self.test_generated() --- needs to be rewritten,
         # (statistical test of simulated data)
 
     def get_results_dict(self):
-        #self.analysis()
+        self.analysis()
         return {
             "e_rules": self.e_rules,
             "parties": self.parties,

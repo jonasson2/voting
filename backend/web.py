@@ -23,6 +23,8 @@ import simulate
 from util import disp
 from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, SIMULATIONS
+from noweb import simulation_to_excel
+from traceback import format_exc
 
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
@@ -98,8 +100,8 @@ def api_election():
         if len(rules) == 0 or len(rules[0]) == 0:
             raise Exception("/api/election posted with no electoral system")        
         results = single_election(vote_table, rules);
-    except Exception as e:
-        message = e.args[0]
+    except Exception:
+        message = format_exc()
         return jsonify({"error": message})
     return jsonify(results)
 
@@ -113,8 +115,8 @@ def api_election_save():
         handler.to_xlsx(tmpfilename)
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name=f"Election-{date}.xlsx"
-    except Exception as e:
-        message = e.args[0]
+    except Exception:
+        message = format_exc()
         return jsonify({"error": message})
     return save_file(tmpfilename, download_name)
 
@@ -123,9 +125,9 @@ def api_settings_save():
     data = request.get_json(force=True)
     try:
         check_input(data, ["e_settings", "sim_settings"])
-    except Exception as e:
+    except Exception:
         print("caught exception")
-        message = e.args[0]
+        message = format_exc()
         return jsonify({"error": message})
     settings = data["e_settings"]
     if type(settings) != list: settings = [settings]
@@ -227,9 +229,8 @@ def api_simulate():
         sim_settings = data["sim_settings"]
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
-    except (KeyError, TypeError, ValueError) as e:
-        message = e.args[0]
-        print("Error-4", message)
+    except Exception:
+        message = format_exc()
         return jsonify({"started": False, "error": message})
 
 @app.route('/api/simulate/check/', methods=['POST'])
@@ -245,8 +246,8 @@ def api_simulate_check():
             sid = data["sid"]
             stop = data["stop"]
             (status, results) = check_simulation(sid, stop)
-        except Exception as e:           
-            msg = "Error in check_simulation: " + str(e)
+        except Exception:
+            msg = format_exc()
     if len(msg) > 0:
         print("Error; message = ", msg)
         return jsonify({"error": msg})
@@ -294,10 +295,10 @@ def api_simdownload():
         sid = data["sid"]
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
         print("tmpfilename", tmpfilename)
-    except Exception as e:
-        message = e.args[0]
+        simulation_to_excel(sid, tmpfilename)
+    except Exception:
+        message = format_exc()
         return jsonify({"error": message})
-    simulation_to_excel(sid, tmpfilename))
     date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
     download_name = f"simulation-{date}.xlsx"
     print("download_name", download_name)
@@ -321,7 +322,10 @@ def get_presets_dict():
         with open('../data/presets.json', encoding='utf-8') as js:
             data = json.load(js)
     except IOError:
-        data = {'error': 'Could not load presets: database lost.'}
+        data = {'error': 'Could not load presets: database lost?'}
+    except Exception:
+        data = {'error': format_exc()}
+        
     #except json.decoder.JSONDecodeError:
     #    data = {'error': 'Could not load presets due to parse error.'}
 
