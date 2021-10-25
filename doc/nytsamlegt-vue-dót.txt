@@ -25,3 +25,6 @@ watch: {
         //...
     }
 }
+
+Þetta er ekki bara vue-dót. Hér er um staðalfrávik o.fl.:
+https://www.johndcook.com/blog/standard_deviation/

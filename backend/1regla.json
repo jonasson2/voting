@@ -1,0 +1,54 @@
+{
+  "e_settings": [
+    {
+      "name": "Optimal",
+      "seat_spec_option": "refer",
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 1,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 2,
+          "num_const_seats": 9
+        }
+      ],
+      "constituency_threshold": 10,
+      "adjustment_threshold": 10,
+      "adjustment_method": "B-alternating-scaling",
+      "constituency_allocation_rule": "4-danish",
+      "adjustment_division_rule": "1-dhondt",
+      "adjustment_allocation_rule": "1-dhondt"
+    }
+  ],
+  "sim_settings": {
+    "distribution_parameter": 0.001,
+    "gen_method": "uniform",
+    "scaling": "both",
+    "selected_rand_constit": "All",
+    "simulate": false,
+    "simulation_count": 1000
+  }
+}

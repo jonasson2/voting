@@ -13,6 +13,13 @@ from dictionaries import MEASURES, LIST_MEASURES, VOTE_MEASURES, AGGREGATES
 from generate_votes import generate_votes, generate_maxchange_votes
 import voting
 from electionHandler import ElectionHandler
+from running_stats import Running_stats
+
+def disp(title, value, depth=99):
+    from pprint import PrettyPrinter
+    pp = PrettyPrinter(compact=False, width=200, depth=depth).pprint
+    print("\n" + title.upper() + ":")
+    pp(value)
 
 logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -26,22 +33,6 @@ def hms(sec):
     if d == 1: s = "1 day + " + s
     elif d > 1: s = f"{d} days + " + s
     return s
-
-def error(avg, ref):
-    """
-    Compare average of generated votes to reference votes to test the
-    quality of the simulation.
-    """
-    num_consts = len(avg)
-    num_parties = len(avg[0])
-    s = 0
-    for c in range(num_consts):
-        for p in range(num_parties):
-            if type(ref) is list:
-                s += abs(avg[c][p] - ref[c][p])
-            else:
-                s += abs(avg[c][p] - ref)
-    return s/(num_consts*num_parties)
 
 def dev(results, ref):
     """Calculate seat deviation of results compared to reference results."""
@@ -97,8 +88,6 @@ def votes_to_change(election):
 
     return votes_to_change
 
-
-
 class SimulationRules(Rules):
     def __init__(self):
         super(SimulationRules, self).__init__()
@@ -140,8 +129,6 @@ class Simulation:
         self.total_time = timedelta(0)
         self.time_left = 0
         self.iterations_with_no_solution = 0
-        self.data = []
-        self.list_data = []
         self.reference = []
         sel_rand_const = sim_rules["selected_rand_constit"]
         if sel_rand_const == "All":
@@ -150,125 +137,49 @@ class Simulation:
             constit = [c["name"] for c in self.constituencies]
             assert sel_rand_const in constit
             self.apply_random = constit.index(sel_rand_const)
+        self.stat = {}
+        self.data = []
+        self.list_data = []
+        self.vote_data = {}
+        nr = self.num_rulesets
+        nc = self.num_constituencies
+        np = self.num_parties
+        for measure in VOTE_MEASURES:
+            self.stat[measure] = Running_stats((nc+1,np+1))
+        for measure in MEASURES:
+            self.stat[measure] = Running_stats(nr)
+        for measure in LIST_MEASURES:
+            self.stat[measure] = Running_stats((nr,nc+1,np+1))
         for ruleset in range(self.num_rulesets):
             self.reference.append([])
-            self.data.append({})
-            for measure in MEASURES.keys():
-                self.data[ruleset][measure] = {
-                    aggr: 0
-                    for aggr in AGGREGATES.keys()
-                }
-            num_constituencies = len(self.e_rules[ruleset]["constituencies"])
-            self.list_data.append({})
-            for measure in LIST_MEASURES.keys():
-                self.list_data[ruleset][measure] = {}
-                for aggr in AGGREGATES.keys():
-                    self.list_data[ruleset][measure][aggr] = []
-                    for c in range(num_constituencies+1):
-                        self.list_data[ruleset][measure][aggr].append([0]*(self.num_parties+1))
-
-        self.data.append({})
-        self.data[-1]["time"] = {}
-        for aggr in AGGREGATES.keys():
-            self.data[-1]["time"][aggr] = 0
-        self.list_data.append({})
-        for measure in VOTE_MEASURES.keys():
-            self.list_data[-1][measure] = {}
-            for aggr in AGGREGATES.keys():
-                self.list_data[-1][measure][aggr] = []
-                for c in range(self.num_constituencies+1):
-                    self.list_data[-1][measure][aggr].append([0]*(self.num_parties+1))
-
         self.run_initial_elections()
         self.find_reference()
 
-    def aggregate_list(self, ruleset, measure, const, party, value):
-        self.list_data[ruleset][measure]["cnt"][const][party] += 1
-        self.list_data[ruleset][measure]["sum"][const][party] += value
-        self.list_data[ruleset][measure]["sm2"][const][party] += value**2
-        self.list_data[ruleset][measure]["sm3"][const][party] += value**3
-        self.list_data[ruleset][measure]["sm4"][const][party] += value**4
-        if (self.list_data[ruleset][measure]["cnt"][const][party] > 1):
-            if (value > self.list_data[ruleset][measure]["max"][const][party]):
-                self.list_data[ruleset][measure]["max"][const][party] = value
-            if (value < self.list_data[ruleset][measure]["min"][const][party]):
-                self.list_data[ruleset][measure]["min"][const][party] = value
+    def analyze(self, measures, type_of_data):
+        is_vote_data = type_of_data == "vote"
+        datadict = {}
+        stat_list = ["avg", "std", "skw", "kur", "min", "max"]
+        for measure in measures:
+            datadict[measure] = {}
+            datadict[measure]["avg"] = self.stat[measure].mean()
+            datadict[measure]["std"] = self.stat[measure].std()
+            datadict[measure]["skw"] = self.stat[measure].skewness()
+            datadict[measure]["kur"] = self.stat[measure].kurtosis()
+            datadict[measure]["min"] = self.stat[measure].minimum()
+            datadict[measure]["max"] = self.stat[measure].maximum()
+        if is_vote_data:
+            for m in measures:
+                self.vote_data[m] = dict((s, datadict[m][s]) for s in stat_list)
         else:
-            self.list_data[ruleset][measure]["max"][const][party] = value
-            self.list_data[ruleset][measure]["min"][const][party] = value
-
-    def analyze_list(self, ruleset, measure, const, party):
-        n = float(self.list_data[ruleset][measure]["cnt"][const][party])
-        s = float(self.list_data[ruleset][measure]["sum"][const][party])
-        t = float(self.list_data[ruleset][measure]["sm2"][const][party])
-        q = float(self.list_data[ruleset][measure]["sm3"][const][party])
-        r = float(self.list_data[ruleset][measure]["sm4"][const][party])
-        m = s/n if n>0 else 0 #average
-        d =                   t - m*s   # = \sum_{i=1}^{n}(x_i-avg)^2
-        h =          q -   m*(t + 2*d)  # = \sum_{i=1}^{n}(x_i-avg)^3
-        c = r - m*(4*q - 3*m*(t +   d)) # = \sum_{i=1}^{n}(x_i-avg)^4
-        if d < 0:
-            if d < -0.0000001:
-                logging.warning(f'Negative d encountered: {d}. '
-                    f'Measure: {measure}, const: {const}, party: {party}')
-            if d < -0.01:
-                message = "Variance very negative. What's going on here?"
-                logging.error(message)
-                raise ValueError(message)
-            d = 0
-        var = d / (n-1) if n>1 else 0
-        std = sqrt(var)
-        skewness = h*sqrt(n/d)/d if d!=0 else 0
-        kurtosis = c*n/d**2      if d!=0 else 0
-        self.list_data[ruleset][measure]["avg"][const][party] = m
-        self.list_data[ruleset][measure]["var"][const][party] = var
-        self.list_data[ruleset][measure]["std"][const][party] = std
-        self.list_data[ruleset][measure]["skw"][const][party] = skewness
-        self.list_data[ruleset][measure]["kur"][const][party] = kurtosis
-
-    def aggregate_measure(self, ruleset, measure, value):
-        self.data[ruleset][measure]["cnt"] += 1
-        self.data[ruleset][measure]["sum"] += value
-        self.data[ruleset][measure]["sm2"] += value**2
-        self.data[ruleset][measure]["sm3"] += value**3
-        self.data[ruleset][measure]["sm4"] += value**4
-        if (self.data[ruleset][measure]["cnt"] > 1):
-            if (value > self.data[ruleset][measure]["max"]):
-                self.data[ruleset][measure]["max"] = value
-            if (value < self.data[ruleset][measure]["min"]):
-                self.data[ruleset][measure]["min"] = value
-        else:
-            self.data[ruleset][measure]["max"] = value
-            self.data[ruleset][measure]["min"] = value
-
-    def analyze_measure(self, ruleset, measure):
-        n = float(self.data[ruleset][measure]["cnt"])
-        s = float(self.data[ruleset][measure]["sum"])
-        t = float(self.data[ruleset][measure]["sm2"])
-        q = float(self.data[ruleset][measure]["sm3"])
-        r = float(self.data[ruleset][measure]["sm4"])
-        m = s/n if n>0 else 0 #average
-        d =                   t - m*s   # = \sum_{i=1}^{n}(x_i-avg)^2
-        h =          q -   m*(t + 2*d)  # = \sum_{i=1}^{n}(x_i-avg)^3
-        c = r - m*(4*q - 3*m*(t +   d)) # = \sum_{i=1}^{n}(x_i-avg)^4
-        if d < 0:
-            if d < -0.0000001:
-                logging.warning(f'Negative d encountered: {d}. '
-                    f'Measure: {measure}, const: {const}, party: {party}')
-            if d < -0.01:
-                message = "Variance very negative. What's going on here?"
-                logging.error(message)
-                raise ValueError(message)
-            d = 0
-        var = d / (n-1) if n>1 else 0
-        std = sqrt(var)
-        skewness = h*sqrt(n/d)/d if d!=0 else 0
-        kurtosis = c*n/d**2      if d!=0 else 0
-        self.data[ruleset][measure]["avg"] = m
-        self.data[ruleset][measure]["var"] = var
-        self.data[ruleset][measure]["std"] = std
-        self.data[ruleset][measure]["skw"] = skewness
-        self.data[ruleset][measure]["kur"] = kurtosis
+            for r in range(self.num_rulesets):
+                self.list_data.append({})
+                self.data.append({})
+                for m in measures:
+                    ddm = datadict[m]
+                    if type_of_data == "list":
+                        self.list_data[r][m] = dict((s, ddm[s][r]) for s in stat_list)
+                    else:
+                        self.data[r][m] = dict((s, ddm[s][r]) for s in stat_list)
 
     def run_initial_elections(self):
         self.base_allocations = []
@@ -298,38 +209,15 @@ class Simulation:
                     self.base_votes, self.var_coeff, self.apply_random)
             else:
                 votes = generate_votes(
-                    self.base_votes, self.var_coeff, self.variate, self.apply_random)
+                    self.base_votes, self.var_coeff, self.variate,
+                    self.apply_random)
             yield votes
-
-    def test_generated(self):
-        """Analysis of generated votes."""
-        var_distr = []
-        for c in range(1+self.num_constituencies):
-            var_distr.append([])
-            for p in range(1+self.num_parties):
-                var_distr[c].append(1/sqrt(self.var_coeff)
-                                        *self.xtd_vote_shares[c][p]
-                                        *(self.xtd_vote_shares[c][p]-1))
-        sim_shares = self.list_data[-1]["sim_shares"]
-        self.data[-1]["sim_shares"] = {
-            "err_avg": error(sim_shares["avg"], self.xtd_vote_shares),
-            "err_var": error(sim_shares["var"], var_distr)
-        }
 
     def collect_votes(self, votes):
         xtd_votes  = add_totals(votes)
         xtd_shares = find_xtd_shares(xtd_votes)
-        for c in range(self.num_constituencies+1):
-            for p in range(self.num_parties+1):
-                self.aggregate_list(-1, "sim_votes", c, p, xtd_votes[c][p])
-                self.aggregate_list(-1, "sim_shares", c, p, xtd_shares[c][p])
-
-    # def find_reference_optimal(self, votes):       
-    #     self.e_handler.set_votes(votes)
-    #     self.collect_votes(votes)
-    #     for ruleset in range(self.num_rulesets):
-    #         election = self.e_handler.elections[ruleset]
-    #         self.reference_optimal
+        self.stat["sim_votes"].update(xtd_votes)
+        self.stat["sim_shares"].update(xtd_shares)
 
     def find_reference(self):
         self.e_handler.set_votes(self.base_votes)
@@ -342,43 +230,60 @@ class Simulation:
         # votes are simulated; this function allocates seats
         self.e_handler.set_votes(votes)
         self.collect_votes(votes)
+        self.collect_list_measures()
+        self.collect_general_measures()
+
+    # def collect_list_measures(self, ruleset, election):
+    def collect_list_measures(self):
+        import numpy as np
+        cs = []
+        ts = []
+        ids = []
+        for ruleset in range(self.num_rulesets):
+            election = self.e_handler.elections[ruleset]                     
+            cs.append(add_totals(election.m_const_seats_alloc))
+            ts.append(add_totals(election.results))
+            ids.append(add_totals(self.calculate_ideal_seats(election)))
+        cs = np.array(cs)
+        ts = np.array(ts)
+        ids = np.array(ids)
+        adj = ts - cs
+        sh = ts/np.maximum(1, ts[:,-1,None]) # divide by last column
+        self.stat["const_seats"].update(cs)
+        self.stat["total_seats"].update(ts)
+        self.stat["adj_seats"].update(adj)
+        self.stat["seat_shares"].update(sh)
+        self.stat["ideal_seats"].update(ids)
+
+    # def collect_general_measures(self, ruleset, election):
+    def collect_general_measures(self):
+        """Various tests to determine the quality of the given method."""
+        measure_list = ["adj_dev", "entropy", "entropy_ratio",
+                        "sum_abs", "sum_pos", "sum_sq", "min_seat_value"]
+        deviation_list = ["dev_opt", "dev_law", "dev_all_adj",
+                          "dev_all_const", "dev_ref"]
+        deviation_list.extend([d + "_totals" for d in deviation_list])
+        self.measures = dict((m,[]) for m in measure_list)
+        self.deviations = dict((m,[]) for m in deviation_list)
         for ruleset in range(self.num_rulesets):
             election = self.e_handler.elections[ruleset]
-            self.collect_list_measures(ruleset, election)
-            self.collect_general_measures(ruleset, election)
+            self.measures["adj_dev"].append(election.adj_dev)
+            opt_results = self.opt_results_and_entropy(election)
+            self.deviation_measures(ruleset, election, opt_results)
+            self.other_measures(ruleset, election)
+        for measure in measure_list:
+            self.stat[measure].update(self.measures[measure])
+        for measure in deviation_list:
+            self.stat[measure].update(self.deviations[measure])
 
-    def collect_list_measures(self, ruleset, election):
-        const_seats_alloc = add_totals(election.m_const_seats_alloc)
-        total_seats_alloc = add_totals(election.results)
-        ideal_seats = add_totals(self.calculate_ideal_seats(election))
-        for c in range(1 + election.num_constituencies):
-            for p in range(1+self.num_parties):
-                cs  = const_seats_alloc[c][p]
-                ts  = total_seats_alloc[c][p]
-                adj = ts - cs
-                sh  = float(ts)/total_seats_alloc[c][-1]
-                ids = ideal_seats[c][p]
-                self.aggregate_list(ruleset, "const_seats", c, p, cs)
-                self.aggregate_list(ruleset, "total_seats", c, p, ts)
-                self.aggregate_list(ruleset, "adj_seats",   c, p, adj)
-                self.aggregate_list(ruleset, "seat_shares", c, p, sh)
-                self.aggregate_list(ruleset, "ideal_seats", c, p, ids)
-
-    def collect_general_measures(self, ruleset, election):
-        """Various tests to determine the quality of the given method."""
-        self.aggregate_measure(ruleset, "adj_dev", election.adj_dev)
-        opt_results = self.opt_results_and_entropy(ruleset, election)
-        self.deviation_measures(ruleset, election, opt_results)
-        self.other_measures(ruleset, election)
-
-    def opt_results_and_entropy(self, ruleset, election):
+    def opt_results_and_entropy(self, election):
         opt_rules = election.rules.generate_opt_ruleset()
         opt_election = voting.Election(opt_rules, election.m_votes)
         opt_results = opt_election.run()
         entropy = election.entropy()
         entropy_ratio = exp(entropy - opt_election.entropy())
-        self.aggregate_measure(ruleset, "entropy", entropy)
-        self.aggregate_measure(ruleset, "entropy_ratio", entropy_ratio)
+        self.measures["entropy"].append(entropy)
+        self.measures["entropy_ratio"].append(entropy_ratio)
         return opt_results
 
     def deviation_measures(self, ruleset, election, opt_results):
@@ -387,12 +292,6 @@ class Simulation:
         self.deviation(ruleset, "all_adj",   election)
         self.deviation(ruleset, "all_const", election)
         self.deviation(ruleset, "ref",       election, self.reference[ruleset])
-        # self.deviation(ruleset, "one_const", [election.v_votes], [v_results])
-        # should be:
-        #   v_results = [sum(x) for x in zip(*election.results)]
-        #   election.results = v_results
-        #   self.deviation(ruleset, "one_const", election)
-        # excep that destroys election...
 
     def other_measures(self, ruleset, election):
         ideal_seats = self.calculate_ideal_seats(election)
@@ -401,19 +300,21 @@ class Simulation:
         self.sum_sq(ruleset, election, ideal_seats)
         self.min_seat_value(ruleset, election, ideal_seats)
 
-    def deviation(self, ruleset, option, election, comparison_results = None):
+    def deviation(self, ruleset, option, election,
+                  comparison_results = None):
         votes = election.m_votes
         results = election.results
         if comparison_results == None:
             rules = self.e_rules[ruleset].generate_comparison_rules(option)
             comparison_results = voting.Election(rules, votes).run()
         deviation = dev(results, comparison_results)
-        self.aggregate_measure(ruleset, "dev_"+option, deviation)
-        if option != "one_const":
-            ref_totals = [sum(x) for x in zip(*results)]
-            comp_totals = [sum(x) for x in zip(*comparison_results)]
-            deviation = dev([ref_totals], [comp_totals])
-            self.aggregate_measure(ruleset, f"dev_{option}_totals", deviation)
+        measure = "dev_" + option
+        self.deviations[measure].append(deviation)
+        ref_totals = [sum(x) for x in zip(*results)]
+        comp_totals = [sum(x) for x in zip(*comparison_results)]
+        deviation = dev([ref_totals], [comp_totals])
+        measure = "dev_" + option + "_totals"
+        self.deviations[measure].append(deviation)
 
     def calculate_ideal_seats(self, election):
         scalar = float(election.total_seats) / sum(sum(x) for x in election.m_votes)
@@ -460,7 +361,7 @@ class Simulation:
             for p in range(self.num_parties)
             for c in range(election.num_constituencies)
         ])
-        self.aggregate_measure(ruleset, "sum_abs", lh)
+        self.measures["sum_abs"].append(lh)
 
     #Minimized by Sainte Lague
     def sum_sq(self, ruleset, election, ideal_seats):
@@ -470,7 +371,7 @@ class Simulation:
             for c in range(election.num_constituencies)
             if ideal_seats[c][p] != 0
         ])
-        self.aggregate_measure(ruleset, "sum_sq", stl)
+        self.measures["sum_sq"].append(stl)
 
     #Maximized by d'Hondt
     def min_seat_value(self, ruleset, election, ideal_seats):
@@ -480,7 +381,7 @@ class Simulation:
             for c in range(election.num_constituencies)
             if election.results[c][p] != 0
         ])
-        self.aggregate_measure(ruleset, "min_seat_value", dh_min)
+        self.measures["min_seat_value"].append(dh_min)
 
     #Minimized by d'Hondt
     def sum_pos(self, ruleset, election, ideal_seats):
@@ -490,24 +391,14 @@ class Simulation:
             for c in range(election.num_constituencies)
             if ideal_seats[c][p] != 0
         ])
-        self.aggregate_measure(ruleset, "sum_pos", dh_sum)
+        self.measures["sum_pos"].append(dh_sum)        
 
     def analysis(self):
         """Calculate averages and variances of various quality measures."""
-        for ruleset in range(self.num_rulesets):
-            for measure in MEASURES.keys():
-                self.analyze_measure(ruleset, measure) # buggy
-            num_constituencies = len(self.e_rules[ruleset]["constituencies"])
-            for c in range(1+num_constituencies):
-                for p in range(1+self.num_parties):
-                    for measure in LIST_MEASURES.keys():
-                        self.analyze_list(ruleset, measure, c, p)
-        # self.analyze_measure(-1, "time") # there is a bug in here 
-        for c in range(1+self.num_constituencies):
-            for p in range(1+self.num_parties):
-                for measure in VOTE_MEASURES.keys():
-                    self.analyze_list(-1, measure, c, p)
-
+        self.analyze(MEASURES, "data")
+        self.analyze(LIST_MEASURES, "list")
+        self.analyze(VOTE_MEASURES, "vote")
+        
     def simulate(self):
         """Simulate many elections."""
         gen = self.gen_votes()
@@ -532,11 +423,13 @@ class Simulation:
             self.time_left = hms(time_pr_iter*(ntot - i))
             self.total_time = hms(elapsed)
         self.analysis()
-        self.aggregate_measure(-1, "time", elapsed)
-        self.test_generated()
+        self.list_data.append({})
+        self.list_data[-1] = self.vote_data
+        # self.test_generated() --- needs to be rewritten,
+        # (statistical test of simulated data)
 
-    def get_results(self):
-        self.analysis()
+    def get_results_dict(self):
+        #self.analysis()
         return {
             "e_rules": self.e_rules,
             "parties": self.parties,
@@ -550,35 +443,16 @@ class Simulation:
             "list_measures": dicts.LIST_MEASURES,
             "vote_measures": dicts.VOTE_MEASURES,
             "aggregates": dicts.AGGREGATES,
-            "data": [
-                {
-                    "name": self.e_rules[ruleset]["name"],
-                    "method": self.e_rules[ruleset]["adjustment_method"],
-                    "measures": self.data[ruleset],
-                    "list_measures": self.list_data[ruleset]
-                }
-                for ruleset in range(self.num_rulesets)
+            "data": [{
+                "name": self.e_rules[ruleset]["name"],
+                "method": self.e_rules[ruleset]["adjustment_method"],
+                "measures": self.data[ruleset],
+                "list_measures": self.list_data[ruleset]
+              }
+              for ruleset in range(self.num_rulesets)
             ],
-            "vote_data": self.list_data[-1],
-            "time_data": self.data[-1]["time"]
+            "vote_data": self.vote_data
         }
 
     def to_xlsx(self, filename):
         simulation_to_xlsx(self, filename)
-
-def run_script_simulation(rules):
-    srs = SimulationRules()
-    srs.update(rules["sim_settings"])
-
-    rs = voting.ElectionRules()
-    rs.update(rules["election_rules"])
-
-    if not "ref_votes" in rules:
-        return {"error": "No reference votes supplied."}
-
-    election = voting.Election(rs, rules["ref_votes"])
-
-    sim = Simulation(srs, election, rules["ref_votes"])
-    sim.simulate()
-
-    return sim

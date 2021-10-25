@@ -289,13 +289,18 @@ def api_presets_load():
 
 @app.route('/api/simdownload/', methods=['GET','POST'])
 def api_simdownload():
-    data = request.get_json(force=True)
-    sid = data["sid"]
-    tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
-    (simulation, thread, _) = SIMULATIONS[sid]
-    simulation.to_xlsx(tmpfilename)
+    try:
+        data = request.get_json(force=True)
+        sid = data["sid"]
+        tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
+        print("tmpfilename", tmpfilename)
+    except Exception as e:
+        message = e.args[0]
+        return jsonify({"error": message})
+    simulation_to_excel(sid, tmpfilename))
     date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
     download_name = f"simulation-{date}.xlsx"
+    print("download_name", download_name)
     return save_file(tmpfilename, download_name);
 
 def get_capabilities_dict(constituencies):

@@ -347,7 +347,7 @@ def simulation_to_xlsx(simulation, filename):
             const["name"] for const in simulation.e_rules[r]["constituencies"]
         ] + ["Total"]
         parties = simulation.e_rules[r]["parties"] + ["Total"]
-
+        
         data_matrix = {
             "base": {
                 "v" : simulation.xtd_votes,
@@ -459,6 +459,7 @@ def simulation_to_xlsx(simulation, filename):
         toprow = 0
         bottomrow = toprow
         c1=1
+
         #Basic info
         for group in info_groups:
             row = toprow

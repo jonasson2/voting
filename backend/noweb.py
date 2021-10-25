@@ -60,7 +60,7 @@ def single_election(votes, systems):
     results = [election.get_results_dict() for election in result]
     return results
 
-def run_simulation(sid):
+def run_thread_simulation(sid):
     global SIMULATIONS
     (sim, thread, _) = SIMULATIONS[sid]
     thread.done=False
@@ -68,6 +68,21 @@ def run_simulation(sid):
     sim.simulate()
     #print("Ending thread %s" % sid)
     thread.done = True
+
+def run_simulation(votes, systems, sim_settings, excelfile = None):
+    # not threaded
+    rulesets = []
+    for rs in systems:
+        election_systems = ElectionRules()
+        election_systems.update(rs)
+        rulesets.append(election_systems)
+    simulation_systems = simulate.SimulationRules()
+    simulation_systems.update(check_simul_settings(sim_settings))
+    sim = simulate.Simulation(simulation_systems, rulesets, votes)
+    sim.simulate()
+    if excelfile != None:
+        sim.to_xlsx(excelfile)
+    return sim.get_results_dict()
 
 def start_simulation(votes, systems, sim_settings):
     global SIMULATIONS
@@ -88,7 +103,7 @@ def start_simulation(votes, systems, sim_settings):
     cleanup_expired_simulations()
     expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
     # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
-    thread = threading.Thread(target=run_simulation, args=(sid,))
+    thread = threading.Thread(target=run_thread_simulation, args=(sid,))
     SIMULATIONS[sid] = [simulation, thread, expires]
     thread.start()
     return sid
@@ -96,6 +111,7 @@ def start_simulation(votes, systems, sim_settings):
 def check_simulation(sid, stop):
     (sim, thread, _) = SIMULATIONS[sid]
     sim.iteration -= sim.iterations_with_no_solution
+    print("Checking simulation, done =", thread.done, ", iteration =", sim.iteration)
     sim_status = {
         "done": thread.done,
         "iteration": sim.iteration,
@@ -103,12 +119,16 @@ def check_simulation(sid, stop):
         "total_time": sim.total_time,
         "target": sim.sim_rules["simulation_count"],
     }
-    sim_results = sim.get_results()
+    sim_results = sim.get_results_dict()
     if stop:
         sim.terminate = True
         # thread.join() finishes the thread and sets thread.done to True
         thread.join()
     return sim_status, sim_results
+
+def simulation_to_excel(sid, file):
+    (sim, _, _) = SIMULATIONS[sid]
+    sim.to_xlsx(file)
 
 def cleanup_expired_simulations():
     global SIMULATIONS
