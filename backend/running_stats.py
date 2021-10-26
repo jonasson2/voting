@@ -12,12 +12,13 @@ class Running_stats:
 
     def update(self, A): # A should have shape "shape"
         A = np.array(A)
+        n1 = self.n
         self.n += 1
         n = self.n
         delta = A - self.M1
         delta_n = delta/n
         delta_n2 = delta_n**2
-        term1 = delta*delta_n*n
+        term1 = delta*delta_n*n1
         self.M1 += delta_n
         self.M4 += (term1 * delta_n2 * (n*n - 3*n + 3) +
                     6 * delta_n2 * self.M2 - 4 * delta_n * self.M3)
