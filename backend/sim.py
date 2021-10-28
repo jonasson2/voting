@@ -7,9 +7,9 @@ from copy import deepcopy, copy
 import numpy as np
 import numpy.random as npr
 
-n_reps = 5
-n_betasim = 5
-n_unifsim = 5
+n_reps = 4
+n_betasim = 1
+n_unifsim = 2
 
 np.set_printoptions(precision=3, floatmode = 'fixed', suppress=True)
 
@@ -65,13 +65,16 @@ def plot(results, names):
     # and then each value is the average of n_betasim standard deviations.
     import matplotlib.pyplot as plt
     import math
+    print("A")
     results = np.array(results)
     plt.rc('savefig',bbox='tight')
     (nreps, nsys) = np.shape(results)
     sr = round(np.sqrt(nsys))
+    print("B")
     sc = math.ceil(nsys/sr)
     plt.figure(figsize=(10,8))
     xmax = math.ceil(results.max())
+    print("C")
     ylims = np.zeros(nsys)
     ax = []
     for j in range(nsys):
@@ -82,6 +85,7 @@ def plot(results, names):
         plt.xlabel(names[j])
         ylims[j] = plt.gca().get_ylim()[1]
     ylim = max(ylims)
+    print("D")
     for j in range(nsys): # Let all plots have same ylim:
         plt.sca(ax[j])
         plt.ylim(0, ylim)
