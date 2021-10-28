@@ -65,16 +65,13 @@ def plot(results, names):
     # and then each value is the average of n_betasim standard deviations.
     import matplotlib.pyplot as plt
     import math
-    print("A")
     results = np.array(results)
     plt.rc('savefig',bbox='tight')
     (nreps, nsys) = np.shape(results)
     sr = round(np.sqrt(nsys))
-    print("B")
     sc = math.ceil(nsys/sr)
     plt.figure(figsize=(10,8))
     xmax = math.ceil(results.max())
-    print("C")
     ylims = np.zeros(nsys)
     ax = []
     for j in range(nsys):
@@ -85,7 +82,6 @@ def plot(results, names):
         plt.xlabel(names[j])
         ylims[j] = plt.gca().get_ylim()[1]
     ylim = max(ylims)
-    print("D")
     for j in range(nsys): # Let all plots have same ylim:
         plt.sca(ax[j])
         plt.ylim(0, ylim)
