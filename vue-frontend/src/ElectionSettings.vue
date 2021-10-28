@@ -184,10 +184,22 @@ export default {
     },
   },
   watch: {
+    newSystem: {
+      handler: function (val) {
+        console.log("newSystem changed")
+        if (this.watching) {
+          console.log("Getting new system")
+          this.getNewSystem(this.newSystem)
+          this.watching = false
+        }
+      },
+      deep: true
+    },
     system: {
       handler: function (val) {
+        console.log("Watched system change in ElectionSettings")
         if (this.watching) {
-          console.log("Watching system in ElectionSettins, system = ", val)
+          console.log("Changing system in watcher, system = ", val)
           this.watching = false
           this.$emit('update-system', val, this.systemidx, this.getNewSystem)
         }

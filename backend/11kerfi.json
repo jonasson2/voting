@@ -1,7 +1,7 @@
 {
   "e_settings": [
     {
-      "name": "Íslensk lög",
+      "name": "Ísl.lög",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -43,7 +43,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Íslensk lög með sætishlutum",
+      "name": "Ísl-sætishl",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -85,7 +85,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Norsk lög",
+      "name": "Norsk-lög",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -127,7 +127,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Norsk lög með sætishlutum",
+      "name": "Norsk-sætishl",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -169,7 +169,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Atkvæðahlutfall",
+      "name": "Atkv.hlutf.",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -211,7 +211,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Afstæðir yfirburðir",
+      "name": "Relsup",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -253,7 +253,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Afstæðir yfirburðir, einfaldaðir",
+      "name": "Relsup-einf.",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -295,7 +295,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Næsti granni",
+      "name": "Næsti-granni",
       "seat_spec_option": "refer",
       "constituencies": [
         {
@@ -421,7 +421,7 @@
       "adjustment_allocation_rule": "1-dhondt"
     },
     {
-      "name": "Besta skipting",
+      "name": "Besta-sk.",
       "seat_spec_option": "refer",
       "constituencies": [
         {

@@ -176,17 +176,21 @@ export default {
       this.$emit("download-file", promise);
     },
     uploadSettings: function(evt) {
+      console.log("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
       if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.$http.post('/api/settings/upload/', formData).then(response => {
         if (this.replace){
           this.systems.splice(0, this.systems.length)
+          console.log("Clearing systems")
         }
         for (var i=0; i < response.data.e_settings.length; i++) {
           var setting = response.data.e_settings[i]
           this.systems.push(setting);
+          console.log("t1", setting.adjustment_threshold)
           console.log("Pushing, i=", i, ", name=", this.systems[i].name)
+          console.log("t2", this.systems[i].adjustment_threshold)
         }
         this.$emit("update-rules", this.systems);
         this.$emit("update-simulation-settings", response.data.sim_settings);

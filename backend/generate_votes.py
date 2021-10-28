@@ -29,7 +29,7 @@ def generate_votes (
                 share = mean
             else:
                 share = rand(mean, var_coeff)
-            generated_votes[c].append(int(share*xtd_votes[c][-1]))
+            generated_votes[c].append(round(share*xtd_votes[c][-1]))
 
     return generated_votes
 

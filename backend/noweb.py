@@ -150,4 +150,3 @@ def get_new_download_id():
 
 SIMULATIONS = {}
 SIMULATION_IDX = 0
-
