@@ -67,10 +67,10 @@ ADJUSTMENT_METHODS = {
 }
 ADJUSTMENT_METHOD_NAMES = {
     "1-icelandic-law":        "Icelandic law 24/2000",
-    "2-ice-shares":           "Icelandic law based on seat shares",
+    "2-ice-shares":           "Icelandic law based on constituency seat shares",
     "3-norwegian-law":        "Norwegian law 20/2002",
-    "4-norwegian-icelandic":  "Norwegian law based on seat shares",
-    "5-pure-vote-ratios":     "Vote percentage",
+    "4-norwegian-icelandic":  "Maximum constituency seat share",
+    "5-pure-vote-ratios":     "Maximum constituency vote percentage",
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
     "8-nearest-neighbor":     "Nearest neighbor",
@@ -110,8 +110,8 @@ MEASURES = {
     "dev_all_const":   "Allocation as if all seats were constituency seats",
     "dev_all_const_totals":
                        "Allocation as if all seats were constituency seats",
-    "dev_ref":         "Allocation based on reference votes",
-    "dev_ref_totals":  "Allocation based on reference votes",
+    "dev_ref":         "Allocation with actual system for the reference votes",
+    "dev_ref_totals":  "Allocation with actual system for the reference votes",
     "adj_dev":         "Desired apportionment of adjustment seats",
     "dev_one_const":   "Allocation as if all constituencies were combined into one",
     "entropy":         "Entropy (product of all seat values used)",

@@ -1,19 +1,17 @@
-
-
 from electionRules import ElectionRules
 from voting import Election
 from table_util import add_totals
 from input_util import check_vote_table, check_systems
 from excel_util import elections_to_xlsx
+from util import disp
 
 class ElectionHandler:
     """A handler for comparing electoral system results of a single election
-
-    A class for managing comparison of results fom different electoral systems,
-        on a common vote table.
+    &
+    A class for managing comparison of results from different electoral systems,
+    on a common vote table.
     """
     def __init__(self, vote_table, election_rules_list):
-        
         self.election_rules_list = check_systems(election_rules_list)
         self.vote_table = check_vote_table(vote_table)
         self.name = self.vote_table["name"]
@@ -24,6 +22,7 @@ class ElectionHandler:
         self.set_votes(self.vote_table["votes"])
 
     def set_votes(self, votes):
+        print("In set_votes in electionHandler")
         assert len(votes) == self.num_constituencies, (
             "Vote_table does not match constituency list.")
         assert all(len(row) == self.num_parties for row in votes), (
@@ -71,6 +70,8 @@ class ElectionHandler:
             self.elections.append(election)
 
     def run_elections(self):
+        print("In run_elections in electionHandler")
+        #disp("el0", self.elections[0].__dict__)
         for election in self.elections:
             election.run()
 

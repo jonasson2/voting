@@ -1,15 +1,27 @@
 import numpy as np
+from math import prod
 
 class Running_stats:
-    def __init__(self, shape):
+    def __init__(self, shape, binwidth = None):
         self.n = 0
         self.M1 = np.zeros(shape)
         self.M2 = np.zeros(shape)
         self.M3 = np.zeros(shape)
         self.M4 = np.zeros(shape)
         self.big = np.zeros(shape)
+        self.binwidth = binwidth
+        if binwidth:
+            self.histcounts = [{}]*prod(shape)
         self.small = np.zeros(shape)
 
+    def histupdate(self, A):
+        for (a,hc) in zip(np.nditer(A), self.histcounts):
+            bin = int(a/self.binwidth)
+            if bin in hc:
+                hc[bin] += 1
+            else:
+                hc[bin] = 0
+        
     def update(self, A): # A should have shape "shape"
         A = np.array(A)
         n1 = self.n
@@ -24,6 +36,7 @@ class Running_stats:
                     6 * delta_n2 * self.M2 - 4 * delta_n * self.M3)
         self.M3 += term1 * delta_n * (n - 2) - 3 * delta_n * self.M2
         self.M2 += term1
+        if self.binwidth: self.histupdate(A)
         if n == 1:
             self.big = A
             self.small = A
@@ -51,7 +64,20 @@ class Running_stats:
 
     def minimum(self):
         return self.small.tolist()
-        
+
+    def histogram(self):
+        # Returns lists of parameters for Matplotlib bar-charts
+        # x[i], height[i] are the parameters for a bar-chart of the
+        # i-th entries in the flattened A-data
+        N = prod(self.shape)
+        x = []
+        height = []
+        for i in range(prod(self.shape)):
+            x.append(np.array(self.histcounts[i].keys()) + self.binwidth/2)
+            height.append(np.array(self.histcounts[i].values()))
+        width = self.binwidth*0.9
+        return (x,height,width)
+
 # References:
 #
 # https://www.johndcook.com/blog/skewness_kurtosis/

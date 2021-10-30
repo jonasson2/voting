@@ -7,6 +7,7 @@ from hashlib import sha256
 from electionRules import ElectionRules
 from electionHandler import ElectionHandler
 import util
+from util import disp
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
 

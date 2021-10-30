@@ -1,5 +1,4 @@
-# from voting import Election, SIMULATION_VARIATES
-import logging
+#import logging
 import json
 from datetime import datetime, timedelta
 from math import sqrt, exp
@@ -21,7 +20,7 @@ def disp(title, value, depth=99):
     print("\n" + title.upper() + ":")
     pp(value)
 
-logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+#logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
 def hms(sec):
     sec = round(sec)
@@ -44,50 +43,6 @@ def dev(results, ref):
             d += abs(results[c][p] - ref[c][p])
     return d
 
-def votes_to_change(election):
-    """
-    Find how many additional votes each individual list must receive
-    for the results of the given election to change.
-    """
-    ref_results = election.results
-    ref_votes = election.m_votes
-    votes_to_change = []
-    votes = deepcopy(ref_votes)
-    for c in range(len(ref_results)):
-        votes_to_change.append([])
-        for p in range(len(ref_results[c])):
-            if ref_votes[c][p] == 0:
-                votes_to_change[c].append(None)
-                continue
-            a = 0
-            b = int(0.1*votes[c][p])
-            d = 0
-            while d == 0:
-                votes[c][p] = ref_votes[c][p]+b
-                election = voting.Election(election.rules, votes)
-                results = election.run()
-                d = dev(results, ref_results)
-                if d == 0:
-                    a = copy(b)
-                    b = int(sqrt(2)*b)
-            m = b-a
-            x = 0
-            while m > 1:
-                x = int(m*sqrt(0.5) + a)
-                votes[c][p] = ref_votes[c][p]+x
-                election = voting.Election(election.rules, votes)
-                results = election.run()
-                d = dev(results, ref_results)
-                if d == 0:
-                    a = copy(x)
-                else:
-                    b = copy(x)
-                m = b-a
-            votes_to_change[c].append(b)
-            votes[c][p] = ref_votes[c][p]
-
-    return votes_to_change
-
 class SimulationRules(Rules):
     def __init__(self):
         super(SimulationRules, self).__init__()
@@ -109,7 +64,7 @@ class SimulationRules(Rules):
 class Simulation:
     """Simulate a set of elections."""
     def __init__(self, sim_rules, e_rules, vote_table):
-        self.e_handler = ElectionHandler(vote_table, e_rules)
+        self.e_handler = ElectionHandler(vote_table, e_rules) # Computes reference results
         self.e_rules = [el.rules for el in self.e_handler.elections]
         self.num_rulesets = len(self.e_rules)
         self.vote_table = self.e_handler.vote_table
@@ -150,7 +105,9 @@ class Simulation:
             self.stat[measure] = Running_stats(nr)
         for measure in LIST_MEASURES:
             self.stat[measure] = Running_stats((nr,nc+1,np+1))
+        print("Running run_initial_elections")
         self.run_initial_elections()
+        print("Running find_reference")
         self.find_reference()
 
     def analyze(self, measures, type_of_data):
@@ -175,7 +132,9 @@ class Simulation:
                     if type_of_data == "list":
                         self.list_data[r][m] = dict((s, ddm[s][r]) for s in stat_list)
                     else:
+                        #disp("dd", datadict["dev_ref"])
                         self.data[r][m] = dict((s, ddm[s][r]) for s in stat_list)
+        #disp("sd", self.data[0])
 
     def run_initial_elections(self):
         self.base_allocations = []
@@ -220,7 +179,6 @@ class Simulation:
         for ruleset in range(self.num_rulesets):
             election = self.e_handler.elections[ruleset]
             self.reference[ruleset] = election.results
-            #self.reference[ruleset] = election.results
 
     def collect_measures(self, votes):
         # votes are simulated; this function allocates seats
@@ -229,7 +187,6 @@ class Simulation:
         self.collect_list_measures()
         self.collect_general_measures()
 
-    # def collect_list_measures(self, ruleset, election):
     def collect_list_measures(self):
         import numpy as np
         cs = []
@@ -243,7 +200,7 @@ class Simulation:
         cs = np.array(cs)
         ts = np.array(ts)
         ids = np.array(ids)
-        adj = ts - cs
+        adj = ts - cs # this computes the adjustment seats
         sh = ts/np.maximum(1, ts[:,-1,None]) # divide by last column
         self.stat["const_seats"].update(cs)
         self.stat["total_seats"].update(ts)
@@ -251,7 +208,6 @@ class Simulation:
         self.stat["seat_shares"].update(sh)
         self.stat["ideal_seats"].update(ids)
 
-    # def collect_general_measures(self, ruleset, election):
     def collect_general_measures(self):
         """Various tests to determine the quality of the given method."""
         measure_list = ["adj_dev", "entropy", "entropy_ratio",
@@ -269,13 +225,14 @@ class Simulation:
             self.other_measures(ruleset, election)
         for measure in measure_list:
             self.stat[measure].update(self.measures[measure])
+        disp("deviations", self.deviations)
         for measure in deviation_list:
             self.stat[measure].update(self.deviations[measure])
 
     def opt_results_and_entropy(self, election):
         opt_rules = election.rules.generate_opt_ruleset()
         opt_election = voting.Election(opt_rules, election.m_votes)
-        opt_results = opt_election.run()
+        opt_results = opt_election.run() # Run optimal comparison
         entropy = election.entropy()
         entropy_ratio = exp(entropy - opt_election.entropy())
         self.measures["entropy"].append(entropy)
@@ -296,12 +253,13 @@ class Simulation:
         self.sum_sq(ruleset, election, ideal_seats)
         self.min_seat_value(ruleset, election, ideal_seats)
 
-    def deviation(self, ruleset, option, election,
-                  comparison_results = None):
+    def deviation(self, ruleset, option, election, comparison_results = None):
         votes = election.m_votes
         results = election.results
         if comparison_results == None:
+            disp("option", option)
             rules = self.e_rules[ruleset].generate_comparison_rules(option)
+            # Run comparisons other than ref and optimal
             comparison_results = voting.Election(rules, votes).run()
         deviation = dev(results, comparison_results)
         measure = "dev_" + option
@@ -410,7 +368,7 @@ class Simulation:
             self.iteration = i + 1
             votes = next(gen)
             try:
-                self.collect_measures(votes)
+                self.collect_measures(votes) # This allocates seats
             except ValueError:
                 self.iterations_with_no_solution += 1
                 continue

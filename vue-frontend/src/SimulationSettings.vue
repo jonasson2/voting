@@ -83,23 +83,24 @@
           title="Adjust the vote shares so that they sum to the total number of seats for
                  each constituency and each party (scale both rows and columns of vote table)"
           value="both"
-          >
-          by both constituency and party seats
+          >          
+          within both constituencies and parties (scale both rows and columns)
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Adjust the vote shares so that they sum to the total number of seats for
                  each constituency (scale rows of vote table)"
           value="const"
-          >
-          by constituency seats
+          >          
+          within constituencies (scale table rows)
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Adjust the vote shares so that they sum to the total number of seats for
                  each party (scale columns of vote table)"
           value="party"
-          >by party seats
+          >
+          within parties (scale table columns)
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -107,7 +108,7 @@
                  nationally (scales all entries in vote table by the same factor)"
           value="total"
           >
-          by total seats
+          nationally
         </b-form-radio>
       </b-form-radio-group>
     </b-form-group>
@@ -132,7 +133,7 @@ export default {
   },
   methods: {
     make_rand_constit: function(constituencies) {
-      this.rand_constit = ["All"]
+      this.rand_constit = ["All constituencies"]
       for (var con in constituencies) {
         this.rand_constit.push(constituencies[con].name)
       }

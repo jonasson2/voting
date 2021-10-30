@@ -6,9 +6,9 @@ from math import sqrt
 from copy import deepcopy, copy
 import json
 
-n_reps = 80
-n_betasim = 80
-n_unifsim = 80
+n_reps = 1
+n_betasim = 1
+n_unifsim = 1
 
 def disp(title, value, depth=99):
     from pprint import PrettyPrinter
@@ -19,22 +19,24 @@ def disp(title, value, depth=99):
 def read_data():
     # Read votes table and electoral systems to simulate
     #vote_file = "aldarkosning.csv"
-    #vote_file = "../data/elections/2-by-2-example.csv"
-    vote_file = "aldarkosning.csv"
-    sys_file = "11kerfi.json"
+    vote_file = "2-by-2-example.csv"
+    #vote_file = "aldarkosning.csv"
+    #sys_file = "11kerfi.json"
     #sys_file = "../data/tests/default-rule.json"
-    #sys_file = "1regla.json"
+    sys_file = "1regla.json"
     votes = load_votes("../data/elections/" + vote_file)
     systems, sim_settings = load_systems(sys_file)
-    results = single_election(votes, systems)
+    # results = single_election(votes, systems)
     # disp("votes", votes)
     # disp("systems", systems) (is included in results)
+    # disp("results", results)
     return votes, systems, sim_settings
 
 def simulate_votes(votes, systems, sim_settings):
     # Run one step of simulation and return the simulated votes
     settings = copy(sim_settings)
     settings["simulation_count"] = 1
+    print("In simulate_votes")
     results = run_simulation(votes, systems, settings)
     return results["vote_data"]["sim_votes"]["avg"]
 
@@ -85,9 +87,10 @@ def simulate(idx):
         #disp("sim_votes", sim_votes)
         #disp("systems", systems)
         #disp("sim_unif_settings", sim_unif_settings)
-        res = run_simulation(sim_votes, systems, sim_unif_settings)      
+        res = run_simulation(sim_votes, systems, sim_unif_settings)
         dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"] for i in range(nsys)]
         dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"] for i in range(nsys)]
+        disp("dev_ref_avg", dev_ref_avg)
         avg.append(dev_ref_avg)
         std.append(dev_ref_std)
     A = colmean(avg)
@@ -96,14 +99,19 @@ def simulate(idx):
 
 systemnames = [s["name"] for s in systems]
 
-if __name__ == "__main__":
+#sim_beta_settings["simulate"] = True
+disp("sim_beta_settings", sim_beta_settings)
+matrix = simulate_votes(votes, systems[:1], sim_beta_settings)
+
+if False: #__name__ == "__main__":
     nsys = len(systems)
     p = Pool(n_reps)
-    result = p.map(simulate, list(range(n_reps)))
+    #result = p.map(simulate, list(range(n_reps)))
+    result = [simulate(1)]
     #disp("result", result)  
     means = [r[0] for r in result]
     sdevs = [r[1] for r in result]
     printcsv("means.dat", means)
     printcsv("sdevs.dat", sdevs)
-    disp("means", means)
+    #disp("means", means)
     #plot(means, systemnames)

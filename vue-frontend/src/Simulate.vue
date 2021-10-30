@@ -82,7 +82,7 @@
       :values="ruleset.list_measures.const_seats.avg"
       :stddev="ruleset.list_measures.const_seats.std"
       :title="ruleset.name"
-      round="2">
+      :round="2">
     </ResultMatrix>
     
     <h4>Adjustment seats</h4>
@@ -94,7 +94,7 @@
       :values="ruleset.list_measures.adj_seats.avg"
       :stddev="ruleset.list_measures.adj_seats.std"
       :title="ruleset.name"
-      round="2">
+      :round="2">
     </ResultMatrix>
     
     <h4>Total seats</h4>
@@ -106,7 +106,7 @@
       :values="ruleset.list_measures.total_seats.avg"
       :stddev="ruleset.list_measures.total_seats.std"
       :title="ruleset.name"
-      round="2">
+      :round="2">
     </ResultMatrix>
     
     <h4>Quality measures</h4>
