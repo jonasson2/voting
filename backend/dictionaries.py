@@ -100,7 +100,7 @@ SEAT_SPECIFICATION_OPTIONS = {
 }
 
 MEASURES = {
-    "dev_opt":         "Allocation by the optimal method",
+    "dev_opt":         "Allocation by the optimal divisor method",
     "dev_opt_totals":  "Allocation by the optimal method",
     "dev_law":         "Allocation by Icelandic law",
     "dev_law_totals":  "Allocation by Icelandic law",
@@ -115,11 +115,11 @@ MEASURES = {
     "adj_dev":         "Desired apportionment of adjustment seats",
     "dev_one_const":   "Allocation as if all constituencies were combined into one",
     "entropy":         "Entropy (product of all seat values used)",
-    "entropy_ratio":   "Entropy relative to optimal value",
-    "min_seat_value":  "Mininum seat value used (based on selected reference seat shares)",
-    "sum_abs":         "Sum of absolute differences",
-    "sum_pos":         "Sum of relative positive differences",
-    "sum_sq":          "Sum of relative squared differences",
+    "entropy_ratio":   "Entropy relative to optimal divisor method",
+    "min_seat_value":  "Mininum allocation seat share used",
+    "sum_abs":         "Sum of absolute differences of shares minus seats",
+    "sum_pos":         "Positive differences relative to the shares",
+    "sum_sq":          "Squared differences relative to the shares",
 }
 LIST_DEVIATION_MEASURES = [
     "dev_opt",
