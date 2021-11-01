@@ -225,7 +225,7 @@ class Simulation:
             self.other_measures(ruleset, election)
         for measure in measure_list:
             self.stat[measure].update(self.measures[measure])
-        disp("deviations", self.deviations)
+        #disp("deviations", self.deviations)
         for measure in deviation_list:
             self.stat[measure].update(self.deviations[measure])
 
@@ -257,7 +257,7 @@ class Simulation:
         votes = election.m_votes
         results = election.results
         if comparison_results == None:
-            disp("option", option)
+            #disp("option", option)
             rules = self.e_rules[ruleset].generate_comparison_rules(option)
             # Run comparisons other than ref and optimal
             comparison_results = voting.Election(rules, votes).run()

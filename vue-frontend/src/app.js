@@ -12,6 +12,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 //import App from './App.vue'
 import Main from './Main.vue'
 import Intro from './Intro.vue'
+import store from './store.js'
 
 const routes = [
     { path: '/', component: Intro },
@@ -19,4 +20,12 @@ const routes = [
 ]
 
 var router = new VueRouter({ routes })
-var app = new Vue({ router, el: "#app", path: '/', render: h => h(Main) })
+var app = new Vue({
+  el: "#app",
+  router,
+  store,
+  template: '<App/>',
+  components: {Main},
+  path: '/',
+  render: h => h(Main)
+})

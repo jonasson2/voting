@@ -4,8 +4,8 @@
   "description": "",
   "main": "src/app.js",
   "scripts": {
-      "build": "NODE_ENV=dev webpack --config webpack.config.dev.js",
-      "build-production": "NODE_ENV=production webpack --config webpack.config.prod.js"
+    "build": "NODE_ENV=dev webpack --config webpack.config.dev.js",
+    "build-production": "NODE_ENV=production webpack --config webpack.config.prod.js"
   },
   "author": "",
   "license": "AGPL",
@@ -21,11 +21,12 @@
   "dependencies": {
     "bootstrap-vue": "^2.0.3",
     "chart.js": "^2.7.2",
-    "vue-input-autowidth": "^1.0.11",
     "copyfiles": "^2.4.1",
     "vue": "^2.6.10",
     "vue-chartjs": "^3.3.2",
+    "vue-input-autowidth": "^1.0.11",
     "vue-resource": "^1.5.1",
-    "vue-router": "^3.0.1"
+    "vue-router": "^3.0.1",
+    "vuex": "^3.6.2"
   }
 }

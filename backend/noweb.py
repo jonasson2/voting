@@ -53,21 +53,25 @@ def load_systems(f):
 
     systems = check_systems(systems)
     return systems, sim_settings
-    
-def single_election(votes, systems):
+
+def single_election(votes, systems, run=True):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
-    result = ElectionHandler(votes, systems).elections
-    results = [election.get_results_dict() for election in result]
-    return results
+    elections = ElectionHandler(votes, systems, run = run).elections
+    # separate rule constituencies from results:
+    if run:
+        results = [election.get_results_dict() for election in elections]
+        const = [r["rules"]["constituencies"] for r in results]        
+    else:
+        results = []
+        const = [election.get_const() for election in elections]
+    return results, const
 
 def run_thread_simulation(sid):
     global SIMULATIONS
     (sim, thread, _) = SIMULATIONS[sid]
     thread.done=False
-    #print("Starting thread %s" % sid)
     sim.simulate()
-    #print("Ending thread %s" % sid)
     thread.done = True
 
 def run_simulation(votes, systems, sim_settings, excelfile = None):

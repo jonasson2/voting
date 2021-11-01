@@ -37,10 +37,12 @@ class Election:
             "step_by_step_demonstration": self.demonstration_table
         }
 
+    def get_const(self):
+        return self.rules["constituencies"]
+
     def run(self):
         """Run an election based on current rules and votes."""
-        print("RUNNING")
-        tb.print_stack()
+        #tb.print_stack()
         # How many constituency seats does each party get in each constituency:
         self.const_seats_alloc = []
         # Which seats does each party get in each constituency:

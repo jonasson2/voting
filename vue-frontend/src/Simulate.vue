@@ -2,7 +2,7 @@
 <div>
   <h3>Simulation settings</h3>
   <SimulationSettings
-    :constituencies="election_rules[0].constituencies"
+    :constituencies="sys_constituencies[0]"
     :sim_settings="settings"
     @update-sim-settings="updateSimSettings"
     >
@@ -77,7 +77,7 @@
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'const-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="sys_constituencies[idx]"
       :parties="results.parties"
       :values="ruleset.list_measures.const_seats.avg"
       :stddev="ruleset.list_measures.const_seats.std"
@@ -89,7 +89,7 @@
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'adj-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="sys_constituencies[idx]"
       :parties="results.parties"
       :values="ruleset.list_measures.adj_seats.avg"
       :stddev="ruleset.list_measures.adj_seats.std"
@@ -101,7 +101,7 @@
     <ResultMatrix
       v-for="(ruleset, idx) in results.data"
       :key="'total-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="sys_constituencies[idx]"
       :parties="results.parties"
       :values="ruleset.list_measures.total_seats.avg"
       :stddev="ruleset.list_measures.total_seats.std"
@@ -128,13 +128,17 @@
 import ResultMatrix from './components/ResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 import SimulationData from './components/SimulationData.vue'
+import { mapState } from 'vuex';
 
 export default {
-  props: [
-    "vote_table",
-    "election_rules",
-    "sim_settings",
-  ],
+  computed: {
+    ...mapState([
+      'vote_table',
+      'systems',
+      'sys_constituencies',
+      'sim_settings',
+    ])
+  },
   data: function() {
     return {
       settings: {},
@@ -177,7 +181,7 @@ export default {
       }).then(response => {
         this.inflight--;
         if (response.body.error) {
-          this.$emit("server-error", response.body.error)
+          this.$store.commit("serverError", response.body.error)
         } else {
           let status = response.body.status
           this.simulation_done = status.done;
@@ -190,7 +194,7 @@ export default {
           }
         }
       }, response => {
-        this.$emit("server-error", response.body)
+        this.$store.commit("serverError", response.body)
       });
     },
     recalculate: function() {
@@ -200,12 +204,13 @@ export default {
       this.sid = "";
       console.log("Simulate (recalculate): this.settings = ", this.settings)
       this.$http.post('/api/simulate/', {
-        vote_table: this.vote_table,
-        election_rules: this.election_rules,
-        sim_settings: this.settings,
+        vote_table:     this.vote_table,
+        rules:          this.systems,
+        sim_settings:   this.settings,
+        constituencies: this.sys_constituencies
       }).then(response => {
         if (response.body.error) {
-          this.$emit("server-error", response.body.error)          
+          this.$store.commit("serverError", response.body.error)          
         } else {
           this.sid = response.body.sid;
           this.simulation_done = !response.body.started;
@@ -213,7 +218,7 @@ export default {
           this.checktimer = window.setInterval(this.check_simulation, 250);
         }
       }, response => {
-        this.$emit("server-error", response.body)          
+        this.$store.commit("serverError", response.body)          
       });
     },
     

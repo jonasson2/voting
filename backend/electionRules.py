@@ -9,7 +9,7 @@ from dictionaries import SEAT_SPECIFICATION_OPTIONS
 class ElectionRules(Rules):
     """A set of rules for an election to follow."""
 
-    def __init__(self, constituencies=[]):
+    def __init__(self):
         super(ElectionRules, self).__init__()
         self.value_rules = {
             "primary_divider": RULE_NAMES.keys(),
@@ -36,10 +36,6 @@ class ElectionRules(Rules):
         self["adjustment_method"] = "1-icelandic-law"
         self["seat_spec_option"] = "refer"
         self["parties"] = []
-        if len(constituencies) > 0:
-            self["constituencies"] = constituencies
-        else:
-            self["constituencies"] = []
 
         # Display rules
         self["debug"] = False

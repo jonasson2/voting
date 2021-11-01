@@ -1,5 +1,5 @@
 <template>
-<div v-if="!waitingForData">
+<div v-if="!waiting_for_data && results.length > 0">
   <h3>Results based on values in Votes and seats tab</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
@@ -12,7 +12,7 @@
     </b-button>
   </b-container>
   <b-tabs v-model="resultIndex" card>
-    <b-tab v-for="(rules, activeTabIndex) in election_rules" :key="activeTabIndex">
+    <b-tab v-for="(rules, activeTabIndex) in systems" :key="activeTabIndex">
       <div slot="title">
         {{rules.name}}
       </div>
@@ -21,7 +21,7 @@
         <b-row>
           <h4>Seat allocation, constituency and adjustment seats combined</h4>
           <ResultMatrix
-            :constituencies="results[activeTabIndex].rules.constituencies"
+            :constituencies="sys_constituencies[activeTabIndex]"
             :parties="vote_table.parties"
             :values="results[activeTabIndex].seat_allocations"
             :stddev="false">
@@ -53,14 +53,16 @@
 import ResultMatrix from './components/ResultMatrix.vue'
 import ResultChart from './components/ResultChart.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
+import { mapState } from 'vuex';
 
 export default {
-  props: [
-    "vote_table",
-    "election_rules",
-    "results",
-    "waitingForData"
-  ],
+  computed: mapState([
+    'results',
+    'vote_table',
+    'systems',
+    'sys_constituencies',
+    'waiting_for_data'
+  ]),
   data: function() {
     return {
       resultIndex: 0,
@@ -78,11 +80,18 @@ export default {
       let promise = axios({
         method: "post",
         url: "/api/election/save",
-        data: { vote_table: this.vote_table, rules: this.election_rules },
+        data: {
+          vote_table:     this.vote_table,
+          rules:          this.systems,
+          constituencies: this.sys_constituencies
+        },
         responseType: "arraybuffer",
       });
       this.$emit("download-file", promise);
     }
   },
+  created: function() {
+    console.log("Created Election")
+  }
 }
 </script>

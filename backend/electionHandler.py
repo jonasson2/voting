@@ -11,7 +11,9 @@ class ElectionHandler:
     A class for managing comparison of results from different electoral systems,
     on a common vote table.
     """
-    def __init__(self, vote_table, election_rules_list):
+    def __init__(self, vote_table, election_rules_list, run=True):
+        # when run=False, only the constituencies are computed, useing
+        # election_rules_list[i]["seat_spec_option"]
         self.election_rules_list = check_systems(election_rules_list)
         self.vote_table = check_vote_table(vote_table)
         self.name = self.vote_table["name"]
@@ -19,10 +21,9 @@ class ElectionHandler:
         self.num_parties = len(self.parties)
         self.constituencies = self.vote_table["constituencies"]
         self.num_constituencies = len(self.constituencies)
-        self.set_votes(self.vote_table["votes"])
+        self.set_votes(self.vote_table["votes"], run)
 
-    def set_votes(self, votes):
-        print("In set_votes in electionHandler")
+    def set_votes(self, votes, run = True):
         assert len(votes) == self.num_constituencies, (
             "Vote_table does not match constituency list.")
         assert all(len(row) == self.num_parties for row in votes), (
@@ -32,8 +33,9 @@ class ElectionHandler:
         self.xtd_votes = add_totals(self.votes)
 
         self._setup_elections()
-        self.run_elections()
-        self.check_solvability()
+        if run:
+            self.run_elections()
+            self.check_solvability()
 
     def _setup_elections(self):
         self.elections = []
@@ -70,7 +72,6 @@ class ElectionHandler:
             self.elections.append(election)
 
     def run_elections(self):
-        print("In run_elections in electionHandler")
         #disp("el0", self.elections[0].__dict__)
         for election in self.elections:
             election.run()

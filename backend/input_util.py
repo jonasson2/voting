@@ -44,7 +44,7 @@ def check_vote_table(vote_table):
         if sum(row)==0: raise ValueError("Every constituency needs some votes.")
 
     for const in vote_table["constituencies"]:
-        if "name" not in const or not const["name"]:
+        if "name" not in const: # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
         name = const["name"]
         for info in ["num_const_seats", "num_adj_seats"]:
@@ -60,7 +60,7 @@ def check_vote_table(vote_table):
 
     seen = set()
     for const in vote_table["constituencies"]:
-        if const["name"] in seen:
+        if False: #const["name"] in seen:
             raise ValueError("Constituency names must be unique. "
                              f"{const['name']} is not.")
         seen.add(const["name"])
@@ -89,7 +89,7 @@ def check_systems(electoral_systems):
         # But let's just check all, to be helpful also
         # in case POST data does not come from frontend but elsewhere.
         for const in electoral_system["constituencies"]:
-            if "name" not in const or not const["name"]:
+            if "name" not in const: # or not const["name"]:
                 #can never happen in case of input from frontend
                 raise KeyError(f"Missing data ('constituencies[x].name' in "
                     f"electoral system {electoral_system['name']})")

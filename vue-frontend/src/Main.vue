@@ -1,52 +1,39 @@
 <template>
-<Div>
+<div>
   <b-navbar toggleable="md" type="dark" variant="info">
     <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
   </b-navbar>
   <b-alert
-    :show="server.errormsg != ''"
+    :show="server_error != ''"
     dismissible
-    @dismissed="server.errormsg=''"
+    @dismissed="$store.commit('clearServerError')"
     variant="danger"
     >
-    Server error. {{server.errormsg}}
+    Server error: {{server_error}}
   </b-alert>
   <b-tabs
     active-nav-item-class="font-weight-bold"
     card
     >
-    <b-tab title="Votes and seats" active>
+    <b-tab title="Votes and seats" active @click="hide_results()">
       <!-- <p>Specify reference votes and seat numbers</p> -->
       <VoteMatrix
-        :vote_sums="vote_sums"
-        @server-error="serverError"
         @download-file="downloadFile"
-        @update-vote-table="updateVoteTable"
         >
       </VoteMatrix>
     </b-tab>
-    <b-tab title="Electoral systems">
+    <b-tab title="Electoral systems" @click="hide_results()">
       <!-- <p>Define one or several electoral systems by specifying apportionment -->
         <!--   rules and modifying seat numbers</p> -->
       <ElectoralSystems
-        :sim_settings="sim_settings"
-        :vote_table_constituencies="vote_table_constituencies"
-        :matrix="vote_table"
-        @server-error="serverError"
-        @update-rules="updateRules"
         @download-file="downloadFile"
-        @update-simulation-settings="updateSimulationSettings"
         >
       </ElectoralSystems>
     </b-tab>
-    <b-tab title="Single election" @click = "recalculate()">
+    <b-tab title="Single election" @click="show_results()">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->      
       <Election
-        :vote_table="vote_table"
-        :election_rules="election_rules"
-        :results="results"
-        :waitingForData="waitingForData"
         @download-file="downloadFile"
         >
       </Election>
@@ -54,10 +41,6 @@
     <b-tab title="Simulated elections">
       <!-- <P>Simulate several elections and compute results for each specified electoral system</p> -->
       <Simulate
-        :vote_table="vote_table"
-        :election_rules="election_rules"
-        :sim_settings="sim_settings"
-        @server-error="serverError"
         @download-file="downloadFile"
         >
       </Simulate>
@@ -77,6 +60,7 @@ import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
 import VoteMatrix from './VoteMatrix.vue'
 import Intro from './Intro.vue'
+import { mapState } from 'vuex';
 
 export default {
   components: {
@@ -87,68 +71,15 @@ export default {
     Intro,
   },
   
-  data: function() {
-    return {
-      server: {
-        errormsg: '',
-      },
-      vote_table_constituencies: [],
-      vote_table: {},
-      vote_sums: {
-        cseats: 0,
-        aseats: 0,
-        row: [],
-        col: [],
-        tot: 0,
-      },
-      election_rules: [{}],
-      sim_settings: {},
-      uploadfile: null,
-      results: {},
-      createdVotes: false,
-      createdSettings: false,
-      waitingForData: true,
-    }
-  },
+  computed: mapState(['server_error']),
   
   methods: {
-    doneCreating: function() {
-      return this.createdVotes && this.createdSettings
+    show_results: function() {
+      this.$store.dispatch("calculate_results")
     },
-    serverError: function(errormessage) {
-      console.log("SERVER ERROR:", errormessage)
-      console.trace()
-      this.server.errormsg = errormessage
-    },
-    updateRules: function(election_rules, whenDone, parameter) {
-      this.election_rules = election_rules
-      console.log("In updateRules in Main")
-      this.createdSettings = true
-      if (this.doneCreating()) this.recalculate(whenDone, parameter)
-    },
-    updateSimulationSettings: function(settings) {
-      console.log("updateSimulationSettings in Main")
-      this.sim_settings = settings
-      //this.sim_settings = Object.assign({}, settings); // shallow copy.
-      console.log("In Main, gen_method =", this.sim_settings.gen_method)
-    },
-    updateVoteTable: function(table) {
-      console.log("Updating vote table")
-      this.vote_table = table
-      this.vote_sums.row = table.votes.map(y => y.reduce((a, b) => a+b))
-      this.vote_sums.col = table.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
-      this.vote_sums.tot = this.vote_sums.row.reduce((a, b) => a + b, 0)
-      this.vote_sums.cseats = 0
-      this.vote_sums.aseats = 0
-      var c = table.constituencies
-      for (var i=0; i<c.length; i++) {
-        this.vote_sums.cseats += c[i].num_const_seats
-        this.vote_sums.aseats += c[i].num_adj_seats
-      }
-      this.vote_table_constituencies = c
-      this.createdVotes = true;
-      if (this.doneCreating()) this.recalculate()
-    },
+    hide_results: function() {
+      this.$store.commit("deleteResults")
+    },    
     // Thanks to Pétur Helgi Einarsson for the next two functions
     parse_headers: function (headers) {
       // Return type and name for download file
@@ -216,37 +147,8 @@ export default {
         }
       );
     },
-    recalculate: function(whenDone, parameter) {
-      console.log("this=",this)
-      console.log("this.$options=",this.$options)
-      console.log("this.$options.name=",this.$options.name)
-      this.waitingForData = true
-      if (this.election_rules.length > 0) {
-        this.$http.post(
-          '/api/election/',
-          {
-            vote_table: this.vote_table,
-            rules: this.election_rules,
-          }).then(response => {
-            if (response.body.error) {
-              console.log("error-return 1")
-              this.serverError(response.body.error)
-            } else {
-              this.results = response.body;
-              for (var i=0; i<response.body.length; i++){
-                this.election_rules.splice(i, 1, response.body[i].rules)
-              }
-              if (whenDone) whenDone(this.election_rules, parameter)
-            }
-            this.$nextTick(()=>{this.waitingForData = false})
-          }, response => {
-            this.serverError("Error in recalculate function")
-            this.$nextTick(()=>{this.waitingForData = false})
-          });
-      }
-    },
   },
-  Created: function() {
+  created: function() {
     console.log("Main created")
   }
 }

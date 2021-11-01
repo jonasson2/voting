@@ -173,6 +173,7 @@ th.topleft {
 
 .simulationdata {
   margin-bottom: 1em;
+  table-layout: auto;
 }
 
 .measurename {

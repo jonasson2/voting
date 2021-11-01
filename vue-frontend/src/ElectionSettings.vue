@@ -15,7 +15,7 @@
                  party lists within each constituency."
           >
           <b-form-select
-            v-model="system.primary_divider"
+            v-model="systems[systemidx].primary_divider"
             :options="capabilities.rules"
             />
         </b-form-group>
@@ -32,7 +32,7 @@
           <b-input-group append="%">
             <b-form-input
               type="number" min="0" max="100"
-              v-model.number="system.constituency_threshold"/>
+              v-model.number="systems[systemidx].constituency_threshold"/>
           </b-input-group>
         </b-form-group>
       </b-col>
@@ -51,7 +51,7 @@
                  based on total votes for all lists of the same party."
           >
           <b-form-select
-            v-model="system.adj_determine_divider"
+            v-model="systems[systemidx].adj_determine_divider"
             :options="capabilities.rules"/>
         </b-form-group>
       </b-col>
@@ -68,7 +68,7 @@
             <b-form-input
               type="number"
               min="0" max="100"
-              v-model.number="system.adjustment_threshold"/>
+              v-model.number="systems[systemidx].adjustment_threshold"/>
           </b-input-group>
         </b-form-group>
       </b-col>
@@ -85,7 +85,7 @@
                  the constituencies."
           >
           <b-form-select
-            v-model="system.adj_alloc_divider"
+            v-model="systems[systemidx].adj_alloc_divider"
             :options="capabilities.divider_rules"/>
         </b-form-group>
       </b-col>
@@ -98,7 +98,7 @@
           title="Method to allocate adjustment seats to party lists based on the given basic rule."
           >
           <b-form-select
-            v-model="system.adjustment_method"
+            v-model="systems[systemidx].adjustment_method"
             :options="capabilities.adjustment_methods"/>
         </b-form-group>
       </b-col>
@@ -113,7 +113,7 @@
           title="Numbers of constituency and adjustment seats in each constituency in this particular electoral system"
           >
           <b-form-select
-            v-model="system.seat_spec_option"
+            v-model="systems[systemidx].seat_spec_option"
             :options="capabilities.seat_spec_options"/>
         </b-form-group>
       </b-col>
@@ -132,24 +132,24 @@
               # Adj.
             </th>
           </tr>
-          <tr v-for="(constituency, conidx) in system.constituencies">
+          <tr v-for="(constituency, conidx) in sys_constituencies[systemidx]">
             <th class="displayleft">
               {{ constituency['name'] }}
             </th>
             <td class="displayright">
-              <span v-if="system.seat_spec_option != 'custom'">
+              <span v-if="systems[systemidx].seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
-              <span v-if="system.seat_spec_option == 'custom'">
+              <span v-if="systems[systemidx].seat_spec_option == 'custom'">
                 <input type="text"
                        v-model.number="constituency['num_const_seats']">
               </span>
             </td>
             <td class="displayright">
-              <span v-if="system.seat_spec_option != 'custom'">
+              <span v-if="systems[systemidx].seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
-              <span v-if="system.seat_spec_option == 'custom'">
+              <span v-if="systems[systemidx].seat_spec_option == 'custom'">
                 <input type="text"
                        v-model.number="constituency['num_adj_seats']">
               </span>
@@ -163,78 +163,28 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 export default {
+  computed: mapState([
+    'vote_table',
+    'systems',
+    'sys_constituencies',
+    'waiting_for_data'
+  ]),
   props: [
-    "newSystem",
     "systemidx",
-    "vote_table_constituencies",
-    "vote_table"
+    "capabilities"
   ],
-  data: function () {
-    return {
-      system: {},
-      capabilities: [{}],
-      watching: false,
-    }
-  },
-  methods: {
-    getNewSystem: function(newSystem) {
-      this.system = newSystem
-      this.$nextTick(()=>{this.watching = true})
-    },
-  },
   watch: {
-    newSystem: {
-      handler: function (val) {
-        console.log("newSystem changed")
-        if (this.watching) {
-          console.log("Getting new system")
-          this.getNewSystem(this.newSystem)
-          this.watching = false
-        }
-      },
-      deep: true
-    },
-    system: {
-      handler: function (val) {
-        console.log("Watched system change in ElectionSettings")
-        if (this.watching) {
-          console.log("Changing system in watcher, system = ", val)
-          this.watching = false
-          this.$emit('update-system', val, this.systemidx, this.getNewSystem)
-        }
+    systems: {
+      handler: function() {
+        this.$store.dispatch("recalc_sys_const")
       },
       deep: true
     }
   },
-  
   created: function() {
     console.log("Creating ElectionSettings")
-    console.log("idx=", this.systemidx, ", newSystem=", this.newSystem)
-    console.log("system=", this.system)
-    var isNew = "name" in this.newSystem
-    console.log("isNew: ", isNew)
-    this.$http.post(
-      '/api/capabilities',
-      this.vote_table_constituencies,
-    ).then(response => {
-      let r = response.body
-      this.capabilities = r.capabilities;
-      if (!("name" in this.newSystem)) {
-        this.system = r.election_rules;
-        console.log("Emitting from created in ElectionSettings")
-        this.$emit('update-system', r.election_rules, this.systemidx)
-        this.$emit('update-sim-settings', r.sim_settings)
-      }
-      else {
-        this.system = this.newSystem
-        console.log("updated system=", this.system)
-      }
-      this.$nextTick(()=>{this.watching = true})
-    }, response => {
-      this.$emit("server-error", "server error in Election settings")
-      this.$nextTick(()=>{this.watching = true})
-    })
   }
 }
 </script>
