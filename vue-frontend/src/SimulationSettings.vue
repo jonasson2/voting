@@ -1,6 +1,7 @@
 <template>
 <!-- <b-form style = "margin-left:16px;margin-right:16px"> -->
-  <b-form style = "margin-left:16px;margin-right:16px">   
+  <b-form style = "margin-left:16px;margin-right:16px">
+    <b-col cols="12">
     <b-row>
       <b-col cols="3">
         <b-form-group
@@ -84,7 +85,7 @@
                  each constituency and each party (scale both rows and columns of vote table)"
           value="both"
           >          
-          within both constituencies and parties (scale both rows and columns)
+          within both constituencies and parties
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -92,7 +93,7 @@
                  each constituency (scale rows of vote table)"
           value="const"
           >          
-          within constituencies (scale table rows)
+          within constituencies
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -100,7 +101,7 @@
                  each party (scale columns of vote table)"
           value="party"
           >
-          within parties (scale table columns)
+          within parties
         </b-form-radio><br>
         <b-form-radio
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -112,6 +113,7 @@
         </b-form-radio>
       </b-form-radio-group>
     </b-form-group>
+    </b-col>
   </b-form>
 </template>
 

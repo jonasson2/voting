@@ -24,7 +24,8 @@
             :constituencies="sys_constituencies[activeTabIndex]"
             :parties="vote_table.parties"
             :values="results[activeTabIndex].seat_allocations"
-            :stddev="false">
+            :stddev="false"
+            >
           </ResultMatrix>
         </b-row>
         <!-- <b-row> -->

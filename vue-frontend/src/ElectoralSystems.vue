@@ -234,9 +234,9 @@ export default {
         console.log("this.sys_constituencies", this.sys_constituencies)
         this.activeSystemIndex += 1
         this.$store.dispatch("recalc_sys_const")
-      }),
-      this.$store.commit('notWaiting')
-      this.adding_system = false
+        this.$store.commit('notWaiting')
+        this.adding_system = false
+      })
     }
   },
   created: function () {

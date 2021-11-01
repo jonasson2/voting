@@ -1,7 +1,6 @@
 <template>
-<div v-if="!waiting_for_data">
   <b-container fluid>
-    <table class="resultmatrix">
+    <table class="resultmatrix" v-if="!waiting_for_data">
       <tr v-if="title">
         <th class="topleft"></th>
         <th :colspan="stddev?2*parties.length:parties.length">
@@ -59,8 +58,8 @@
         </td>
       </tr>
     </table>
+    <br>
   </b-container>
-</div>
 </template>
 <script>
 
