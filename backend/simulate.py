@@ -57,7 +57,7 @@ class SimulationRules(Rules):
         self["gen_method"] = "beta"
         self["distribution_parameter"] = 0.25
         self["scaling"] = "both"
-        self["selected_rand_constit"] = "All"
+        self["selected_rand_constit"] = "All constituencies"
         # self["row_constraints"] = True
         # self["col_constraints"] = True
 
@@ -86,7 +86,7 @@ class Simulation:
         self.iterations_with_no_solution = 0
         self.reference = [[] for i in range(self.num_rulesets)]
         sel_rand_const = sim_rules["selected_rand_constit"]
-        if sel_rand_const == "All":
+        if sel_rand_const == "All constituencies":
             self.apply_random = -1
         else:
             constit = [c["name"] for c in self.constituencies]
