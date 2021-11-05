@@ -211,6 +211,11 @@ class Simulation:
         self.stat["seat_shares"].update(sh)
         self.stat["ideal_seats"].update(ids)
 
+    def new_collect_measures(self):
+        gen_measures = set(get_measures("seatShares") + get_measures("other"))
+        dev_measures = get_measures("seatSpec") + get_measures("cmpSystems")
+        cmp_measures = get_measures("cmpSystems")
+        
     def collect_general_measures(self):
         # Various tests to determine the quality of the given method.
         measure_list = ["adj_dev", "entropy", "entropy_ratio",
@@ -220,13 +225,9 @@ class Simulation:
         deviation_list.extend([d + "_tot" for d in deviation_list])
         self.measures = dict((m,[]) for m in measure_list)
         self.deviations = dict((m,[]) for m in deviation_list)
-        cmp_measures = get_measures("cmpSystems")
-        cmp_systems = get_compare_systems(self.measure_groups)
         for system in range(self.num_systems):
             election = self.e_handler.elections[system]
             self.measures["adj_dev"].append(election.adj_dev)
-            for (meas,sys) in zip(cmp_measures, cmp_sytems):
-                pass
             opt_results = self.opt_results_and_entropy(election)
             self.deviation_measures(system, election, opt_results)
             self.other_measures(system, election)
