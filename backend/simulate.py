@@ -99,12 +99,14 @@ class Simulation:
         nr = self.num_systems
         nc = self.num_constituencies
         np = self.num_parties
+        self.measure_groups = get_measure_groups(self.systems)
+        self.measures = get_all_measures(self.measure_groups)
         for measure in VOTE_MEASURES:
             self.stat[measure] = Running_stats((nc+1,np+1))
-        for measure in MEASURES:
-            self.stat[measure] = Running_stats(nr)
         for measure in LIST_MEASURES:
             self.stat[measure] = Running_stats((nr,nc+1,np+1))
+        for measure in self.measures:
+            self.stat[measure] = Running_stats(nr)
         print("Running run_initial_elections")
         self.run_initial_elections()
         print("Running find_reference")
@@ -218,12 +220,13 @@ class Simulation:
         deviation_list.extend([d + "_tot" for d in deviation_list])
         self.measures = dict((m,[]) for m in measure_list)
         self.deviations = dict((m,[]) for m in deviation_list)
+        cmp_measures = get_measures("cmpSystems")
+        cmp_systems = get_compare_systems(self.measure_groups)
         for system in range(self.num_systems):
             election = self.e_handler.elections[system]
-            #disp("election systems", election.systems)
-            disp("measures[adj_dev]", self.measures["adj_dev"])
             self.measures["adj_dev"].append(election.adj_dev)
-            disp("measures[adj_dev]", self.measures["adj_dev"])
+            for (meas,sys) in zip(cmp_measures, cmp_sytems):
+                pass
             opt_results = self.opt_results_and_entropy(election)
             self.deviation_measures(system, election, opt_results)
             self.other_measures(system, election)
