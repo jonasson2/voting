@@ -1,4 +1,4 @@
-from electionRules import ElectionRules
+from electionSystems import ElectionSystems
 from voting import Election
 from table_util import add_totals
 from input_util import check_vote_table, check_systems
@@ -40,35 +40,35 @@ class ElectionHandler:
     def _setup_elections(self):
         self.elections = []
         for electoral_system in self.election_rules_list:
-            rules = ElectionRules()
-            rules.update(electoral_system)
-            rules["parties"] = self.parties
+            systems = ElectionSystems()
+            systems.update(electoral_system)
+            systems["parties"] = self.parties
             votes = self.votes
             option = electoral_system["seat_spec_option"]
             if option == "refer":
-                rules["constituencies"] = self.constituencies
+                systems["constituencies"] = self.constituencies
             elif option == "make_all_const":
-                rules["constituencies"] = self.constituencies
-                rules = rules.generate_all_const_ruleset()
+                systems["constituencies"] = self.constituencies
+                systems = systems.generate_all_const_ruleset()
             elif option == "make_all_adj":
-                rules["constituencies"] = self.constituencies
-                rules = rules.generate_all_adj_ruleset()
+                systems["constituencies"] = self.constituencies
+                systems = systems.generate_all_adj_ruleset()
             elif option == "one_const":
-                rules = rules.generate_one_const_ruleset()
+                systems = systems.generate_one_const_ruleset()
                 total_votes = self.xtd_votes[-1][:-1]
                 votes = [total_votes]
             else:
                 assert option == "custom", (
                     f"unexpected seat_spec_option encountered: {option}")
-                rules["constituencies"] = []
+                systems["constituencies"] = []
                 for const in self.constituencies:
                     match = const
                     for modified_const in electoral_system["constituencies"]:
                         if modified_const["name"] == const["name"]:
                             match = modified_const
                             break
-                    rules["constituencies"].append(match)
-            election = Election(rules, votes, self.name)
+                    systems["constituencies"].append(match)
+            election = Election(systems, votes, self.name)
             self.elections.append(election)
 
     def run_elections(self):

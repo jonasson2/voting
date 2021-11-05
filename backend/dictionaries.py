@@ -1,4 +1,3 @@
-
 from division_rules import dhondt_gen, sainte_lague_gen, \
     nordic_sainte_lague_gen, imperiali_gen, danish_gen, huntington_hill_gen
 from division_rules import droop, hare
@@ -100,26 +99,26 @@ SEAT_SPECIFICATION_OPTIONS = {
 }
 
 MEASURES = {
-    "dev_opt":         "Allocation by the optimal divisor method",
-    "dev_opt_totals":  "Allocation by the optimal method",
-    "dev_law":         "Allocation by Icelandic law",
-    "dev_law_totals":  "Allocation by Icelandic law",
-    "dev_all_adj":     "Allocation as if all seats were adjustment seats",
-    "dev_all_adj_totals":
-                       "Allocation as if all seats were adjustment seats",
-    "dev_all_const":   "Allocation as if all seats were constituency seats",
-    "dev_all_const_totals":
-                       "Allocation as if all seats were constituency seats",
-    "dev_ref":         "Allocation with actual system for the reference votes",
-    "dev_ref_totals":  "Allocation with actual system for the reference votes",
-    "adj_dev":         "Desired apportionment of adjustment seats",
-    "dev_one_const":   "Allocation as if all constituencies were combined into one",
-    "entropy":         "Entropy (product of all seat values used)",
-    "entropy_ratio":   "Entropy relative to optimal divisor method",
-    "min_seat_value":  "Mininum allocation seat share used",
-    "sum_abs":         "Sum of absolute differences of shares minus seats",
-    "sum_pos":         "Positive differences relative to the shares",
-    "sum_sq":          "Squared differences relative to the shares",
+    "dev_opt":      "Allocation by the optimal divisor method",
+    "dev_opt_tot":  "Allocation by the optimal method",
+    "dev_law":      "Allocation by Icelandic law",
+    "dev_law_tot":  "Allocation by Icelandic law",
+    "dev_all_adj":  "Allocation as if all seats were adjustment seats",
+    "dev_all_adj_tot":
+                    "Allocation as if all seats were adjustment seats",
+    "dev_all_const":"Allocation as if all seats were constituency seats",
+    "dev_all_const_tot":
+                    "Allocation as if all seats were constituency seats",
+    "dev_ref":      "Allocation with actual system for the reference votes",
+    "dev_ref_tot":  "Allocation with actual system for the reference votes",
+    "adj_dev":      "Desired apportionment of adjustment seats",
+    "dev_one_const":"Allocation as if all constituencies were combined into one",
+    "entropy":      "Entropy (product of all seat values used)",
+    "entropy_ratio":"Entropy relative to optimal divisor method",
+    "min_seat_value":"Mininum allocation seat share used",
+    "sum_abs":      "Sum of absolute differences of shares minus seats",
+    "sum_pos":       "Positive differences relative to the shares",
+    "sum_sq":        "Squared differences relative to the shares",
 }
 LIST_DEVIATION_MEASURES = [
     "dev_opt",
@@ -132,9 +131,9 @@ LIST_DEVIATION_MEASURES = [
 TOTALS_DEVIATION_MEASURES = [
     #"dev_opt_totals",
     #"dev_law_totals",
-    "dev_all_adj_totals",
-    "dev_all_const_totals",
-    "dev_ref_totals",
+    "dev_all_adj_tot",
+    "dev_all_const_tot",
+    "dev_ref_tot",
     "adj_dev",
 ]
 STANDARDIZED_MEASURES = [

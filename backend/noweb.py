@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 import json
 from hashlib import sha256
-from electionRules import ElectionRules
+from electionSystems import ElectionSystems
 from electionHandler import ElectionHandler
 import util
 from util import disp
@@ -21,6 +21,7 @@ def load_systems(f):
     '''returns systems, sim_settings from file json-file f'''
     if isinstance(f,str):
         f = os.path.expanduser(f)
+        print("file", f)
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
@@ -44,7 +45,7 @@ def load_systems(f):
                 raise KeyError(f"{info} is missing from a system in file.")
         if item["seat_spec_option"] == "defer":
             item["seat_spec_option"] = "refer"
-        system = ElectionRules()
+        system = ElectionSystems()
         system.update(item)
         system["primary_divider"] = item["constituency_allocation_rule"]
         system["adj_determine_divider"] = item["adjustment_division_rule"]
@@ -61,7 +62,7 @@ def single_election(votes, systems, run=True):
     # separate rule constituencies from results:
     if run:
         results = [election.get_results_dict() for election in elections]
-        const = [r["rules"]["constituencies"] for r in results]        
+        const = [r["systems"]["constituencies"] for r in results]        
     else:
         results = []
         const = [election.get_const() for election in elections]
@@ -77,11 +78,11 @@ def run_thread_simulation(sid):
 def run_simulation(votes, systems, sim_settings, excelfile = None):
     # not threaded
     rulesets = []
-    for rs in systems:
-        election_systems = ElectionRules()
-        election_systems.update(rs)
+    for sys in systems:
+        election_systems = ElectionSystems()
+        election_systems.update(sys)
         rulesets.append(election_systems)
-    simulation_systems = simulate.SimulationRules()
+    simulation_systems = simulate.SimulationSettings()
     simulation_systems.update(check_simul_settings(sim_settings))
     sim = simulate.Simulation(simulation_systems, rulesets, votes)
     sim.simulate()
@@ -98,11 +99,11 @@ def start_simulation(votes, systems, sim_settings):
     h.update(sidbytes)
     sid = h.hexdigest()
     rulesets = []
-    for rs in systems:
-        election_systems = ElectionRules()
-        election_systems.update(rs)
+    for sys in systems:
+        election_systems = ElectionSystems()
+        election_systems.update(sys)
         rulesets.append(election_systems)
-    simulation_systems = simulate.SimulationRules()
+    simulation_systems = simulate.SimulationSettings()
     simulation_systems.update(check_simul_settings(sim_settings))
     simulation = simulate.Simulation(simulation_systems, rulesets, votes)
     cleanup_expired_simulations()
@@ -116,7 +117,7 @@ def start_simulation(votes, systems, sim_settings):
 def check_simulation(sid, stop):
     (sim, thread, _) = SIMULATIONS[sid]
     sim.iteration -= sim.iterations_with_no_solution
-    print("Checking simulation, done =", thread.done, ", iteration =", sim.iteration)
+    # print("Checking simulation, done =", thread.done, ", iteration =", sim.iteration)
     sim_status = {
         "done": thread.done,
         "iteration": sim.iteration,
@@ -125,6 +126,7 @@ def check_simulation(sid, stop):
         "target": sim.sim_rules["simulation_count"],
     }
     sim_results = sim.get_results_dict()
+    #disp("sim_status", sim_status)
     if stop:
         sim.terminate = True
         # thread.join() finishes the thread and sets thread.done to True

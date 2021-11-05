@@ -1,12 +1,7 @@
 <template>
-<div>
+<div v-if="show_simulate">
   <h3>Simulation settings</h3>
-  <SimulationSettings
-    :constituencies="sys_constituencies[0]"
-    :sim_settings="settings"
-    @update-sim-settings="updateSimSettings"
-    >
-  </SimulationSettings>
+  <SimulationSettings />
   <div style="text-align: center; margin-bottom: 0.7em;
               margin-left:16px; margin-right:16px">
     <span v-if="simulation_done">
@@ -35,7 +30,7 @@
     <b-col cols="12">
       <b-progress
         height="30px"
-        :max="settings.simulation_count"
+        :max="sim_settings.simulation_count"
         :animated="!simulation_done">
         <b-progress-bar
           :variant="simulation_done ? 'success':'primary'"
@@ -56,7 +51,7 @@
       
     </b-col>
   </div>
-  
+  <br>
   <h3>Simulation results</h3>
   <b-alert :show="results.data.length == 0">
     Run simulation to get results.
@@ -75,37 +70,35 @@
     <p></p>
     <h4>Constituency seats</h4>
     <ResultMatrix
-      v-for="(ruleset, idx) in results.data"
+      v-for="(system, idx) in results.data"
       :key="'const-seats-' + idx"
-      :constituencies="sys_constituencies[idx]"
+      :constituencies="results.e_rules[idx].constituencies"
       :parties="results.parties"
-      :values="ruleset.list_measures.const_seats.avg"
-      :stddev="ruleset.list_measures.const_seats.std"
-      :title="ruleset.name"
+      :values="system.list_measures.const_seats.avg"
+      :stddev="system.list_measures.const_seats.std"
+      :title="system.name"
       :round="2">
     </ResultMatrix>
-    
     <h4>Adjustment seats</h4>
     <ResultMatrix
-      v-for="(ruleset, idx) in results.data"
+      v-for="(system, idx) in results.data"
       :key="'adj-seats-' + idx"
-      :constituencies="sys_constituencies[idx]"
+      :constituencies="results.e_rules[idx].constituencies"
       :parties="results.parties"
-      :values="ruleset.list_measures.adj_seats.avg"
-      :stddev="ruleset.list_measures.adj_seats.std"
-      :title="ruleset.name"
+      :values="system.list_measures.adj_seats.avg"
+      :stddev="system.list_measures.adj_seats.std"
+      :title="system.name"
       :round="2">
     </ResultMatrix>
-    
     <h4>Total seats</h4>
     <ResultMatrix
-      v-for="(ruleset, idx) in results.data"
+      v-for="(system, idx) in results.data"
       :key="'total-seats-' + idx"
-      :constituencies="sys_constituencies[idx]"
+      :constituencies="results.e_rules[idx].constituencies"
       :parties="results.parties"
-      :values="ruleset.list_measures.total_seats.avg"
-      :stddev="ruleset.list_measures.total_seats.std"
-      :title="ruleset.name"
+      :values="system.list_measures.total_seats.avg"
+      :stddev="system.list_measures.total_seats.std"
+      :title="system.name"
       :round="2">
     </ResultMatrix>
     
@@ -128,7 +121,7 @@
 import ResultMatrix from './components/ResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 import SimulationData from './components/SimulationData.vue'
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 export default {
   computed: {
@@ -137,17 +130,18 @@ export default {
       'systems',
       'sys_constituencies',
       'sim_settings',
-    ])
+      'show_simulate'
+    ]),
+  },
+  created: function() {
+    console.log("Created Simulate")
   },
   data: function() {
     return {
-      settings: {},
       simulation_done: true,
       current_iteration: 0,
       time_left: 0,
       total_time: 0,
-      inflight: 0,
-      watching: true,
       results: { measures: [], methods: [], data: [], parties: [], e_rules: [] }
     }
   },
@@ -156,32 +150,20 @@ export default {
     SimulationSettings,
     SimulationData,
   },
-  watch: {
-    sim_settings: {
-      handler: function(val) {
-        if (this.watching) this.settings = val
-      },
-      deep: true
-    }
-  },
   methods: {
-    updateSimSettings: function(settings) {
-      this.watching = false
-      this.settings = settings
-      this.$nextTick(()=>{this.watching = true})
-    },
+    ...mapMutations([
+      "serverError"
+    ]),
     check_simulation: function() {
       this.checkstatus(false)
     },
     checkstatus: function(stop) {
-      this.inflight++;
       this.$http.post('/api/simulate/check/', {
         sid: this.sid,
         stop: stop
       }).then(response => {
-        this.inflight--;
         if (response.body.error) {
-          this.$store.commit("serverError", response.body.error)
+          this.serverError(response.body.error)
         } else {
           let status = response.body.status
           this.simulation_done = status.done;
@@ -194,7 +176,7 @@ export default {
           }
         }
       }, response => {
-        this.$store.commit("serverError", response.body)
+        this.serverError(response.body)
       });
     },
     recalculate: function() {
@@ -202,15 +184,15 @@ export default {
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
-      console.log("Simulate (recalculate): this.settings = ", this.settings)
+      console.log("Simulate (recalculate): this.sim_settings = ", this.sim_settings)
       this.$http.post('/api/simulate/', {
         vote_table:     this.vote_table,
-        rules:          this.systems,
-        sim_settings:   this.settings,
+        systems:          this.systems,
+        sim_settings:   this.sim_settings,
         constituencies: this.sys_constituencies
       }).then(response => {
         if (response.body.error) {
-          this.$store.commit("serverError", response.body.error)          
+          this.serverError(response.body.error)          
         } else {
           this.sid = response.body.sid;
           this.simulation_done = !response.body.started;
@@ -218,7 +200,7 @@ export default {
           this.checktimer = window.setInterval(this.check_simulation, 250);
         }
       }, response => {
-        this.$store.commit("serverError", response.body)          
+        this.serverError(response.body)          
       });
     },
     

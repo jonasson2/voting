@@ -112,21 +112,21 @@ def elections_to_xlsx(elections, filename):
 
     for r in range(len(elections)):
         election = elections[r]
-        rules = election.rules
-        sheet_name = f'{r+1}-{rules["name"]}'
+        systems = election.systems
+        sheet_name = f'{r+1}-{systems["name"]}'
         worksheet = workbook.add_worksheet(sheet_name[:31])
         worksheet.set_column(0,0, 30)
         const_names = [
-            const["name"] for const in rules["constituencies"]
+            const["name"] for const in systems["constituencies"]
         ] + ["Total"]
-        parties = rules["parties"] + ["Total"]
+        parties = systems["parties"] + ["Total"]
         xtd_votes = add_totals(election.m_votes)
         xtd_shares = find_xtd_shares(xtd_votes)
         xtd_const_seats = add_totals(election.m_const_seats_alloc)
         xtd_total_seats = add_totals(election.results)
         xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
         xtd_seat_shares = find_xtd_shares(xtd_total_seats)
-        threshold = 0.01*election.rules["adjustment_threshold"]
+        threshold = 0.01*election.systems["adjustment_threshold"]
         xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
         xtd_final_shares = find_xtd_shares([xtd_final_votes])[0]
 
@@ -138,21 +138,21 @@ def elections_to_xlsx(elections, filename):
                 {"label": "Vote table:",
                     "data": election.name},
                 {"label": "Electoral system:",
-                    "data": rules["name"]},
+                    "data": systems["name"]},
             ]},
             {"left_span": 4, "right_span": 2, "info": [
                 {"label": "Rule for allocating constituency seats:",
-                    "data": DRN[rules["primary_divider"]]},
+                    "data": DRN[systems["primary_divider"]]},
                 {"label": "Threshold for constituency seats:",
-                    "data": rules["constituency_threshold"]},
+                    "data": systems["constituency_threshold"]},
                 {"label": "Rule for apportioning adjustment seats:",
-                    "data": DRN[rules["adj_determine_divider"]]},
+                    "data": DRN[systems["adj_determine_divider"]]},
                 {"label": "Threshold for apportioning adjustment seats:",
-                    "data": rules["adjustment_threshold"]},
+                    "data": systems["adjustment_threshold"]},
                 {"label": "Rule for allocating adjustment seats:",
-                    "data": DRN[rules["adj_alloc_divider"]]},
+                    "data": DRN[systems["adj_alloc_divider"]]},
                 {"label": "Method for allocating adjustment seats:",
-                    "data": AMN[rules["adjustment_method"]]}
+                    "data": AMN[systems["adjustment_method"]]}
             ]},
         ]
 
@@ -183,7 +183,7 @@ def elections_to_xlsx(elections, filename):
             yheaders=const_names,
             matrix=add_totals([
                 [const["num_const_seats"],const["num_adj_seats"]]
-                for const in rules["constituencies"]
+                for const in systems["constituencies"]
             ])
         )
         bottomrow = max(2+len(const_names), bottomrow)
@@ -385,44 +385,44 @@ def simulation_to_xlsx(simulation, filename):
         worksheet.write(toprow,c,aggregate_names_dict[aggr] + " values",fmt["h_big"])
         toprow += 2
         present_measures(worksheet, row=toprow, col=c,
-            xheaders=[rule["name"] for rule in simulation.e_rules],
+            xheaders=[rule["name"] for rule in simulation.systems],
             list_deviation_measures={
                 "headers": [MEASURES[key] for key in LIST_DEVIATION_MEASURES],
                 "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.e_rules))]
+                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
                     for measure in LIST_DEVIATION_MEASURES
                 ]
             },
             totals_deviation_measures={
                 "headers": [MEASURES[key] for key in TOTALS_DEVIATION_MEASURES],
                 "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.e_rules))]
+                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
                     for measure in TOTALS_DEVIATION_MEASURES
                 ]
             },
             ideal_comparison_measures={
                 "headers": [MEASURES[key] for key in IDEAL_COMPARISON_MEASURES],
                 "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.e_rules))]
+                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
                     for measure in IDEAL_COMPARISON_MEASURES
                 ]
             },
             normalized_measures={
                 "headers": [MEASURES[key] for key in STANDARDIZED_MEASURES],
                 "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.e_rules))]
+                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
                     for measure in STANDARDIZED_MEASURES
                 ]
             }
         )
 
-    for r in range(len(simulation.e_rules)):
-        sheet_name  = f'{r+1}-{simulation.e_rules[r]["name"]}'
+    for r in range(len(simulation.systems)):
+        sheet_name  = f'{r+1}-{simulation.systems[r]["name"]}'
         worksheet   = workbook.add_worksheet(sheet_name[:31])
         const_names = [
-            const["name"] for const in simulation.e_rules[r]["constituencies"]
+            const["name"] for const in simulation.systems[r]["constituencies"]
         ] + ["Total"]
-        parties = simulation.e_rules[r]["parties"] + ["Total"]
+        parties = simulation.systems[r]["parties"] + ["Total"]
         
         data_matrix = {
             "base": {
@@ -502,21 +502,21 @@ def simulation_to_xlsx(simulation, filename):
                 {"label": "Reference votes:",
                     "data": simulation.vote_table["name"]},
                 {"label": "Electoral system:",
-                    "data": simulation.e_rules[r]["name"]},
+                    "data": simulation.systems[r]["name"]},
             ]},
             {"left_span": 4, "right_span": 2, "info": [
                 {"label": "Rule for allocating constituency seats:",
-                    "data": DRN[simulation.e_rules[r]["primary_divider"]]},
+                    "data": DRN[simulation.systems[r]["primary_divider"]]},
                 {"label": "Threshold for constituency seats:",
-                    "data": simulation.e_rules[r]["constituency_threshold"]},
+                    "data": simulation.systems[r]["constituency_threshold"]},
                 {"label": "Rule for apportioning adjustment seats to parties:",
-                    "data": DRN[simulation.e_rules[r]["adj_determine_divider"]]},
+                    "data": DRN[simulation.systems[r]["adj_determine_divider"]]},
                 {"label": "Threshold for apportioning adjustment seats:",
-                    "data": simulation.e_rules[r]["adjustment_threshold"]},
+                    "data": simulation.systems[r]["adjustment_threshold"]},
                 {"label": "Rule for allocating adjustment seats:",
-                    "data": DRN[simulation.e_rules[r]["adj_alloc_divider"]]},
+                    "data": DRN[simulation.systems[r]["adj_alloc_divider"]]},
                 {"label": "Method for allocating adjustment seats:",
-                    "data": AMN[simulation.e_rules[r]["adjustment_method"]]}
+                    "data": AMN[simulation.systems[r]["adjustment_method"]]}
             ]},
             {"left_span": 4, "right_span": 2, "info": [
                 {"label": "Number of simulations run:",
@@ -560,7 +560,7 @@ def simulation_to_xlsx(simulation, filename):
             yheaders=const_names,
             matrix=add_totals([
                 [const["num_const_seats"],const["num_adj_seats"]]
-                for const in simulation.e_rules[r]["constituencies"]
+                for const in simulation.systems[r]["constituencies"]
             ])
         )
         bottomrow = max(2+len(const_names), bottomrow)

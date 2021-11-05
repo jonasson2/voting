@@ -274,7 +274,7 @@
 
 <script>
 import Vue from "vue";
-import { mapState } from 'vuex';
+import { mapState,mapMutations } from 'vuex';
 import VueInputAutowidth from "vue-input-autowidth";
 Vue.use(VueInputAutowidth);
 
@@ -283,7 +283,6 @@ export default {
     ...mapState([
       'vote_table',
       'vote_sums',
-      'waiting_for_data'
     ]),
   },
   data: function () {
@@ -308,30 +307,33 @@ export default {
   },
   created: function () {
     console.log("Creating VoteMatrix")
-    this.$store.commit('waiting')
     this.$http.get("/api/presets").then(
       (response) => {
         this.presets = response.body;
-        this.$store.commit("updateVoteSums")    
+        this.updateVoteSums()
       },
       (response) => {
         console.log("Error, response.body", response.body)
       }
     );
-    this.$store.commit('notWaiting')
     console.log("Created VoteMatrix");
   },
   watch: {
     vote_table: {
       handler: function(val, oldval) {
         console.log("watching vote_table")
-        this.$store.commit("updateVoteSums")
+        this.updateVoteSums()
         this.$store.dispatch("recalc_sys_const")
       },
       deep: true,
     },
   },
   methods: {
+    ...mapMutations([
+      "updateVoteSums",
+      "updateVoteTable",
+      "serverError",
+    ]),
     deleteParty: function (index) {
       this.vote_table.parties.splice(index, 1);
       for (let con in this.vote_table.votes) {
@@ -381,20 +383,17 @@ export default {
       this.$emit("download-file", promise);
     },
     loadPreset: function (eid) {
-      this.$store.commit('waiting')
       this.$http.post("/api/presets/load/", { eid: eid }).then(
         (response) => {
-          this.$store.commit("updateVoteTable", response.data)
+          this.updateVoteTable(response.data)
           this.$store.dispatch("recalc_sys_const")
         },
         (response) => {
-          this.$store.commit("serverError", "Illegal format of presets file")
+          this.serverError("Illegal format of presets file")
         },
-        this.$store.commit('notWaiting')
       )
     },
     uploadVotes: function (evt) {
-      this.$store.commit('waiting')
       if (!this.uploadfile) {
         evt.preventDefault();
       }
@@ -402,31 +401,28 @@ export default {
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.$http.post("/api/votes/upload/", formData).then(
         (response) => {
-          this.$store.commit("updateVoteTable", response.data)
+          this.updateVoteTable(response.data)
           this.$store.dispatch("recalc_sys_const")
         },
         (response) => {
-          this.$store.commit("serverError", "Cannot upload votes from this file")
+          this.serverError("Cannot upload votes from this file")
         },
-        this.$store.commit('notWaiting')
       )
     },
     pasteCSV: function (evt) {
-      this.$store.commit("waiting")
       if (!this.paste.csv) {
         evt.preventDefault();
         return;
       }
       this.$http.post("/api/votes/paste/", this.paste).then(
         (response) => {
-          this.$store.commit("updateVoteTable", response.data)
+          this.updateVoteTable(response.data)
           this.$store.dispatch("recalc_sys_const")
         },
         (response) => {
           console.log("Error:", response);
           // Error?
         },
-        this.$store.commit("notWaiting")
       );
     },
   },

@@ -44,11 +44,11 @@ def cli(debug):
 @click.option('--show-details', default=False, is_flag=True)
 def simulate(votes, constituencies, **kwargs):
     """Simulate elections."""
-    e_rules = voting.ElectionRules()
-    e_rules["constituencies"] = constituencies
-    parties, votes = util.load_votes(votes, e_rules["constituencies"])
-    e_rules["parties"] = parties
-    s_rules = sim.SimulationRules()
+    systems = voting.ElectionSystems()
+    systems["constituencies"] = constituencies
+    parties, votes = util.load_votes(votes, systems["constituencies"])
+    systems["parties"] = parties
+    s_rules = sim.SimulationSettings()
 
     try:
       for arg, val in kwargs.iteritems():
@@ -57,9 +57,9 @@ def simulate(votes, constituencies, **kwargs):
       for arg, val in kwargs.items():
         s_rules[arg] = val
 
-    e_rules = util.sim_election_rules(e_rules, s_rules["test_method"])
+    systems = util.sim_election_rules(systems, s_rules["test_method"])
 
-    simulation = sim.Simulation(s_rules, [e_rules], votes)
+    simulation = sim.Simulation(s_rules, [systems], votes)
 
     simulation.simulate()
 
@@ -115,7 +115,7 @@ def www(host="localhost", port=5000, **kwargs):
 @click.option('--show-constituency-seats', is_flag=True)
 def apportion(votes, **kwargs):
     """Do regular apportionment based on votes and constituency data."""
-    rules = voting.ElectionRules()
+    rules = voting.ElectionSystems()
     kwargs["primary_divider"] = kwargs["divider"]
     kwargs["adj_determine_divider"] = kwargs["adj_determine_divider"] or kwargs["divider"]
     kwargs["adj_alloc_divider"] = kwargs["adj_alloc_divider"] or kwargs["adj_determine_divider"]

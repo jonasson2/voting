@@ -16,7 +16,7 @@
           >
           <b-form-select
             v-model="systems[systemidx].primary_divider"
-            :options="capabilities.rules"
+            :options="capabilities.systems"
             />
         </b-form-group>
       </b-col>
@@ -52,7 +52,7 @@
           >
           <b-form-select
             v-model="systems[systemidx].adj_determine_divider"
-            :options="capabilities.rules"/>
+            :options="capabilities.systems"/>
         </b-form-group>
       </b-col>
       <b-col cols="5">
@@ -169,7 +169,6 @@ export default {
     'vote_table',
     'systems',
     'sys_constituencies',
-    'waiting_for_data'
   ]),
   props: [
     "systemidx",

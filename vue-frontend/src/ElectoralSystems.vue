@@ -89,7 +89,8 @@
         size="sm"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Remove selected electoral system"
-        @click="deleteSystem()">
+        @click="deleteSystem(activeSystemIndex)"
+        >
         <b>X</b>
       </b-button>
     </template>
@@ -112,7 +113,7 @@
 
 <script>
 import ElectionSettings from './ElectionSettings.vue'
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 export default {
   components: {
@@ -124,7 +125,6 @@ export default {
     'sim_settings',
     'systems',
     'sys_constituencies',
-    'waiting_for_data'
   ]),
   
   data: function() {
@@ -151,6 +151,14 @@ export default {
   },
   
   methods: {
+    ...mapMutations([
+      "addSystem",
+      "addSysConst",
+      "updateSysConst",
+      "updateSimSettings",
+      "deleteSystem",
+      "deleteAllSystems",
+    ]),
     setReplace: function(status) {
       this.replace = status
     },
@@ -173,10 +181,6 @@ export default {
       this.activeTabIndex = this.activeSystemIndex + 1
       console.log("end of updateDisplaySystems")
     },
-    deleteSystem: function() {
-      console.log("deleting election rule #");
-      this.$store.commit("deleteSystem", this.activeSystemIndex)
-    },
     saveSettings: function () {
       console.log(">>>", this.sys_constituencies)
       let promise;
@@ -184,7 +188,7 @@ export default {
         method: "post",
         url: "/api/settings/save",
         data: {
-          rules:          this.systems,
+          systems:        this.systems,
           sim_settings:   this.sim_settings,
           constituencies: this.sys_constituencies
         },
@@ -194,30 +198,26 @@ export default {
       this.$emit("download-file", promise);
     },
     uploadSettings: function(evt) {
-      this.$store.commit('waiting')
       if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.$http.post('/api/settings/upload/', formData).then(response => {
         if (this.replace){
-          this.$store.commit("deleteAllSystems")
-          // this.systems.splice(0, this.systems.length)
+          this.deleteAllSystems()
           console.log("Clearing systems")
-          console.log("waiting", this.waiting_for_data)
         }
-        for (var i=0; i < response.data.rules.length; i++) {
-          this.$store.commit("addSystem", response.data.rules[i])
+        let systems = response.data.systems
+        for (var i=0; i < systems.length; i++) {
+          if (!("compare_with" in systems[i])) systems[i].compare_with = false
+          this.addSystem(systems[i])
         }
-        this.$store.commit("updateSysConst", response.data.constituencies)
+        this.updateSysConst(response.data.constituencies)
         //this.updateDisplaySystems()
-        console.log("this.dsystems", this.dsystems)
-        this.$store.commit("updateSimSettings", response.data.sim_settings);
+        this.updateSimSettings(response.data.sim_settings);
         this.$store.dispatch("recalc_sys_const")
-        this.$store.commit('notWaiting')
       });
     },
     addNewSystem() {
-      this.$store.commit('waiting')
       this.adding_system = true
       this.$http.post(
         '/api/capabilities',
@@ -226,15 +226,13 @@ export default {
         let r = response.body
         this.capabilities = r.capabilities;
         console.log("in addNewSystem")
-        console.log("r.election_rules", r.election_rules)
+        console.log("r.election_systems", r.election_systems)
         console.log("r.const", r.constituencies)
-        this.$store.commit("addSystem", r.election_rules)
-        this.$store.commit("addSysConst", r.constituencies)
-        this.$store.commit("updateSimSettings", r.sim_settings)
-        console.log("this.sys_constituencies", this.sys_constituencies)
+        this.addSystem(r.election_systems)
+        this.addSysConst(r.constituencies)
+        this.updateSimSettings(r.sim_settings)
         this.activeSystemIndex += 1
         this.$store.dispatch("recalc_sys_const")
-        this.$store.commit('notWaiting')
         this.adding_system = false
       })
     }

@@ -8,16 +8,16 @@ from table_util import entropy, add_totals
 from solution_util import solution_exists
 from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
-from electionRules import ElectionRules
+from electionSystems import ElectionSystems
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 import traceback as tb
 
 class Election:
     """A single election."""
-    def __init__(self, rules, votes=None, name=''):
-        self.num_constituencies = len(rules["constituencies"])
-        self.num_parties = len(rules["parties"])
-        self.rules = rules
+    def __init__(self, systems, votes=None, name=''):
+        self.num_constituencies = len(systems["constituencies"])
+        self.num_parties = len(systems["parties"])
+        self.systems = systems
         self.name = name
         self.set_votes(votes)
 
@@ -32,16 +32,16 @@ class Election:
 
     def get_results_dict(self):
         return {
-            "rules": self.rules,
+            "systems": self.systems,
             "seat_allocations": add_totals(self.results),
             "step_by_step_demonstration": self.demonstration_table
         }
 
     def get_const(self):
-        return self.rules["constituencies"]
+        return self.systems["constituencies"]
 
     def run(self):
-        """Run an election based on current rules and votes."""
+        """Run an election based on current systems and votes."""
         #tb.print_stack()
         # How many constituency seats does each party get in each constituency:
         self.const_seats_alloc = []
@@ -50,7 +50,7 @@ class Election:
         # Determine total seats (const + adjustment) in each constituency:
         self.v_desired_row_sums = [
             const["num_const_seats"] + const["num_adj_seats"]
-            for const in self.rules["constituencies"]
+            for const in self.systems["constituencies"]
         ]
         # Determine total seats in play:
         self.total_seats = sum(self.v_desired_row_sums)
@@ -63,11 +63,11 @@ class Election:
 
     def run_primary_apportionment(self):
         """Conduct primary apportionment"""
-        if self.rules["debug"]:
+        if self.systems["debug"]:
             print(" + Primary apportionment")
 
-        constituencies = self.rules["constituencies"]
-        parties = self.rules["parties"]
+        constituencies = self.systems["constituencies"]
+        parties = self.systems["parties"]
 
         m_allocations = []
         self.last = []
@@ -78,9 +78,9 @@ class Election:
                     v_votes=self.m_votes[i],
                     num_total_seats=num_seats,
                     prior_allocations=[],
-                    rule=self.rules.get_generator("primary_divider"),
-                    type_of_rule=self.rules.get_type("primary_divider"),
-                    threshold=self.rules["constituency_threshold"]
+                    rule=self.systems.get_generator("primary_divider"),
+                    type_of_rule=self.systems.get_type("primary_divider"),
+                    threshold=self.systems["constituency_threshold"]
                 )
                 assert last_in #last_in is not None because num_seats > 0
                 self.last.append(last_in["active_votes"])
@@ -100,38 +100,38 @@ class Election:
 
     def run_threshold_elimination(self):
         """Eliminate parties that do not reach the adjustment threshold."""
-        if self.rules["debug"]:
+        if self.systems["debug"]:
             print(" + Threshold elimination")
         self.m_votes_eliminated = threshold_elimination_constituencies(
             votes=self.m_votes,
-            threshold=self.rules["adjustment_threshold"]
+            threshold=self.systems["adjustment_threshold"]
         )
         self.v_votes_eliminated = threshold_elimination_totals(
             votes=self.m_votes,
-            threshold=self.rules["adjustment_threshold"]
+            threshold=self.systems["adjustment_threshold"]
         )
 
     def run_determine_adjustment_seats(self):
         """Calculate the number of adjustment seats each party gets."""
-        if self.rules["debug"]:
+        if self.systems["debug"]:
             print(" + Determine adjustment seats")
         self.v_desired_col_sums, self.adj_seat_gen, _, _ = apportion1d_general(
             v_votes=self.v_votes,
             num_total_seats=self.total_seats,
             prior_allocations=self.v_const_seats_alloc,
-            rule=self.rules.get_generator("adj_determine_divider"),
-            type_of_rule=self.rules.get_type("adj_determine_divider"),
-            threshold=self.rules["adjustment_threshold"]
+            rule=self.systems.get_generator("adj_determine_divider"),
+            type_of_rule=self.systems.get_type("adj_determine_divider"),
+            threshold=self.systems["adjustment_threshold"]
         )
         return self.v_desired_col_sums
 
     def run_adjustment_apportionment(self):
         """Conduct adjustment seat apportionment."""
-        if self.rules["debug"]:
+        if self.systems["debug"]:
             print(" + Apportion adjustment seats")
-        method = ADJUSTMENT_METHODS[self.rules["adjustment_method"]]
-        self.gen = self.rules.get_generator("adj_alloc_divider")
-        consts = self.rules["constituencies"]
+        method = ADJUSTMENT_METHODS[self.systems["adjustment_method"]]
+        self.gen = self.systems.get_generator("adj_alloc_divider")
+        consts = self.systems["constituencies"]
 
         self.solvable = solution_exists(
             votes=self.m_votes_eliminated,
@@ -147,7 +147,7 @@ class Election:
                 m_prior_allocations=self.m_const_seats_alloc,
                 divisor_gen=self.gen,
                 adj_seat_gen=self.adj_seat_gen,
-                threshold=self.rules["adjustment_threshold"],
+                threshold=self.systems["adjustment_threshold"],
                 orig_votes=self.m_votes,
                 v_const_seats=[con["num_const_seats"] for con in consts],
                 last=self.last #for nearest_neighbor and relative_inferiority
@@ -165,19 +165,19 @@ class Election:
 
         if self.adj_seats_info is not None:
             allocation_sequence, present = self.adj_seats_info
-            headers, steps = present(self.rules, allocation_sequence)
+            headers, steps = present(self.systems, allocation_sequence)
             self.demonstration_table = {"headers": headers, "steps": steps}
         else:
             self.demonstration_table = {"headers": ["Not available"], "steps": []}
-        if self.rules["show_entropy"]:
+        if self.systems["show_entropy"]:
             print("\nEntropy: %s" % self.entropy())
 
-def run_script_election(rules):
-    rs = ElectionRules()
-    if "election_rules" not in rules:
-        return {"error": "No election rules supplied."}
+def run_script_election(systems):
+    rs = ElectionSystems()
+    if "election_systems" not in systems:
+        return {"error": "No election systems supplied."}
 
-    rs.update(rules["election_rules"])
+    rs.update(systems["election_systems"])
 
     if not "votes" in rs:
         return {"error": "No votes supplied"}

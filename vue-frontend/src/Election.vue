@@ -1,5 +1,5 @@
 <template>
-<div v-if="!waiting_for_data && results.length > 0">
+<div v-if="results.length > 0">
   <h3>Results based on values in Votes and seats tab</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
@@ -12,9 +12,9 @@
     </b-button>
   </b-container>
   <b-tabs v-model="resultIndex" card>
-    <b-tab v-for="(rules, activeTabIndex) in systems" :key="activeTabIndex">
+    <b-tab v-for="(system, activeTabIndex) in systems" :key="activeTabIndex">
       <div slot="title">
-        {{rules.name}}
+        {{system.name}}
       </div>
       <b-container fluid
                    v-if="results[activeTabIndex] !== undefined">
@@ -62,7 +62,6 @@ export default {
     'vote_table',
     'systems',
     'sys_constituencies',
-    'waiting_for_data'
   ]),
   data: function() {
     return {
@@ -83,7 +82,7 @@ export default {
         url: "/api/election/save",
         data: {
           vote_table:     this.vote_table,
-          rules:          this.systems,
+          systems:        this.systems,
           constituencies: this.sys_constituencies
         },
         responseType: "arraybuffer",

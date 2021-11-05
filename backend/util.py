@@ -1,6 +1,6 @@
 #coding:utf-8
 import random
-from backports import csv
+import csv
 import sys #??????
 from tabulate import tabulate
 import io
@@ -181,15 +181,15 @@ def print_table(data, header, labels, output, f_string=None):
 
 def print_steps_election(election):
     """Print detailed information about a single election."""
-    rules = election.rules
-    out = rules["output"]
+    systems = election.systems
+    out = systems["output"]
     header = ["Constituency"]
-    header.extend(rules["parties"])
+    header.extend(systems["parties"])
     header.append("Total")
-    if "constituencies" in rules:
-        const_names = [c["name"] for c in rules["constituencies"]]
+    if "constituencies" in systems:
+        const_names = [c["name"] for c in systems["constituencies"]]
     else:
-        const_names = rules["constituency_names"]
+        const_names = systems["constituency_names"]
     const_names.append("Total")
 
     print("Votes")
@@ -205,7 +205,7 @@ def print_steps_election(election):
     print_table(xtd_const_seats, header, const_names, out)
 
     print("\nAdjustment seat apportionment")
-    print("Threshold: {:.1%}".format(rules["adjustment_threshold"]*0.01))
+    print("Threshold: {:.1%}".format(systems["adjustment_threshold"]*0.01))
     v_votes = election.v_votes
     v_votes.append(sum(election.v_votes))
     v_elim_votes = election.v_votes_eliminated
@@ -238,20 +238,20 @@ def print_steps_election(election):
 
 def pretty_print_election(election):
     """Print results of a single election."""
-    rules = election.rules
+    systems = election.systems
     header = ["Constituency"]
-    header.extend(rules["parties"])
+    header.extend(systems["parties"])
     header.append("Total")
-    if "constituencies" in rules:
-        const_names = [c["name"] for c in rules["constituencies"]]
+    if "constituencies" in systems:
+        const_names = [c["name"] for c in systems["constituencies"]]
     else:
-        const_names = rules["constituency_names"]
+        const_names = systems["constituency_names"]
     const_names.append("Total")
     xtd_results = add_totals(election.results)
-    print_table(xtd_results, header, const_names, rules["output"])
+    print_table(xtd_results, header, const_names, systems["output"])
 
 def sim_election_rules(rs, test_method):
-    """Get preset election rules for simulation from file."""
+    """Get preset election systems for simulation from file."""
     config = configparser.ConfigParser()
     config.read("../data/presets/methods.ini")
 
@@ -266,18 +266,18 @@ def sim_election_rules(rs, test_method):
 
 def print_simulation(simulation):
     """Print detailed information about a simulation."""
-    for r in range(len(simulation.e_rules)):
-        rules = simulation.e_rules[r]
-        out = rules["output"]
+    for r in range(len(simulation.systems)):
+        systems = simulation.systems[r]
+        out = systems["output"]
         print("==========================================")
-        print("Adjustment method:", rules["adjustment_method"])
+        print("Adjustment method:", systems["adjustment_method"])
         print("==========================================\n")
         h = ["Constituency"]
-        h.extend(rules["parties"]+["Total"])
-        if "constituencies" in rules:
-            const_names = [c["name"] for c in rules["constituencies"]]
+        h.extend(systems["parties"]+["Total"])
+        if "constituencies" in systems:
+            const_names = [c["name"] for c in systems["constituencies"]]
         else:
-            const_names = rules["constituency_names"]
+            const_names = systems["constituency_names"]
         const_names.append("Total")
 
         print("Reference")

@@ -1,16 +1,16 @@
 import json
 from copy import copy, deepcopy
 
-from rules import Rules
+from systems import Systems
 from util import load_constituencies
 from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
 
-class ElectionRules(Rules):
-    """A set of rules for an election to follow."""
+class ElectionSystems(Systems):
+    """A set of systems for an election to follow."""
 
     def __init__(self):
-        super(ElectionRules, self).__init__()
+        super(ElectionSystems, self).__init__()
         self.value_rules = {
             "primary_divider": RULE_NAMES.keys(),
             "adj_determine_divider": RULE_NAMES.keys(),
@@ -27,7 +27,7 @@ class ElectionRules(Rules):
         ]
         self["name"] = "System"
         
-        # Election rules
+        # Election systems
         self["primary_divider"] = "1-dhondt"
         self["adj_determine_divider"] = "1-dhondt"
         self["adj_alloc_divider"] = "1-dhondt"
@@ -37,7 +37,7 @@ class ElectionRules(Rules):
         self["seat_spec_option"] = "refer"
         self["parties"] = []
 
-        # Display rules
+        # Display systems
         self["debug"] = False
         self["show_entropy"] = False
         self["output"] = "simple"
@@ -46,10 +46,10 @@ class ElectionRules(Rules):
         if key == "constituencies" and type(value) == str:
             value = load_constituencies(value)
 
-        super(ElectionRules, self).__setitem__(key, value)
+        super(ElectionSystems, self).__setitem__(key, value)
 
     def get_generator(self, div):
-        """Fetch a generator from divider rules."""
+        """Fetch a generator from divider systems."""
         method = self[div]
         if method in DIVIDER_RULES.keys():
             return DIVIDER_RULES[method]
@@ -90,23 +90,24 @@ class ElectionRules(Rules):
         return None
 
     def generate_opt_ruleset(self):
-        ref_rs = ElectionRules()
+        ref_rs = ElectionSystems()
         ref_rs.update(self)
         ref_rs["adjustment_method"] = "B-alternating-scaling"
         return ref_rs
 
     def generate_law_ruleset(self):
-        ref_rs = ElectionRules()
+        ref_rs = ElectionSystems()
         ref_rs.update(self)
         ref_rs["adjustment_method"] = "1-icelandic-law"
         ref_rs["primary_divider"] = "1-dhondt"
         ref_rs["adj_determine_divider"] = "1-dhondt"
         ref_rs["adj_alloc_divider"] = "1-dhondt"
         ref_rs["adjustment_threshold"] = 5
+        ref_rs["compare_with"] = False
         return ref_rs
 
     def generate_all_const_ruleset(self):
-        ref_rs = ElectionRules()
+        ref_rs = ElectionSystems()
         ref_rs.update(self)
         ref_rs["constituencies"] = deepcopy(self["constituencies"])
         for const in ref_rs["constituencies"]:
@@ -115,7 +116,7 @@ class ElectionRules(Rules):
         return ref_rs
 
     def generate_one_const_ruleset(self):
-        ref_rs = ElectionRules()
+        ref_rs = ElectionSystems()
         ref_rs.update(self)
         ref_rs["constituencies"] = [{
             "name": "All",
@@ -127,7 +128,7 @@ class ElectionRules(Rules):
         return ref_rs
 
     def generate_all_adj_ruleset(self):
-        ref_rs = ElectionRules()
+        ref_rs = ElectionSystems()
         ref_rs.update(self)
         ref_rs["constituencies"] = deepcopy(self["constituencies"])
         for const in ref_rs["constituencies"]:

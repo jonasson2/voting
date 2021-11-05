@@ -4,9 +4,6 @@ import Vuex from "vuex"
 Vue.use(Vuex)
 
 function setVoteSums(state) {
-  console.log("state", state)
-  console.log("state.vote_table", state.vote_table)
-  console.log("state.vote_sums", state.vote_sums)
   let vt = state.vote_table
   let vs = state.vote_sums
   let vc = vt.constituencies
@@ -45,8 +42,8 @@ const state = {
   sys_constituencies: [],
   sim_settings: {},
   results: [],
-  waiting_for_data: false,
-  server_error: ""
+  server_error: "",
+  show_simulate: false,
 }
 
 const mutations = {
@@ -59,9 +56,13 @@ const mutations = {
   },
   addSystem(state, system) {
     let idx = state.systems.length
-    console.log("addSystem, name=", system.name, ", idx=", idx)    
     if (system.name == "System") system.name += "-" + (idx+1).toString();
     state.systems.push(system)
+  },
+  updateComparisonSystems(state, list) {
+    for (var sys of state.systems) {
+      sys.compare_with = list.includes(sys.name) ? true : false
+    }
   },
   
   deleteSystem(state, idx) { state.systems.splice(idx, 1); },
@@ -74,12 +75,10 @@ const mutations = {
   
   addSysConst(state,sys_const) { state.sys_constituencies.push(sys_const) },
   
-  deleteResults() { state.results = [] },
-  
-  notWaiting(state) { state.waiting_for_data = false },
-  
-  waiting(state) { state.waiting_for_data = true },
+  showDataTabs(state) { state.results = []; state.show_simulate = false },
 
+  showSimulate(state) {state.show_simulate = true},
+  
   serverError(state, message) {
     console.log("SERVER ERROR: ", message)
     state.server_error = message
@@ -91,47 +90,42 @@ const mutations = {
 const actions = {
   calculate_results(context) {
     console.log("In calculate_results")
-    context.commit("waiting")
     Vue.http.post(
       '/api/election/',
       {
         vote_table:     context.state.vote_table,
-        rules:          context.state.systems,
-        constituencies: context.state.sys_constituencies
+        systems:          context.state.systems,
+        constituencies: context.state.sys_constituencies,
+        run:            true,
       }).then(response => {
         if (response.body.error) {
           context.commit("serverError", response.body.error)
         } else {
-          context.state.results = response.body.results
-          console.log("store results", context.state.results)
           context.state.sys_constituencies = response.body.constituencies
-          // for (var i=0; i<response.body.length; i++){
-          //   context.state.systems.splice(i, 1, response.body[i].rules)
-          // }
+          context.state.results = response.body.results
         }
-        context.commit("notWaiting")
       })
   },
   recalc_sys_const(context) {
+    // Refresh the constituencies property of each system according to the value
+    // of system.seat_spec_option. If this option is "custom", use values from
+    // system.constituencies for constituency names matching the ones of the
+    // vote_table, otherwise use use values from vote_table, possibly modified
+    // according to the seat_spec_option.
     console.log("In recalc_sys_const")
-    context.commit("waiting")
     Vue.http.post(
       '/api/election/',
       {
         vote_table:     context.state.vote_table,
-        rules:          context.state.systems,
+        systems:          context.state.systems,
         constituencies: context.state.sys_constituencies,
-        run:            false
+        run:            false,
       }).then(response => {
         if (response.body.error) {
           context.commit("serverError", response.body.error)
         } else {
           context.state.sys_constituencies = response.body.constituencies
-          // for (var i=0; i<response.body.length; i++){
-          //   context.state.systems.splice(i, 1, response.body[i].rules)
-          // }
         }
-        context.commit("notWaiting")
       })
   }
 }

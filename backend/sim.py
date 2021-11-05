@@ -5,7 +5,6 @@ from time import sleep
 from math import sqrt
 from copy import deepcopy, copy
 import json
-
 n_reps = 1
 n_betasim = 1
 n_unifsim = 1
@@ -23,7 +22,7 @@ def read_data():
     #vote_file = "aldarkosning.csv"
     #sys_file = "11kerfi.json"
     #sys_file = "../data/tests/default-rule.json"
-    sys_file = "1regla.json"
+    sys_file = "2reglur.json"
     votes = load_votes("../data/elections/" + vote_file)
     systems, sim_settings = load_systems(sys_file)
     # results = single_election(votes, systems)
@@ -81,18 +80,21 @@ def simulate(idx):
     std = []
     for idx_beta in range(n_betasim):
         #disp("votes", votes)
-        matrix = simulate_votes(votes, systems[:1], sim_beta_settings)
+        matrix = simulate_votes(votes, systems, sim_beta_settings)
         #disp("matrix", matrix)
         sim_votes["votes"] = matrix2votes(matrix)
         #disp("sim_votes", sim_votes)
         #disp("systems", systems)
         #disp("sim_unif_settings", sim_unif_settings)
         res = run_simulation(sim_votes, systems, sim_unif_settings)
-        dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"] for i in range(nsys)]
-        dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"] for i in range(nsys)]
+        dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
+                       for i in range(nsys)]
+        dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
+                       for i in range(nsys)]
         disp("dev_ref_avg", dev_ref_avg)
         avg.append(dev_ref_avg)
         std.append(dev_ref_std)
+    disp("res", res)
     A = colmean(avg)
     S = colmean(std)
     return A,S
@@ -101,14 +103,13 @@ systemnames = [s["name"] for s in systems]
 
 #sim_beta_settings["simulate"] = True
 disp("sim_beta_settings", sim_beta_settings)
-matrix = simulate_votes(votes, systems[:1], sim_beta_settings)
-
+matrix = simulate_votes(votes, systems, sim_beta_settings)
+result = simulate(1)
 if False: #__name__ == "__main__":
     nsys = len(systems)
     p = Pool(n_reps)
     #result = p.map(simulate, list(range(n_reps)))
     result = [simulate(1)]
-    #disp("result", result)  
     means = [r[0] for r in result]
     sdevs = [r[1] for r in result]
     printcsv("means.dat", means)

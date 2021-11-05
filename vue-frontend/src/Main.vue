@@ -7,7 +7,7 @@
   <b-alert
     :show="server_error != ''"
     dismissible
-    @dismissed="$store.commit('clearServerError')"
+    @dismissed="clearServerError()"
     variant="danger"
     >
     Server error: {{server_error}}
@@ -16,14 +16,14 @@
     active-nav-item-class="font-weight-bold"
     card
     >
-    <b-tab title="Votes and seats" active @click="hide_results()">
+    <b-tab title="Votes and seats" active @click="showDataTabs()">
       <!-- <p>Specify reference votes and seat numbers</p> -->
       <VoteMatrix
         @download-file="downloadFile"
         >
       </VoteMatrix>
     </b-tab>
-    <b-tab title="Electoral systems" @click="hide_results()">
+    <b-tab title="Electoral systems" @click="showDataTabs()">
       <!-- <p>Define one or several electoral systems by specifying apportionment -->
         <!--   rules and modifying seat numbers</p> -->
       <ElectoralSystems
@@ -31,14 +31,14 @@
         >
       </ElectoralSystems>
     </b-tab>
-    <b-tab title="Single election" @click="show_results()">
+    <b-tab title="Single election" @click="calculate_results()">
       <!-- <p>Calculate results for the reference votes and a selected electoral system</p> -->      
       <Election
         @download-file="downloadFile"
         >
       </Election>
     </b-tab>
-    <b-tab title="Simulated elections">
+    <b-tab title="Simulated elections" @click="showSimulate()">
       <!-- <P>Simulate several elections and compute results for each specified electoral system</p> -->
       <Simulate
         @download-file="downloadFile"
@@ -60,7 +60,7 @@ import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
 import VoteMatrix from './VoteMatrix.vue'
 import Intro from './Intro.vue'
-import { mapState } from 'vuex';
+import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
   components: {
@@ -74,12 +74,14 @@ export default {
   computed: mapState(['server_error']),
   
   methods: {
-    show_results: function() {
-      this.$store.dispatch("calculate_results")
-    },
-    hide_results: function() {
-      this.$store.commit("deleteResults")
-    },    
+    ...mapMutations([
+      "clearServerError",
+      "showDataTabs",
+      "showSimulate",
+    ]),
+    ...mapActions([
+      "calculate_results"
+    ]),
     // Thanks to Pétur Helgi Einarsson for the next two functions
     parse_headers: function (headers) {
       // Return type and name for download file

@@ -18,7 +18,7 @@ def votes_to_change(election):
             d = 0
             while d == 0:
                 votes[c][p] = ref_votes[c][p]+b
-                election = voting.Election(election.rules, votes)
+                election = voting.Election(election.systems, votes)
                 results = election.run()
                 d = dev(results, ref_results)
                 if d == 0:
@@ -29,7 +29,7 @@ def votes_to_change(election):
             while m > 1:
                 x = int(m*sqrt(0.5) + a)
                 votes[c][p] = ref_votes[c][p]+x
-                election = voting.Election(election.rules, votes)
+                election = voting.Election(election.systems, votes)
                 results = election.run()
                 d = dev(results, ref_results)
                 if d == 0:

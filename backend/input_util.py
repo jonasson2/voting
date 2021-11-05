@@ -68,7 +68,7 @@ def check_vote_table(vote_table):
     return vote_table
 
 def check_systems(electoral_systems):
-    """Checks election rules constituency input, and translates empty cells to 0
+    """Checks election systems constituency input, and translates empty cells to 0
 
     Raises:
         KeyError: If constituencies are missing a component
@@ -110,10 +110,10 @@ def check_systems(electoral_systems):
 
 def check_simul_settings(sim_rules):
     from math import sqrt
-    """Checks simulation rules, and translates checkbox values to bool values
+    """Checks simulation settings, and translates checkbox values to bool values
 
     Raises:
-        KeyError: If simulation rules are missing a component
+        KeyError: If simulation settings are missing a component
         ValueError: If coefficient of variation is too high
     """
     if "row_constraints" in sim_rules and "col_constraints" in sim_rules:
