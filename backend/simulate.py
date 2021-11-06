@@ -265,7 +265,6 @@ class Simulation:
         votes = election.m_votes
         results = election.results
         if comparison_results == None:
-            #disp("option", option)
             systems = self.systems[system].generate_comparison_rules(option)
             # Run comparisons other than ref and optimal
             comparison_results = voting.Election(systems, votes).run()

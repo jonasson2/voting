@@ -112,7 +112,7 @@ if False: #__name__ == "__main__":
     result = [simulate(1)]
     means = [r[0] for r in result]
     sdevs = [r[1] for r in result]
-    printcsv("means.dat", means)
-    printcsv("sdevs.dat", sdevs)
+    #printcsv("means.dat", means)
+    #printcsv("sdevs.dat", sdevs)
     #disp("means", means)
     #plot(means, systemnames)

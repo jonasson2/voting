@@ -4,6 +4,7 @@
 *.docx
 \#*
 .\#*
+~$*
 .tmp.driveupload
 .DS_Store
 .idea
