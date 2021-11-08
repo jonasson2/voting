@@ -98,16 +98,17 @@ class Simulation:
         self.data = [{} for _ in range(len(self.systems))]
         self.list_data = [{} for _ in range(len(self.systems) + 1)]
         self.vote_data = {}
-        ns = len(self.systems)
-        nc = len(vote_table["constituencies"])
-        np = len(self.parties)
-        measures = self.measure_groups.get_all_measures()
+        nr = self.num_systems
+        nc = self.num_constituencies
+        np = self.num_parties
+        self.measures = self.measure_groups.get_all_measures()
         for measure in VOTE_MEASURES:
             self.stat[measure] = Running_stats((nc + 1, np + 1))
         for measure in LIST_MEASURES:
-            self.stat[measure] = Running_stats((ns, nc + 1, np + 1))
-        for measure in measures:  # MEASURES:
-            self.stat[measure] = Running_stats(ns)
+            self.stat[measure] = Running_stats((nr,nc+1,np+1))
+        for measure in MEASURES:
+            self.stat[measure] = Running_stats(nr)
+        print("Running run_initial_elections")
         self.run_initial_elections()
         self.find_reference()
 
