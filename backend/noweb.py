@@ -131,7 +131,6 @@ def check_simulation(sid, stop):
         sim.terminate = True
         # thread.join() finishes the thread and sets thread.done to True
         thread.join()
-    disp("sim_results", sim_results)
     return sim_status, sim_results
 
 def simulation_to_excel(sid, file):
