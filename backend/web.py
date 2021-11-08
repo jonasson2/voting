@@ -87,7 +87,7 @@ def save_file(tmpfilename, download_name):
     )
     return response
 
-def get_rules(data):
+def add_const_to_systems(data):
     systems = data["systems"]
     const = data["constituencies"]
     for (r,c) in zip(systems, const):
@@ -102,7 +102,7 @@ def api_election():
         data = request.get_json(force=True)
         data = check_input(data, ["vote_table", "systems", "constituencies"])
         vote_table = data["vote_table"]
-        systems = get_rules(data)
+        systems = add_const_to_systems(data)
         run = not "run" in data or data["run"] == True
         if len(systems) == 0 or len(systems[0]) == 0:
             raise Exception("/api/election posted with no electoral system")
@@ -120,7 +120,7 @@ def api_election_save():
     try:
         data = request.get_json(force=True)
         data = check_input(data, ["vote_table", "systems", "constituencies"])
-        systems = get_rules(data)
+        systems = add_const_to_systems(data)
         vote_table = data["vote_table"]
         handler = ElectionHandler(vote_table, systems)
         tmpfilename = tempfile.mktemp(prefix='election-')
@@ -141,7 +141,7 @@ def api_settings_save():
         print("caught exception")
         message = format_exc()
         return jsonify({"error": message})
-    settings = get_rules(data)
+    settings = add_const_to_systems(data)
     settings = check_systems(settings)
     
     #no need to expose more than the following keys
@@ -242,7 +242,7 @@ def api_simulate():
         data = check_input(data, ["vote_table", "systems", "sim_settings",
                                   "constituencies"])
         votes = data["vote_table"]
-        systems = get_rules(data)
+        systems = add_const_to_systems(data)
         sim_settings = data["sim_settings"]
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})

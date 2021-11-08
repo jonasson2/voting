@@ -94,7 +94,7 @@ const actions = {
       '/api/election/',
       {
         vote_table:     context.state.vote_table,
-        systems:          context.state.systems,
+        systems:        context.state.systems,
         constituencies: context.state.sys_constituencies,
         run:            true,
       }).then(response => {

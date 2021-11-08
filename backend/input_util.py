@@ -108,7 +108,7 @@ def check_systems(electoral_systems):
                      f"electoral system {electoral_system['name']}.")
     return electoral_systems
 
-def check_simul_settings(sim_rules):
+def check_simul_settings(sim_settings):
     from math import sqrt
     """Checks simulation settings, and translates checkbox values to bool values
 
@@ -116,27 +116,27 @@ def check_simul_settings(sim_rules):
         KeyError: If simulation settings are missing a component
         ValueError: If coefficient of variation is too high
     """
-    if "row_constraints" in sim_rules and "col_constraints" in sim_rules:
+    if "row_constraints" in sim_settings and "col_constraints" in sim_settings:
         for key in ["row_constraints", "col_constraints"]:
-            sim_rules[key] = bool(strtobool(str(sim_rules[key])))
-        if sim_rules["row_constraints"]:
-            sim_rules["scaling"] = "both" if sim_rules["col_constraints"] else "const"
+            sim_settings[key] = bool(strtobool(str(sim_settings[key])))
+        if sim_settings["row_constraints"]:
+            sim_settings["scaling"] = "both" if sim_settings["col_constraints"] else "const"
         else:
-            sim_rules["scaling"] = "party" if sim_rules["col_constraints"] else "total"
+            sim_settings["scaling"] = "party" if sim_settings["col_constraints"] else "total"
     for key in ["simulation_count", "gen_method", "scaling"]:
-        if key not in sim_rules:
+        if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
-    if "distribution_parameter" not in sim_rules:
+    if "distribution_parameter" not in sim_settings:
         raise KeyError("Missing data ('sim_settings.distribution_parameter')")
-    variance_coefficient = sim_rules["distribution_parameter"]
-    if sim_rules["gen_method"] == "beta":
+    variance_coefficient = sim_settings["distribution_parameter"]
+    if sim_settings["gen_method"] == "beta":
         if variance_coefficient >= 0.75:
             raise ValueError("Coefficient of variation must be less than 0.75")
-    elif sim_rules["gen_method"] == "uniform":
+    elif sim_settings["gen_method"] == "uniform":
         if variance_coefficient >= 1/sqrt(3):
             raise ValueError("Coefficient of variation must be less than 0.57735")
-    sim_count = sim_rules["simulation_count"]
+    sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     if sim_count > 500 and digoce:
         raise ValueError("Maximum iterations in the online version is 500 (see Help)")
-    return sim_rules
+    return sim_settings

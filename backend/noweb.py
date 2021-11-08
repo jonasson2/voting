@@ -77,18 +77,14 @@ def run_thread_simulation(sid):
 
 def run_simulation(votes, systems, sim_settings, excelfile = None):
     # not threaded
-    rulesets = []
-    for sys in systems:
-        election_systems = ElectionSystems()
-        election_systems.update(sys)
-        rulesets.append(election_systems)
     simulation_systems = simulate.SimulationSettings()
     simulation_systems.update(check_simul_settings(sim_settings))
-    sim = simulate.Simulation(simulation_systems, rulesets, votes)
+    sim = simulate.Simulation(simulation_systems, systems, votes)
     sim.simulate()
     if excelfile != None:
         sim.to_xlsx(excelfile)
-    return sim.get_results_dict()
+    results = sim.get_results_dict()
+    return results
 
 def start_simulation(votes, systems, sim_settings):
     global SIMULATIONS
@@ -123,7 +119,7 @@ def check_simulation(sid, stop):
         "iteration": sim.iteration,
         "time_left": sim.time_left,
         "total_time": sim.total_time,
-        "target": sim.sim_rules["simulation_count"],
+        "target": sim.sim_settings["simulation_count"],
     }
     sim_results = sim.get_results_dict()
     #disp("sim_status", sim_status)

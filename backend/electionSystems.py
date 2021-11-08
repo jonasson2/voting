@@ -35,6 +35,7 @@ class ElectionSystems(Systems):
         self["constituency_threshold"] = 0
         self["adjustment_method"] = "1-icelandic-law"
         self["seat_spec_option"] = "refer"
+        self["compare_with"] = False
         self["parties"] = []
 
         # Display systems

@@ -16,7 +16,7 @@ class Systems(dict):
         if key in self.range_rules and (value < self.range_rules[key][0] or
                                         value > self.range_rules[key][1]):
             raise ValueError("Cannot set %s to '%.02f'. Allowed values are \
-between %.02f and %.02f" % (key, value, self.range_rules[key][0],
+            between %.02f and %.02f" % (key, value, self.range_rules[key][0],
                             self.range_rules[key][1]))
         if key in self.list_rules and not isinstance(value, list):
             raise ValueError("Cannot set %s to '%s'. Must be a list." %

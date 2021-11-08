@@ -84,7 +84,7 @@ def simulate(idx):
         #disp("matrix", matrix)
         sim_votes["votes"] = matrix2votes(matrix)
         #disp("sim_votes", sim_votes)
-        #disp("systems", systems)
+        #disp("systems", systems)[]
         #disp("sim_unif_settings", sim_unif_settings)
         res = run_simulation(sim_votes, systems, sim_unif_settings)
         dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
@@ -103,7 +103,7 @@ systemnames = [s["name"] for s in systems]
 
 #sim_beta_settings["simulate"] = True
 disp("sim_beta_settings", sim_beta_settings)
-matrix = simulate_votes(votes, systems, sim_beta_settings)
+#matrix = simulate_votes(votes, systems, sim_beta_settings)
 result = simulate(1)
 if False: #__name__ == "__main__":
     nsys = len(systems)
