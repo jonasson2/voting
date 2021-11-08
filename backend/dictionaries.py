@@ -99,10 +99,6 @@ SEAT_SPECIFICATION_OPTIONS = {
 }
 
 MEASURES = {
-    "dev_opt":      "Allocation by the optimal divisor method",
-    "dev_opt_tot":  "Allocation by the optimal method",
-    "dev_law":      "Allocation by Icelandic law",
-    "dev_law_tot":  "Allocation by Icelandic law",
     "dev_all_adj":  "Allocation as if all seats were adjustment seats",
     "dev_all_adj_tot":
                     "Allocation as if all seats were adjustment seats",
@@ -111,22 +107,18 @@ MEASURES = {
                     "Allocation as if all seats were constituency seats",
     "dev_ref":      "Allocation with actual system for the reference votes",
     "dev_ref_tot":  "Allocation with actual system for the reference votes",
-    "adj_dev":      "Desired apportionment of adjustment seats",
-    "dev_one_const":"Allocation as if all constituencies were combined into one",
+    #"adj_dev":      "Desired apportionment of adjustment seats",
+    "one_const_tot":"Allocation as if all constituencies were combined into one",
     "entropy":      "Entropy (product of all seat values used)",
-    "entropy_ratio":"Entropy relative to optimal divisor method",
-    "min_seat_value":"Mininum allocation seat share used",
+    "min_seat_val": "Mininum allocation seat share used",
     "sum_abs":      "Sum of absolute differences of shares minus seats",
     "sum_pos":       "Positive differences relative to the shares",
     "sum_sq":        "Squared differences relative to the shares",
 }
 LIST_DEVIATION_MEASURES = [
-    "dev_opt",
-    "dev_law",
     "dev_all_adj",
     "dev_all_const",
     "dev_ref",
-    # "dev_one_const", #skipped, because already measured by all_adj (party sums)
 ]
 TOTALS_DEVIATION_MEASURES = [
     #"dev_opt_totals",
@@ -134,11 +126,10 @@ TOTALS_DEVIATION_MEASURES = [
     "dev_all_adj_tot",
     "dev_all_const_tot",
     "dev_ref_tot",
-    "adj_dev",
 ]
 STANDARDIZED_MEASURES = [
-    "entropy_ratio",
-    "min_seat_value",
+    "entropy",
+    "min_seat_val",
 ]
 IDEAL_COMPARISON_MEASURES = [
     "sum_abs",
@@ -162,16 +153,10 @@ VOTE_MEASURES = {
     "sim_shares": "shares in simulations",
 }
 AGGREGATES = {
-    "cnt": "Number of elements",
+    "avg": "Average",
+    "std": "Std. dev",
     "max": "Max",
     "min": "Min",
-    "sum": "Sum of elements",
-    "sm2": "Sum of squares",
-    "sm3": "Sum of cubes",
-    "sm4": "Sum of fourth powers",
-    "avg": "Average",
-    "var": "Variance",
-    "std": "Std. dev",
     "skw": "Skewness",
     "kur": "Kurtosis",
 }

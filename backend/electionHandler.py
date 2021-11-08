@@ -12,7 +12,7 @@ class ElectionHandler:
     on a common vote table.
     """
     def __init__(self, vote_table, election_rules_list, run=True):
-        # when run=False, only the constituencies are computed, useing
+        # when run=False, only the constituencies are computed, using
         # election_rules_list[i]["seat_spec_option"]
         self.election_rules_list = check_systems(election_rules_list)
         self.vote_table = check_vote_table(vote_table)

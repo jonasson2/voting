@@ -181,7 +181,7 @@ def print_table(data, header, labels, output, f_string=None):
 
 def print_steps_election(election):
     """Print detailed information about a single election."""
-    systems = election.systems
+    systems = election.system
     out = systems["output"]
     header = ["Constituency"]
     header.extend(systems["parties"])
@@ -238,7 +238,7 @@ def print_steps_election(election):
 
 def pretty_print_election(election):
     """Print results of a single election."""
-    systems = election.systems
+    systems = election.system
     header = ["Constituency"]
     header.extend(systems["parties"])
     header.append("Total")
@@ -264,10 +264,28 @@ def sim_election_rules(rs, test_method):
 
     return rs
 
+def hms(sec):
+    # Turn seconds into xxx days hh:mm:ss
+    sec = round(sec)
+    minute = sec//60
+    sec %= 60
+    hr = minute//60
+    minute %= 60
+    d = hr//24
+    hr %= 24
+    s = f"{minute:02}:{sec:02}"
+    if hr > 0:
+        s = f"{hr:02}" + s
+    if d == 1:
+        s = "1 day + " + s
+    elif d > 1:
+        s = f"{d} days + " + s
+    return s
+
 def print_simulation(simulation):
     """Print detailed information about a simulation."""
-    for r in range(len(simulation.systems)):
-        systems = simulation.systems[r]
+    for r in range(len(simulation.system)):
+        systems = simulation.system[r]
         out = systems["output"]
         print("==========================================")
         print("Adjustment method:", systems["adjustment_method"])
@@ -365,3 +383,5 @@ def disp(title, value):
     pp = PrettyPrinter(compact=False, width=80).pprint
     print("\n" + title.upper() + ":")
     pp(value)
+
+    

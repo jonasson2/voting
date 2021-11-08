@@ -2,17 +2,17 @@
   "e_settings": [
     {
       "name": "Lögin",
-      "seat_spec_option": "refer",
+      "seat_spec_option": "custom",
       "constituencies": [
         {
           "name": "Suður",
-          "num_adj_seats": 1,
-          "num_const_seats": 9
+          "num_adj_seats": 5,
+          "num_const_seats": 15
         },
         {
           "name": "Suðvestur",
-          "num_adj_seats": 2,
-          "num_const_seats": 9
+          "num_adj_seats": 5,
+          "num_const_seats": 15
         }
       ],
       "compare_with": true,
@@ -39,8 +39,8 @@
         }
       ],
       "compare_with": true,
-      "constituency_threshold": 7.5,
-      "adjustment_threshold": 5,
+      "constituency_threshold": 4,
+      "adjustment_threshold": 0,
       "adjustment_method": "B-alternating-scaling",
       "constituency_allocation_rule": "1-dhondt",
       "adjustment_division_rule": "1-dhondt",
@@ -48,11 +48,11 @@
     }
   ],
   "sim_settings": {
-    "distribution_parameter": 0.25,
+    "distribution_parameter": 0.35,
     "gen_method": "beta",
     "scaling": "both",
     "selected_rand_constit": "All",
     "simulate": false,
-    "simulation_count": 2
+    "simulation_count": 100
   }
 }
