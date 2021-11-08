@@ -99,13 +99,13 @@ class Simulation:
         nr = self.num_systems
         nc = self.num_constituencies
         np = self.num_parties
-        self.measure_groups = get_measure_groups(self.systems)
-        self.measures = get_all_measures(self.measure_groups)
+        # self.measure_groups = get_measure_groups(self.systems)
+        # self.measures = get_all_measures(self.measure_groups)
         for measure in VOTE_MEASURES:
             self.stat[measure] = Running_stats((nc+1,np+1))
         for measure in LIST_MEASURES:
             self.stat[measure] = Running_stats((nr,nc+1,np+1))
-        for measure in self.measures:
+        for measure in MEASURES:
             self.stat[measure] = Running_stats(nr)
         print("Running run_initial_elections")
         self.run_initial_elections()
@@ -126,15 +126,15 @@ class Simulation:
             datadict[measure]["max"] = self.stat[measure].maximum()
         if is_vote_data:
             for m in measures:
-                self.vote_data[m] = dict((stat, datadict[m][s])
+                self.vote_data[m] = dict((stat, datadict[m][stat])
                                          for stat in stat_list)
         else:
             for sys in range(self.num_systems):
                 for m in measures:
                     ddm = datadict[m]
                     if type_of_data == "list":
-                        # self.list_data[sys][m] =
-                        dict((stat, ddm[stat][sys]) for stat in stat_list)
+                        self.list_data[sys][m] = dict((stat, ddm[stat][sys])
+                                                      for stat in stat_list)
                     else:
                         #disp("dd", datadict["dev_ref"])
                         self.data[sys][m] = dict((stat, ddm[stat][sys])

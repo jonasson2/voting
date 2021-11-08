@@ -72,7 +72,7 @@
     <ResultMatrix
       v-for="(system, idx) in results.data"
       :key="'const-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="results.systems[idx].constituencies"
       :parties="results.parties"
       :values="system.list_measures.const_seats.avg"
       :stddev="system.list_measures.const_seats.std"
@@ -83,7 +83,7 @@
     <ResultMatrix
       v-for="(system, idx) in results.data"
       :key="'adj-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="results.systems[idx].constituencies"
       :parties="results.parties"
       :values="system.list_measures.adj_seats.avg"
       :stddev="system.list_measures.adj_seats.std"
@@ -94,7 +94,7 @@
     <ResultMatrix
       v-for="(system, idx) in results.data"
       :key="'total-seats-' + idx"
-      :constituencies="results.e_rules[idx].constituencies"
+      :constituencies="results.systems[idx].constituencies"
       :parties="results.parties"
       :values="system.list_measures.total_seats.avg"
       :stddev="system.list_measures.total_seats.std"
@@ -142,7 +142,7 @@ export default {
       current_iteration: 0,
       time_left: 0,
       total_time: 0,
-      results: { measures: [], methods: [], data: [], parties: [], e_rules: [] }
+      results: { measures: [], methods: [], data: [], parties: [], systems: [] }
     }
   },
   components: {
@@ -187,7 +187,7 @@ export default {
       console.log("Simulate (recalculate): this.sim_settings = ", this.sim_settings)
       this.$http.post('/api/simulate/', {
         vote_table:     this.vote_table,
-        systems:          this.systems,
+        systems:        this.systems,
         sim_settings:   this.sim_settings,
         constituencies: this.sys_constituencies
       }).then(response => {
