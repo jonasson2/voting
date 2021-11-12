@@ -15,6 +15,7 @@
           "num_const_seats": 10
         }
       ],
+      "compare_with": true,
       "constituency_threshold": 0,
       "adjustment_threshold": 5,
       "adjustment_method": "1-icelandic-law",

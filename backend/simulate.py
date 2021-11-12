@@ -99,8 +99,6 @@ class Simulation:
         nr = self.num_systems
         nc = self.num_constituencies
         np = self.num_parties
-        # self.measure_groups = get_measure_groups(self.systems)
-        # self.measures = get_all_measures(self.measure_groups)
         for measure in VOTE_MEASURES:
             self.stat[measure] = Running_stats((nc+1,np+1))
         for measure in LIST_MEASURES:

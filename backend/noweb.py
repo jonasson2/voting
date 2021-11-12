@@ -88,6 +88,8 @@ def run_simulation(votes, systems, sim_settings, excelfile = None):
     sim.simulate()
     if excelfile != None:
         sim.to_xlsx(excelfile)
+    disp("systems", sim.systems)
+    disp("data", sim.data)
     return sim.get_results_dict()
 
 def start_simulation(votes, systems, sim_settings):

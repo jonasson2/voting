@@ -11,8 +11,9 @@ def disp(title, value, depth=99):
     pp(value)
 
 # votes = load_votes("iceland-2021-first.csv", preset=True)
-votes = load_votes("../data/elections/aldarkosning.csv")
-systemfile = "2reglur.json"
+# votes = load_votes("../data/elections/aldarkosning.csv")
+votes = load_votes("../data/elections/2-by-2-example.csv")
+systemfile = "1regla.json"
 systems, sim_settings = load_systems(systemfile)
 # results = single_election(votes, systems)
 # disp("votes", votes)
