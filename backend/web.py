@@ -20,7 +20,7 @@ from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
 import voting
 import simulate
-from util import disp
+from util import disp, short_traceback
 from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, SIMULATIONS
 from noweb import simulation_to_excel
@@ -247,33 +247,22 @@ def api_simulate():
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
     except Exception:
-        message = format_exc()
+        message = short_traceback(format_exc())
+        print("Length of message = ", len(message))
+        print("Error; message = ", message)
         return jsonify({"started": False, "error": message})
 
 @app.route('/api/simulate/check/', methods=['POST'])
 def api_simulate_check():
     data = request.get_json(force=True)
-    msg = ""
-    if "sid" not in data:
-        msg = "Please supply a SID."
-    elif data["sid"] not in SIMULATIONS:
-        msg = "Please supply a valid SID."
-    else:
-        try:
-            sid = data["sid"]
-            stop = data["stop"]
-            (status, results) = check_simulation(sid, stop)
-        except Exception:
-            msg = format_exc()
-    if len(msg) > 0:
-        print("Error; message = ", msg)
+    try:
+        sid = data["sid"]
+        stop = data["stop"]
+        (status, results) = check_simulation(sid, stop)
+    except Exception:
+        msg = short_traceback(format_exc())
         return jsonify({"error": msg})
-    else:
-        try:
-            return jsonify({"status": status, "results": results})
-        except:
-            disp("status", status)
-            return jsonify({"error": "Illegal simulation status"})
+    return jsonify({"status": status, "results": results})
 
 @app.route('/api/script/', methods=["POST"])
 def handle_api():

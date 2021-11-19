@@ -15,6 +15,11 @@ h3 {
   margin-left: 15px;
 }
 
+th {
+  text-align: center;
+  font-weight: bold;
+}
+
 /***************************************************/
 
 .votematrix {
@@ -115,11 +120,14 @@ th.topleft {
 
 /*********************************************************/
 
+.
+
 .resultmatrix tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
 .resultmatrix th {
+  text-aligin:    center;
   font-weight:    bold;
 }
 
@@ -188,4 +196,13 @@ th.topleft {
   padding:        6px;
   text-align:     center;
   background:     none;
+}
+
+measures {
+  border: 0px;
+  paddingss: 0px;
+}
+
+.noborder {
+  border: 0
 }

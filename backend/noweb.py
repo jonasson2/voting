@@ -11,6 +11,8 @@ from util import disp
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
 
+from sim_measures import add_vuedata
+
 def load_votes(f, preset=False):
     '''returns votes (and seats) from excel file f'''
     if preset: f = "../data/elections/" + f
@@ -21,7 +23,6 @@ def load_systems(f):
     '''returns systems, sim_settings from file json-file f'''
     if isinstance(f,str):
         f = os.path.expanduser(f)
-        print("file", f)
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
@@ -84,6 +85,7 @@ def run_simulation(votes, systems, sim_settings, excelfile = None):
     if excelfile != None:
         sim.to_xlsx(excelfile)
     results = sim.get_results_dict()
+    add_vuedata(results)
     return results
 
 def start_simulation(votes, systems, sim_settings):
@@ -122,6 +124,7 @@ def check_simulation(sid, stop):
         "target": sim.sim_settings["simulation_count"],
     }
     sim_results = sim.get_results_dict()
+    add_vuedata(sim_results)
     #disp("sim_status", sim_status)
     if stop:
         sim.terminate = True

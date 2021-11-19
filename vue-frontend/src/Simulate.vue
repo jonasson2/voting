@@ -68,6 +68,16 @@
       </b-button>
     </b-container>
     <p></p>
+    <h4 style="margin-bottom:0px">Quality measures</h4>
+    <QualityMeasures
+      :vuedata="vuedata"
+      :stats="vuedata.stats"
+      :stat_headings="vuedata.stat_headings"
+      :system_names="vuedata.system_names"
+      :group_ids="vuedata.group_ids"
+      :group_titles="vuedata.group_titles"
+      >
+      </QualityMeasures>
     <h4>Constituency seats</h4>
     <ResultMatrix
       v-for="(system, idx) in results.data"
@@ -99,20 +109,9 @@
       :values="system.list_measures.total_seats.avg"
       :stddev="system.list_measures.total_seats.std"
       :title="system.name"
-      :round="2">
+      :round="2"
+      >
     </ResultMatrix>
-    
-    <h4>Quality measures</h4>
-    <SimulationData
-      :measures="results.measures"
-      :list_deviation_measures="results.list_deviation_measures"
-      :totals_deviation_measures="results.totals_deviation_measures"
-      :standardized_measures="results.standardized_measures"
-      :ideal_comparison_measures="results.ideal_comparison_measures"
-      :methods="results.methods"
-      :data="results.data"
-      :testnames="results.testnames">
-    </SimulationData>
   </div>
 </div>
 </template>
@@ -120,7 +119,8 @@
 <script>
 import ResultMatrix from './components/ResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
-import SimulationData from './components/SimulationData.vue'
+// import SimulationData from './components/SimulationData.vue'
+import QualityMeasures from './QualityMeasures.vue'
 import { mapState, mapMutations } from 'vuex';
 
 export default {
@@ -142,13 +142,15 @@ export default {
       current_iteration: 0,
       time_left: 0,
       total_time: 0,
-      results: { measures: [], methods: [], data: [], parties: [], systems: [] }
+      results: { measures: [], methods: [], data: [], parties: [], systems: [] },
+      vuedata: {}
     }
   },
   components: {
     ResultMatrix,
     SimulationSettings,
-    SimulationData,
+    QualityMeasures
+    // SimulationData,
   },
   methods: {
     ...mapMutations([
@@ -171,6 +173,7 @@ export default {
           this.total_time = status.total_time;
           this.time_left = status.time_left;
           this.results = response.body.results;
+          this.vuedata = response.body.results.vuedata;
           if (this.simulation_done) {
             window.clearInterval(this.checktimer);
           }

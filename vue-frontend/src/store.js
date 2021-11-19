@@ -81,7 +81,8 @@ const mutations = {
   
   serverError(state, message) {
     console.log("SERVER ERROR: ", message)
-    state.server_error = message
+    state.server_error = message.split(/\n/g);
+    console.log("lengths", message.length, state.server_error.length)
   },
   
   clearServerError(state) { state.server_error = '' }

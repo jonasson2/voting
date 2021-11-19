@@ -61,4 +61,5 @@ def entropy(votes, allocations, divisor_gen):
             for k in range(allocations[c][p]):
                 dk = next(gen)
                 e += log(votes[c][p]/dk)
+
     return e

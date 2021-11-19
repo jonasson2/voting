@@ -21,6 +21,7 @@ class ElectionHandler:
         self.num_parties = len(self.parties)
         self.constituencies = self.vote_table["constituencies"]
         self.num_constituencies = len(self.constituencies)
+        self.elections = []
         self.set_votes(self.vote_table["votes"], run)
 
     def set_votes(self, votes, run = True):
@@ -32,10 +33,11 @@ class ElectionHandler:
         self.votes = votes
         self.xtd_votes = add_totals(self.votes)
 
+        #if not self.elections:
         self._setup_elections()
         if run:
             self.run_elections()
-            self.check_solvability()
+            # self.check_solvability()
 
     def _setup_elections(self):
         self.elections = []

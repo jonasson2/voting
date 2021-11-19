@@ -1,6 +1,6 @@
-# measureGroups[group][0] is the Group heading (in Excel-file column 1)
-# MeasureGroups[group][1][measure][0] is measure title, column 1
-# MeasureGroups[group][1][measure][1] is measure title, column 2
+# measureGroups[group]["title"] is the Group heading (in Excel-file column 1)
+# MeasureGroups[group]["rows"][measure][0] is measure title, column 1
+# MeasureGroups[group]["rows"][measure][1] is measure title, column 2
 
 # Corresponding data is stored in
 #   simulation.data[r][m][stat]
@@ -21,35 +21,50 @@ from util import disp
 
 class MeasureGroups(dict):
     def __init__(self, systems):
-        self["seatShares"] = [
-            "Comparison with reference seat shares",
-            {  "sum_abs":  ("Sum of all absolute seat allocation differences", ""),
-               "sum_pos":  ("Sum of positive seat allocation differences", ""),
-               "sum_sq":   ("Sum of squared seat allocation differences", "")}]
-        self["other"] = [
-            "Other qualitiy indices for the allocations",
-            {  "entropy":      ("Entropy (logarithmic)", ""),
-               "min_seat_val": ("Minimum quotient or remainder", "")}]
-        self["compTitle"] = [
-            "Sum of absolute seat allocation differences:",
-            {}]
-        self["seatSpec"] = [
-            "– compared with other seat specifications",
-            {  "dev_all_adj":        ("Individual lists", "Only adjustment seats"),
-               "dev_all_const":      ("",                 "Only constituency seats"),
-               "dev_all_adj_tot":    ("Party totals",     "Only adjustment seats"),
-               "dev_all_const_tot":  ("",                 "Only constituency seats"),
-               "one_const_tot":      ("",            "All constituencies combined")}]
-        self["expected"] = [
-            "– of same system with expected votes",
-            {  "dev_ref":     ("Individual lists", ""),
-               "dev_ref_tot": ("Party totals", "")}]
-        self["cmpSys"] = [
-            "– compared with other electoral systems", {}]
-        self.add_systems(systems)
+        self["seatShares"] = {
+            "title": "Allocated seats minus reference seat shares",
+            "rows": {
+                "sum_abs":  ("Sum of absolute values", ""),
+                "sum_pos":  ("Sum of positive values", ""),
+                "sum_sq":   ("Sum of squared values", "")
+            }
+        }
+        self["other"] = {
+            "title": "Specific qualitiy indices for seat allocations",
+            "rows": {
+                "entropy":      ("Entropy (logarithmic)", ""),
+                "min_seat_val": ("Minimum reference seat share per seat", "")
+            }
+        }
+        self["compTitle"] = {
+            "title": "Sum of absolute seat allocation differences:",
+            "rows": {}
+        }
+        self["seatSpec"] = {
+            "title": "– compared with other seat specifications",
+            "rows": {
+                "dev_all_adj":        ("Individual lists", "Only adjustment seats"),
+                "dev_all_const":      ("",                 "Only constituency seats"),
+                "dev_all_adj_tot":    ("Party totals",     "Only adjustment seats"),
+                "dev_all_const_tot":  ("",                 "Only constituency seats"),
+                "one_const_tot":      ("",            "All constituencies combined")
+            }
+        }
+        self["expected"] = {
+            "title": "– compared w. tested systems and source votes",
+            "rows": {
+                "dev_ref":     ("Individual lists", ""),
+                "dev_ref_tot": ("Party totals", "")
+            }
+        }
+        self["cmpSys"] = {
+            "title": "– compared with following electoral systems",
+            "rows": {}
+        }
+        self._add_systems(systems)
 
-    def add_systems(self, systems):
-        sysGroup = self["cmpSys"][1]
+    def _add_systems(self, systems):
+        sysGroup = self["cmpSys"]["rows"]
         firstcol = "Individual lists"
         for sys in systems:
             if sys["compare_with"]:
@@ -62,24 +77,49 @@ class MeasureGroups(dict):
                 measure = "cmp_" + sys["name"] + "_tot"
                 sysGroup[measure] = (firstcol, sys["name"])
                 firstcol = ""
+        no_comparison_systems = not sysGroup
+        if no_comparison_systems:
+            del self["cmpSys"]
+            return
 
     def get_measures(self, group): # get measures from one group
-        return self[group][1].keys()
+        return self[group]["rows"].keys()
                 
     def get_all_measures(self):  # get measures from all groups
         measures = []
         for value in self.values():
-            measures.extend(value[1].keys())
+            measures.extend(value["rows"].keys())
         return measures
     
         group = self.group[grp]
         return group.get_measures()
 
 statisticsHeadings = {
-    "avg": "Average of indicated measures for all simulations",
-    "std": "Minima for all simulations",
-    "min": "Maxima for all simulations",
-    "max": "Standard deviations for all simulations",
-    "skw": "Skewness for all simulations",
-    "kur": "Kurtosis for all simulations"
+    # "avg": "Averages for all simulations",
+    # "min": "Maxima for all simulations",
+    # "max": "Standard deviations for all simulations",
+    # "std": "Minima for all simulations",
+    # "skw": "Skewness for all simulations",
+    # "kur": "Kurtosis for all simulations"
+    "avg": "AVERAGE",
+    "min": "MINIMUM",
+    "max": "MAXIMUM",
+    "std": "STD.DEV.",
+    "skw": "SKEWNESS",
+    "kur": "KURTOSIS"
 }
+
+headingType = {
+    "seatShares": "systems",
+    "other":      "empty",
+    "compTitle":  "stats",
+    "seatSpec":   "systems",
+    "expected":   "empty",
+    "cmpSys":     "empty"
+}
+
+def fractional_digits(group, stat):
+    if group in {"seatSpec", "expected", "cmpSys"} and stat in {"min", "max"}:
+        return 0
+    else:
+        return 3

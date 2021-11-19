@@ -4,7 +4,7 @@
 
 
   <p>
-    Election Simulator, version: 1.1.26 Time of release: 2021-07-31
+    Election Simulator, version: 2.0(beta) Time of release: 2021-xx.xx
   </p>
   <p>
     The aim of this software is to help people understand
@@ -24,6 +24,7 @@
   <ul>
     <li>Smári McCarthy (smarim@althingi.is)</li>
     <li>Þorkell Helgason (thorkellhelga@gmail.com)</li>
+    <li>Kristján Jónasson (jonasson@hi.is)</li>
     <li>Martha Guðrún Bjarnadóttir</li>
     <li>Pétur Ólafur Aðalgeirsson</li>
     <li>Helgi Hrafn Gunnarsson</li>

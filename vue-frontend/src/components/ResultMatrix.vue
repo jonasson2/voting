@@ -1,9 +1,10 @@
 <template>
   <b-container fluid>
-    <table class="resultmatrix" v-if="!waiting_for_data">
+    <table class="resultmatrix" style="margin-bottom:0px; font-size:90%">
       <tr v-if="title">
         <th class="topleft"></th>
-        <th :colspan="stddev?2*parties.length:parties.length">
+        <th :colspan="stddev?2*parties.length:parties.length"
+            class="displaycenter">
           {{title}}
         </th>
       </tr>
@@ -19,11 +20,11 @@
           Total
         </th>
       </tr>
-      <tr v-if="stddev" class="parties">
+      <tr v-if="stddev">
         <th class="topleft"></th>
         <template v-for="(party, partyidx) in parties">
-          <td class="displayright">Average</td>
-          <td class="displayright">Stderr</td>
+          <th style="text-align:center">Avg.</th>
+          <th style="text-align:center">SD</th>
         </template>
         <td></td>
       </tr>
@@ -65,11 +66,6 @@
 
 import { mapState } from 'vuex'  
 export default {
-  computed: {
-    ...mapState([
-      "waiting_for_data"
-    ])
-  },
   props: {
     "constituencies": { default: [] },
     "parties": { default: [] },

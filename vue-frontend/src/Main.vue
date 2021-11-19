@@ -1,5 +1,7 @@
+<!-- https://stackoverflow.com/questions/61497825/bootstrap-vue-custom-border-column-style-and-custom-border-row-style-on-b-table -->
+
 <template>
-<div>
+  <div>
   <b-navbar toggleable="md" type="dark" variant="info">
     <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
@@ -10,7 +12,10 @@
     @dismissed="clearServerError()"
     variant="danger"
     >
-    Server error: {{server_error}}
+    <template v-for="(line, idx) in server_error">
+      <br v-if="idx>0">
+      {{line}}
+    </template>
   </b-alert>
   <b-tabs
     active-nav-item-class="font-weight-bold"
@@ -73,6 +78,18 @@ export default {
   
   computed: mapState(['server_error']),
   
+  data: function() {
+    return {
+      fields: [{ key: 'first_name', label: 'First' },'last_name', 'age'],
+      items: [
+        { isActive: true, age: 40, first_name: 'Dickerson', last_name: 'Macdonald' },
+        { isActive: false, age: 21, first_name: 'Larsen', last_name: 'Shaw' },
+        { isActive: false, age: 89, first_name: 'Geneva', last_name: 'Wilson' },
+        { isActive: true, age: 38, first_name: 'Jami', last_name: 'Carney' }
+      ]
+    }
+  },
+
   methods: {
     ...mapMutations([
       "clearServerError",

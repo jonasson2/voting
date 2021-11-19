@@ -10,6 +10,7 @@ from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
 from electionSystems import ElectionSystems
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
+from copy import deepcopy
 import traceback as tb
 
 class Election:
@@ -28,9 +29,6 @@ class Election:
 
     def entropy(self):
         return entropy(self.m_votes, self.results, self.gen)
-
-    def set_reference_results(self):
-        self.reference_results = self.results
 
     def set_votes(self, votes):
         assert len(votes) == self.num_constituencies
