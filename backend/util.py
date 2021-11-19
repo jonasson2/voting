@@ -384,4 +384,18 @@ def disp(title, value):
     print("\n" + title.upper() + ":")
     pp(value)
 
-    
+def short_traceback(trace):
+    from pathlib import Path
+    def traceline(line):
+        word = line.split()
+        file = word[1].removeprefix('"').removesuffix('",')
+        file = Path(file).name
+        lineno = word[3].removesuffix(',')
+        function = word[5]
+        return f"{function}, {file} line {lineno}"
+        
+    trace = trace.splitlines()
+    first = traceline(trace[1])
+    last = traceline(trace[-3])
+    error = trace[-1]
+    return f"Server error ({first},..., {last}):\n{error}"

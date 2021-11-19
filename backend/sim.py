@@ -6,8 +6,8 @@ from math import sqrt
 from copy import deepcopy, copy
 import json
 n_reps = 1
-n_betasim = 100
-n_unifsim = 200
+n_betasim = 1
+n_unifsim = 1
 
 def disp(title, value, depth=99):
     from pprint import PrettyPrinter
