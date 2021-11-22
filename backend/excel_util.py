@@ -11,12 +11,16 @@ def prepare_formats(workbook):
     formats = {}
     formats["cell"] = workbook.add_format()
     formats["cell"].set_align('right')
+    formats["cell"].set_num_format('#,##0.000')
 
     formats["center"] = workbook.add_format()
-    formats["center"].set_align('center');
+    formats["center"].set_align('center')
 
     formats["share"] = workbook.add_format()
     formats["share"].set_num_format('0.0%')
+
+    formats["threshold"] = workbook.add_format()
+    formats["threshold"].set_num_format('0%')
 
     formats["h"] = workbook.add_format()
     formats["h"].set_align('left')
@@ -26,7 +30,7 @@ def prepare_formats(workbook):
     formats["h_big"] = workbook.add_format()
     formats["h_big"].set_align('left')
     formats["h_big"].set_bold()
-    formats["h_big"].set_font_size(13)
+    formats["h_big"].set_font_size(14)
 
     formats["h_right"] = workbook.add_format()
     formats["h_right"].set_align('right')
@@ -265,25 +269,25 @@ def simulation_to_xlsx(simulation, filename):
     fmt = prepare_formats(workbook)
 
     def draw_block(worksheet, row, col,
-        heading, xheaders, yheaders,
+        heading, # xheaders, yheaders,
         matrix,
         cformat=fmt["cell"],
         hideTotals=False
     ):
         if hideTotals:
-            xheaders = xheaders[:-1]
+            # xheaders = xheaders[:-1]
             matrix = [r[:-1] for r in matrix]
-        if heading.endswith("shares") or heading.endswith("percentages"):
+        if heading.endswith("shares"):
             cformat = fmt["share"]
         if heading.lower().startswith("ideal") or heading.lower().startswith("reference"):
             cformat = fmt["cell"]
         if heading == "Votes":
             cformat = fmt["base"]
-        worksheet.merge_range(
-            row, col, row, col+len(xheaders), heading, fmt["h"])
-        worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
-        worksheet.write_column(row+2, col, yheaders, fmt["basic"])
-        write_matrix(worksheet, row+2, col+1, matrix, cformat)
+        # worksheet.merge_range(
+        #     row, col, row, col+len(xheaders), heading, fmt["h"])
+        # worksheet.write_row(row+1, col, xheaders, fmt["center"])
+        # worksheet.write_column(row+2, col, yheaders, fmt["basic"])
+        write_matrix(worksheet, row, col, matrix, cformat)
 
     def present_measures(worksheet, row, col, xheaders,
         list_deviation_measures, totals_deviation_measures,
@@ -294,7 +298,24 @@ def simulation_to_xlsx(simulation, filename):
         worksheet.write_row(row, col+6, xheaders, fmt["h_right"])
         row += 1
         worksheet.write(row, col,
-            "Comparison to other seat allocations".upper(), fmt["basic_h"])
+            "Allocated seats minus reference seat shares",
+            fmt["basic_h"])
+        row += 1
+        worksheet.write_column(row, col,
+            ideal_comparison_measures["headers"], fmt["basic"])
+        write_matrix(worksheet, row, col+6,
+            ideal_comparison_measures["matrix"], fmt["cell"], True)
+        row += len(ideal_comparison_measures["headers"])
+        worksheet.write(row, col,
+            "Specific quality indices for seat allocations", fmt["basic_h"])
+        row += 1
+        worksheet.write_column(row, col,
+            normalized_measures["headers"], fmt["basic"])
+        write_matrix(worksheet, row, col+6,
+            normalized_measures["matrix"], fmt["cell"], True)
+        row += len(normalized_measures["headers"])
+        worksheet.write(row, col,
+            "Sum of absolute seat allocation differences:", fmt["basic_h"])
         row += 1
         worksheet.write(row, col,
             "Sum of absolute differences of lists for tested method and:",
@@ -314,48 +335,67 @@ def simulation_to_xlsx(simulation, filename):
         write_matrix(worksheet, row, col+6,
             totals_deviation_measures["matrix"], fmt["cell"], True)
         row += len(totals_deviation_measures["headers"])
-        worksheet.write(row, col,
-            "Quality indices (the higher the better)".upper(), fmt["basic_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            normalized_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            normalized_measures["matrix"], fmt["cell"], True)
-        row += len(normalized_measures["headers"])
-        worksheet.write(row, col,
-            "Comparison to reference seat shares (the lower the better)".upper(),
-            fmt["basic_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            ideal_comparison_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            ideal_comparison_measures["matrix"], fmt["cell"], True)
-        row += len(ideal_comparison_measures["headers"])
 
+    row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
+    col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
+    sim_settings = [
+        {"label": "Number of simulations run",
+            "data": simulation.iteration},
+        {"label": "Generating method",
+            "data": GMN[simulation.variate]},
+        {"label": "Coefficient of variation",
+            "data": simulation.var_coeff},
+        {"label": "Apply randomness to",
+            "data": "All constituencies" if simulation.apply_random == -1 else None},
+        {"label": "Scaling of reference seat shares",
+            "data": "within both constituencies and parties" if row_constraints and col_constraints
+            else "within constituencies" if row_constraints
+            else "within parties" if col_constraints
+            else None}
+    ]
+
+    worksheet = workbook.add_worksheet("Common settings")
+    c1 = 0
+    c2 = c1 + 1
+    row = 0
+    worksheet.set_column(c1, c1, 30)
+    worksheet.set_column(c2, c2, 35)
+    worksheet.write(row, c1, "Date", fmt["basic_h"])
+    worksheet.write(row, c2, datetime.now(), fmt["time"])
+    row += 2
+    worksheet.write(row, c1, "Source votes and seats", fmt["basic_h"])
+    worksheet.write(row, c2, simulation.vote_table["name"], fmt["basic"])
+    row += 2
+    worksheet.write(row, c1, "Simulation settings", fmt["basic_h"])
+    for setting in sim_settings:
+        row += 1
+        worksheet.write(row, c1, setting["label"], fmt["basic"])
+        worksheet.write(row, c2, setting["data"], fmt["basic"])
+    
     categories = [
         {"abbr": "base", "cell_format": fmt["base"],
-         "heading": "Expected values:"},
+         "heading": "Values based on source votes"},
         {"abbr": "avg",  "cell_format": fmt["sim"],
-         "heading": "Averages:"},
+         "heading": "Avg. simulated values"},
         {"abbr": "min",  "cell_format": fmt["base"],
-         "heading": "Minimum values:"},
+         "heading": "Maximum values"},
         {"abbr": "max",  "cell_format": fmt["base"],
-         "heading": "Maximum values:"},
+         "heading": "Minimum values"},
         {"abbr": "std",  "cell_format": fmt["sim"],
-         "heading": "Standard deviations:"},
-        {"abbr": "skw",  "cell_format": fmt["sim"],
-         "heading": "Skewness:"},
-        {"abbr": "kur",  "cell_format": fmt["sim"],
-         "heading": "Kurtosis:"},
+         "heading": "Standard deviations"}
+        # {"abbr": "skw",  "cell_format": fmt["sim"],
+        #  "heading": "Skewness"},
+        # {"abbr": "kur",  "cell_format": fmt["sim"],
+        #  "heading": "Kurtosis"}
     ]
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
-        {"abbr": "vs", "heading": "Vote percentages"       },
+        {"abbr": "vs", "heading": "Vote shares"       },
         {"abbr": "id", "heading": "Reference seat shares" },
         {"abbr": "cs", "heading": "Constituency seats"},
         {"abbr": "as", "heading": "Adjustment seats"  },
         {"abbr": "ts", "heading": "Total seats"       },
-        {"abbr": "ss", "heading": "Seat percentages"       },
+        {"abbr": "ss", "heading": "Seat shares"       },
     ]
     base_const_names = [const["name"] for const in simulation.constituencies]\
                         + ["Total"]
@@ -372,6 +412,7 @@ def simulation_to_xlsx(simulation, filename):
     aggregates_short = ["max","min","avg"]
     aggregate_names_dict = {"max": "Maximum", "min": "Minimum", "avg": "Average"}
 
+    
     for aggr in aggregates_short:
         worksheet = workbook.add_worksheet(aggregate_names_dict[aggr])
         toprow = 0
@@ -490,132 +531,115 @@ def simulation_to_xlsx(simulation, filename):
             },
         }
 
-        date_label = "Date:"
-        row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
-        col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
-        # row_constraints = simulation.sim_settings["row_constraints"] and simulation.num_parties > 1
-        # col_constraints = simulation.sim_settings["col_constraints"] and simulation.num_constituencies > 1
-        info_groups = [
-            {"left_span": 1, "right_span": 2, "info": [
-                {"label": date_label,
-                    "data": datetime.now()},
-                {"label": "Reference votes:",
-                    "data": simulation.vote_table["name"]},
-                {"label": "Electoral system:",
-                    "data": simulation.systems[r]["name"]},
-            ]},
-            {"left_span": 4, "right_span": 2, "info": [
-                {"label": "Rule for allocating constituency seats:",
-                    "data": DRN[simulation.systems[r]["primary_divider"]]},
-                {"label": "Threshold for constituency seats:",
-                    "data": simulation.systems[r]["constituency_threshold"]},
-                {"label": "Rule for apportioning adjustment seats to parties:",
-                    "data": DRN[simulation.systems[r]["adj_determine_divider"]]},
-                {"label": "Threshold for apportioning adjustment seats:",
-                    "data": simulation.systems[r]["adjustment_threshold"]},
-                {"label": "Rule for allocating adjustment seats:",
-                    "data": DRN[simulation.systems[r]["adj_alloc_divider"]]},
-                {"label": "Method for allocating adjustment seats:",
-                    "data": AMN[simulation.systems[r]["adjustment_method"]]}
-            ]},
-            {"left_span": 4, "right_span": 2, "info": [
-                {"label": "Number of simulations run:",
-                    "data": simulation.iteration},
-                {"label": "Generating method:",
-                    "data": GMN[simulation.variate]},
-                {"label": "Coefficient of variation:",
-                    "data": simulation.var_coeff},
-                {"label": "Reference seat shares scaled by constituencies:",
-                    "data": "Yes" if row_constraints else "No"},
-                {"label": "Reference seat shares scaled by parties:",
-                    "data": "Yes" if col_constraints else "No"},
-            ]},
-        ]
+        alloc_info = [{
+            "left_span": 2, "center_span": 4, "right_span": 1, "info": [
+                {"label": "Allocation of constituency seats",
+                    "rule": DRN[simulation.systems[r]["primary_divider"]],
+                    "threshold": simulation.systems[r]["constituency_threshold"]/100.0},
+                {"label": "Apportionment of adjustment seats to parties",
+                    "rule": DRN[simulation.systems[r]["adj_determine_divider"]],
+                    "threshold": simulation.systems[r]["adjustment_threshold"]/100.0},
+                {"label": "Allocation of adjustment seats to lists",
+                    "rule": DRN[simulation.systems[r]["adj_alloc_divider"]],
+                    "threshold": None}
+            ]
+        }, {
+            "left_span": 2, "center_span": 3, "right_span": 0, "info": [
+                {"label": "Allocation method for adjustment seats",
+                    "rule": AMN[simulation.systems[r]["adjustment_method"]]}
+            ]
+        }]
 
         toprow = 0
-        bottomrow = toprow
-        c1=0
-        worksheet.set_column(c1,c1,20)
+        c1 = 0
+        c2 = c1 + 1
+        worksheet.set_row_pixels(0,25)
+        worksheet.set_column(c1,c1,25)
+        worksheet.set_column(c2,c2,20)
+        worksheet.write(toprow, c1, "Electoral system", fmt["h_big"])
+        worksheet.write(toprow, c2, simulation.systems[r]["name"], fmt["h_big"])
+        toprow += 1
+        worksheet.write(toprow, c2+1, "Rule", fmt["basic_h"])
+        worksheet.write(toprow, c2+5, "Threshold", fmt["basic_h"])
 
-        #Basic info
-        for group in info_groups:
-            row = toprow
+        for group in alloc_info:
+            toprow += 1
             c2 = c1 + group["left_span"]
+            c3 = c2 + group["center_span"]
             for info in group["info"]:
-                if group["left_span"] == 1:
-                    worksheet.write(row,c1,info["label"],fmt["basic_h"])
-                else:
-                    worksheet.merge_range(row,c1,row,c2-1,info["label"],fmt["basic_h"])
-                if info["label"] == date_label:
-                    worksheet.write(row,c2,info["data"],fmt["time"])
-                else:
-                    worksheet.write(row,c2,info["data"],fmt["basic"])
-                row += 1
-            bottomrow = max(row, bottomrow)
-            c1 = c2 + group["right_span"]
+                worksheet.write(toprow, c1, info["label"], fmt["basic"])
+                worksheet.write(toprow, c2, info["rule"], fmt["basic"])
+                if group["right_span"] > 0:
+                    worksheet.write(toprow, c3, info["threshold"], fmt["threshold"])
+                toprow += 1
 
-        draw_block(worksheet, row=toprow, col=c1,
-            heading="Specified number of seats",
-            xheaders=["Const.", "Adj.", "Total"],
-            yheaders=const_names,
-            matrix=add_totals([
-                [const["num_const_seats"],const["num_adj_seats"]]
-                for const in simulation.systems[r]["constituencies"]
-            ])
-        )
-        bottomrow = max(2+len(const_names), bottomrow)
-        toprow = bottomrow+2
+        toprow += 1
+        worksheet.set_row_pixels(toprow, 25)
+        worksheet.write(toprow, c1, "Simulation results", fmt["h_big"])
+        
+        col = 2
+        for table in tables:
+            is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
+            worksheet.write(toprow, col, table["heading"], fmt["basic_h"])
+            worksheet.write_row(toprow+1, col, parties[:-1] if is_percentages_table else parties, fmt["center"])
+            col += len(parties[:-1] if is_percentages_table else parties)+1
+            worksheet.set_column(col-1,col-1,3)
 
+        toprow += 2
+
+        worksheet.set_column(2,len(parties)+1,10)
+        
         #Election tables
         for category in categories:
             worksheet.write(toprow, 0, category["heading"], fmt["basic_h"])
-            col = 1
+            worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
+            col = 2
             for table in tables:
-                is_vote_table = table["heading"].startswith("Vote")
-                is_percentages_table = table["heading"].endswith("percentages")
+                # is_vote_table = table["heading"].startswith("Vote")
+                is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
                 draw_block(worksheet, row=toprow, col=col,
                     heading=table["heading"],
-                    xheaders=parties,
-                    yheaders=base_const_names if is_vote_table else const_names,
+                    #xheaders=parties,
+                    #yheaders=base_const_names if is_vote_table else const_names,
                     matrix=data_matrix[category["abbr"]][table["abbr"]],
                     cformat=category["cell_format"],
                     hideTotals=is_percentages_table
                 )
-                col += len(parties)+2
-            toprow += len(const_names)+3
+                col += len(parties[:-1] if is_percentages_table else parties)+1
+            toprow += len(base_const_names)+1
 
         
-        present_measures(worksheet, row=toprow, col=0,
-            xheaders=aggregate_names,
-            list_deviation_measures={
-                "headers": [MEASURES[key] for key in LIST_DEVIATION_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for aggr in aggregates]
-                    for measure in LIST_DEVIATION_MEASURES
-                ]
-            },
-            totals_deviation_measures={
-                "headers": [MEASURES[key] for key in TOTALS_DEVIATION_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for aggr in aggregates]
-                    for measure in TOTALS_DEVIATION_MEASURES
-                ]
-            },
-            ideal_comparison_measures={
-                "headers": [MEASURES[key] for key in IDEAL_COMPARISON_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for aggr in aggregates]
-                    for measure in IDEAL_COMPARISON_MEASURES
-                ]
-            },
-            normalized_measures={
-                "headers": [MEASURES[key] for key in STANDARDIZED_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for aggr in aggregates]
-                    for measure in STANDARDIZED_MEASURES
-                ]
-            }
-        )
+        # present_measures(worksheet, row=toprow, col=0,
+        #     xheaders=aggregate_names,
+        #     list_deviation_measures={
+        #         "headers": [MEASURES[key] for key in LIST_DEVIATION_MEASURES],
+        #         "matrix": [
+        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
+        #             for measure in LIST_DEVIATION_MEASURES
+        #         ]
+        #     },
+        #     totals_deviation_measures={
+        #         "headers": [MEASURES[key] for key in TOTALS_DEVIATION_MEASURES],
+        #         "matrix": [
+        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
+        #             for measure in TOTALS_DEVIATION_MEASURES
+        #         ]
+        #     },
+        #     ideal_comparison_measures={
+        #         "headers": [MEASURES[key] for key in IDEAL_COMPARISON_MEASURES],
+        #         "matrix": [
+        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
+        #             for measure in IDEAL_COMPARISON_MEASURES
+        #         ]
+        #     },
+        #     normalized_measures={
+        #         "headers": [MEASURES[key] for key in STANDARDIZED_MEASURES],
+        #         "matrix": [
+        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
+        #             for measure in STANDARDIZED_MEASURES
+        #         ]
+        #     }
+        # )
 
     workbook.close()
 

@@ -109,11 +109,11 @@ MEASURES = {
     "dev_ref_tot":  "Allocation with actual system for the reference votes",
     #"adj_dev":      "Desired apportionment of adjustment seats",
     "one_const_tot":"Allocation as if all constituencies were combined into one",
-    "entropy":      "Entropy (product of all seat values used)",
-    "min_seat_val": "Mininum allocation seat share used",
-    "sum_abs":      "Sum of absolute differences of shares minus seats",
-    "sum_pos":       "Positive differences relative to the shares",
-    "sum_sq":        "Squared differences relative to the shares",
+    "entropy":      "Entropy (logarithmic)",
+    "min_seat_val": "Mininum reference seat share per seat",
+    "sum_abs":      "Sum of absolute values",
+    "sum_pos":       "Sum of positive values",
+    "sum_sq":        "Sum of squared values",
 }
 LIST_DEVIATION_MEASURES = [
     "dev_all_adj",
