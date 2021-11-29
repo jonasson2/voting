@@ -1,6 +1,6 @@
 <template>
 <div v-if="results.length > 0">
-  <h3>Results based on values in Votes and seats tab</h3>
+  <h3>Results based on source Votes and seats</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"
@@ -21,7 +21,7 @@
         <b-row>
           <h4>Seat allocation, constituency and adjustment seats combined</h4>
           <ResultMatrix
-            :constituencies="sys_constituencies[activeTabIndex]"
+            :constituencies="systems[activeTabIndex].constituencies"
             :parties="vote_table.parties"
             :values="results[activeTabIndex].seat_allocations"
             :stddev="false"
@@ -54,15 +54,16 @@
 import ResultMatrix from './components/ResultMatrix.vue'
 import ResultChart from './components/ResultChart.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 
 export default {
-  computed: mapState([
-    'results',
-    'vote_table',
-    'systems',
-    'sys_constituencies',
-  ]),
+  computed: {
+    ...mapState([
+      'results',
+      'vote_table',
+      'systems',
+    ]),
+  },
   data: function() {
     return {
       resultIndex: 0,
@@ -75,7 +76,9 @@ export default {
   },
   
   methods: {
-    
+    ...mapActions([
+      "downloadFile"
+    ]),    
     saveResults: function() {
       let promise = axios({
         method: "post",
@@ -83,11 +86,10 @@ export default {
         data: {
           vote_table:     this.vote_table,
           systems:        this.systems,
-          constituencies: this.sys_constituencies
         },
         responseType: "arraybuffer",
       });
-      this.$emit("download-file", promise);
+      this.downloadFile(promise)
     }
   },
   created: function() {

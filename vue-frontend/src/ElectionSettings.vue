@@ -118,7 +118,7 @@
         </b-form-group>
       </b-col>
       <b-col cols="6">
-        <table class="votematrix">
+        <table v-if="!waiting_for_data" class="votematrix">
           <tr>
             <th class="topleft"></th>
             <th class="displaycenter"
@@ -132,7 +132,7 @@
               # Adj.
             </th>
           </tr>
-          <tr v-for="(constituency, conidx) in sys_constituencies[systemidx]">
+          <tr v-for="constituency in systems[systemidx].constituencies">
             <th class="displayleft">
               {{ constituency['name'] }}
             </th>
@@ -140,18 +140,29 @@
               <span v-if="systems[systemidx].seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
-              <span v-if="systems[systemidx].seat_spec_option == 'custom'">
-                <input type="text"
-                       v-model.number="constituency['num_const_seats']">
+              <span
+                v-if="systems[systemidx].seat_spec_option == 'custom'"
+                class="numerical"
+                >
+                <input
+                  type="text"
+                  v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
+                  v-model.number="constituency['num_const_seats']"f
+                  >
               </span>
             </td>
             <td class="displayright">
               <span v-if="systems[systemidx].seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
-              <span v-if="systems[systemidx].seat_spec_option == 'custom'">
-                <input type="text"
-                       v-model.number="constituency['num_adj_seats']">
+              <span
+                v-if="systems[systemidx].seat_spec_option == 'custom'"
+                class="numerical"
+                >
+                <input
+                  type="text"
+                  v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
+                  v-model.number="constituency['num_adj_seats']">
               </span>
             </td>
           </tr>
@@ -163,13 +174,21 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 export default {
-  computed: mapState([
-    'vote_table',
-    'systems',
-    'sys_constituencies',
-  ]),
+  computed: {
+    ...mapState([
+      'vote_table',
+      'systems',
+      'waiting_for_data',
+    ]),
+  },
+  methods: {
+    ...mapMutations([
+      "setWaitingForData",
+      "clearWaitingForData"
+    ]),
+  },
   props: [
     "systemidx",
     "capabilities"
@@ -177,7 +196,9 @@ export default {
   watch: {
     systems: {
       handler: function() {
-        this.$store.dispatch("recalc_sys_const")
+        if (!this.waiting_for_data) {
+          this.$store.dispatch("recalc_sys_const")
+        }
       },
       deep: true
     }

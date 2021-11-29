@@ -8,9 +8,10 @@ from table_util import entropy, add_totals
 from solution_util import solution_exists
 from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
-from electionSystems import ElectionSystems
+from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 import traceback as tb
+from util import disp
 
 class Election:
     """A single election."""
@@ -48,7 +49,7 @@ class Election:
     def get_const(self):
         return self.system["constituencies"]
 
-    def run(self):
+    def run(self, check_exist=False):
         """Run an election based on current systems and votes."""
         #tb.print_stack()
         # How many constituency seats does each party get in each constituency:
@@ -66,7 +67,7 @@ class Election:
         self.run_primary_apportionment()
         self.run_threshold_elimination()
         self.run_determine_adjustment_seats()
-        self.run_adjustment_apportionment()
+        self.run_adjustment_apportionment(check_exist)
         return self.results
 
     def run_primary_apportionment(self):
@@ -133,7 +134,7 @@ class Election:
         )
         return self.v_desired_col_sums
 
-    def run_adjustment_apportionment(self):
+    def run_adjustment_apportionment(self, check_exist):
         """Conduct adjustment seat apportionment."""
         if self.system["debug"]:
             print(" + Apportion adjustment seats")
@@ -141,11 +142,14 @@ class Election:
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
 
-        self.solvable = solution_exists(
-            votes=self.m_votes_eliminated,
-            row_constraints=self.v_desired_row_sums,
-            col_constraints=self.v_desired_col_sums,
-            prior_allocations=self.m_const_seats_alloc)
+        if check_exist:
+            self.solvable = solution_exists(
+                votes=self.m_votes_eliminated,
+                row_constraints=self.v_desired_row_sums,
+                col_constraints=self.v_desired_col_sums,
+                prior_allocations=self.m_const_seats_alloc)
+        else:
+            self.solvable = True
         #Some methods return a solution violating the constraints if necessary
         try:
             self.results, self.adj_seats_info = method(
@@ -181,11 +185,11 @@ class Election:
             print("\nEntropy: %s" % self.entropy())
 
 def run_script_election(systems):
-    rs = ElectionSystems()
-    if "election_systems" not in systems:
+    rs = ElectionSystem()
+    if "election_system" not in systems:
         return {"error": "No election systems supplied."}
 
-    rs.update(systems["election_systems"])
+    rs.update(systems["election_system"])
 
     if not "votes" in rs:
         return {"error": "No votes supplied"}

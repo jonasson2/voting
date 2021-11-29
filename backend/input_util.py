@@ -1,7 +1,8 @@
 import os
 from distutils.util import strtobool
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
-
+from copy import deepcopy
+from util import disp
 def check_input(data, sections):
     for section in sections:
         if section not in data or not data[section]:
@@ -9,7 +10,7 @@ def check_input(data, sections):
             raise KeyError(f"Missing data ('{section}')")
     return data
 
-def check_vote_table(vote_table):
+def check_vote_table(vote_table, min_votes = 0):
     """Checks vote_table input, and translates empty cells to zeroes
 
     Raises:
@@ -20,21 +21,25 @@ def check_vote_table(vote_table):
             or constituency names are not unique
         TypeError: If vote or seat counts are not given as numbers
     """
+    table = deepcopy(vote_table)
+    for row in table["votes"]:
+        for i in range(len(row)):
+            row[i] = max(min_votes, row[i])
     for info in [
         "name",
         "votes",
         "parties",
         "constituencies",
     ]:
-        if info not in vote_table or not vote_table[info]:
+        if info not in table or not table[info]:
             raise KeyError(f"Missing data ('vote_table.{info}')")
 
-    num_parties = len(vote_table["parties"])
-    num_constituencies = len(vote_table["constituencies"])
+    num_parties = len(table["parties"])
+    num_constituencies = len(table["constituencies"])
 
-    if not len(vote_table["votes"]) == num_constituencies:
+    if not len(table["votes"]) == num_constituencies:
         raise ValueError("The vote table does not match the constituency list.")
-    for row in vote_table["votes"]:
+    for row in table["votes"]:
         if not len(row) == num_parties:
             raise ValueError("The vote table does not match the party list.")
         for p in range(len(row)):
@@ -43,7 +48,7 @@ def check_vote_table(vote_table):
             if row[p]<0: raise ValueError("Votes may not be negative.")
         if sum(row)==0: raise ValueError("Every constituency needs some votes.")
 
-    for const in vote_table["constituencies"]:
+    for const in table["constituencies"]:
         if "name" not in const: # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
         name = const["name"]
@@ -59,13 +64,13 @@ def check_vote_table(vote_table):
                              f"This is not the case for {name}.")
 
     seen = set()
-    for const in vote_table["constituencies"]:
+    for const in table["constituencies"]:
         if False: #const["name"] in seen:
             raise ValueError("Constituency names must be unique. "
                              f"{const['name']} is not.")
         seen.add(const["name"])
 
-    return vote_table
+    return table
 
 def check_systems(electoral_systems):
     """Checks election systems constituency input, and translates empty cells to 0

@@ -25,53 +25,21 @@
       ></b-form-file>
   </b-modal>
   
-  <b-modal size="lg" id="modalpaste" title="Paste CSV" @ok="pasteCSV">
+  <b-modal
+    size="lg"
+    id="modaluploadall"
+    title="Upload json file with vote table and settings"
+    @ok="uploadAll"
+    >
     <p>
-      Here you can paste in comma separated values to override the current
-      vote table.
+      The file provided should be a JSON file formatted lika a file
+      downloaded from here using the SAVE ALL button.
     </p>
-    <b-form-textarea
-      id="id_paste_csv"
-      v-model="paste.csv"
-      placeholder="Add your vote data"
-      rows="7"
-      >
-    </b-form-textarea>
-    <b-form-checkbox
-      v-model="paste.has_name"
-      value="true"
-      unchecked-value="false"
-      >
-      First row begins with name by which to refer to this vote table.
-    </b-form-checkbox>
-    <b-form-checkbox
-      v-model="paste.has_parties"
-      value="true"
-      unchecked-value="false"
-      >
-      First row is a header with party names.
-    </b-form-checkbox>
-    <b-form-checkbox
-      v-model="paste.has_constituencies"
-      value="true"
-      unchecked-value="false"
-      >
-      First column contains constituency names.
-    </b-form-checkbox>
-    <b-form-checkbox
-      v-model="paste.has_constituency_seats"
-      value="true"
-      unchecked-value="false"
-      >
-      Second column contains constituency seats.
-    </b-form-checkbox>
-    <b-form-checkbox
-      v-model="paste.has_constituency_adjustment_seats"
-      value="true"
-      unchecked-value="false"
-      >
-      Third column contains adjustment seats.
-    </b-form-checkbox>
+    <b-form-file
+      v-model="uploadfile"
+      :state="Boolean(uploadfile)"
+      placeholder="Choose a file..."
+      ></b-form-file>
   </b-modal>
   
   <b-modal
@@ -81,14 +49,12 @@
     title="Load preset"
     cancel-only
     >
-    <b-table hover :items="presets" :fields="presetfields">
+    <b-table small hover :items="presets" :fields="presetfields">
       <template v-slot:cell(actions)="row">
         <b-button
           size="sm"
-          @click.stop="
-                       loadPreset(row.item.id);
-                       $refs.modalpresetref.hide();
-                       "
+          @click.stop="loadPreset(row.item.id);
+                       $refs.modalpresetref.hide();"
           class="mr-1 mt-0 mb-0"
           >
           Load
@@ -96,6 +62,7 @@
       </template>
     </b-table>
   </b-modal>
+
   <b-button-toolbar key-nav aria-label="Vote tools">
     <b-button-group class="mx-1">
       <b-button
@@ -121,7 +88,7 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Delete all vote and seat numbers"
+        title="Delete all votes and seat numbers"
         @click="clearAll()"
         >
         Delete
@@ -131,11 +98,32 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download votes and seat numbers to local Excel xlsx-file. 
-               You may need to change browser settings; see Help for details"
+        title="Download votes and seat numbers to local Excel xlsx-file."
         @click="save()"
         >
         Save
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Upload both votes table and electoral systems 
+               from local JSON file."
+        v-b-modal.modaluploadall
+        >
+        Load all
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Download both vote table and electoral systems
+               to local JSON file."
+        @click="saveAll()"
+        >
+        Save all
       </b-button>
     </b-button-group>
   </b-button-toolbar>
@@ -150,7 +138,7 @@
       <th class="tablename">
         <input
           type="text"
-          v-autowidth="{ maxWidth: '400px', minWidth: '50px' }"
+          v-autowidth="{ maxWidth: '320px', minWidth: '50px' }"
           v-model="vote_table.name"
           />
       </th>
@@ -217,21 +205,21 @@
           v-model="constituency['name']"
           />
       </th>
-      <td class="partyseats">
+      <td class="numerical">
         <input
           type="text"
           v-autowidth="{ maxWidth: '200px', minWidth: '60px' }"
           v-model.number="constituency['num_const_seats']"
           />
       </td>
-      <td class="partyseats">
+      <td class="numerical">
         <input
           type="text"
           v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
           v-model.number="constituency['num_adj_seats']"
           />
       </td>
-      <td v-for="(party, partyidx) in vote_table.parties" class="partyvotes">
+      <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
         <input
           type="text"
           v-autowidth="{ maxWidth: '300px', minWidth: '75px' }"
@@ -275,7 +263,7 @@
 
 <script>
 import Vue from "vue";
-import { mapState,mapMutations } from 'vuex';
+import { mapState,mapMutations,mapActions } from 'vuex';
 import VueInputAutowidth from "vue-input-autowidth";
 Vue.use(VueInputAutowidth);
 
@@ -324,7 +312,6 @@ export default {
       handler: function(val, oldval) {
         console.log("watching vote_table")
         this.updateVoteSums()
-        this.$store.dispatch("recalc_sys_const")
       },
       deep: true,
     },
@@ -333,7 +320,16 @@ export default {
     ...mapMutations([
       "updateVoteSums",
       "updateVoteTable",
+      "updateSystems",
+      "updateSimSettings",
       "serverError",
+      "setWaitingForData",
+      "clearWaitingForData",
+      "addBeforeunload"
+    ]),
+    ...mapActions([
+      "saveAll",
+      "downloadFile"
     ]),
     deleteParty: function (index) {
       this.vote_table.parties.splice(index, 1);
@@ -381,51 +377,63 @@ export default {
         data: { vote_table: this.vote_table },
         responseType: "arraybuffer",
       });
-      this.$emit("download-file", promise);
+      this.downloadFile(promise)
     },
     loadPreset: function (eid) {
+      this.setWaitingForData()
       this.$http.post("/api/presets/load/", { eid: eid }).then(
         (response) => {
           this.updateVoteTable(response.data)
-          this.$store.dispatch("recalc_sys_const")
+          this.clearWaitingForData()
         },
         (response) => {
           this.serverError("Illegal format of presets file")
-        },
+          this.clearWaitingForData()
+        }
       )
     },
     uploadVotes: function (evt) {
-      if (!this.uploadfile) {
-        evt.preventDefault();
-      }
+      this.setWaitingForData()
+      if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.$http.post("/api/votes/upload/", formData).then(
         (response) => {
           this.updateVoteTable(response.data)
-          this.$store.dispatch("recalc_sys_const")
+          this.clearWaitingForData()
         },
         (response) => {
           this.serverError("Cannot upload votes from this file")
+          this.clearWaitingForData()
         },
       )
     },
-    pasteCSV: function (evt) {
-      if (!this.paste.csv) {
-        evt.preventDefault();
-        return;
-      }
-      this.$http.post("/api/votes/paste/", this.paste).then(
+    uploadAll: function (evt) {
+      this.setWaitingForData()
+      if (!this.uploadfile) evt.preventDefault();
+      var formData = new FormData();
+      formData.append("file", this.uploadfile, this.uploadfile.name);
+      this.$http.post("/api/votes/uploadall/", formData).then(
         (response) => {
-          this.updateVoteTable(response.data)
-          this.$store.dispatch("recalc_sys_const")
+          console.log("response", response)
+          this.updateVoteTable(response.data.vote_table)
+          this.updateSystems(response.data.systems)
+          this.updateSimSettings(response.data.sim_settings)
+          this.clearWaitingForData()
         },
         (response) => {
-          console.log("Error:", response);
-          // Error?
+          this.serverError("Cannot upload votes from this file")
+          this.clearWaitingForData()
         },
-      );
+      )
     },
+  },
+  watch: {
+    vote_table: {
+      handler() {console.log("vote_table")
+                 this.addBeforeunload() },
+      deep: true
+    }
   },
 };
 </script>

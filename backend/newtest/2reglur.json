@@ -2,17 +2,17 @@
   "e_settings": [
     {
       "name": "Lögin",
-      "seat_spec_option": "refer",
+      "seat_spec_option": "custom",
       "constituencies": [
         {
           "name": "Suður",
-          "num_adj_seats": 1,
-          "num_const_seats": 9
+          "num_adj_seats": 3,
+          "num_const_seats": 7
         },
         {
           "name": "Suðvestur",
-          "num_adj_seats": 2,
-          "num_const_seats": 9
+          "num_adj_seats": 5,
+          "num_const_seats": 6
         }
       ],
       "compare_with": true,
@@ -29,13 +29,13 @@
       "constituencies": [
         {
           "name": "Suður",
-          "num_adj_seats": 1,
-          "num_const_seats": 9
+          "num_adj_seats": 0,
+          "num_const_seats": 10
         },
         {
           "name": "Suðvestur",
-          "num_adj_seats": 2,
-          "num_const_seats": 9
+          "num_adj_seats": 0,
+          "num_const_seats": 11
         }
       ],
       "compare_with": true,

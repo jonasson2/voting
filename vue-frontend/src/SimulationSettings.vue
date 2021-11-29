@@ -123,14 +123,13 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 export default {
   computed: {
     ...mapState([
       'sim_settings',
       'systems',
-      'sys_constituencies'
     ]),
     system_names: function() {
       let sysnames = this.systems.map(system => system.name)
@@ -140,7 +139,7 @@ export default {
     },
     const_names: function() {
       console.log("this.systems=", this.systems)
-      let cnames = this.sys_constituencies.map(syscon => syscon.name)
+      let cnames = this.systems[0].constituencies.map(con => con.name)
       cnames.unshift("All constituencies")
       return cnames
     }
@@ -152,6 +151,9 @@ export default {
       capabilities: {},
       selected: '',
     }
+  },
+  methods: {
+    ...mapMutations(["setSimulateCreated"])
   },
   watch: {
     comparison_systems: {
@@ -171,6 +173,7 @@ export default {
     this.$http.post('/api/capabilities', {}).then(response => {
       this.capabilities = response.body.capabilities;
       this.$store.commit("updateSimSettings", response.body.sim_settings)
+      this.$nextTick(()=>this.setSimulateCreated())
       console.log("Created SimulationSettings")
       this.created = true
     }, response => {

@@ -8,24 +8,24 @@
       <th class="topleft">
       </th>
       <th colspan="6"
-        v-for="(ruleset, idx) in data"
+        v-for="(system, idx) in data"
         class="methodname"
       >
-        <div>{{ ruleset.name }}</div>
+        <div>{{ system.name }}</div>
       </th>
     </tr>
     <tr>
       <th class="measurename">Adjustment method</th>
       <td colspan="6"
         class="methoddata"
-        v-for="(ruleset, idx) in data"
+        v-for="(system, idx) in data"
       >
-        {{ruleset.method}}
+        {{system.method}}
       </td>
     </tr>
     <tr>
       <th class="topleft"></th>
-      <template v-for="(ruleset, ridx) in data">
+      <template v-for="(system, sidx) in data">
         <th class="methodname">Average</th>
         <th class="methodname">Min</th>
         <th class="methodname">Max</th>
@@ -48,24 +48,24 @@
       <td class="measurename">
           {{ measures[midx] }}
       </td>
-      <template v-for="(ruleset, ridx) in data">
+      <template v-for="(system, sidx) in data">
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["avg"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["avg"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["min"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["min"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["max"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["max"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["std"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["std"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["skw"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["skw"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["kur"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["kur"].toFixed(4) }}
         </td>
       </template>
     </tr>
@@ -78,24 +78,24 @@
       <td class="measurename">
           {{ measures[midx] }}
       </td>
-      <template v-for="(ruleset, ridx) in data">
+      <template v-for="(system, sidx) in data">
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["avg"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["avg"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["min"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["min"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["max"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["max"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["std"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["std"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["skw"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["skw"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["kur"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["kur"].toFixed(4) }}
         </td>
       </template>
     </tr>
@@ -108,24 +108,24 @@
       <td class="measurename">
           {{ measures[midx] }}
       </td>
-      <template v-for="(ruleset, ridx) in data">
+      <template v-for="(system, sidx) in data">
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["avg"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["avg"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["min"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["min"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["max"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["max"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["std"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["std"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["skw"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["skw"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["kur"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["kur"].toFixed(4) }}
         </td>
       </template>
     </tr>
@@ -138,24 +138,24 @@
       <td class="measurename">
           {{ measures[midx] }}
       </td>
-      <template v-for="(ruleset, ridx) in data">
+      <template v-for="(system, sidx) in data">
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["avg"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["avg"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["min"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["min"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["max"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["max"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["std"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["std"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["skw"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["skw"].toFixed(4) }}
         </td>
         <td class="methoddata">
-          {{ data[ridx]["measures"][midx]["kur"].toFixed(4) }}
+          {{ data[sidx]["measures"][midx]["kur"].toFixed(4) }}
         </td>
       </template>
     </tr>

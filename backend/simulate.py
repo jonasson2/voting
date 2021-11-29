@@ -9,7 +9,7 @@ from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
 from generate_votes import generate_maxchange_votes, generate_votes
 from running_stats import Running_stats
-from systems import Systems
+from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
 from util import hms
 from copy import deepcopy
@@ -41,7 +41,7 @@ class Collect(dict):
         else:
             self[key] = [x]
 
-class SimulationSettings(Systems):
+class SimulationSettings(System):
     def __init__(self):
         super(SimulationSettings, self).__init__()
         # Simulation systems
@@ -65,11 +65,12 @@ class Simulation:
         random.seed(42)
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
-        self.election_handler = ElectionHandler(vote_table, systems)
-        #                                  (computes reference results)
+        self.election_handler = ElectionHandler(vote_table, systems, min_votes=1)
         # The systems from elections have correct constituencies:
         elections = self.election_handler.elections;
         self.systems = [election.system for election in elections]
+        for (election, system) in zip(elections, self.systems):
+            system.reference_results = deepcopy(election.results)
         self.parties = vote_table["parties"]
         self.base_votes = vote_table["votes"]
         self.xtd_votes = add_totals(self.base_votes)
@@ -115,7 +116,7 @@ class Simulation:
                 self.stat[measure] = Running_stats(ns)
                 self.stat[measure + "_tot"] = Running_stats(ns)
         self.run_initial_elections()
-        self.find_reference()
+        print("End of of simulate init")
 
     def analyze(self, measures, type_of_data):
         is_vote_data = type_of_data == "vote"
@@ -181,11 +182,6 @@ class Simulation:
         self.stat["sim_votes"].update(xtd_votes)
         self.stat["sim_shares"].update(xtd_shares)
 
-    def find_reference(self):
-        self.election_handler.set_votes(self.base_votes)
-        for (election, system) in zip(self.election_handler.elections, self.systems):
-            system.reference_results = deepcopy(election.results)
-
     def collect_list_measures(self):
         import numpy as np
         cs = []
@@ -208,8 +204,8 @@ class Simulation:
         self.stat["ideal_seats"].update(ids)
 
     def collect_measures(self, votes):
-        # votes are simulated; this function allocates seats
-        self.election_handler.set_votes(votes)
+        # allocate seats according to votes:
+        self.election_handler.run_elections(votes)
         self.collect_votes(votes)
         self.collect_list_measures()
         self.collect_general_measures()
@@ -232,8 +228,9 @@ class Simulation:
     def deviation_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_const", "one_const"]:
             option = measure.removeprefix("dev_")
-            comparison_system = system.generate_comparison_rules(option)
-            comparison_results = voting.Election(comparison_system, election.m_votes).run()
+            comparison_system = system.generate_system(option)
+            comparison_election = voting.Election(comparison_system, election.m_votes)
+            comparison_results = comparison_election.run(check_exist = False)
             self.add_deviation(election, measure, comparison_results, deviations)
         self.add_deviation(election, "dev_ref", system.reference_results, deviations)
 
@@ -352,11 +349,7 @@ class Simulation:
                 break
             self.iteration = i + 1
             votes = next(gen)
-            try:
-                self.collect_measures(votes)  # This allocates seats
-            except ValueError:
-                self.iterations_with_no_solution += 1
-                continue
+            self.collect_measures(votes)  # This allocates seats
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)

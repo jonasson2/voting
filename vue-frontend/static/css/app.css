@@ -52,21 +52,16 @@ th {
   background: none;
 }
 
-.constname input, .tablename input {
+.constname input, .tablename input, .partyname input {
   border:         0;
   background: none;
 }
 
-.partyseats input {
+.numerical input {
   border:         0;
   text-align:     right;
-  background: none;
-}
-
-.partyvotes input, .partyname input {
-  border:         0;
-  text-align:     right;
-}
+  background:     none;
+}  
 
 td.displayleft, th.displayleft {
   text-align: left;
@@ -104,13 +99,16 @@ th.topleft {
   background-color: #fff;
 }
 
+.partyname, .constname, .numerical, .tablename {
+  border: 0px;
+}
 
+.numerical input:hover, .numerical input:focus,
 .partyname input:hover, .partyname input:focus,
 .constname input:hover, .constname input:focus,
-.partyseats input:hover, .partyseats input:focus,
-.partyvotes input:hover, .partyvotes input:focus,
 .tablename input:hover, .tablename input:focus {
-  background:     #ddd;
+  border:         0px;
+  background:     #fff;
 }
 
 .growtable {

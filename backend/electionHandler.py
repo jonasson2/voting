@@ -1,9 +1,11 @@
-from electionSystems import ElectionSystems
+from electionSystem import ElectionSystem
+from electionSystem import set_one_const, set_all_adj, set_all_const, set_custom
 from voting import Election
 from table_util import add_totals
 from input_util import check_vote_table, check_systems
 from excel_util import elections_to_xlsx
 from util import disp
+from copy import deepcopy
 
 class ElectionHandler:
     """A handler for comparing electoral system results of a single election
@@ -11,72 +13,36 @@ class ElectionHandler:
     A class for managing comparison of results from different electoral systems,
     on a common vote table.
     """
-    def __init__(self, vote_table, election_rules_list, run=True):
-        # when run=False, only the constituencies are computed, using
-        # election_rules_list[i]["seat_spec_option"]
-        self.election_rules_list = check_systems(election_rules_list)
-        self.vote_table = check_vote_table(vote_table)
-        self.name = self.vote_table["name"]
-        self.parties = self.vote_table["parties"]
-        self.num_parties = len(self.parties)
-        self.constituencies = self.vote_table["constituencies"]
+    def __init__(self, vote_table, systems, run=True, min_votes=0):
+        systems = check_systems(systems)
+        vote_table = check_vote_table(vote_table, min_votes)
+        # self.name = vote_table["name"]
+        # self.parties = vote_table["parties"]
+        # self.num_parties = len(self.parties)
+        self.constituencies = vote_table["constituencies"]
         self.num_constituencies = len(self.constituencies)
-        self.elections = []
-        self.set_votes(self.vote_table["votes"], run)
+        self._setup_elections(vote_table, systems)
+        self.run_elections(vote_table["votes"])
 
-    def set_votes(self, votes, run = True):
-        assert len(votes) == self.num_constituencies, (
-            "Vote_table does not match constituency list.")
-        assert all(len(row) == self.num_parties for row in votes), (
-            "Vote_table does not match party list.")
-
+    def run_elections(self, votes):
         self.votes = votes
         self.xtd_votes = add_totals(self.votes)
-
-        #if not self.elections:
-        self._setup_elections()
-        if run:
-            self.run_elections()
-            # self.check_solvability()
-
-    def _setup_elections(self):
-        self.elections = []
-        for electoral_system in self.election_rules_list:
-            systems = ElectionSystems()
-            systems.update(electoral_system)
-            systems["parties"] = self.parties
-            votes = self.votes
-            option = electoral_system["seat_spec_option"]
-            if option == "refer":
-                systems["constituencies"] = self.constituencies
-            elif option == "make_all_const":
-                systems["constituencies"] = self.constituencies
-                systems = systems.generate_all_const_ruleset()
-            elif option == "make_all_adj":
-                systems["constituencies"] = self.constituencies
-                systems = systems.generate_all_adj_ruleset()
-            elif option == "one_const":
-                systems = systems.generate_one_const_ruleset()
-                total_votes = self.xtd_votes[-1][:-1]
-                votes = [total_votes]
-            else:
-                assert option == "custom", (
-                    f"unexpected seat_spec_option encountered: {option}")
-                systems["constituencies"] = []
-                for const in self.constituencies:
-                    match = const
-                    for modified_const in electoral_system["constituencies"]:
-                        if modified_const["name"] == const["name"]:
-                            match = modified_const
-                            break
-                    systems["constituencies"].append(match)
-            election = Election(systems, votes, self.name)
-            self.elections.append(election)
-
-    def run_elections(self):
-        #disp("el0", self.elections[0].__dict__)
         for election in self.elections:
+            election.set_votes(votes)
             election.run()
+            
+    def _setup_elections(self, vote_table, systems):
+        self.elections = []
+        votes = deepcopy(vote_table["votes"])
+        constituencies_list = update_constituencies(vote_table, systems)
+        for (system,constituencies) in zip(systems, constituencies_list):
+            option = system["seat_spec_option"]
+            system["parties"] = vote_table["parties"]
+            system["constituencies"] = constituencies
+            electionSystem = ElectionSystem()
+            electionSystem.update(system)
+            election = Election(electionSystem, votes, system["name"])
+            self.elections.append(election)
 
     def check_solvability(self):
         unsolvable = []
@@ -92,3 +58,19 @@ class ElectionHandler:
 
     def to_xlsx(self, filename):
         elections_to_xlsx(self.elections, filename)
+
+def update_constituencies(vote_table, systems):
+    constituencies = []
+    for system in systems:
+        opt = system["seat_spec_option"]
+        opt = opt.removeprefix("make_")
+        const = deepcopy(vote_table["constituencies"])
+        if "constituencies" not in system:
+            system["constituencies"] = const        
+        sysconst = system["constituencies"]
+        if opt=="all_const":   set_all_const(const)
+        elif opt=="all_adj":   set_all_adj(const)
+        elif opt=="one_const": set_one_const(const)
+        elif opt =="custom":   set_custom(const, sysconst)
+        constituencies.append(const)
+    return constituencies

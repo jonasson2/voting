@@ -1,19 +1,22 @@
 <template>
-<div  v-if="vote_table.constituencies.length > 0">
+<div v-if="show_systems">
   <b-modal
     size="lg"
     id="modaluploadesettings"
     title="Upload JSON file"
-    @ok="uploadSettings"
+    @ok="uploadSystems"
     >
-    <p>
-      The file provided must be a JSON file
-      formatted like a file downloaded from here, using the Save button.
-      The electoral systems contained in the file
-      will be added to those you have already specified.
+    <p v-if="replace">
+      The file provided must be a JSON file formatted like a file downloaded
+      from here, using the Save button. The electoral systems contained in the
+      file will be replace the current systems.
+    </p>
+    <p v-else>
+      The file provided must be a JSON file formatted like a file downloaded
+      from here, using the Save button. The electoral systems contained in the
+      file will be added to those currently specified.
     </p>
     <b-form-file
-      ref="appendFromFile"
       v-model="uploadfile"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
@@ -49,8 +52,8 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download settings for all electoral systems to local json-file. 
-               You may need to change browser settings; see Help for details"
+        title="Download settings for all electoral systems to local
+               json-file. Also saves simulation settings" 
         @click="saveSettings()"
         >
         Save
@@ -113,19 +116,21 @@
 
 <script>
 import ElectionSettings from './ElectionSettings.vue'
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
   components: {
     ElectionSettings,
   },
   
-  computed: mapState([
-    'vote_table',
-    'sim_settings',
-    'systems',
-    'sys_constituencies',
-  ]),
+  computed: {
+    ...mapState([
+      'vote_table',
+      'sim_settings',
+      'systems',
+      'show_systems'
+    ]),
+  },
   
   data: function() {
     return {
@@ -136,20 +141,11 @@ export default {
       activeSystemIndex: 0,  // Not including the <-- and --> tabs
       replace: false,
       uploadfile: null,
-      adding_system: false
+      adding_system: false,
+      created: false
     }
   },
-  
-  watch: {
-    systems: {
-      handler: function (val) {
-        //console.log("Watching systems", this.systems)
-        //this.updateDisplaySystems()
-      },
-      deep: true
-    },
-  },
-  
+    
   methods: {
     ...mapMutations([
       "addSystem",
@@ -158,6 +154,13 @@ export default {
       "updateSimSettings",
       "deleteSystem",
       "deleteAllSystems",
+      "setWaitingForData",
+      "clearWaitingForData",
+      "addBeforeunload"
+    ]),
+    ...mapActions([
+      "downloadFile",
+      "uploadElectoralSystems"
     ]),
     setReplace: function(status) {
       this.replace = status
@@ -182,7 +185,6 @@ export default {
       console.log("end of updateDisplaySystems")
     },
     saveSettings: function () {
-      console.log(">>>", this.sys_constituencies)
       let promise;
       promise = axios({
         method: "post",
@@ -190,56 +192,49 @@ export default {
         data: {
           systems:        this.systems,
           sim_settings:   this.sim_settings,
-          constituencies: this.sys_constituencies
         },
         responseType: "arraybuffer",
       });
       console.log("NAME: ",this.$options.name)
-      this.$emit("download-file", promise);
+      this.downloadFile(promise)
     },
-    uploadSettings: function(evt) {
+    uploadSystems: function(evt) {
       if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
-      this.$http.post('/api/settings/upload/', formData).then(response => {
-        if (this.replace){
-          this.deleteAllSystems()
-          console.log("Clearing systems")
-        }
-        let systems = response.data.systems
-        for (var i=0; i < systems.length; i++) {
-          if (!("compare_with" in systems[i])) systems[i].compare_with = false
-          this.addSystem(systems[i])
-        }
-        this.updateSysConst(response.data.constituencies)
-        //this.updateDisplaySystems()
-        this.updateSimSettings(response.data.sim_settings);
-        this.$store.dispatch("recalc_sys_const")
-      });
+      console.log("replace", this.replace)
+      console.log("formData", formData)
+      this.uploadElectoralSystems({"formData":formData, "replace":this.replace})
     },
     addNewSystem() {
       this.adding_system = true
+      this.setWaitingForData()
       this.$http.post(
         '/api/capabilities',
         this.vote_table.constituencies,
       ).then(response => {
         let r = response.body
         this.capabilities = r.capabilities;
-        console.log("in addNewSystem")
-        console.log("r.election_systems", r.election_systems)
-        console.log("r.const", r.constituencies)
-        this.addSystem(r.election_systems)
-        this.addSysConst(r.constituencies)
+        this.addSystem(r.election_system)
         this.updateSimSettings(r.sim_settings)
         this.activeSystemIndex += 1
         this.$store.dispatch("recalc_sys_const")
         this.adding_system = false
+        this.clearWaitingForData()
+        this.$nextTick(()=>{this.created = true})
+        console.log("added systems")
       })
     }
   },
   created: function () {
     console.log("CreatedElectoralSystems")
     this.addNewSystem()
-  }
+  },
+  watch: {
+    systems: {
+      handler() { if (this.created) this.addBeforeunload() },
+      deep: true
+    }
+  },
 }
 </script>

@@ -12,8 +12,8 @@ except ImportError:
 import csv
 
 import dictionaries
-from electionSystems import ElectionSystems
-from electionHandler import ElectionHandler
+from electionSystem import ElectionSystem
+from electionHandler import ElectionHandler, update_constituencies
 import util
 from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_systems
@@ -21,7 +21,7 @@ from input_util import check_simul_settings
 import voting
 import simulate
 from util import disp, short_traceback
-from noweb import load_votes, load_systems, single_election
+from noweb import load_votes, load_systems, single_election, load_all
 from noweb import start_simulation, check_simulation, SIMULATIONS
 from noweb import simulation_to_excel
 from traceback import format_exc
@@ -87,27 +87,19 @@ def save_file(tmpfilename, download_name):
     )
     return response
 
-def add_const_to_systems(data):
-    systems = data["systems"]
-    const = data["constituencies"]
-    for (r,c) in zip(systems, const):
-        r["constituencies"] = c
-    return systems
-
 @app.route('/api/election/', methods=["POST"])
 def api_election():
-    # when run is false, constituencies are updated according to
-    # systems["seat_spec_option"] but no results are computed
     try:
         data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems", "constituencies"])
+        disp("data", data)
+        data = check_input(data, ["vote_table", "systems"])
+        data = check_input(data, ["vote_table", "systems"])
         vote_table = data["vote_table"]
-        systems = add_const_to_systems(data)
-        run = not "run" in data or data["run"] == True
+        systems = data["systems"]
         if len(systems) == 0 or len(systems[0]) == 0:
             raise Exception("/api/election posted with no electoral system")
-        (results,const) = single_election(vote_table, systems, run = run);
-        return jsonify({"results": results, "constituencies": const})
+        results = single_election(vote_table, systems);
+        return jsonify({"results": results})
     except Exception:
         message = format_exc()
         print("ERROR: ", message)
@@ -120,7 +112,7 @@ def api_election_save():
     try:
         data = request.get_json(force=True)
         data = check_input(data, ["vote_table", "systems", "constituencies"])
-        systems = add_const_to_systems(data)
+        systems = data["systems"]
         vote_table = data["vote_table"]
         handler = ElectionHandler(vote_table, systems)
         tmpfilename = tempfile.mktemp(prefix='election-')
@@ -132,17 +124,35 @@ def api_election_save():
         return jsonify({"error": message})
     return save_file(tmpfilename, download_name)
 
+@app.route('/api/settings/update_constituencies/', methods=["POST"])
+def api_update_constituencies():
+    # Update constituencies in electoral systems according to
+    # the current vote table and systems[:]["seat_spec_option"]
+    data = request.get_json(force=True)
+    vote_table = data["vote_table"]
+    systems = data["systems"]
+    try:
+        constituencies = update_constituencies(vote_table, systems)
+        disp("constituencies", constituencies)
+        return jsonify({"constituencies": constituencies})
+    except Exception:
+        message = format_exc()
+        print("ERROR: ", message)
+        disp("vote_table", vote_table)
+        disp("systems", systems)
+        return jsonify({"error": message})
+
 @app.route('/api/settings/save/', methods=['POST'])
 def api_settings_save():
     data = request.get_json(force=True)
     try:
-        check_input(data, ["systems", "sim_settings", "constituencies"])
+        check_input(data, ["systems", "sim_settings"])
     except Exception:
         print("caught exception")
         message = format_exc()
         return jsonify({"error": message})
-    settings = add_const_to_systems(data)
-    settings = check_systems(settings)
+    systems = data["systems"]
+    systems = check_systems(systems)
     
     #no need to expose more than the following keys
     keys = [
@@ -155,13 +165,13 @@ def api_settings_save():
 
     names = []
     electoral_system_list = []
-    for setting in settings:
-        names.append(setting["name"])
-        #electoral_system_list.append({key: setting[key] for key in keys})
-        item = {key: setting[key] for key in keys}
-        item["constituency_allocation_rule"] = setting["primary_divider"]
-        item["adjustment_division_rule"]     = setting["adj_determine_divider"]
-        item["adjustment_allocation_rule"]   = setting["adj_alloc_divider"]
+    for system in systems:
+        names.append(system["name"])
+        #electoral_system_list.append({key: system[key] for key in keys})
+        item = {key: system[key] for key in keys}
+        item["constituency_allocation_rule"] = system["primary_divider"]
+        item["adjustment_division_rule"]     = system["adj_determine_divider"]
+        item["adjustment_allocation_rule"]   = system["adj_alloc_divider"]
         electoral_system_list.append(item)
 
     file_content = {
@@ -182,11 +192,7 @@ def api_settings_upload():
         return jsonify({'error': 'must upload a file.'})
     f = request.files['file']
     systems, sim_settings = load_systems(f)
-    const = [r["constituencies"] for r in systems]
-    for r in systems:
-        del r["constituencies"]
-    return jsonify({"systems": systems, "sim_settings": sim_settings,
-                    "constituencies": const})
+    return jsonify({"systems": systems, "sim_settings": sim_settings})
 
 @app.route('/api/votes/save/', methods=['POST'])
 def api_votes_save():
@@ -206,6 +212,29 @@ def api_votes_save():
     save_votes_to_xlsx(file_matrix, tmpfilename)
     download_name = secure_filename(vote_table['name']) + ".xlsx"
     return save_file(tmpfilename, download_name);
+
+@app.route('/api/votes/saveall/', methods=['POST'])
+def api_votes_save_all():
+    data = request.get_json(force=True)
+    disp("data", data)
+    contents = {
+        "vote_table": data["vote_table"],
+        "systems": data["systems"],
+        "sim_settings": data["sim_settings"]
+    }
+    tmpfilename = tempfile.mktemp(prefix='simulator-')
+    with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
+        json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    download_filename = "simulator-" + date + ".json"
+    return save_file(tmpfilename, download_filename)
+
+@app.route('/api/votes/uploadall/', methods=['POST'])
+def api_votes_uploadall():
+    f = request.files['file']
+    content = load_all(f)
+    disp("content", content)
+    return jsonify(content)
 
 @app.route('/api/votes/upload/', methods=['POST'])
 def api_votes_upload():
@@ -239,12 +268,14 @@ def api_votes_paste():
 def api_simulate():
     try:
         data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems", "sim_settings",
-                                  "constituencies"])
+        data = check_input(data, ["vote_table", "systems", "sim_settings"])
         votes = data["vote_table"]
-        systems = add_const_to_systems(data)
+        systems = data["systems"]
         sim_settings = data["sim_settings"]
+        print("starting simulation")
+        disp("sim_settings", sim_settings)
         sid = start_simulation(votes, systems, sim_settings)
+        print("simulation started")
         return jsonify({"started": True, "sid": sid})
     except Exception:
         message = short_traceback(format_exc())
@@ -278,6 +309,7 @@ def handle_api():
 def api_capabilities():
     constituencies = request.get_json(force=True)
     capabilities_dict = get_capabilities_dict()
+    disp("capabilities_dict", capabilities_dict)
     capabilities_dict["constituencies"] = constituencies
     #disp("capabilities_dict", capabilities_dict)
     return jsonify(capabilities_dict)
@@ -316,9 +348,9 @@ def api_simdownload():
     return save_file(tmpfilename, download_name);
 
 def get_capabilities_dict():
-    election_systems = ElectionSystems()
+    election_system = ElectionSystem()
     return {
-        "election_systems": election_systems,
+        "election_system": election_system,
         "sim_settings": simulate.SimulationSettings(),
         "capabilities": {
             "systems": dictionaries.RULE_NAMES,

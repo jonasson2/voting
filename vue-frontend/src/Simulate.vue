@@ -121,16 +121,16 @@ import ResultMatrix from './components/ResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './QualityMeasures.vue'
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {
   computed: {
     ...mapState([
       'vote_table',
       'systems',
-      'sys_constituencies',
       'sim_settings',
-      'show_simulate'
+      'show_simulate',
+      'simulateCreated'
     ]),
   },
   created: function() {
@@ -149,12 +149,16 @@ export default {
   components: {
     ResultMatrix,
     SimulationSettings,
-    QualityMeasures
+    QualityMeasures,
     // SimulationData,
   },
   methods: {
     ...mapMutations([
-      "serverError"
+      "serverError",
+      "addBeforeunload"
+    ]),
+    ...mapActions([
+      "downloadFile"
     ]),
     check_simulation: function() {
       this.checkstatus(false)
@@ -192,17 +196,19 @@ export default {
         vote_table:     this.vote_table,
         systems:        this.systems,
         sim_settings:   this.sim_settings,
-        constituencies: this.sys_constituencies
       }).then(response => {
         if (response.body.error) {
+          console.log("ERROR-1")
           this.serverError(response.body.error)          
         } else {
+          console.log("simulation started")
           this.sid = response.body.sid;
           this.simulation_done = !response.body.started;
           // 250 ms between updating simulation progress bar
           this.checktimer = window.setInterval(this.check_simulation, 250);
         }
       }, response => {
+        console.log("ERROR-2")
         this.serverError(response.body)          
       });
     },
@@ -214,8 +220,19 @@ export default {
         data: { sid: this.sid },
         responseType: "arraybuffer",
       });
-      this.$emit("download-file", promise);
+      this.downloadFile(promise)
     }
   },
+  mounted: function() {
+    console.log("Mounted Simulate")
+  },
+  watch: {
+    sim_settings: {
+      handler() {
+        if (this.simulateCreated) this.addBeforeunload()
+      },
+      deep: true
+    }
+  },  
 }
 </script>
