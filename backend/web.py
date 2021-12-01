@@ -91,7 +91,6 @@ def save_file(tmpfilename, download_name):
 def api_election():
     try:
         data = request.get_json(force=True)
-        disp("data", data)
         data = check_input(data, ["vote_table", "systems"])
         data = check_input(data, ["vote_table", "systems"])
         vote_table = data["vote_table"]
@@ -103,8 +102,6 @@ def api_election():
     except Exception:
         message = format_exc()
         print("ERROR: ", message)
-        disp("vote_table", vote_table)
-        disp("systems", systems)
         return jsonify({"error": message})
 
 @app.route('/api/election/save/', methods=['POST'])
@@ -133,13 +130,10 @@ def api_update_constituencies():
     systems = data["systems"]
     try:
         constituencies = update_constituencies(vote_table, systems)
-        disp("constituencies", constituencies)
         return jsonify({"constituencies": constituencies})
     except Exception:
         message = format_exc()
         print("ERROR: ", message)
-        disp("vote_table", vote_table)
-        disp("systems", systems)
         return jsonify({"error": message})
 
 @app.route('/api/settings/save/', methods=['POST'])
@@ -216,7 +210,6 @@ def api_votes_save():
 @app.route('/api/votes/saveall/', methods=['POST'])
 def api_votes_save_all():
     data = request.get_json(force=True)
-    disp("data", data)
     contents = {
         "vote_table": data["vote_table"],
         "systems": data["systems"],
@@ -233,7 +226,6 @@ def api_votes_save_all():
 def api_votes_uploadall():
     f = request.files['file']
     content = load_all(f)
-    disp("content", content)
     return jsonify(content)
 
 @app.route('/api/votes/upload/', methods=['POST'])
@@ -273,7 +265,6 @@ def api_simulate():
         systems = data["systems"]
         sim_settings = data["sim_settings"]
         print("starting simulation")
-        disp("sim_settings", sim_settings)
         sid = start_simulation(votes, systems, sim_settings)
         print("simulation started")
         return jsonify({"started": True, "sid": sid})
@@ -309,7 +300,6 @@ def handle_api():
 def api_capabilities():
     constituencies = request.get_json(force=True)
     capabilities_dict = get_capabilities_dict()
-    disp("capabilities_dict", capabilities_dict)
     capabilities_dict["constituencies"] = constituencies
     #disp("capabilities_dict", capabilities_dict)
     return jsonify(capabilities_dict)

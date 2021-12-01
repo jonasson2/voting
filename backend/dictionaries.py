@@ -160,3 +160,5 @@ AGGREGATES = {
     "skw": "Skewness",
     "kur": "Kurtosis",
 }
+
+STAT_LIST = AGGREGATES.keys()

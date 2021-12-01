@@ -26,6 +26,8 @@ const store = new Vuex.Store({
       tot: 0,
     },
     systems: [],
+    system_numbering: [],
+    activeTabIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
     results: [],
     server_error: "",
@@ -49,6 +51,7 @@ const store = new Vuex.Store({
       let idx = state.systems.length
       if (system.name == "System") system.name += "-" + (idx+1).toString();
       state.systems.push(system)
+      findNumbering(state, idx)
     },
     updateComparisonSystems(state, list) {
       for (var sys of state.systems) {
@@ -56,9 +59,16 @@ const store = new Vuex.Store({
       }
     },
     
-    deleteSystem(state, idx) { state.systems.splice(idx, 1); },
+    deleteSystem(state, idx) {
+      state.systems.splice(idx, 1);
+      findNumbering(state, idx)
+    },
     
-    deleteAllSystems(state) { state.systems.splice(0, state.systems.length) },
+    deleteAllSystems(state) {
+      state.systems.splice(0, state.systems.length)
+      state.numbering = []
+      state.activeTabIndex = -1
+    },
     
     updateSystems(state, systems) {state.systems = systems},
 
@@ -69,6 +79,16 @@ const store = new Vuex.Store({
     clearWaitingForData(state) {Vue.nextTick(()=>{state.waiting_for_data=false})},
 
     setSimulateCreated(state) {state.simulateCreated = true},
+
+    setActiveTabIndex(state, idx) {state.activeTabIndex = idx},
+
+    setSeatSpecOption(state, payload) {
+      console.log("sssi", state.systems[0].seat_spec_option)
+      state.systems[payload.idx].seat_spec_option = payload.opt
+      console.log("ssso", state.systems[0].seat_spec_option)
+    },
+
+    newNumbering(state, idx) {findNumbering(state, idx)},
 
     showSimulate(state) {
       state.results = []
@@ -98,10 +118,10 @@ const store = new Vuex.Store({
       if (state.listening) return
       state.listening = true
       console.log("adding event listener")
-      window.addEventListener('beforeunload', function (e) {
-        e.preventDefault()
-        e.returnValue = ''
-      })
+      // window.addEventListener('beforeunload', function (e) {
+      //   e.preventDefault()
+      //   e.returnValue = ''
+      // })
     },
   },
 
@@ -123,22 +143,38 @@ const store = new Vuex.Store({
     
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
+      if (payload.replace){
+        context.commit("deleteAllSystems")
+      }
       Vue.http.post('/api/settings/upload/', payload.formData).then(response => {
-        if (payload.replace){
-          context.commit("deleteAllSystems")
-        }
         let systems = response.data.systems
         for (var i=0; i < systems.length; i++) {
           if (!("compare_with" in systems[i])) systems[i].compare_with = false
           context.commit("addSystem", systems[i])
         }
-        //context.commit("updateSysConst", response.data.constituencies)
-        //this.updateDisplaySystems()
+        findNumbering(context.state, 0)
         context.commit("updateSimSettings", response.data.sim_settings);
         context.commit("clearWaitingForData")
       });
     },
-
+    uploadAll: function (context, formData) {
+      context.commit("setWaitingForData")
+      context.commit("deleteAllSystems")
+      Vue.http.post("/api/votes/uploadall/", formData).then(
+        (response) => {
+          console.log("response", response)
+          context.commit("updateVoteTable", response.data.vote_table)
+          context.commit("updateSystems", response.data.systems)
+          context.commit("updateSimSettings", response.data.sim_settings)
+          findNumbering(context.state, 0)
+          context.commit("clearWaitingForData")
+        },
+        (response) => {
+          context.commit("serverError", "Cannot upload votes from this file")
+          context.commit("clearWaitingForData")
+        },
+      )
+    },
     saveAll(context) {
       let promise;
       promise = axios({
@@ -178,7 +214,6 @@ const store = new Vuex.Store({
       // vote_table, otherwise use use values from vote_table, possibly modified
       // according to the seat_spec_option.
       context.commit("setWaitingForData")
-      // waitingForData should be set and cleared in caller
       Vue.http.post(
         '/api/settings/update_constituencies/',
         {
@@ -221,7 +256,6 @@ const store = new Vuex.Store({
                 return
               }
             }
-            console.log("data=", response.data)
             let link = document.createElement("a");
             const [type, downloadname] = parse_headers(response.headers);
             const blob = new Blob([response.data], {type: type});
@@ -281,25 +315,18 @@ function setVoteSums(state) {
   }
 }
 
-// function watchFunction(state) {
-//   let watchList = [state.vote_table]
-//   console.log("watching")
-//   if (state.watching["ElectoralSystems"]) watchList.push(state.systems)
-//   if (state.watching["SimSettings"]) watchList.push(state.sim_settings)
-//   return watchList
-// }
-
-// store.watch(
-//   watchFunction,
-//   // (state => [state.vote_table, state.systems, state.sim_settings]),
-//   () => {
-//     console.log("adding EventListener")
-//     window.addEventListener('beforeunload', function (e) {
-//       e.preventDefault()
-//       e.returnValue = ''
-//     })
-//   },
-//   {deep:true}
-// )
+function findNumbering(state, asi) {
+  let n = state.systems.length
+  if (asi > n-1) asi = n-1
+  let num = []
+  for (var i=0; i < n; i++) {
+    if (n > 1 && i > 0 && i == asi) num.push(-2)
+    num.push(i)
+    if (n > 1 && i < n-1 && i == asi) num.push(-1)
+  }
+  console.log("numbering=", num)
+  state.system_numbering = num
+  if (asi==0) state.activeTabIndex = 0;
+}
 
 export default store

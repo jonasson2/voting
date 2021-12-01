@@ -16,32 +16,38 @@
       <div slot="title">
         {{system.name}}
       </div>
-      <b-container fluid
-                   v-if="results[activeTabIndex] !== undefined">
-        <b-row>
-          <h4>Seat allocation, constituency and adjustment seats combined</h4>
-          <ResultMatrix
-            :constituencies="systems[activeTabIndex].constituencies"
-            :parties="vote_table.parties"
-            :values="results[activeTabIndex].seat_allocations"
-            :stddev="false"
-            >
-          </ResultMatrix>
-        </b-row>
-        <!-- <b-row> -->
-          <!--   <ResultChart -->
-          <!--     :parties="vote_table.parties" -->
-          <!--     :seats="results[activeTabIndex].seat_allocations"> -->
-            <!--   </ResultChart> -->
-          <!-- </b-row> -->
-        <b-row>
-          <br>
-          <h4>Allocation of adjustment seats step-by-step</h4>
-          <ResultDemonstration
-            :table="results[activeTabIndex].step_by_step_demonstration">
-          </ResultDemonstration>
-        </b-row>
-      </b-container>
+      <template v-if = "results[activeTabIndex] == null">
+        <b-alert :show="true">
+          No solution exists.
+        </b-alert>
+      </template>
+      <template v-else>
+        <b-container fluid v-if="results[activeTabIndex] !== undefined">
+          <b-row>
+            <h4>Seat allocation, constituency and adjustment seats combined</h4>
+            <ResultMatrix
+              :constituencies="systems[activeTabIndex].constituencies"
+              :parties="vote_table.parties"
+              :values="results[activeTabIndex].seat_allocations"
+              :stddev="false"
+              >
+            </ResultMatrix>
+          </b-row>
+          <!-- <b-row> -->
+            <!--   <ResultChart -->
+            <!--     :parties="vote_table.parties" -->
+            <!--     :seats="results[activeTabIndex].seat_allocations"> -->
+              <!--   </ResultChart> -->
+            <!-- </b-row> -->
+          <b-row>
+            <br>
+            <h4>Allocation of adjustment seats step-by-step</h4>
+            <ResultDemonstration
+              :table="results[activeTabIndex].step_by_step_demonstration">
+            </ResultDemonstration>
+          </b-row>
+        </b-container>
+      </template>
     </b-tab>
     <div slot="empty">
       There are no electoral systems specified.

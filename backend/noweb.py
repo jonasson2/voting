@@ -11,9 +11,6 @@ from util import disp
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
 
-def prufa():
-    print(0)
-
 from sim_measures import add_vuedata
 
 def load_votes(f, preset=False):
@@ -23,8 +20,11 @@ def load_votes(f, preset=False):
     return res
 
 def load_all(f):
-    file_content = json.load(f.stream)
-    disp("file_content", file_content)
+    if isinstance(f,str):
+        f = os.path.expanduser(f)
+        with open(f) as file: file_content = json.load(file)
+    else:
+        file_content = json.load(f.stream)
     return file_content
 
 def load_systems(f):
@@ -68,7 +68,6 @@ def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
     elections = ElectionHandler(votes, systems).elections
-    # separate rule constituencies from results:
     results = [election.get_results_dict() for election in elections]
     return results
 
@@ -101,7 +100,6 @@ def start_simulation(votes, systems, sim_settings):
     sid = h.hexdigest()
     simulation = simulate.Simulation(sim_settings, systems, votes)
     cleanup_expired_simulations()
-    disp("sim_settings", sim_settings)
     expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
     # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
     thread = threading.Thread(target=run_thread_simulation, args=(sid,))

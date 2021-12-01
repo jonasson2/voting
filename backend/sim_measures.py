@@ -1,4 +1,4 @@
-# Construct titles and data to put in the measures b-table in
+# Construct titles and data to put in the measures table in
 # simulation results
 
 from measure_groups import MeasureGroups, fractional_digits

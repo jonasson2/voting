@@ -95,7 +95,8 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Method to allocate adjustment seats to party lists based on the given basic rule."
+          title="Method to allocate adjustment seats to party 
+                 lists based on the given basic rule."
           >
           <b-form-select
             v-model="systems[systemidx].adjustment_method"
@@ -110,15 +111,16 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Numbers of constituency and adjustment seats in each constituency in this particular electoral system"
+          title="Numbers of constituency and adjustment seats in each 
+                 constituency in this particular electoral system"
           >
           <b-form-select
-            v-model="systems[systemidx].seat_spec_option"
+            v-model="seat_spec_option"
             :options="capabilities.seat_spec_options"/>
         </b-form-group>
       </b-col>
       <b-col cols="6">
-        <table v-if="!waiting_for_data" class="votematrix">
+        <table v-if="!adding_system && !waiting_for_data" class="votematrix">
           <tr>
             <th class="topleft"></th>
             <th class="displaycenter"
@@ -137,11 +139,11 @@
               {{ constituency['name'] }}
             </th>
             <td class="displayright">
-              <span v-if="systems[systemidx].seat_spec_option != 'custom'">
+              <span v-if="seat_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
               <span
-                v-if="systems[systemidx].seat_spec_option == 'custom'"
+                v-if="seat_spec_option == 'custom'"
                 class="numerical"
                 >
                 <input
@@ -152,11 +154,11 @@
               </span>
             </td>
             <td class="displayright">
-              <span v-if="systems[systemidx].seat_spec_option != 'custom'">
+              <span v-if="seat_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
               <span
-                v-if="systems[systemidx].seat_spec_option == 'custom'"
+                v-if="seat_spec_option == 'custom'"
                 class="numerical"
                 >
                 <input
@@ -174,35 +176,42 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapMutations, mapActions } from 'vuex';
 export default {
+  data: function() {
+    return {
+      created: false
+    }
+  },
   computed: {
     ...mapState([
       'vote_table',
       'systems',
       'waiting_for_data',
     ]),
+    seat_spec_option: {
+      get() { return this.systems[this.systemidx].seat_spec_option },
+      set(val) {
+        this.setSeatSpecOption({"opt": val, "idx": this.systemidx})
+        this.recalc_sys_const()
+      }
+    },
   },
   methods: {
     ...mapMutations([
       "setWaitingForData",
-      "clearWaitingForData"
+      "clearWaitingForData",
+      "setSeatSpecOption",
+    ]),
+    ...mapActions([
+      'recalc_sys_const',
     ]),
   },
   props: [
     "systemidx",
-    "capabilities"
+    "capabilities",
+    "adding_system"
   ],
-  watch: {
-    systems: {
-      handler: function() {
-        if (!this.waiting_for_data) {
-          this.$store.dispatch("recalc_sys_const")
-        }
-      },
-      deep: true
-    }
-  },
   created: function() {
     console.log("Creating ElectionSettings")
   }

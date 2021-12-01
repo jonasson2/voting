@@ -12,14 +12,13 @@ from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 import traceback as tb
 from util import disp
+from copy import deepcopy
 
 class Election:
     """A single election."""
-    def __init__(self, system, votes=None, name=''):
+    def __init__(self, system, votes, name=''):
         cons = system["constituencies"]
         one_const = len(cons) == 1 and cons[0]["name"] == "All"
-        if one_const:
-            votes = [[sum(x) for x in zip(*votes)]]
         self.num_constituencies = len(system["constituencies"])
         self.num_parties = len(system["parties"])
         self.system = system
@@ -34,12 +33,19 @@ class Election:
         self.reference_results = self.results
 
     def set_votes(self, votes):
-        assert len(votes) == self.num_constituencies
+        # m_votes: Matrix of votes (numconst by numpart)
+        # v_votes: Vector of votes (numpart, colsums of m_votes)
+        if self.num_constituencies == 1:
+            self.m_votes = [[sum(x) for x in zip(*votes)]]
+        else:
+            assert len(votes) == self.num_constituencies
+            self.m_votes = deepcopy(votes)
         assert all(len(row) == self.num_parties for row in votes)
-        self.m_votes = votes
         self.v_votes = [sum(x) for x in zip(*votes)]
 
     def get_results_dict(self):
+        if not self.solvable:
+            return None
         return {
             "systems": self.system,
             "seat_allocations": add_totals(self.results),
@@ -49,7 +55,7 @@ class Election:
     def get_const(self):
         return self.system["constituencies"]
 
-    def run(self, check_exist=False):
+    def run(self, check_exist=True):
         """Run an election based on current systems and votes."""
         #tb.print_stack()
         # How many constituency seats does each party get in each constituency:
@@ -68,6 +74,8 @@ class Election:
         self.run_threshold_elimination()
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment(check_exist)
+        if not self.solvable:
+            self.results = None
         return self.results
 
     def run_primary_apportionment(self):
@@ -141,13 +149,12 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-
         if check_exist:
             self.solvable = solution_exists(
-                votes=self.m_votes_eliminated,
-                row_constraints=self.v_desired_row_sums,
-                col_constraints=self.v_desired_col_sums,
-                prior_allocations=self.m_const_seats_alloc)
+                votes = self.m_votes_eliminated,
+                row_constraints = self.v_desired_row_sums,
+                col_constraints = self.v_desired_col_sums,
+                prior_allocations = self.m_const_seats_alloc)
         else:
             self.solvable = True
         #Some methods return a solution violating the constraints if necessary
@@ -164,12 +171,11 @@ class Election:
                 v_const_seats=[con["num_const_seats"] for con in consts],
                 last=self.last #for nearest_neighbor and relative_inferiority
             )
-        except (ZeroDivisionError, RuntimeError):
-            self.results = self.m_const_seats_alloc
-            self.adj_seats_info = None
-        except Exception as e:
-            print("Unknown error in voting.py")
+        except (ZeroDivisionError, RuntimeError, ValueError):
+            self.solvable = False
             return
+            # self.results = self.m_const_seats_alloc
+            # self.adj_seats_info = None
 
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]

@@ -29,7 +29,7 @@
     size="lg"
     id="modaluploadall"
     title="Upload json file with vote table and settings"
-    @ok="uploadAll"
+    @ok="loadAll"
     >
     <p>
       The file provided should be a JSON file formatted lika a file
@@ -132,7 +132,6 @@
     These source votes and seats are used as basis for allocation in the Single
     election tab and as expected values in the Simulated elections tab
   </h6>
-
   <table class="votematrix">
     <tr>
       <th class="tablename">
@@ -272,6 +271,7 @@ export default {
     ...mapState([
       'vote_table',
       'vote_sums',
+      'waiting_for_data',
     ]),
   },
   data: function () {
@@ -307,15 +307,6 @@ export default {
     );
     console.log("Created VoteMatrix");
   },
-  watch: {
-    vote_table: {
-      handler: function(val, oldval) {
-        console.log("watching vote_table")
-        this.updateVoteSums()
-      },
-      deep: true,
-    },
-  },
   methods: {
     ...mapMutations([
       "updateVoteSums",
@@ -329,7 +320,8 @@ export default {
     ]),
     ...mapActions([
       "saveAll",
-      "downloadFile"
+      "downloadFile",
+      "uploadAll",
     ]),
     deleteParty: function (index) {
       this.vote_table.parties.splice(index, 1);
@@ -408,30 +400,22 @@ export default {
         },
       )
     },
-    uploadAll: function (evt) {
-      this.setWaitingForData()
+    loadAll: function (evt) {
       if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.$http.post("/api/votes/uploadall/", formData).then(
-        (response) => {
-          console.log("response", response)
-          this.updateVoteTable(response.data.vote_table)
-          this.updateSystems(response.data.systems)
-          this.updateSimSettings(response.data.sim_settings)
-          this.clearWaitingForData()
-        },
-        (response) => {
-          this.serverError("Cannot upload votes from this file")
-          this.clearWaitingForData()
-        },
-      )
-    },
+      this.uploadAll(formData)
+    }
   },
   watch: {
     vote_table: {
-      handler() {console.log("vote_table")
-                 this.addBeforeunload() },
+      handler: function() {
+        if (!this.waiting_for_data) {
+          console.log("watching vote_table")
+          this.addBeforeunload()
+          this.updateVoteSums()
+        }
+      },
       deep: true
     }
   },

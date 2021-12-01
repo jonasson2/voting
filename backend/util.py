@@ -10,6 +10,12 @@ import configparser
 import codecs
 from distutils.util import strtobool
 
+def shape(M):
+    # Simply assume that all rows have equal length
+    if not isinstance(M,list): return None
+    if not isinstance(M[0],list): return len(M)
+    return (len(M),len(M[0]))
+
 #??????
 def random_id(length=8):
     chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
