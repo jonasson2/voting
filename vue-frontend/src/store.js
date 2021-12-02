@@ -118,10 +118,10 @@ const store = new Vuex.Store({
       if (state.listening) return
       state.listening = true
       console.log("adding event listener")
-      // window.addEventListener('beforeunload', function (e) {
-      //   e.preventDefault()
-      //   e.returnValue = ''
-      // })
+      window.addEventListener('beforeunload', function (e) {
+        e.preventDefault()
+        e.returnValue = ''
+      })
     },
   },
 
