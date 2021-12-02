@@ -29,6 +29,7 @@
               :constituencies="systems[activeTabIndex].constituencies"
               :parties="vote_table.parties"
               :values="results[activeTabIndex].seat_allocations"
+              :voteless="results[activeTabIndex].voteless_seats"
               :stddev="false"
               >
             </ResultMatrix>

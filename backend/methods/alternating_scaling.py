@@ -29,12 +29,12 @@ def alternating_scaling(m_votes, v_desired_row_sums, v_desired_col_sums,
 
         v_priors = m_allocations[const_id]
 
-        _, div = apportion1d(v_scaled_votes, num_total_seats,
+        _, apportion_const = apportion1d(v_scaled_votes, num_total_seats,
                                  v_priors, divisor_gen)
 
         # See IV.3.9 in paper:
-        minval = div[2] # apportion1d gives the last used value, which is min
-        maxval = max([float(a)/b for a, b in zip(v_scaled_votes, div[0])])
+        minval = apportion_const[2] # apportion1d gives the last used value, which is min
+        maxval = max([float(a)/b for a, b in zip(v_scaled_votes, apportion_const[0])])
         const_multiplier = (minval+maxval)/2
 
         return const_multiplier
@@ -48,11 +48,12 @@ def alternating_scaling(m_votes, v_desired_row_sums, v_desired_col_sums,
 
         v_priors = [const_alloc[party_id] for const_alloc in m_allocations]
 
-        _, div = apportion1d(v_scaled_votes, num_total_seats, v_priors,
-                                 divisor_gen)
+        _, apportion_party = apportion1d(v_scaled_votes, num_total_seats,
+                                         v_priors, divisor_gen)
 
-        minval = div[2]
-        maxval = max([float(a)/b for a, b in zip(v_scaled_votes, div[0])])
+        minval = apportion_party[2]
+        maxval = max([float(a)/b 
+                      for a, b in zip(v_scaled_votes, apportion_party[0])])
         party_multiplier = (minval+maxval)/2
 
         return party_multiplier

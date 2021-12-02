@@ -47,7 +47,7 @@ class Election:
         if not self.solvable:
             return None
         return {
-            "systems": self.system,
+            "voteless_seats": self.voteless_seats(),
             "seat_allocations": add_totals(self.results),
             "step_by_step_demonstration": self.demonstration_table
         }
@@ -56,17 +56,21 @@ class Election:
         return self.system["constituencies"]
 
     def run(self, check_exist=True):
-        """Run an election based on current systems and votes."""
-        #tb.print_stack()
-        # How many constituency seats does each party get in each constituency:
+        # Run an election based on current systems and votes.
+        # Return None if no solution exists.
+
+        # How many constituency seats does each party get in each constituency
         self.const_seats_alloc = []
+
         # Which seats does each party get in each constituency:
         self.order = []
+
         # Determine total seats (const + adjustment) in each constituency:
         self.v_desired_row_sums = [
             const["num_const_seats"] + const["num_adj_seats"]
             for const in self.system["constituencies"]
         ]
+
         # Determine total seats in play:
         self.total_seats = sum(self.v_desired_row_sums)
 
@@ -77,6 +81,19 @@ class Election:
         if not self.solvable:
             self.results = None
         return self.results
+
+    @staticmethod
+    def anym(A):
+        # is any element of matrix A true?
+        return any(any(a) for a in A)
+
+    def voteless_seats(self):
+        over = [None]*self.num_constituencies
+        for c in range(self.num_constituencies):
+            for p in range(self.num_parties):
+                over[c] = [r > 0 and v < 1
+                           for (r,v) in zip(self.results[c], self.m_votes[c])]
+        return over
 
     def run_primary_apportionment(self):
         """Conduct primary apportionment"""

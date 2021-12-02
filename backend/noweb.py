@@ -67,7 +67,7 @@ def load_systems(f):
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
-    elections = ElectionHandler(votes, systems).elections
+    elections = ElectionHandler(votes, systems, min_votes=0.5).elections
     results = [election.get_results_dict() for election in elections]
     return results
 
@@ -110,7 +110,6 @@ def start_simulation(votes, systems, sim_settings):
 def check_simulation(sid, stop):
     (sim, thread, _) = SIMULATIONS[sid]
     sim.iteration -= sim.iterations_with_no_solution
-    print("Checking simulation, done =", thread.done, ", iteration =", sim.iteration)
     sim_status = {
         "done": thread.done,
         "iteration": sim.iteration,

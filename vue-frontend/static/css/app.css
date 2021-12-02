@@ -103,6 +103,10 @@ th.topleft {
   border: 0px;
 }
 
+.red {
+  color: red;
+}
+
 .numerical input:hover, .numerical input:focus,
 .partyname input:hover, .partyname input:focus,
 .constname input:hover, .constname input:focus,

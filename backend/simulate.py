@@ -64,7 +64,7 @@ class Simulation:
         random.seed(42)
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
-        self.election_handler = ElectionHandler(vote_table, systems, min_votes=1)
+        self.election_handler = ElectionHandler(vote_table, systems, min_votes=0.5)
         elections = self.election_handler.elections
         self.systems = [election.system for election in elections]
         self.nsys = len(self.systems)
@@ -95,7 +95,6 @@ class Simulation:
         self.vote_data = [{} for _ in range(self.nsys)]
         self.initialize_stat_counters()
         self.run_initial_elections()
-        print("End of of simulate init")
 
     def index_of_const_to_apply_randomness_to(self):
         sel_rand = self.sim_settings["selected_rand_constit"]
@@ -259,7 +258,6 @@ class Simulation:
     @staticmethod
     def add_deviation(election, measure, comparison_results, deviations):
         deviation = dev(election.results, comparison_results)
-        print(deviation)
         if deviation:
             deviations.add(measure, deviation)
         else:

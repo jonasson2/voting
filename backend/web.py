@@ -264,9 +264,7 @@ def api_simulate():
         votes = data["vote_table"]
         systems = data["systems"]
         sim_settings = data["sim_settings"]
-        print("starting simulation")
         sid = start_simulation(votes, systems, sim_settings)
-        print("simulation started")
         return jsonify({"started": True, "sid": sid})
     except Exception:
         message = short_traceback(format_exc())
