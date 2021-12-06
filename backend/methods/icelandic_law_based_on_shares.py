@@ -2,17 +2,13 @@
 from copy import deepcopy
 import random
 
-def icelandic_share_apportionment(
-    m_votes,
-    v_desired_row_sums,
-    v_desired_col_sums,
-    m_prior_allocations,
-    divisor_gen,
-    adj_seat_gen,
-    threshold=None,
-    orig_votes=None,
-    **kwargs
-):
+def icelandic_share_apportionment(m_votes,
+                                  v_desired_row_sums,
+                                  m_prior_allocations,
+                                  divisor_gen,
+                                  adj_seat_gen,
+                                  orig_votes,
+                                  **kwargs):
     """
     Apportion based on Icelandic law nr. 24/2000.
     """

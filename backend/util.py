@@ -22,6 +22,12 @@ def random_id(length=8):
     s = "".join(random.sample(chars, length))
     return s
 
+def subtract_m(A, B):
+    C = []
+    for (a,b) in zip(A, B):
+        c = [x - y for (x,y) in zip(a,b)]
+        C.append(c)
+    return C
 
 def read_csv(filename):
     with io.open(filename, mode="r", newline='', encoding='utf-8') as f:
@@ -207,7 +213,7 @@ def print_steps_election(election):
     print_table(xtd_shares, header, const_names, out, "{:.1%}")
 
     print("\nConstituency seats")
-    xtd_const_seats = add_totals(election.m_const_seats_alloc)
+    xtd_const_seats = add_totals(election.m_const_seats)
     print_table(xtd_const_seats, header, const_names, out)
 
     print("\nAdjustment seat apportionment")

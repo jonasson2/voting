@@ -43,18 +43,6 @@ class ElectionHandler:
             election = Election(electionSystem, votes, system["name"])
             self.elections.append(election)
 
-    def check_solvability(self):
-        unsolvable = []
-        for r in range(len(self.elections)):
-            if not self.elections[r].solvable:
-                unsolvable.append(str(r+1))
-        if unsolvable:
-            problematic = ", ".join(unsolvable)
-            systems = "systems" if len(unsolvable)>1 else "system"
-            raise ValueError(
-                "The given vote table admits no solution "
-                f"for electoral {systems} nr. {problematic}")
-
     def to_xlsx(self, filename):
         elections_to_xlsx(self.elections, filename)
 

@@ -3,7 +3,8 @@ from copy import copy, deepcopy
 
 from system import System
 from util import load_constituencies, disp
-from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, ADJUSTMENT_METHODS
+from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
+    ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
 
 class ElectionSystem(System):
@@ -143,8 +144,8 @@ def set_all_const(constituencies):
         const["num_adj_seats"] = 0
 
 def set_custom(constituencies, customlist):
-    # Return the constituencies that are in constituencies, but with seat numbers
-    # copied from customlist for those constituencies that are there
+    # Return the constituencies that are in constituencies, but with seat
+    # numbers copied from customlist for those constituencies that are there
     customnames = [c["name"] for c in customlist]
     for k in range(len(constituencies)):
         name = constituencies[k]["name"]

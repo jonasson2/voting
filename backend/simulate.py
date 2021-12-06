@@ -61,7 +61,7 @@ class SimulationSettings(System):
 class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
-        # random.seed(42)
+        random.seed(42)
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
         self.election_handler = ElectionHandler(vote_table, systems, min_votes=0.5)
@@ -168,12 +168,16 @@ class Simulation:
         self.analyze_general()
         self.analyze_list_data()
         self.analyze_vote_data()
-        self.list_data[-1] = self.vote_data  # used by excel_util
+        self.list_data[-1] = self.vote_data[0]  # used by excel_util
+        # Það er villa sem á eftir að leiðrétta þegar búið er að "mergja" Excel útskrift
+        # (des. 2021). Vote-data er bara skrifað út fyrir fyrsta kerfið í list_data[-1]
+        # en ef sum kerfin eru með sameinuð kjördæmi (í "All") þá getur vote-datað
+        # orðið misjafnt milli kerfa; excel_util.py ræður bara við að skrifa eitt vote_data.
 
     def run_initial_elections(self):
         for election in self.election_handler.elections:
             xtd_total_seats = add_totals(election.results)
-            xtd_const_seats = add_totals(election.m_const_seats_alloc)
+            xtd_const_seats = add_totals(election.m_const_seats)
             xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
             xtd_seat_shares = find_xtd_shares(xtd_total_seats)
             ideal_seats = self.calculate_ideal_seats(election)
@@ -212,7 +216,7 @@ class Simulation:
         ts = []
         ids = []
         for (i,election) in enumerate(self.election_handler.elections):
-            cs = np.array(add_totals(election.m_const_seats_alloc))
+            cs = np.array(add_totals(election.m_const_seats))
             ts = np.array(add_totals(election.results))
             ids = np.array(add_totals(self.calculate_ideal_seats(election)))
             adj = ts - cs  # this computes the adjustment seats
@@ -251,7 +255,7 @@ class Simulation:
             option = measure.removeprefix("dev_")
             comparison_system = system.generate_system(option)
             comparison_election = voting.Election(comparison_system, election.m_votes)
-            comparison_results = comparison_election.run(check_exist = False)
+            comparison_results = comparison_election.run()
             self.add_deviation(election, measure, comparison_results, deviations)
         self.add_deviation(election, "dev_ref", system.reference_results, deviations)
 
@@ -277,7 +281,7 @@ class Simulation:
     def calculate_ideal_seats(self, election):
         scalar = float(election.total_seats)/sum(sum(x) for x in election.m_votes)
         ideal_seats = scale_matrix(election.m_votes, scalar)
-        assert election.solvable
+        # assert election.solvable
         rein = 0
         error = 1
         niter = 0

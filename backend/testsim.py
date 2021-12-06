@@ -27,20 +27,23 @@ def LoadAll(file):
 vote_table = load_votes(ELEC + "2-by-2-example.csv")
 # vote_table["votes"][0][0] = 0
 
-all_file = "../krass.json"
+# all_file = "~/hermir/krass.json"
 # all_file = "assert.json"
+all_file = "~/hermir/altscaling.json"
 (systems, sim_settings, vote_table) = LoadAll(all_file)
+vote_table = load_votes(ELEC + "2-by-2-example.csv")
 
-# systemfile = "newtest/2reglur.json"
-# systemfile = "1regla.json"
+systemfile = "newtest/2reglur.json"
+# systemfile = "newtest/1regla.json"
 # systemfile = "newtest/11kerfi.json"
-# systems, sim_settings = load_systems(systemfile)
+systems, sim_settings = load_systems(systemfile)
 
-single_results = single_election(vote_table, systems)
-disp("single_results", single_results)
+# single_results = single_election(vote_table, systems)
+# disp("single_results", single_results)
 # disp("vote_table", vote_table)
 # disp("systems", systems) (is included in results)
 # sim_settings["simulation_count"] = 10
 # results = run_simulation(vote_table, systems, sim_settings, "a.xlsx")
-# results = run_simulation(vote_table, systems, sim_settings)
+results = run_simulation(vote_table, systems, sim_settings)
 # disp("results", results["vuedata"])
+pass

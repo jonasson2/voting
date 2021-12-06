@@ -83,9 +83,7 @@ const store = new Vuex.Store({
     setActiveTabIndex(state, idx) {state.activeTabIndex = idx},
 
     setSeatSpecOption(state, payload) {
-      console.log("sssi", state.systems[0].seat_spec_option)
       state.systems[payload.idx].seat_spec_option = payload.opt
-      console.log("ssso", state.systems[0].seat_spec_option)
     },
 
     newNumbering(state, idx) {findNumbering(state, idx)},
@@ -118,11 +116,15 @@ const store = new Vuex.Store({
       if (state.listening) return
       state.listening = true
       console.log("adding event listener")
-      window.addEventListener('beforeunload', function (e) {
-        e.preventDefault()
-        e.returnValue = ''
-      })
+      window.addEventListener('beforeunload', eventListener)
     },
+
+    removeBeforeunload(state) {
+      if (!state.listening) return
+      state.listening = false
+      console.log("removing event listener")
+      window.removeEventListener("beforeunload", eventListener)
+    }
   },
 
   //ACTIONS
@@ -187,9 +189,10 @@ const store = new Vuex.Store({
         },
         responseType: "arraybuffer",
       });
-      //this.$emit("download-file", promise);
       context.dispatch("downloadFile", promise)
+      context.commit("removeBeforeunload")
     },
+    
     calculate_results(context) {
       context.commit("setWaitingForData")
       console.log("In calculate_results")
@@ -203,6 +206,7 @@ const store = new Vuex.Store({
             context.commit("serverError", response.body.error)
           } else {
             context.state.results = response.body.results
+            context.state.systems = response.body.systems
           }
           context.commit("clearWaitingForData")
         })
@@ -218,8 +222,7 @@ const store = new Vuex.Store({
         '/api/settings/update_constituencies/',
         {
           vote_table:     context.state.vote_table,
-          systems:        context.state.systems,
-          run:            false,
+          systems:        context.state.systems
         }).then(response => {
           if (response.body.error) {
             context.commit("serverError", response.body.error)
@@ -246,9 +249,11 @@ const store = new Vuex.Store({
             console.log("response=", response)
             console.log("headers=", response.headers)
             console.log("content-type", response.headers["content-type"])
+            console.log("data", response.data)
             if (response.headers["content-type"] == "application/json") {
               let s,x
               s = String.fromCharCode.apply(null, new Uint8Array(response.data))
+              console.log("s=", s)
               eval("x = " + s)
               if ("error" in x) {
                 // API returned error instead of actual blob
@@ -265,7 +270,7 @@ const store = new Vuex.Store({
             document.body.appendChild(link);
             // Dispatch click event on the link (this is necessary
             // as link.click() does not work in the latest Firefox
-            link.dispatchEvent(
+            let result = link.dispatchEvent(
               new MouseEvent("click", {
                 bubbles: true,
                 cancelable: true,
@@ -324,9 +329,13 @@ function findNumbering(state, asi) {
     num.push(i)
     if (n > 1 && i < n-1 && i == asi) num.push(-1)
   }
-  console.log("numbering=", num)
   state.system_numbering = num
   if (asi==0) state.activeTabIndex = 0;
+}
+
+function eventListener(e) {
+  e.preventDefault()
+  e.returnValue = ''
 }
 
 export default store

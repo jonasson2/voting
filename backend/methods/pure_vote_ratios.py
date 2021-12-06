@@ -3,9 +3,13 @@ from copy import deepcopy
 from apportion import apportion1d
 import random
 
-def pure_vote_ratios_apportionment(m_votes, v_desired_row_sums, v_desired_col_sums,
-                            m_prior_allocations, divisor_gen, threshold=None,
-                            orig_votes=None, **kwargs):
+def pure_vote_ratios_apportionment(m_votes,
+                                   v_desired_row_sums,
+                                   v_desired_col_sums,
+                                   m_prior_allocations,
+                                   divisor_gen,
+                                   orig_votes,
+                                   **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 
     num_allocated = sum([sum(c) for c in m_allocations])

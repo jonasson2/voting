@@ -119,8 +119,8 @@ td {
 .firstcol {
   text-align:left;
   position: sticky;
+  background: white;
   left: 0;
-  background: #fff;
 }
 
 th:not(.firstcol),td:not(.firstcol) {

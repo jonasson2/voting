@@ -79,7 +79,7 @@
       >
       </QualityMeasures>
     <h4>Constituency seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'const-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -88,9 +88,9 @@
       :stddev="system.list_measures.const_seats.std"
       :title="system.name"
       :round="2">
-    </ResultMatrix>
+    </SimResultMatrix>
     <h4>Adjustment seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'adj-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -99,9 +99,9 @@
       :stddev="system.list_measures.adj_seats.std"
       :title="system.name"
       :round="2">
-    </ResultMatrix>
+    </SimResultMatrix>
     <h4>Total seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'total-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -111,13 +111,13 @@
       :title="system.name"
       :round="2"
       >
-    </ResultMatrix>
+    </SimResultMatrix>
   </div>
 </div>
 </template>
 
 <script>
-import ResultMatrix from './components/ResultMatrix.vue'
+import SimResultMatrix from './components/SimResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './QualityMeasures.vue'
@@ -147,7 +147,7 @@ export default {
     }
   },
   components: {
-    ResultMatrix,
+    SimResultMatrix,
     SimulationSettings,
     QualityMeasures,
     // SimulationData,
@@ -202,10 +202,11 @@ export default {
           this.serverError(response.body.error)          
         } else {
           console.log("simulation started")
-          this.sid = response.body.sid;
-          this.simulation_done = !response.body.started;
+          this.sid = response.body.sid
+          this.simulation_done = !response.body.started
           // 250 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.check_simulation, 250);
+          this.checktimer = window.setInterval(this.check_simulation, 250)
+          this.addBeforeunload()
         }
       }, response => {
         console.log("ERROR-2")
@@ -222,9 +223,6 @@ export default {
       });
       this.downloadFile(promise)
     }
-  },
-  mounted: function() {
-    console.log("Mounted Simulate")
   },
   watch: {
     sim_settings: {

@@ -108,8 +108,8 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Upload both votes table and electoral systems 
-               from local JSON file."
+        title="Upload vote table, all electoral systems, and simulation
+               settings from local JSON file."
         v-b-modal.modaluploadall
         >
         Load all
@@ -119,8 +119,8 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download both vote table and electoral systems
-               to local JSON file."
+        title="Download vote table, all electoral systems and simulation 
+               settings to local JSON file."
         @click="saveAll()"
         >
         Save all

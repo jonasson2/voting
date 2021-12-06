@@ -2,9 +2,12 @@
 from copy import deepcopy, copy
 from apportion import apportion1d, threshold_elimination_constituencies
 
-def nearest_neighbor(m_votes, v_desired_row_sums, v_desired_col_sums,
-                        m_prior_allocations, divisor_gen, threshold=None,
-                        **kwargs):
+def nearest_neighbor(m_votes,
+                     v_desired_row_sums,
+                     v_desired_col_sums,
+                     m_prior_allocations,
+                     divisor_gen,
+                     **kwargs):
 
     assert("last" in kwargs)
     last = kwargs["last"]
@@ -46,10 +49,9 @@ def nearest_neighbor(m_votes, v_desired_row_sums, v_desired_col_sums,
             next_used.append(div[2])
 
             # Calculate neighbor ratio:
-            if False: # len(last[c]) == 0:
+            if last[c] == 0:
                 nr = eps/next_used[c]
-                reason.append(eps)
-                reason.append("Order of max list vote, as there is no"
+                reason.append("Order of max list vote, as there is no "
                               "previous allocation")
             elif next_used[c] > 0:
                 reason.append("Min ratio of last to next quotient of list vote")
@@ -64,7 +66,6 @@ def nearest_neighbor(m_votes, v_desired_row_sums, v_desired_col_sums,
         least = min(neighbor_ratio)
         idx = neighbor_ratio.index(least)
         m_allocations[idx][first_in[idx]] += 1
-        last[idx] = next_used[idx]
         allocation_sequence.append({
             "constituency": idx, "party": first_in[idx],
             "reason": reason[idx],

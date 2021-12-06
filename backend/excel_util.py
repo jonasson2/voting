@@ -1,6 +1,7 @@
 
 import xlsxwriter
 from datetime import datetime
+from util import disp
 
 from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
@@ -122,7 +123,7 @@ def elections_to_xlsx(elections, filename):
         parties = system["parties"] + ["Total"]
         xtd_votes = add_totals(election.m_votes)
         xtd_shares = find_xtd_shares(xtd_votes)
-        xtd_const_seats = add_totals(election.m_const_seats_alloc)
+        xtd_const_seats = add_totals(election.m_const_seats)
         xtd_total_seats = add_totals(election.results)
         xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
         xtd_seat_shares = find_xtd_shares(xtd_total_seats)
@@ -423,7 +424,7 @@ def simulation_to_xlsx(simulation, filename):
             const["name"] for const in simulation.systems[r]["constituencies"]
         ] + ["Total"]
         parties = simulation.systems[r]["parties"] + ["Total"]
-        
+        disp('sld', simulation.list_data)
         data_matrix = {
             "base": {
                 "v" : simulation.xtd_votes,

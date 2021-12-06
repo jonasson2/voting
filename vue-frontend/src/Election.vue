@@ -24,13 +24,12 @@
       <template v-else>
         <b-container fluid v-if="results[activeTabIndex] !== undefined">
           <b-row>
-            <h4>Seat allocation, constituency and adjustment seats combined</h4>
+            <h4>Seat allocation</h4>
             <ResultMatrix
               :constituencies="systems[activeTabIndex].constituencies"
               :parties="vote_table.parties"
-              :values="results[activeTabIndex].seat_allocations"
+              :values="results[activeTabIndex].display_results"
               :voteless="results[activeTabIndex].voteless_seats"
-              :stddev="false"
               >
             </ResultMatrix>
           </b-row>

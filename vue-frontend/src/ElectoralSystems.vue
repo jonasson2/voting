@@ -264,7 +264,7 @@ export default {
   watch: {
     systems: {
       handler(val) {
-        if (this.created) this.addBeforeunload()
+        if (this.created && !this.adding_system && !this.waiting_for_data) this.addBeforeunload()
       },
       deep: true
     }

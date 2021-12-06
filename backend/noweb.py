@@ -95,7 +95,8 @@ def start_simulation(votes, systems, sim_settings):
     global SIMULATION_IDX
     SIMULATION_IDX += 1
     h = sha256()
-    sidbytes = (str(SIMULATION_IDX) + ":" + str(random.randint(1, 100000000))).encode('utf-8')
+    sidbytes = (str(SIMULATION_IDX) + ":"
+                + str(random.randint(1, 100000000))).encode('utf-8')
     h.update(sidbytes)
     sid = h.hexdigest()
     simulation = simulate.Simulation(sim_settings, systems, votes)
@@ -144,7 +145,8 @@ def get_new_download_id():
     global DOWNLOADS_IDX
     did = DOWNLOADS_IDX = DOWNLOADS_IDX + 1
     h = sha256()
-    didbytes = (str(did) + ":" + str(random.randint(1, 100000000))).encode('utf-8')
+    didbytes = (str(did) + ":"
+                + str(random.randint(1, 100000000))).encode('utf-8')
     h.update(didbytes)
     return h.hexdigest()
 

@@ -2,9 +2,14 @@
 from copy import deepcopy
 from apportion import apportion1d, threshold_elimination_constituencies
 
-def norwegian_apportionment(m_votes, v_desired_row_sums, v_desired_col_sums,
-                            m_prior_allocations, divisor_gen, v_const_seats,
-                            threshold=None, orig_votes=None, **kwargs):
+def norwegian_apportionment(m_votes,
+                            v_desired_row_sums,
+                            v_desired_col_sums,
+                            m_prior_allocations,
+                            divisor_gen,
+                            v_const_seats,
+                            orig_votes,
+                            **kwargs):
     """Apportion based on Norwegian law."""
 
     m_allocations = deepcopy(m_prior_allocations)

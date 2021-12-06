@@ -97,8 +97,11 @@ def api_election():
         systems = data["systems"]
         if len(systems) == 0 or len(systems[0]) == 0:
             raise Exception("/api/election posted with no electoral system")
+        constituencies = update_constituencies(vote_table, systems)
+        for (c,s) in zip(constituencies, systems):
+            s["constituencies"] = c
         results = single_election(vote_table, systems);
-        return jsonify({"results": results})
+        return jsonify({"results": results, "systems": systems})
     except Exception:
         message = format_exc()
         print("ERROR: ", message)
@@ -108,7 +111,7 @@ def api_election():
 def api_election_save():
     try:
         data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems", "constituencies"])
+        data = check_input(data, ["vote_table", "systems"])
         systems = data["systems"]
         vote_table = data["vote_table"]
         handler = ElectionHandler(vote_table, systems)
@@ -215,6 +218,7 @@ def api_votes_save_all():
         "systems": data["systems"],
         "sim_settings": data["sim_settings"]
     }
+    disp("contents", contents)
     tmpfilename = tempfile.mktemp(prefix='simulator-')
     with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
         json.dump(contents, jsonfile, ensure_ascii=False, indent=2)

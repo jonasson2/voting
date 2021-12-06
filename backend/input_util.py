@@ -86,6 +86,8 @@ def check_systems(electoral_systems):
     """
     if not electoral_systems:
         raise ValueError("Must have at least one electoral system.")
+    electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
+    # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
         # option = electoral_system["seat_spec_option"]
         # assert option in SEAT_SPECIFICATION_OPTIONS.keys(), (

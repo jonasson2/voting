@@ -6,7 +6,7 @@ from methods.var_alt_scal import var_alt_scal
 from methods.alternating_scaling import alternating_scaling
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
-from methods.monge import monge
+# from methods.monge import monge
 from methods.nearest_neighbor import nearest_neighbor
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
@@ -59,7 +59,7 @@ ADJUSTMENT_METHODS = {
     "6-relative-superiority": relative_superiority,
     "7-relative-sup-simple": relative_superiority_simple,
     "8-nearest-neighbor": nearest_neighbor,
-    "9-monge": monge,
+    # "9-monge": monge,
     # "opt-entropy": opt_entropy,
     "A-switching": switching,
     "B-alternating-scaling": alternating_scaling,
@@ -73,7 +73,7 @@ ADJUSTMENT_METHOD_NAMES = {
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
     "8-nearest-neighbor":     "Nearest neighbor",
-    "9-monge":                "Monge",
+    # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",
 }

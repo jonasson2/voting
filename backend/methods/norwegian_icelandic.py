@@ -2,9 +2,13 @@
 from copy import deepcopy
 from apportion import apportion1d, threshold_elimination_constituencies
 
-def norw_ice_apportionment(m_votes, v_desired_row_sums, v_desired_col_sums,
-                            m_prior_allocations, divisor_gen, threshold=None,
-                            orig_votes=None, **kwargs):
+def norw_ice_apportionment(m_votes,
+                           v_desired_row_sums,
+                           v_desired_col_sums,
+                           m_prior_allocations,
+                           divisor_gen,
+                           orig_votes,
+                           **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
     v_allocations = [sum(x) for x in zip(*m_allocations)]
 
