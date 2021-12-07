@@ -44,7 +44,7 @@ def alt_scaling(v, r, c, prior_alloc):
             v[:,j] = v[:,j]/sigma
         if np.array_equal(x, y):
             break
-    print('iter =', iter)
+    # print('iter =', iter)
     return x + xp
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
