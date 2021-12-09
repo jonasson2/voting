@@ -29,6 +29,7 @@ const store = new Vuex.Store({
     system_numbering: [],
     activeTabIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
+    sim_capabilities: {},
     results: [],
     server_error: "",
     show_simulate: false,
@@ -72,7 +73,10 @@ const store = new Vuex.Store({
     
     updateSystems(state, systems) {state.systems = systems},
 
-    updateSimSettings(state, sim_settings) { state.sim_settings = sim_settings },
+    updateSimSettings(state, sim_settings) {
+      state.sim_settings = sim_settings
+      console.log("Updating sim_settings, new settings = ", sim_settings)
+    },
 
     setWaitingForData(state) { state.waiting_for_data = true },
     
@@ -92,6 +96,8 @@ const store = new Vuex.Store({
       state.results = []
       state.show_systems = false
       state.show_simulate = true
+      console.log("showSimulate")
+      console.log("sim_settings=", state.sim_settings)
     },
     
     showVoteMatrix(state) {
@@ -110,6 +116,15 @@ const store = new Vuex.Store({
 
     initialize(state) {
       console.log("initialize")
+      Vue.http.post('/api/capabilities', {}).then(response => {
+        state.sim_capabilities = response.body.capabilities;
+        state.sim_settings = response.body.sim_settings
+        //state.commit("updateSimSettings", response.body.sim_settings)
+        //his.$nextTick(()=>this.setSimulateCreated())
+        console.log("Created SimulationSettings")
+      }, response => {
+        this.serverError = true;
+      });
     },
 
     addBeforeunload(state) {
@@ -131,6 +146,7 @@ const store = new Vuex.Store({
   actions : {
     
     showElectoralSystems(context) {
+      console.log("showElectoralSystems")
       context.state.results = []
       context.state.show_systems = true
       context.state.show_simulate = false
@@ -231,6 +247,8 @@ const store = new Vuex.Store({
               (c,i) => context.state.systems[i].constituencies = c
             )
           }
+          console.log("recalc_sys_const")
+          console.log("sim_settings=", context.state.sim_settings)
           context.commit("clearWaitingForData")
         })
     },

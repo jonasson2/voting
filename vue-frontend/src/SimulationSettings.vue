@@ -26,7 +26,7 @@
           >
           <b-form-select
             v-model="sim_settings.gen_method"
-            :options="capabilities.generating_methods"
+            :options="sim_capabilities.generating_methods"
             />
         </b-form-group>
         <b-form-group
@@ -130,6 +130,7 @@ export default {
   computed: {
     ...mapState([
       'sim_settings',
+      'sim_capabilities',
       'systems',
     ]),
     system_names: function() {
@@ -149,12 +150,13 @@ export default {
     return {
       created: false,
       comparison_systems: [],
-      capabilities: {},
       selected: '',
     }
   },
   methods: {
-    ...mapMutations(["setSimulateCreated"])
+    // The following function should maybe be moved to startsimulation
+    // to force listening to beforeunload if simulation has been run
+    //...mapMutations(["setSimulateCreated"])
   },
   watch: {
     comparison_systems: {
@@ -171,15 +173,7 @@ export default {
   created: function() {
     this.comparison_systems = this.systems.flatMap(
       sys => sys.compare_with ? [sys.name] : [])
-    this.$http.post('/api/capabilities', {}).then(response => {
-      this.capabilities = response.body.capabilities;
-      this.$store.commit("updateSimSettings", response.body.sim_settings)
-      this.$nextTick(()=>this.setSimulateCreated())
-      console.log("Created SimulationSettings")
-      this.created = true
-    }, response => {
-      this.serverError = true;
-    });
+    this.created = true
   },
 }
 </script>
