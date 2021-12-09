@@ -2,50 +2,18 @@ from copy import copy, deepcopy
 from table_util import find_shares_1d
 
 import numpy as np
-def apportion(v, xp, total_seats):
-    n = len(v)
-    x = np.zeros(n)
-    div = xp + np.ones(n)
+from util import dispv
+
+def apportion(v, xp, total_seats, inverse_divisors):
+    x = xp.copy()
     if total_seats == 0:
-        return x, 1
+        return x, 0
     for i in range(total_seats):
-        vdiv = v/div
+        vdiv = v*inverse_divisors[x]
         k = vdiv.argmax()
         x[k] += 1
-        div[k] += 1
-    vdivnext = max(v/div)
-    return x, (vdiv[k] + vdivnext)/2
-
-def flaw_count(x, r, c):
-    import numpy.linalg as la
-    fr = la.norm(np.sum(x,1) - r, 1)
-    fc = la.norm(np.sum(x,0) - c, 1)
-    return fr + fc
-
-def alt_scaling(v, r, c, prior_alloc):
-    import numpy as np
-    v = np.array(v, float)
-    xp = np.array(prior_alloc)
-    r = np.array(r) - np.sum(xp, 1)
-    c = np.array(c) - np.sum(xp, 0)
-    (nrows, ncols) = np.shape(v)
-    x = np.zeros((nrows, ncols))
-    y = np.zeros((nrows, ncols))
-    next_break = False
-    equal_count = 0
-    for iter in range(1,50):
-        for i in range(nrows):
-            (x[i,:], rho) = apportion(v[i,:], xp[i,:], r[i])
-            v[i,:] = v[i,:]/rho
-        if iter > 1 and np.array_equal(x, y):
-            break
-        for j in range(ncols):
-            (y[:,j], sigma) = apportion(v[:,j], xp[:,j], c[j])
-            v[:,j] = v[:,j]/sigma
-        if np.array_equal(x, y):
-            break
-    print('iter =', iter)
-    return x + xp
+    vdivnext = max(v*inverse_divisors[x])
+    return x, 2/(vdiv[k] + vdivnext)
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
                 threshold=0, v_max_left=[]):

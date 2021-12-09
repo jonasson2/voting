@@ -2,6 +2,9 @@ from table_util import add_totals, find_xtd_shares
 from random import randint, uniform
 import dictionaries
 
+def shake(vote):
+    return vote + uniform(-0.01, 0.01)
+
 def generate_votes (
     base_votes,   # 2d - votes for each list
     var_coeff,    # coefficient of variation, SD/mean
@@ -14,8 +17,8 @@ def generate_votes (
     """
     rand = dictionaries.GENERATING_METHODS[distribution]
     
-    xtd_votes = add_totals(base_votes)
-    xtd_shares = find_xtd_shares(xtd_votes)
+    # xtd_votes = add_totals(base_votes)
+    # xtd_shares = find_xtd_shares(xtd_votes)
 
     generated_votes = []
     num_constit = len(base_votes)
@@ -23,13 +26,17 @@ def generate_votes (
     for c in range(num_constit):
         generated_votes.append([])
         for p in range(num_parties):
-            mean = xtd_shares[c][p]
-            assert 0 <= mean and mean <= 1
-            if mean == 0 or mean == 1 or c == apply_random:
-                share = mean
+            # mean = xtd_shares[c][p]
+            mean = base_votes[c][p]
+            # assert 0 <= mean and mean <= 1
+            if mean == 0 or c == apply_random:
+                vote = mean
             else:
-                share = rand(mean, var_coeff)
-            generated_votes[c].append(max(1,round(share*xtd_votes[c][-1])))
+                vote = rand(mean, var_coeff)
+            if vote >= 1:
+                vote = round(vote)
+            vote = shake(vote)
+            generated_votes[c].append(vote)
 
     return generated_votes
 

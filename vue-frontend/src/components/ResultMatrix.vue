@@ -34,7 +34,7 @@
       </tr>
     </table>
     <p style="margin:5px 0px 0px; font-size:90%">
-      The table shows total seats including adjustments seats which are shown in brackets.
+      The table shows total seats including adjustments seats (in brackets).
     </p>
     <br>
     <b-alert :show="some_red" >

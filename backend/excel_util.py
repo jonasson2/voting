@@ -424,7 +424,6 @@ def simulation_to_xlsx(simulation, filename):
             const["name"] for const in simulation.systems[r]["constituencies"]
         ] + ["Total"]
         parties = simulation.systems[r]["parties"] + ["Total"]
-        disp('sld', simulation.list_data)
         data_matrix = {
             "base": {
                 "v" : simulation.xtd_votes,
@@ -496,6 +495,8 @@ def simulation_to_xlsx(simulation, filename):
         col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
         # row_constraints = simulation.sim_settings["row_constraints"] and simulation.num_parties > 1
         # col_constraints = simulation.sim_settings["col_constraints"] and simulation.num_constituencies > 1
+        generating_method = next((v['text'] for v in GMN
+                                  if v['value'] == 'beta'), None)
         info_groups = [
             {"left_span": 1, "right_span": 2, "info": [
                 {"label": date_label,
@@ -523,7 +524,7 @@ def simulation_to_xlsx(simulation, filename):
                 {"label": "Number of simulations run:",
                     "data": simulation.iteration},
                 {"label": "Generating method:",
-                    "data": GMN[simulation.variate]},
+                    "data": generating_method},
                 {"label": "Coefficient of variation:",
                     "data": simulation.var_coeff},
                 {"label": "Reference seat shares scaled by constituencies:",

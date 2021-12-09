@@ -13,12 +13,7 @@ from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
 from util import hms, shape
 from copy import deepcopy
-
-def disp(title, value, depth=99):
-    from pprint import PrettyPrinter
-    pp = PrettyPrinter(compact=False, width=100, depth=depth).pprint
-    print("\n" + title.upper() + ":")
-    pp(value)
+from util import disp, dispv
 
 # logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -50,8 +45,8 @@ class SimulationSettings(System):
             "col_constraints": {True, False},
         }
         self["simulate"] = False
-        self["simulation_count"] = 100
-        self["gen_method"] = "beta"
+        self["simulation_count"] = 200
+        self["gen_method"] = "gamma"
         self["distribution_parameter"] = 0.25
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
@@ -62,17 +57,17 @@ class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
         random.seed(42)
+        min_votes = 0.5
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
-        self.election_handler = ElectionHandler(vote_table, systems, min_votes=0.5)
+        self.election_handler = ElectionHandler(vote_table, systems, min_votes)
         elections = self.election_handler.elections
         self.systems = [election.system for election in elections]
         self.nsys = len(self.systems)
         for (election, system) in zip(elections, self.systems):
             system.reference_results = deepcopy(election.results)
         self.parties = vote_table["parties"]
-        self.base_votes = vote_table["votes"]
-        self.xtd_votes = add_totals(self.base_votes)
+        self.xtd_votes = add_totals(self.election_handler.votes)
         self.xtd_vote_shares = find_xtd_shares(self.xtd_votes)
         self.sim_settings = sim_settings
         self.sim_count = self.sim_settings["simulation_count"]
@@ -196,11 +191,12 @@ class Simulation:
         while True:
             if self.variate == "maxchange":
                 votes = generate_maxchange_votes(
-                    self.base_votes, self.var_coeff, self.apply_random)
+                    self.election_handler.votes, self.var_coeff,
+                    self.apply_random)
             else:
                 votes = generate_votes(
-                    self.base_votes, self.var_coeff, self.variate,
-                    self.apply_random)
+                    self.election_handler.votes, self.var_coeff,
+                    self.variate, self.apply_random)
             yield votes
 
     def collect_votes(self, votes):
@@ -229,7 +225,8 @@ class Simulation:
 
     def run_and_collect_measures(self, votes):
         # allocate seats according to votes:
-        self.election_handler.run_elections(votes)
+        #print("it", self.iteration)
+        self.election_handler.run_elections(votes) # A
         self.collect_votes(votes)
         self.collect_list_measures()
         self.collect_general_measures()
@@ -361,7 +358,7 @@ class Simulation:
         gen = self.gen_votes()
         ntot = self.sim_count
         if ntot == 0:
-            self.run_and_collect_measures(self.base_votes)
+            self.run_and_collect_measures(self.election_handler.votes)
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
         for i in range(ntot):

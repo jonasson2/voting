@@ -36,7 +36,8 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="This is the standard deviation of simulated votes
-                 divided by their mean. Valid range 0–0.75 (beta), 0–0.577 (uniform)."
+                 divided by their mean. Valid range 0–0.75 (beta), 
+                 0–1 (gamma), 0–0.577 (uniform)."
           >
           <b-input-group>
             <b-form-input

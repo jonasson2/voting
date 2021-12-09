@@ -5,7 +5,6 @@ This module contains the core voting system logic.
 from tabulate import tabulate
 
 from table_util import entropy, add_totals
-from solution_util import solution_exists
 from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
 from electionSystem import ElectionSystem
@@ -17,19 +16,20 @@ from copy import deepcopy
 def dispSeats(totSeats, adjSeats):
     if adjSeats > 0:
         return f"{totSeats} ({adjSeats})"
-    else:
+    elif totSeats > 0:
         return f"{totSeats}"
+    else:
+        return ""
 
 class Election:
     """A single election."""
-    def __init__(self, system, votes, name=''):
+    def __init__(self, system, votes, min_votes=0):
         cons = system["constituencies"]
         one_const = len(cons) == 1 and cons[0]["name"] == "All"
         self.num_constituencies = len(system["constituencies"])
         self.num_parties = len(system["parties"])
         self.system = system
-        self.name = name
-        self.set_votes(votes)
+        self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
 
     def entropy(self):
@@ -38,7 +38,7 @@ class Election:
     def set_reference_results(self):
         self.reference_results = self.results
 
-    def set_votes(self, votes):
+    def set_votes(self, votes, min_votes=0):
         # m_votes: Matrix of votes (numconst by numpart)
         # v_votes: Vector of votes (numpart, colsums of m_votes)
         if self.num_constituencies == 1:

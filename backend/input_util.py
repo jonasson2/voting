@@ -10,7 +10,7 @@ def check_input(data, sections):
             raise KeyError(f"Missing data ('{section}')")
     return data
 
-def check_vote_table(vote_table, min_votes = 0):
+def check_vote_table(vote_table):
     """Checks vote_table input, and translates empty cells to zeroes
 
     Raises:
@@ -22,9 +22,6 @@ def check_vote_table(vote_table, min_votes = 0):
         TypeError: If vote or seat counts are not given as numbers
     """
     table = deepcopy(vote_table)
-    for row in table["votes"]:
-        for i in range(len(row)):
-            row[i] = max(min_votes, row[i])
     for info in [
         "name",
         "votes",
@@ -45,8 +42,8 @@ def check_vote_table(vote_table, min_votes = 0):
         for p in range(len(row)):
             if not row[p]: row[p] = 0
             notok = row[p] >= 1 and type(row[p]) != int
-            if row[p] >= 1 and type(row[p]) != int:
-                raise TypeError("Votes must be whole numbers.")
+            # if row[p] >= 1 and type(row[p]) != int:
+            #     raise TypeError("Votes must be whole numbers.")
             if row[p]<0:
                 raise ValueError("Votes may not be negative.")
         if sum(row)==0:
@@ -146,8 +143,11 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] == "uniform":
         if variance_coefficient >= 1/sqrt(3):
             raise ValueError("Coefficient of variation must be less than 0.57735")
+    elif sim_settings["gen_method"] == "gamma":
+        if variance_coefficient >= 1:
+            raise ValueError("Coefficient of variation must be less than 1")
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    if sim_count > 500 and digoce:
-        raise ValueError("Maximum iterations in the online version is 500 (see Help)")
+    if sim_count > 2000 and digoce:
+        raise ValueError("Maximum iterations in the online version is 2000 (see Help)")
     return sim_settings

@@ -42,6 +42,7 @@ def load_systems(f):
         electoral_system_list = file_content
         sim_settings = None
     assert type(electoral_system_list) == list
+    #disp("esl", electoral_system_list)
 
     keys = ["name", "seat_spec_option", "constituencies",
             "constituency_threshold", "constituency_allocation_rule",
@@ -80,7 +81,7 @@ def run_thread_simulation(sid):
 
 def run_simulation(votes, systems, sim_settings, excelfile = None):
     # not threaded
-    sim_settings = simulate.SimulationSettings()
+    # sim_settings = simulate.SimulationSettings()
     sim_settings.update(check_simul_settings(sim_settings))
     sim = simulate.Simulation(sim_settings, systems, votes)
     sim.simulate()

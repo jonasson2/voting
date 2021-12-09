@@ -218,7 +218,6 @@ def api_votes_save_all():
         "systems": data["systems"],
         "sim_settings": data["sim_settings"]
     }
-    disp("contents", contents)
     tmpfilename = tempfile.mktemp(prefix='simulator-')
     with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
         json.dump(contents, jsonfile, ensure_ascii=False, indent=2)

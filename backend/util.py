@@ -390,12 +390,27 @@ def print_simulation(simulation):
         #print("\nVotes added to change results")
         #print_table(simulation.votes_to_change, h[:-1], const_names[:-1], out)
 
-def disp(title, value):
+def disp(title, value=[]):
+    if not value:
+        value = title
+        title=''
     from pprint import PrettyPrinter
     pp = PrettyPrinter(compact=False, width=80).pprint
-    print("\n" + title.upper() + ":")
+    if title:
+        print("\n" + title.upper() + ":")
     pp(value)
 
+def dispv(title, value=None, ndec=3):
+    import numpy as np
+    if value is None:
+        value = title
+        title=''
+    if title:
+        print("\n" + title.upper() + ":")
+    np.set_printoptions(suppress=True, precision=ndec, floatmode="fixed",
+                        linewidth=120)
+    print(np.array(value))
+    
 def short_traceback(trace):
     from pathlib import Path
     def traceline(line):
