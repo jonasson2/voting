@@ -5,7 +5,6 @@ import BootstrapVue from 'bootstrap-vue'
 Vue.use(VueRouter);
 Vue.use(VueResource);
 Vue.use(BootstrapVue);
-
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
@@ -20,6 +19,7 @@ const routes = [
 ]
 
 var router = new VueRouter({ routes })
+
 var app = new Vue({
   el: "#app",
   router,
@@ -27,5 +27,5 @@ var app = new Vue({
   template: '<App/>',
   components: {Main},
   path: '/',
-  render: h => h(Main)
+  render: h => h(Main),
 })

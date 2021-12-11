@@ -1,13 +1,13 @@
 import json
 
-class Systems(dict):
+class System(dict):
     """A set of rules for an election or a simulation to follow."""
 
     def __init__(self):
         self.value_rules = {}
         self.range_rules = {}
         self.list_rules = []
-        super(Systems, self).__init__()
+        super(System, self).__init__()
 
     def __setitem__(self, key, value):
         if key in self.value_rules and value not in self.value_rules[key]:
@@ -22,5 +22,5 @@ class Systems(dict):
             raise ValueError("Cannot set %s to '%s'. Must be a list." %
                              (key, value))
 
-        super(Systems, self).__setitem__(key, value)
+        super(System, self).__setitem__(key, value)
 

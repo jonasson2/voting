@@ -79,7 +79,7 @@
       >
       </QualityMeasures>
     <h4>Constituency seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'const-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -88,9 +88,9 @@
       :stddev="system.list_measures.const_seats.std"
       :title="system.name"
       :round="2">
-    </ResultMatrix>
+    </SimResultMatrix>
     <h4>Adjustment seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'adj-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -99,9 +99,9 @@
       :stddev="system.list_measures.adj_seats.std"
       :title="system.name"
       :round="2">
-    </ResultMatrix>
+    </SimResultMatrix>
     <h4>Total seats</h4>
-    <ResultMatrix
+    <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'total-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
@@ -111,26 +111,26 @@
       :title="system.name"
       :round="2"
       >
-    </ResultMatrix>
+    </SimResultMatrix>
   </div>
 </div>
 </template>
 
 <script>
-import ResultMatrix from './components/ResultMatrix.vue'
+import SimResultMatrix from './components/SimResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './QualityMeasures.vue'
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {
   computed: {
     ...mapState([
       'vote_table',
       'systems',
-      'sys_constituencies',
       'sim_settings',
-      'show_simulate'
+      'show_simulate',
+      'simulateCreated'
     ]),
   },
   created: function() {
@@ -147,14 +147,18 @@ export default {
     }
   },
   components: {
-    ResultMatrix,
+    SimResultMatrix,
     SimulationSettings,
-    QualityMeasures
+    QualityMeasures,
     // SimulationData,
   },
   methods: {
     ...mapMutations([
-      "serverError"
+      "serverError",
+      "addBeforeunload"
+    ]),
+    ...mapActions([
+      "downloadFile"
     ]),
     check_simulation: function() {
       this.checkstatus(false)
@@ -192,17 +196,20 @@ export default {
         vote_table:     this.vote_table,
         systems:        this.systems,
         sim_settings:   this.sim_settings,
-        constituencies: this.sys_constituencies
       }).then(response => {
         if (response.body.error) {
+          console.log("ERROR-1")
           this.serverError(response.body.error)          
         } else {
-          this.sid = response.body.sid;
-          this.simulation_done = !response.body.started;
+          console.log("simulation started")
+          this.sid = response.body.sid
+          this.simulation_done = !response.body.started
           // 250 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.check_simulation, 250);
+          this.checktimer = window.setInterval(this.check_simulation, 250)
+          this.addBeforeunload()
         }
       }, response => {
+        console.log("ERROR-2")
         this.serverError(response.body)          
       });
     },
@@ -214,8 +221,16 @@ export default {
         data: { sid: this.sid },
         responseType: "arraybuffer",
       });
-      this.$emit("download-file", promise);
+      this.downloadFile(promise)
     }
   },
+  watch: {
+    sim_settings: {
+      handler() {
+        if (this.simulateCreated) this.addBeforeunload()
+      },
+      deep: true
+    }
+  },  
 }
 </script>

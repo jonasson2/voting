@@ -1,7 +1,8 @@
 import os
 from distutils.util import strtobool
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
-
+from copy import deepcopy
+from util import disp
 def check_input(data, sections):
     for section in sections:
         if section not in data or not data[section]:
@@ -20,30 +21,35 @@ def check_vote_table(vote_table):
             or constituency names are not unique
         TypeError: If vote or seat counts are not given as numbers
     """
+    table = deepcopy(vote_table)
     for info in [
         "name",
         "votes",
         "parties",
         "constituencies",
     ]:
-        if info not in vote_table or not vote_table[info]:
+        if info not in table or not table[info]:
             raise KeyError(f"Missing data ('vote_table.{info}')")
 
-    num_parties = len(vote_table["parties"])
-    num_constituencies = len(vote_table["constituencies"])
+    num_parties = len(table["parties"])
+    num_constituencies = len(table["constituencies"])
 
-    if not len(vote_table["votes"]) == num_constituencies:
+    if not len(table["votes"]) == num_constituencies:
         raise ValueError("The vote table does not match the constituency list.")
-    for row in vote_table["votes"]:
+    for row in table["votes"]:
         if not len(row) == num_parties:
             raise ValueError("The vote table does not match the party list.")
         for p in range(len(row)):
             if not row[p]: row[p] = 0
-            if type(row[p]) != int: raise TypeError("Votes must be numbers.")
-            if row[p]<0: raise ValueError("Votes may not be negative.")
-        if sum(row)==0: raise ValueError("Every constituency needs some votes.")
+            notok = row[p] >= 1 and type(row[p]) != int
+            # if row[p] >= 1 and type(row[p]) != int:
+            #     raise TypeError("Votes must be whole numbers.")
+            if row[p]<0:
+                raise ValueError("Votes may not be negative.")
+        if sum(row)==0:
+            raise ValueError("Every constituency needs some votes.")
 
-    for const in vote_table["constituencies"]:
+    for const in table["constituencies"]:
         if "name" not in const: # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
         name = const["name"]
@@ -59,13 +65,13 @@ def check_vote_table(vote_table):
                              f"This is not the case for {name}.")
 
     seen = set()
-    for const in vote_table["constituencies"]:
+    for const in table["constituencies"]:
         if False: #const["name"] in seen:
             raise ValueError("Constituency names must be unique. "
                              f"{const['name']} is not.")
         seen.add(const["name"])
 
-    return vote_table
+    return table
 
 def check_systems(electoral_systems):
     """Checks election systems constituency input, and translates empty cells to 0
@@ -77,6 +83,8 @@ def check_systems(electoral_systems):
     """
     if not electoral_systems:
         raise ValueError("Must have at least one electoral system.")
+    electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
+    # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
         # option = electoral_system["seat_spec_option"]
         # assert option in SEAT_SPECIFICATION_OPTIONS.keys(), (
@@ -135,8 +143,11 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] == "uniform":
         if variance_coefficient >= 1/sqrt(3):
             raise ValueError("Coefficient of variation must be less than 0.57735")
+    elif sim_settings["gen_method"] == "gamma":
+        if variance_coefficient >= 1:
+            raise ValueError("Coefficient of variation must be less than 1")
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    if sim_count > 500 and digoce:
-        raise ValueError("Maximum iterations in the online version is 500 (see Help)")
+    if sim_count > 2000 and digoce:
+        raise ValueError("Maximum iterations in the online version is 2000 (see Help)")
     return sim_settings

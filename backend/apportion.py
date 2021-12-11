@@ -1,5 +1,19 @@
-from copy import copy
+from copy import copy, deepcopy
 from table_util import find_shares_1d
+
+import numpy as np
+from util import dispv
+
+def apportion(v, xp, total_seats, inverse_divisors):
+    x = xp.copy()
+    if total_seats == 0:
+        return x, 0
+    for i in range(total_seats):
+        vdiv = v*inverse_divisors[x]
+        k = vdiv.argmax()
+        x[k] += 1
+    vdivnext = max(v*inverse_divisors[x])
+    return x, 2/(vdiv[k] + vdivnext)
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
                 threshold=0, v_max_left=[]):

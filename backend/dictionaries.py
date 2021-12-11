@@ -2,11 +2,10 @@ from division_rules import dhondt_gen, sainte_lague_gen, \
     nordic_sainte_lague_gen, imperiali_gen, danish_gen, huntington_hill_gen
 from division_rules import droop, hare
 
-from methods.var_alt_scal import var_alt_scal
-from methods.alternating_scaling import alternating_scaling
+from methods.alternating_scaling import alt_scaling
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
-from methods.monge import monge
+# from methods.monge import monge
 from methods.nearest_neighbor import nearest_neighbor
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
@@ -16,7 +15,8 @@ from methods.pure_vote_ratios import pure_vote_ratios_apportionment
 from methods.opt_entropy import opt_entropy
 from methods.switching import switching
 
-from distributions.beta_distribution import beta_distribution
+from distributions.symmetric_beta_distribution import symmetric_beta_distribution
+from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
 
 DIVIDER_RULES = {
@@ -50,7 +50,6 @@ RULE_NAMES = {
 }
 
 ADJUSTMENT_METHODS = {
-    # "var-alt-scal": var_alt_scal,
     "1-icelandic-law": icelandic_apportionment,
     "2-ice-shares": icelandic_share_apportionment,
     "3-norwegian-law": norwegian_apportionment,
@@ -59,10 +58,10 @@ ADJUSTMENT_METHODS = {
     "6-relative-superiority": relative_superiority,
     "7-relative-sup-simple": relative_superiority_simple,
     "8-nearest-neighbor": nearest_neighbor,
-    "9-monge": monge,
+    # "9-monge": monge,
     # "opt-entropy": opt_entropy,
     "A-switching": switching,
-    "B-alternating-scaling": alternating_scaling,
+    "B-alternating-scaling": alt_scaling,
 }
 ADJUSTMENT_METHOD_NAMES = {
     "1-icelandic-law":        "Icelandic law 24/2000",
@@ -73,25 +72,27 @@ ADJUSTMENT_METHOD_NAMES = {
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
     "8-nearest-neighbor":     "Nearest neighbor",
-    "9-monge":                "Monge",
+    # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",
 }
 
 GENERATING_METHODS = {
-    "beta": beta_distribution,
+    "beta": symmetric_beta_distribution,
+    "gamma": gamma_distribution,
     "uniform": uniform_distribution,
     "maxchange": None
 }
 
-GENERATING_METHOD_NAMES = {
-    "beta": "Beta distribution",
-    "uniform": "Uniform distribution",
-    "maxchange": "Maximum change method"
-}
+GENERATING_METHOD_NAMES = [
+    {"value": "gamma",     "text": "Gamma distribution"},
+    {"value": "beta",      "text": "Symmetric beta distribution"},
+    {"value": "uniform",   "text": "Uniform distribution"},
+    {"value": "maxchange", "text": "Maximum change method"}
+]
 
 SEAT_SPECIFICATION_OPTIONS = {
-    "refer":          'Use values from "Votes and seats" tab',
+    "refer":          'Use values from "Source votes and seats" tab',
     "custom":         "Specify seat numbers by changing individual values",
     "make_all_const": "Make all seats constituency seats",
     "make_all_adj":   "Make all seats adjustment seats",
@@ -160,3 +161,5 @@ AGGREGATES = {
     "skw": "Skewness",
     "kur": "Kurtosis",
 }
+
+STAT_LIST = AGGREGATES.keys()

@@ -227,14 +227,6 @@ def seats_still_available(C, P, c_goals, p_goals, allocations):
     p_left = p_unclaimed(P, p_goals, allocations)
     return min(c_left, p_left)
 
-
-
-
-
-
-
-
-
 def print_seats(rules, adj_seats_info):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party", "Criteria",

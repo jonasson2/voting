@@ -52,21 +52,16 @@ th {
   background: none;
 }
 
-.constname input, .tablename input {
+.constname input, .tablename input, .partyname input {
   border:         0;
   background: none;
 }
 
-.partyseats input {
+.numerical input {
   border:         0;
   text-align:     right;
-  background: none;
-}
-
-.partyvotes input, .partyname input {
-  border:         0;
-  text-align:     right;
-}
+  background:     none;
+}  
 
 td.displayleft, th.displayleft {
   text-align: left;
@@ -104,13 +99,20 @@ th.topleft {
   background-color: #fff;
 }
 
+.partyname, .constname, .numerical, .tablename {
+  border: 0px;
+}
 
+.red {
+  color: red;
+}
+
+.numerical input:hover, .numerical input:focus,
 .partyname input:hover, .partyname input:focus,
 .constname input:hover, .constname input:focus,
-.partyseats input:hover, .partyseats input:focus,
-.partyvotes input:hover, .partyvotes input:focus,
 .tablename input:hover, .tablename input:focus {
-  background:     #ddd;
+  border:         0px;
+  background:     #fff;
 }
 
 .growtable {
@@ -119,8 +121,6 @@ th.topleft {
 }
 
 /*********************************************************/
-
-.
 
 .resultmatrix tr:nth-child(even) {
     background-color: #f2f2f2;
@@ -132,10 +132,12 @@ th.topleft {
 }
 
 .resultmatrix td, .resultmatrix th {
-  border:         1px solid #ccc;
+  border:      1px solid #ccc;
+  white-space: nowrap
 }
 
 .resultmatrix {
+  table-layout:  auto
   margin-bottom: 1em;
 }
 
@@ -143,8 +145,14 @@ th.topleft {
   background-color: #f2f2f2;
 }
 
+.demomatrix td:nth-child(2),
+.demomatrix td:nth-child(4) {
+  text-align: left
+}
+
 .demomatrix th {
-  font-weight:    700;
+  white-space: wrap
+  font-weight: 700;
 }
 
 .demomatrix td, .demomatrix th {
@@ -153,11 +161,8 @@ th.topleft {
   padding:        6px;
 }
 
-.demomatrix td:nth-child(4) {
-  text-align: left;
-}
-
 .demomatrix {
+  table-layout: auto
   margin-bottom: 1em;
   padding:        6px;
 }

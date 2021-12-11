@@ -1,65 +1,45 @@
 <template>
   <b-container fluid>
-    <table class="resultmatrix" style="margin-bottom:0px; font-size:90%">
-      <tr v-if="title">
-        <th class="topleft"></th>
-        <th :colspan="stddev?2*parties.length:parties.length"
-            class="displaycenter">
-          {{title}}
-        </th>
-      </tr>
+    <table class="resultmatrix" style="margin-bottom:0px">
       <tr>
         <th class="topleft"></th>
-        <th v-for="(party, partyidx) in parties"
-            class="displaycenter"
-            :colspan="stddev?2:1"
-            >
+        <th v-for="(party, partyidx) in parties" class="displaycenter">
           {{parties[partyidx]}}
         </th>
         <th class="displaycenter">
           Total
         </th>
       </tr>
-      <tr v-if="stddev">
-        <th class="topleft"></th>
-        <template v-for="(party, partyidx) in parties">
-          <th style="text-align:center">Avg.</th>
-          <th style="text-align:center">SD</th>
-        </template>
-        <td></td>
-      </tr>
       <tr v-for="(constituency, conidx) in constituencies">
         <th class="displayleft">
           {{ constituency["name"] }}
         </th>
-        <template v-for="(party, partyidx) in parties">
-          <td class="displayright">
-            {{ values[conidx][partyidx].toFixed(round) }}
+        <template v-for="partyidx in parties.length + 1">
+          <td v-if="partyidx <= parties.length && voteless[conidx][partyidx-1]"
+              class="red displaycenter">
+            {{ values[conidx][partyidx - 1] }}
           </td>
-          <td v-if="stddev" class="displayright">
-            {{ stddev[conidx][partyidx].toFixed(round) }}
+          <td v-else class="displaycenter">
+            {{ values[conidx][partyidx - 1] }}
           </td>
         </template>
-        <td class="displayright">
-          {{ values[conidx][parties.length].toFixed(round) }}
-        </td>
       </tr>
       <tr>
         <th class="displayleft">Total</th>
-        <template v-for="(party, partyidx) in parties">
-          <td class="displayright">
-            {{ values[constituencies.length][partyidx].toFixed(round) }}
-          </td>
-          <td v-if="stddev" class="displayright">
-            {{ stddev[constituencies.length][partyidx].toFixed(round) }}
+        <template v-for="partyidx in parties.length + 1">
+          <td class="displaycenter">
+            {{ values[constituencies.length][partyidx - 1] }}
           </td>
         </template>
-        <td class="displayright">
-          {{ values[constituencies.length][parties.length].toFixed(round) }}
-        </td>
       </tr>
     </table>
+    <p style="margin:5px 0px 0px; font-size:90%">
+      The table shows total seats including adjustments seats (in brackets).
+    </p>
     <br>
+    <b-alert :show="some_red" >
+      The electoral system was forced to allocate some seats to lists without votes (shown in red)
+    </b-alert>
   </b-container>
 </template>
 <script>
@@ -70,9 +50,17 @@ export default {
     "constituencies": { default: [] },
     "parties": { default: [] },
     "values": { default: [] },
-    "round": { default: 0 },
-    "stddev": { default: false },
-    "title": { default: "" },
+    "voteless": { default: null },
+  },
+  computed: {
+    some_red: {
+      get() { 
+        for (let i=0; i<this.constituencies.length; i++)
+          for (let j=0; j<this.parties.length; j++) 
+            if (this.voteless && this.voteless[i][j]) return true
+        return false
+      }
+    }
   }
 }
 </script>

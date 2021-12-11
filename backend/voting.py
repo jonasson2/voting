@@ -5,25 +5,31 @@ This module contains the core voting system logic.
 from tabulate import tabulate
 
 from table_util import entropy, add_totals
-from solution_util import solution_exists
 from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
-from electionSystems import ElectionSystems
+from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 import traceback as tb
+from util import disp, subtract_m
+from copy import deepcopy
+
+def dispSeats(totSeats, adjSeats):
+    if adjSeats > 0:
+        return f"{totSeats} ({adjSeats})"
+    elif totSeats > 0:
+        return f"{totSeats}"
+    else:
+        return ""
 
 class Election:
     """A single election."""
-    def __init__(self, system, votes=None, name=''):
+    def __init__(self, system, votes, min_votes=0):
         cons = system["constituencies"]
         one_const = len(cons) == 1 and cons[0]["name"] == "All"
-        if one_const:
-            votes = [[sum(x) for x in zip(*votes)]]
         self.num_constituencies = len(system["constituencies"])
         self.num_parties = len(system["parties"])
         self.system = system
-        self.name = name
-        self.set_votes(votes)
+        self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
 
     def entropy(self):
@@ -32,34 +38,55 @@ class Election:
     def set_reference_results(self):
         self.reference_results = self.results
 
-    def set_votes(self, votes):
-        assert len(votes) == self.num_constituencies
+    def set_votes(self, votes, min_votes=0):
+        # m_votes: Matrix of votes (numconst by numpart)
+        # v_votes: Vector of votes (numpart, colsums of m_votes)
+        if self.num_constituencies == 1:
+            self.m_votes = [[sum(x) for x in zip(*votes)]]
+        else:
+            assert len(votes) == self.num_constituencies
+            self.m_votes = deepcopy(votes)
         assert all(len(row) == self.num_parties for row in votes)
-        self.m_votes = votes
         self.v_votes = [sum(x) for x in zip(*votes)]
 
+    def display_results(self):
+        dispResult = []
+        totSeats = add_totals(self.results)
+        adjSeats = add_totals(self.m_adj_seats)
+        for (totrow, adjrow) in zip(totSeats, adjSeats):
+            dispRow = [dispSeats(r,a) for (r,a) in zip(totrow, adjrow)]
+            dispResult.append(dispRow)
+        return dispResult
+
     def get_results_dict(self):
+        # if not self.solvable:
+        #     return None
         return {
-            "systems": self.system,
+            "voteless_seats": self.voteless_seats(),
             "seat_allocations": add_totals(self.results),
-            "step_by_step_demonstration": self.demonstration_table
+            "step_by_step_demonstration": self.demonstration_table,
+            "display_results": self.display_results()
         }
 
     def get_const(self):
         return self.system["constituencies"]
 
     def run(self):
-        """Run an election based on current systems and votes."""
-        #tb.print_stack()
-        # How many constituency seats does each party get in each constituency:
+        # Run an election based on current systems and votes.
+        # Return None if no solution exists.
+
+        # How many constituency seats does each party get in each constituency
         self.const_seats_alloc = []
+
         # Which seats does each party get in each constituency:
         self.order = []
+
         # Determine total seats (const + adjustment) in each constituency:
         self.v_desired_row_sums = [
             const["num_const_seats"] + const["num_adj_seats"]
             for const in self.system["constituencies"]
         ]
+
         # Determine total seats in play:
         self.total_seats = sum(self.v_desired_row_sums)
 
@@ -67,7 +94,22 @@ class Election:
         self.run_threshold_elimination()
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
+        # if not self.solvable:
+        #     self.results = None
         return self.results
+
+    @staticmethod
+    def anym(A):
+        # is any element of matrix A true?
+        return any(any(a) for a in A)
+
+    def voteless_seats(self):
+        over = [None]*self.num_constituencies
+        for c in range(self.num_constituencies):
+            for p in range(self.num_parties):
+                over[c] = [r > 0 and v < 1
+                           for (r,v) in zip(self.results[c], self.m_votes[c])]
+        return over
 
     def run_primary_apportionment(self):
         """Conduct primary apportionment"""
@@ -103,7 +145,7 @@ class Election:
 
         v_allocations = [sum(x) for x in zip(*m_allocations)]
 
-        self.m_const_seats_alloc = m_allocations
+        self.m_const_seats = m_allocations
         self.v_const_seats_alloc = v_allocations
 
     def run_threshold_elimination(self):
@@ -123,50 +165,50 @@ class Election:
         """Calculate the number of adjustment seats each party gets."""
         if self.system["debug"]:
             print(" + Determine adjustment seats")
-        self.v_desired_col_sums, self.adj_seat_gen, _, _ = apportion1d_general(
-            v_votes=self.v_votes,
-            num_total_seats=self.total_seats,
-            prior_allocations=self.v_const_seats_alloc,
-            rule=self.system.get_generator("adj_determine_divider"),
-            type_of_rule=self.system.get_type("adj_determine_divider"),
-            threshold=self.system["adjustment_threshold"]
-        )
+        self.v_desired_col_sums, self.adj_seat_gen, _, _ \
+            = apportion1d_general(
+                v_votes=self.v_votes,
+                num_total_seats=self.total_seats,
+                prior_allocations=self.v_const_seats_alloc,
+                rule=self.system.get_generator("adj_determine_divider"),
+                type_of_rule=self.system.get_type("adj_determine_divider"),
+                threshold=self.system["adjustment_threshold"]
+            )
         return self.v_desired_col_sums
+
+    def set_forced_reasons(self):
+        demoTable = self.demonstration_table
+        if "Criteria" not in demoTable["headers"]:
+            return
+        criteria_idx = demoTable["headers"].index("Criteria")
+        for row in demoTable["steps"]:
+            (constituency, party) = row[1:3]
+            const = [c["name"] for c in self.system["constituencies"]]
+            parties = self.system["parties"]
+            constIdx = const.index(constituency)
+            partyIdx = parties.index(party)
+            if self.m_votes[constIdx][partyIdx] < 1:
+                row[criteria_idx] = "Forced allocation"
 
     def run_adjustment_apportionment(self):
         """Conduct adjustment seat apportionment."""
-        if self.system["debug"]:
-            print(" + Apportion adjustment seats")
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-
-        self.solvable = solution_exists(
-            votes=self.m_votes_eliminated,
-            row_constraints=self.v_desired_row_sums,
-            col_constraints=self.v_desired_col_sums,
-            prior_allocations=self.m_const_seats_alloc)
-        #Some methods return a solution violating the constraints if necessary
-        try:
-            self.results, self.adj_seats_info = method(
-                m_votes=self.m_votes_eliminated,
-                v_desired_row_sums=self.v_desired_row_sums,
-                v_desired_col_sums=self.v_desired_col_sums,
-                m_prior_allocations=self.m_const_seats_alloc,
-                divisor_gen=self.gen,
-                adj_seat_gen=self.adj_seat_gen,
-                threshold=self.system["adjustment_threshold"],
-                orig_votes=self.m_votes,
-                v_const_seats=[con["num_const_seats"] for con in consts],
-                last=self.last #for nearest_neighbor and relative_inferiority
-            )
-        except (ZeroDivisionError, RuntimeError):
-            self.results = self.m_const_seats_alloc
-            self.adj_seats_info = None
-        except Exception as e:
-            print("Unknown error in voting.py")
-            return
-
+        self.results, self.adj_seats_info = method(
+            m_votes             = self.m_votes_eliminated,
+            v_desired_row_sums  = self.v_desired_row_sums,
+            v_desired_col_sums  = self.v_desired_col_sums,
+            m_prior_allocations = self.m_const_seats,
+            divisor_gen         = self.gen,
+            adj_seat_gen        = self.adj_seat_gen,
+            threshold           = self.system["adjustment_threshold"],
+            orig_votes          = self.m_votes,
+            v_const_seats       = [con["num_const_seats"] for con in consts],
+            last                = self.last
+                                #for nearest_neighbor and relative_inferiority
+        )
+        self.m_adj_seats = subtract_m(self.results, self.m_const_seats)
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]
         self.adj_dev = sum(devs)
@@ -175,17 +217,17 @@ class Election:
             allocation_sequence, present = self.adj_seats_info
             headers, steps = present(self.system, allocation_sequence)
             self.demonstration_table = {"headers": headers, "steps": steps}
+            self.set_forced_reasons()
         else:
-            self.demonstration_table = {"headers": ["Not available"], "steps": []}
-        if self.system["show_entropy"]:
-            print("\nEntropy: %s" % self.entropy())
+            self.demonstration_table = {"headers": ["Not available"],
+                                        "steps": []}
 
 def run_script_election(systems):
-    rs = ElectionSystems()
-    if "election_systems" not in systems:
+    rs = ElectionSystem()
+    if "election_system" not in systems:
         return {"error": "No election systems supplied."}
 
-    rs.update(systems["election_systems"])
+    rs.update(systems["election_system"])
 
     if not "votes" in rs:
         return {"error": "No votes supplied"}

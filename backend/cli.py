@@ -44,7 +44,7 @@ def cli(debug):
 @click.option('--show-details', default=False, is_flag=True)
 def simulate(votes, constituencies, **kwargs):
     """Simulate elections."""
-    systems = voting.ElectionSystems()
+    systems = voting.ElectionSystem()
     systems["constituencies"] = constituencies
     parties, votes = util.load_votes(votes, systems["constituencies"])
     systems["parties"] = parties
@@ -115,7 +115,7 @@ def www(host="localhost", port=5000, **kwargs):
 @click.option('--show-constituency-seats', is_flag=True)
 def apportion(votes, **kwargs):
     """Do regular apportionment based on votes and constituency data."""
-    rules = voting.ElectionSystems()
+    rules = voting.ElectionSystem()
     kwargs["primary_divider"] = kwargs["divider"]
     kwargs["adj_determine_divider"] = kwargs["adj_determine_divider"] or kwargs["divider"]
     kwargs["adj_alloc_divider"] = kwargs["adj_alloc_divider"] or kwargs["adj_determine_divider"]

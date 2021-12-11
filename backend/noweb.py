@@ -4,8 +4,8 @@ import os
 from datetime import datetime, timedelta
 import json
 from hashlib import sha256
-from electionSystems import ElectionSystems
-from electionHandler import ElectionHandler
+from electionSystem import ElectionSystem
+from electionHandler import ElectionHandler, update_constituencies
 import util
 from util import disp
 from input_util import check_input, check_systems, check_simul_settings
@@ -14,10 +14,18 @@ import simulate
 from sim_measures import add_vuedata
 
 def load_votes(f, preset=False):
-    '''returns votes (and seats) from excel file f'''
+    import os
     if preset: f = "../data/elections/" + f
     res = util.load_votes_from_stream(open(f, "r"), f)
     return res
+
+def load_all(f):
+    if isinstance(f,str):
+        f = os.path.expanduser(f)
+        with open(f) as file: file_content = json.load(file)
+    else:
+        file_content = json.load(f.stream)
+    return file_content
 
 def load_systems(f):
     '''returns systems, sim_settings from file json-file f'''
@@ -34,6 +42,7 @@ def load_systems(f):
         electoral_system_list = file_content
         sim_settings = None
     assert type(electoral_system_list) == list
+    #disp("esl", electoral_system_list)
 
     keys = ["name", "seat_spec_option", "constituencies",
             "constituency_threshold", "constituency_allocation_rule",
@@ -44,9 +53,9 @@ def load_systems(f):
         for info in keys:
             if info not in item:
                 raise KeyError(f"{info} is missing from a system in file.")
-        if item["seat_spec_option"] == "defer":
+        if item["seat_spec_option"] == "refer":
             item["seat_spec_option"] = "refer"
-        system = ElectionSystems()
+        system = ElectionSystem()
         system.update(item)
         system["primary_divider"] = item["constituency_allocation_rule"]
         system["adj_determine_divider"] = item["adjustment_division_rule"]
@@ -56,18 +65,12 @@ def load_systems(f):
     systems = check_systems(systems)
     return systems, sim_settings
 
-def single_election(votes, systems, run=True):
+def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
-    elections = ElectionHandler(votes, systems, run = run).elections
-    # separate rule constituencies from results:
-    if run:
-        results = [election.get_results_dict() for election in elections]
-        const = [r["systems"]["constituencies"] for r in results]        
-    else:
-        results = []
-        const = [election.get_const() for election in elections]
-    return results, const
+    elections = ElectionHandler(votes, systems, min_votes=0.5).elections
+    results = [election.get_results_dict() for election in elections]
+    return results
 
 def run_thread_simulation(sid):
     global SIMULATIONS
@@ -78,9 +81,9 @@ def run_thread_simulation(sid):
 
 def run_simulation(votes, systems, sim_settings, excelfile = None):
     # not threaded
-    simulation_systems = simulate.SimulationSettings()
-    simulation_systems.update(check_simul_settings(sim_settings))
-    sim = simulate.Simulation(simulation_systems, systems, votes)
+    # sim_settings = simulate.SimulationSettings()
+    sim_settings.update(check_simul_settings(sim_settings))
+    sim = simulate.Simulation(sim_settings, systems, votes)
     sim.simulate()
     if excelfile != None:
         sim.to_xlsx(excelfile)
@@ -93,17 +96,11 @@ def start_simulation(votes, systems, sim_settings):
     global SIMULATION_IDX
     SIMULATION_IDX += 1
     h = sha256()
-    sidbytes = (str(SIMULATION_IDX) + ":" + str(random.randint(1, 100000000))).encode('utf-8')
+    sidbytes = (str(SIMULATION_IDX) + ":"
+                + str(random.randint(1, 100000000))).encode('utf-8')
     h.update(sidbytes)
     sid = h.hexdigest()
-    rulesets = []
-    for sys in systems:
-        election_systems = ElectionSystems()
-        election_systems.update(sys)
-        rulesets.append(election_systems)
-    simulation_systems = simulate.SimulationSettings()
-    simulation_systems.update(check_simul_settings(sim_settings))
-    simulation = simulate.Simulation(simulation_systems, rulesets, votes)
+    simulation = simulate.Simulation(sim_settings, systems, votes)
     cleanup_expired_simulations()
     expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
     # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
@@ -115,7 +112,6 @@ def start_simulation(votes, systems, sim_settings):
 def check_simulation(sid, stop):
     (sim, thread, _) = SIMULATIONS[sid]
     sim.iteration -= sim.iterations_with_no_solution
-    # print("Checking simulation, done =", thread.done, ", iteration =", sim.iteration)
     sim_status = {
         "done": thread.done,
         "iteration": sim.iteration,
@@ -150,7 +146,8 @@ def get_new_download_id():
     global DOWNLOADS_IDX
     did = DOWNLOADS_IDX = DOWNLOADS_IDX + 1
     h = sha256()
-    didbytes = (str(did) + ":" + str(random.randint(1, 100000000))).encode('utf-8')
+    didbytes = (str(did) + ":"
+                + str(random.randint(1, 100000000))).encode('utf-8')
     h.update(didbytes)
     return h.hexdigest()
 

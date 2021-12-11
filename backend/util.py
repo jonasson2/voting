@@ -10,12 +10,24 @@ import configparser
 import codecs
 from distutils.util import strtobool
 
+def shape(M):
+    # Simply assume that all rows have equal length
+    if not isinstance(M,list): return None
+    if not isinstance(M[0],list): return len(M)
+    return (len(M),len(M[0]))
+
 #??????
 def random_id(length=8):
     chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     s = "".join(random.sample(chars, length))
     return s
 
+def subtract_m(A, B):
+    C = []
+    for (a,b) in zip(A, B):
+        c = [x - y for (x,y) in zip(a,b)]
+        C.append(c)
+    return C
 
 def read_csv(filename):
     with io.open(filename, mode="r", newline='', encoding='utf-8') as f:
@@ -201,7 +213,7 @@ def print_steps_election(election):
     print_table(xtd_shares, header, const_names, out, "{:.1%}")
 
     print("\nConstituency seats")
-    xtd_const_seats = add_totals(election.m_const_seats_alloc)
+    xtd_const_seats = add_totals(election.m_const_seats)
     print_table(xtd_const_seats, header, const_names, out)
 
     print("\nAdjustment seat apportionment")
@@ -378,12 +390,27 @@ def print_simulation(simulation):
         #print("\nVotes added to change results")
         #print_table(simulation.votes_to_change, h[:-1], const_names[:-1], out)
 
-def disp(title, value):
+def disp(title, value=[]):
+    if not value:
+        value = title
+        title=''
     from pprint import PrettyPrinter
     pp = PrettyPrinter(compact=False, width=80).pprint
-    print("\n" + title.upper() + ":")
+    if title:
+        print("\n" + title.upper() + ":")
     pp(value)
 
+def dispv(title, value=None, ndec=3):
+    import numpy as np
+    if value is None:
+        value = title
+        title=''
+    if title:
+        print("\n" + title.upper() + ":")
+    np.set_printoptions(suppress=True, precision=ndec, floatmode="fixed",
+                        linewidth=120)
+    print(np.array(value))
+    
 def short_traceback(trace):
     from pathlib import Path
     def traceline(line):

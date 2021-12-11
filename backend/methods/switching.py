@@ -3,8 +3,12 @@ import heapq
 from apportion import apportion1d
 from table_util import v_subtract
 
-def switching(m_votes, v_desired_row_sums, v_desired_col_sums, m_prior_allocations,
-                divisor_gen, threshold=None, orig_votes=None, **kwargs):
+def switching(m_votes,
+              v_desired_row_sums,
+              v_desired_col_sums,
+              m_prior_allocations,
+              divisor_gen,
+              **kwargs):
     num_constituencies = len(v_desired_row_sums)
     num_parties        = len(v_desired_col_sums)
     assert num_constituencies == len(m_votes)

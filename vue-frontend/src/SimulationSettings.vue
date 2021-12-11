@@ -36,7 +36,8 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="This is the standard deviation of simulated votes
-                 divided by their mean. Valid range 0–0.75 (beta), 0–0.577 (uniform)."
+                 divided by their mean. Valid range 0–0.75 (beta), 
+                 0–1 (gamma), 0–0.577 (uniform)."
           >
           <b-input-group>
             <b-form-input
@@ -123,14 +124,13 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 
 export default {
   computed: {
     ...mapState([
       'sim_settings',
       'systems',
-      'sys_constituencies'
     ]),
     system_names: function() {
       let sysnames = this.systems.map(system => system.name)
@@ -140,7 +140,7 @@ export default {
     },
     const_names: function() {
       console.log("this.systems=", this.systems)
-      let cnames = this.sys_constituencies.map(syscon => syscon.name)
+      let cnames = this.systems[0].constituencies.map(con => con.name)
       cnames.unshift("All constituencies")
       return cnames
     }
@@ -152,6 +152,9 @@ export default {
       capabilities: {},
       selected: '',
     }
+  },
+  methods: {
+    ...mapMutations(["setSimulateCreated"])
   },
   watch: {
     comparison_systems: {
@@ -171,6 +174,7 @@ export default {
     this.$http.post('/api/capabilities', {}).then(response => {
       this.capabilities = response.body.capabilities;
       this.$store.commit("updateSimSettings", response.body.sim_settings)
+      this.$nextTick(()=>this.setSimulateCreated())
       console.log("Created SimulationSettings")
       this.created = true
     }, response => {
