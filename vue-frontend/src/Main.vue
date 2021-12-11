@@ -19,7 +19,7 @@
   </b-alert>
   <b-tabs
     active-nav-item-class="font-weight-bold"
-    card
+    no-key-nav card
     >
     <b-tab title="Source votes and seats" active @click="showVoteMatrix">
       <!-- <p>Specify reference votes and seat numbers</p> -->
