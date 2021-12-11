@@ -62,7 +62,7 @@
       </b-button-group>
     </b-button-toolbar>
   </b-container>
-  <b-tabs v-if="!adding_system" v-model="activeTabIndex" card>
+  <b-tabs v-if="!adding_system" v-model="activeTabIndex" no-key-nav card>
     <b-tab v-for="(sysidx,idx) in system_numbering" :key="idx" @click="reorder(sysidx,idx)">
       <template v-if="sysidx==-2" #title>
         ←
@@ -245,7 +245,6 @@ export default {
         this.addSystem(r.election_system)
         this.updateSimSettings(r.sim_settings)
         this.$store.dispatch("recalc_sys_const")
-        this.clearWaitingForData()
         this.$nextTick(()=>{
           this.created = true
           console.log("new system added")

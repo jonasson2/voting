@@ -11,7 +11,7 @@
       Download Excel file
     </b-button>
   </b-container>
-  <b-tabs v-model="resultIndex" card>
+  <b-tabs v-model="resultIndex" no-key-nav card>
     <b-tab v-for="(system, activeTabIndex) in systems" :key="activeTabIndex">
       <div slot="title">
         {{system.name}}
