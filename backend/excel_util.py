@@ -1,6 +1,8 @@
 
 import xlsxwriter
 from datetime import datetime
+from measure_groups import MeasureGroups, fractional_digits
+from sim_measures import combine_titles
 
 from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
@@ -16,11 +18,15 @@ def prepare_formats(workbook):
     formats["center"] = workbook.add_format()
     formats["center"].set_align('center')
 
+    formats["right"] = workbook.add_format()
+    formats["right"].set_align('right')
+
     formats["share"] = workbook.add_format()
     formats["share"].set_num_format('0.0%')
 
     formats["threshold"] = workbook.add_format()
     formats["threshold"].set_num_format('0%')
+    formats["threshold"].set_align('center')
 
     formats["h"] = workbook.add_format()
     formats["h"].set_align('left')
@@ -38,7 +44,7 @@ def prepare_formats(workbook):
     formats["h_right"].set_font_size(11)
 
     formats["time"] = workbook.add_format()
-    formats["time"].set_num_format('d mmm yyyy hh:mm')
+    formats["time"].set_num_format('dd/mm/yy hh:mm')
     formats["time"].set_align('left')
 
     formats["basic"] = workbook.add_format()
@@ -64,15 +70,6 @@ def prepare_formats(workbook):
     formats["inter_h"].set_italic()
     formats["inter_h"].set_font_size(11)
 
-    #simulations
-    formats["r"] = workbook.add_format()
-    formats["r"].set_rotation(90)
-    formats["r"].set_align('center')
-    formats["r"].set_align('vcenter')
-    formats["r"].set_text_wrap()
-    formats["r"].set_bold()
-    formats["r"].set_font_size(12)
-
     formats["base"] = workbook.add_format()
     formats["base"].set_num_format('#,##0')
 
@@ -81,16 +78,36 @@ def prepare_formats(workbook):
 
     return formats
 
-def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False):
+def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False, totalsformat = None, zeroesformat = None):
     for c in range(len(matrix)):
-        for p in range(len(matrix[c])):
-            if matrix[c][p] != 0 or display_zeroes:
-                try:
-                    worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                    cformat[c])
-                except TypeError:
-                    worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                    cformat)
+        if totalsformat is not None:
+            for p in range(len(matrix[c])-1):
+                if matrix[c][p] != 0 or display_zeroes:
+                    try:
+                        worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        cformat[c])
+                    except TypeError:
+                        if matrix[c][p] == 0 and zeroesformat is not None:
+                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        zeroesformat)
+                        else:
+                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        cformat)
+            worksheet.write(startrow+c, startcol+len(matrix[c])-1, matrix[c][-1],
+                        totalsformat)
+        else:
+            for p in range(len(matrix[c])):
+                if matrix[c][p] != 0 or display_zeroes:
+                    try:
+                        worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        cformat[c])
+                    except TypeError:
+                        if matrix[c][p] == 0 and zeroesformat is not None:
+                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        zeroesformat)
+                        else:
+                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
+                                        cformat)
 
 def elections_to_xlsx(elections, filename):
     """Write detailed information about an election with a single vote table
@@ -188,7 +205,8 @@ def elections_to_xlsx(elections, filename):
             matrix=add_totals([
                 [const["num_const_seats"],const["num_adj_seats"]]
                 for const in system["constituencies"]
-            ])
+            ]),
+            cformat=fmt["base"]
         )
         bottomrow = max(2+len(const_names), bottomrow)
         toprow = bottomrow+2
@@ -196,7 +214,7 @@ def elections_to_xlsx(elections, filename):
         col = startcol
         draw_block(worksheet, row=toprow, col=col,
             heading="Votes", xheaders=parties, yheaders=const_names,
-            matrix=xtd_votes
+            matrix=xtd_votes, cformat=fmt["base"]
         )
         col += len(parties)+2
         draw_block(worksheet, row=toprow, col=col,
@@ -207,7 +225,7 @@ def elections_to_xlsx(elections, filename):
         col = startcol
         draw_block(worksheet, row=toprow, col=col,
             heading="Constituency seats", xheaders=parties, yheaders=const_names,
-            matrix=xtd_const_seats
+            matrix=xtd_const_seats, cformat=fmt["base"]
         )
         toprow += len(const_names)+3
 
@@ -216,8 +234,8 @@ def elections_to_xlsx(elections, filename):
                        'Vote shares above threshold', 'Constituency seats']
         matrix = [xtd_votes[-1],   xtd_shares[-1],   [threshold],
                   xtd_final_votes, xtd_final_shares, xtd_const_seats[-1]]
-        formats = [fmt["cell"], fmt["share"], fmt["share"],
-                   fmt["cell"], fmt["share"], fmt["cell"]]
+        formats = [fmt["base"], fmt["share"], fmt["share"],
+                   fmt["base"], fmt["share"], fmt["base"]]
         draw_block(worksheet, row=toprow, col=startcol,
             heading="Adjustment seat apportionment", topleft="Party",
             xheaders=parties, yheaders=row_headers,
@@ -243,12 +261,12 @@ def elections_to_xlsx(elections, filename):
         col = startcol
         draw_block(worksheet, row=toprow, col=col,
             heading="Adjustment seats", xheaders=parties, yheaders=const_names,
-            matrix=xtd_adj_seats
+            matrix=xtd_adj_seats, cformat=fmt["base"]
         )
         toprow += len(const_names)+3
         draw_block(worksheet, row=toprow, col=col,
             heading="Total seats", xheaders=parties, yheaders=const_names,
-            matrix=xtd_total_seats
+            matrix=xtd_total_seats, cformat=fmt["base"]
         )
         col += len(parties)+2
         draw_block(worksheet, row=toprow, col=col,
@@ -269,72 +287,22 @@ def simulation_to_xlsx(simulation, filename):
     fmt = prepare_formats(workbook)
 
     def draw_block(worksheet, row, col,
-        heading, # xheaders, yheaders,
+        heading,
         matrix,
         cformat=fmt["cell"],
         hideTotals=False
     ):
+        totalsformat = None
         if hideTotals:
-            # xheaders = xheaders[:-1]
             matrix = [r[:-1] for r in matrix]
         if heading.endswith("shares"):
             cformat = fmt["share"]
         if heading.lower().startswith("ideal") or heading.lower().startswith("reference"):
             cformat = fmt["cell"]
+            totalsformat = fmt["base"]
         if heading == "Votes":
             cformat = fmt["base"]
-        # worksheet.merge_range(
-        #     row, col, row, col+len(xheaders), heading, fmt["h"])
-        # worksheet.write_row(row+1, col, xheaders, fmt["center"])
-        # worksheet.write_column(row+2, col, yheaders, fmt["basic"])
-        write_matrix(worksheet, row, col, matrix, cformat)
-
-    def present_measures(worksheet, row, col, xheaders,
-        list_deviation_measures, totals_deviation_measures,
-        ideal_comparison_measures, normalized_measures
-    ):
-        worksheet.write(row, col, "Quality measures", fmt["h"])
-        row += 1
-        worksheet.write_row(row, col+6, xheaders, fmt["h_right"])
-        row += 1
-        worksheet.write(row, col,
-            "Allocated seats minus reference seat shares",
-            fmt["basic_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            ideal_comparison_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            ideal_comparison_measures["matrix"], fmt["cell"], True)
-        row += len(ideal_comparison_measures["headers"])
-        worksheet.write(row, col,
-            "Specific quality indices for seat allocations", fmt["basic_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            normalized_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            normalized_measures["matrix"], fmt["cell"], True)
-        row += len(normalized_measures["headers"])
-        worksheet.write(row, col,
-            "Sum of absolute seat allocation differences:", fmt["basic_h"])
-        row += 1
-        worksheet.write(row, col,
-            "Sum of absolute differences of lists for tested method and:",
-            fmt["inter_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            list_deviation_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            list_deviation_measures["matrix"], fmt["cell"], True)
-        row += len(list_deviation_measures["headers"])
-        worksheet.write(row, col,
-            "Sum of absolute differences of national totals for tested method and:",
-            fmt["inter_h"])
-        row += 1
-        worksheet.write_column(row, col,
-            totals_deviation_measures["headers"], fmt["basic"])
-        write_matrix(worksheet, row, col+6,
-            totals_deviation_measures["matrix"], fmt["cell"], True)
-        row += len(totals_deviation_measures["headers"])
+        write_matrix(worksheet, row, col, matrix, cformat, False, totalsformat)
 
     row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
     col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
@@ -402,67 +370,71 @@ def simulation_to_xlsx(simulation, filename):
 
     #Measures
     results = simulation.get_results_dict()
-    LIST_DEVIATION_MEASURES = results["list_deviation_measures"]
-    TOTALS_DEVIATION_MEASURES = results["totals_deviation_measures"]
-    STANDARDIZED_MEASURES = results["standardized_measures"]
-    IDEAL_COMPARISON_MEASURES = results["ideal_comparison_measures"]
-    MEASURES = results["measures"]
-    aggregates = ["avg", "min", "max", "std", "skw", "kur"]
-    aggregate_names = [results["aggregates"][aggr] for aggr in aggregates]
-    aggregates_short = ["max","min","avg"]
-    aggregate_names_dict = {"max": "Maximum", "min": "Minimum", "avg": "Average"}
+    data = results["data"]
+    systems = results["systems"]
+    groups = MeasureGroups(systems)
+    stats = ["avg", "min", "max", "std", "skw", "kur"]
+    edata = {}
+    edata["stats"] = stats
+    edata["stat_headings"] = {"avg": "Average of indicated measures for all simulations",
+                                "min": "Minima for all simulations",
+                                "max": "Maxima for all simulations",
+                                "std": "Standard deviations for all simulations",
+                                "skw": "Skewness for all simulations",
+                                "kur": "Kurtosis for all simulations"}
+    for (id, group) in groups.items():
+        edata[id] = []
+        for (measure, _) in group["rows"].items():
+            row = {}
+            for stat in stats:
+                row[stat] = []
+                for s in range(len(systems)):
+                    row[stat].append(data[s]["measures"][measure][stat])
+            edata[id].append(row)
 
-    
-    for aggr in aggregates_short:
-        worksheet = workbook.add_worksheet(aggregate_names_dict[aggr])
-        toprow = 0
-        c = 0
-        worksheet.write(toprow,c,"Date:",fmt["basic_h"])
-        worksheet.write(toprow,c+1,datetime.now(),fmt["time"])
+    worksheet = workbook.add_worksheet("Quality measures")
+    worksheet.freeze_panes(2,2)
+    toprow = 0
+    c = 0
+    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["basic_h"])
+    worksheet.set_column(c,c,16)
+    c += 1
+    worksheet.set_column(c,c,25)
+    worksheet.write(toprow+1,c,"Tested systems: ",fmt["right"])
+    c += 1
+
+    for stat in stats:
+        worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
+        worksheet.set_column(c,c+len(simulation.systems)-1,15)
+        for system in simulation.systems:
+            worksheet.write(toprow+1,c,system["name"],fmt["center"])
+            c += 1
+        worksheet.set_column(c,c,3)
+        c += 1
+
+    c = 0
+    toprow += 2
+
+    for (id, group) in groups.items():
+        worksheet.write(toprow,c,group["title"],fmt["basic_h"])
         toprow += 1
-        worksheet.write(toprow,c,"Reference votes:",fmt["basic_h"])
-        worksheet.write(toprow,c+1,simulation.vote_table["name"])
-        toprow += 2
-        worksheet.write(toprow,c,aggregate_names_dict[aggr] + " values",fmt["h_big"])
-        toprow += 2
-        present_measures(worksheet, row=toprow, col=c,
-                         xheaders=[rule["name"] for rule in simulation.systems],
-                         list_deviation_measures={
-                "headers": [MEASURES[key] for key in LIST_DEVIATION_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
-                    for measure in LIST_DEVIATION_MEASURES
-                ]
-            },
-                         totals_deviation_measures={
-                "headers": [MEASURES[key] for key in TOTALS_DEVIATION_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
-                    for measure in TOTALS_DEVIATION_MEASURES
-                ]
-            },
-                         ideal_comparison_measures={
-                "headers": [MEASURES[key] for key in IDEAL_COMPARISON_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
-                    for measure in IDEAL_COMPARISON_MEASURES
-                ]
-            },
-                         normalized_measures={
-                "headers": [MEASURES[key] for key in STANDARDIZED_MEASURES],
-                "matrix": [
-                    [simulation.data[r][measure][aggr] for r in range(len(simulation.systems))]
-                    for measure in STANDARDIZED_MEASURES
-                ]
-            }
-                         )
+        worksheet.write_column(toprow,c,[val[0] for (_, val) in group["rows"].items()])
+        worksheet.write_column(toprow,c+1,[val[1] for (_, val) in group["rows"].items()])
+        
+        for stat in stats:
+            if stat in ["min","max"] and id in ["seatSpec","expected","cmpSys"]:
+                write_matrix(worksheet,toprow,c+2,[row[stat] for row in edata[id]],fmt["base"],True)
+            else:
+                write_matrix(worksheet,toprow,c+2,[row[stat] for row in edata[id]],fmt["cell"],True,zeroesformat=fmt["base"])
+            c += len(simulation.systems) + 1
+        nrows = len(group["rows"])
+        toprow += nrows + 1 if nrows > 0 else 0
+        c = 0
 
     for r in range(len(simulation.systems)):
-        sheet_name  = f'{r+1}-{simulation.systems[r]["name"]}'
+        sheet_name  = simulation.systems[r]["name"]
         worksheet   = workbook.add_worksheet(sheet_name[:31])
-        const_names = [
-            const["name"] for const in simulation.systems[r]["constituencies"]
-        ] + ["Total"]
+        worksheet.freeze_panes(10,2)
         parties = simulation.systems[r]["parties"] + ["Total"]
         
         data_matrix = {
@@ -595,51 +567,15 @@ def simulation_to_xlsx(simulation, filename):
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
             for table in tables:
-                # is_vote_table = table["heading"].startswith("Vote")
                 is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
                 draw_block(worksheet, row=toprow, col=col,
                     heading=table["heading"],
-                    #xheaders=parties,
-                    #yheaders=base_const_names if is_vote_table else const_names,
                     matrix=data_matrix[category["abbr"]][table["abbr"]],
                     cformat=category["cell_format"],
                     hideTotals=is_percentages_table
                 )
                 col += len(parties[:-1] if is_percentages_table else parties)+1
             toprow += len(base_const_names)+1
-
-        
-        # present_measures(worksheet, row=toprow, col=0,
-        #     xheaders=aggregate_names,
-        #     list_deviation_measures={
-        #         "headers": [MEASURES[key] for key in LIST_DEVIATION_MEASURES],
-        #         "matrix": [
-        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
-        #             for measure in LIST_DEVIATION_MEASURES
-        #         ]
-        #     },
-        #     totals_deviation_measures={
-        #         "headers": [MEASURES[key] for key in TOTALS_DEVIATION_MEASURES],
-        #         "matrix": [
-        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
-        #             for measure in TOTALS_DEVIATION_MEASURES
-        #         ]
-        #     },
-        #     ideal_comparison_measures={
-        #         "headers": [MEASURES[key] for key in IDEAL_COMPARISON_MEASURES],
-        #         "matrix": [
-        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
-        #             for measure in IDEAL_COMPARISON_MEASURES
-        #         ]
-        #     },
-        #     normalized_measures={
-        #         "headers": [MEASURES[key] for key in STANDARDIZED_MEASURES],
-        #         "matrix": [
-        #             [simulation.data[r][measure][aggr] for aggr in aggregates]
-        #             for measure in STANDARDIZED_MEASURES
-        #         ]
-        #     }
-        # )
 
     workbook.close()
 

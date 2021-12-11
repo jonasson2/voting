@@ -17,7 +17,6 @@
           <td class="firstcol blank"></td>
         </tr>
         <tr>
-          </td>
           <td :class="groupclass(id)">
             {{group_titles[id]}}                     <!-- GROUP TITLE -->
           </td>
