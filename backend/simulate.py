@@ -56,7 +56,7 @@ class SimulationSettings(System):
 class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
-        random.seed(42)
+        #random.seed(42)
         min_votes = 0.5
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []

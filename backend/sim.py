@@ -5,8 +5,9 @@ from time import sleep
 from math import sqrt
 from copy import deepcopy, copy
 import json
+from util import disp
 n_reps = 1
-n_betasim = 1
+n_betasim = 2
 n_unifsim = 1
 
 def disp(title, value, depth=99):
@@ -22,7 +23,7 @@ def read_data():
     #vote_file = "aldarkosning.csv"
     #sys_file = "11kerfi.json"
     #sys_file = "../data/tests/default-rule.json"
-    sys_file = "2reglur.json"
+    sys_file = "~/hermir/2reglur.json"
     votes = load_votes("../data/elections/" + vote_file)
     systems, sim_settings = load_systems(sys_file)
     # results = single_election(votes, systems)
@@ -37,7 +38,7 @@ def simulate_votes(votes, systems, sim_settings):
     settings["simulation_count"] = 1
     print("In simulate_votes")
     results = run_simulation(votes, systems, settings)
-    return results["vote_data"]["sim_votes"]["avg"]
+    return results["vote_data"][0]["sim_votes"]["avg"]
 
 def matrix2votes(A):
     # Remove total columns and round votes to integers
@@ -91,20 +92,23 @@ def simulate(idx):
                        for i in range(nsys)]
         dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
                        for i in range(nsys)]
-        disp("dev_ref_avg", dev_ref_avg)
+        #disp("dev_ref_avg", dev_ref_avg)
         avg.append(dev_ref_avg)
         std.append(dev_ref_std)
-    disp("res", res)
-    A = colmean(avg)
-    S = colmean(std)
-    return A,S
+    #disp("res", res)
+    sysnames = [sys["name"] for sys in systems]
+    avg = dict(zip(sysnames, colmean(avg)))
+    std = dict(zip(sysnames, colmean(std)))
+    return avg, std
 
 systemnames = [s["name"] for s in systems]
 
 #sim_beta_settings["simulate"] = True
-disp("sim_beta_settings", sim_beta_settings)
+#disp("sim_beta_settings", sim_beta_settings)
 #matrix = simulate_votes(votes, systems, sim_beta_settings)
-result = simulate(1)
+(avg,std) = simulate(1)
+disp('Avereage', avg)
+disp('Std.dev.', std)
 if False: #__name__ == "__main__":
     nsys = len(systems)
     p = Pool(n_reps)
@@ -116,3 +120,4 @@ if False: #__name__ == "__main__":
     #printcsv("sdevs.dat", sdevs)
     #disp("means", means)
     #plot(means, systemnames)
+None
