@@ -4,7 +4,7 @@ from measure_groups import MeasureGroups
 import dictionaries as dicts
 import voting
 import random
-from dictionaries import LIST_MEASURES, MEASURES, VOTE_MEASURES
+from dictionaries import LIST_MEASURES, VOTE_MEASURES
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
 from generate_votes import generate_maxchange_votes, generate_votes
@@ -383,14 +383,14 @@ class Simulation:
             "parties":                   self.parties,
             "testnames":                 [systems["name"] for systems in self.systems],
             "methods":                   [systems["adjustment_method"] for systems in self.systems],
-            "measures":                  MEASURES,
-            "list_deviation_measures":   dicts.LIST_DEVIATION_MEASURES,
-            "totals_deviation_measures": dicts.TOTALS_DEVIATION_MEASURES,
-            "ideal_comparison_measures": dicts.IDEAL_COMPARISON_MEASURES,
-            "standardized_measures":     dicts.STANDARDIZED_MEASURES,
-            "list_measures":             dicts.LIST_MEASURES,
-            "vote_measures":             dicts.VOTE_MEASURES,
-            "aggregates":                dicts.AGGREGATES,
+            #"measures":                  MEASURES,
+            #"list_deviation_measures":   dicts.LIST_DEVIATION_MEASURES,
+            #"totals_deviation_measures": dicts.TOTALS_DEVIATION_MEASURES,
+            #"ideal_comparison_measures": dicts.IDEAL_COMPARISON_MEASURES,
+            #"standardized_measures":     dicts.STANDARDIZED_MEASURES,
+            #"list_measures":             dicts.LIST_MEASURES,
+            #"vote_measures":             dicts.VOTE_MEASURES,
+            #"aggregates":                dicts.AGGREGATES,
             "data":                      [{
                 "name":          self.systems[sysnr]["name"],
                 "method":        self.systems[sysnr]["adjustment_method"],

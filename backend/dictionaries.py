@@ -46,7 +46,15 @@ RULE_NAMES = {
     "5-huntington-hill": "Huntington-Hill",
     "6-hare":            "Hare quota",
     "7-droop":           "Droop quota",
-    #"imperiali": "Imperiali method",
+}
+
+STATISTICS_HEADINGS = {
+    "avg": "AVERAGE",
+    "min": "MINIMUM",
+    "max": "MAXIMUM",
+    "std": "STD.DEV.",
+    "skw": "SKEWNESS",
+    "kur": "KURTOSIS"
 }
 
 ADJUSTMENT_METHODS = {
@@ -99,55 +107,50 @@ SEAT_SPECIFICATION_OPTIONS = {
     "one_const":      "Combine all constituencies into one",
 }
 
-MEASURES = {
-    "dev_all_adj":  "Allocation as if all seats were adjustment seats",
-    "dev_all_adj_tot":
-                    "Allocation as if all seats were adjustment seats",
-    "dev_all_const":"Allocation as if all seats were constituency seats",
-    "dev_all_const_tot":
-                    "Allocation as if all seats were constituency seats",
-    "dev_ref":      "Allocation with actual system for the reference votes",
-    "dev_ref_tot":  "Allocation with actual system for the reference votes",
-    #"adj_dev":      "Desired apportionment of adjustment seats",
-    "one_const_tot":"Allocation as if all constituencies were combined into one",
-    "entropy":      "Entropy (logarithmic)",
-    "min_seat_val": "Mininum reference seat share per seat",
-    "sum_abs":      "Sum of absolute values",
-    "sum_pos":       "Sum of positive values",
-    "sum_sq":        "Sum of squared values",
-}
-LIST_DEVIATION_MEASURES = [
-    "dev_all_adj",
-    "dev_all_const",
-    "dev_ref",
-]
-TOTALS_DEVIATION_MEASURES = [
-    #"dev_opt_totals",
-    #"dev_law_totals",
-    "dev_all_adj_tot",
-    "dev_all_const_tot",
-    "dev_ref_tot",
-]
-STANDARDIZED_MEASURES = [
-    "entropy",
-    "min_seat_val",
-]
-IDEAL_COMPARISON_MEASURES = [
-    "sum_abs",
-    "sum_pos",
-    "sum_sq",
-]
+# MEASURES = {
+#     "dev_all_adj":  "Allocation as if all seats were adjustment seats",
+#     "dev_all_adj_tot":
+#                     "Allocation as if all seats were adjustment seats",
+#     "dev_all_const":"Allocation as if all seats were constituency seats",
+#     "dev_all_const_tot":
+#                     "Allocation as if all seats were constituency seats",
+#     "dev_ref":      "Allocation with actual system for the reference votes",
+#     "dev_ref_tot":  "Allocation with actual system for the reference votes",
+#     #"adj_dev":      "Desired apportionment of adjustment seats",
+#     "one_const_tot":"Allocation as if all constituencies were combined into one",
+#     "entropy":      "Entropy (logarithmic)",
+#     "min_seat_val": "Mininum reference seat share per seat",
+#     "sum_abs":      "Sum of absolute values",
+#     "sum_pos":       "Sum of positive values",
+#     "sum_sq":        "Sum of squared values",
+# }
+# LIST_DEVIATION_MEASURES = [
+#     "dev_all_adj",
+#     "dev_all_const",
+#     "dev_ref",
+# ]
+# TOTALS_DEVIATION_MEASURES = [
+#     #"dev_opt_totals",
+#     #"dev_law_totals",
+#     "dev_all_adj_tot",
+#     "dev_all_const_tot",
+#     "dev_ref_tot",
+# ]
+# STANDARDIZED_MEASURES = [
+#     "entropy",
+#     "min_seat_val",
+# ]
+# IDEAL_COMPARISON_MEASURES = [
+#     "sum_abs",
+#     "sum_pos",
+#     "sum_sq",
+# ]
 LIST_MEASURES = {
     "const_seats":   "constituency seats",
     "adj_seats":     "adjustment seats",
     "total_seats":   "constituency and adjustment seats combined",
     "seat_shares":   "total seats normalized within each constituency",
     "ideal_seats":   "ideal seat shares",
-    # "dev_opt":       "deviation from optimal solution",
-    # "dev_law":       "deviation from official law method",
-    # "dev_all_const": "deviation from Independent Constituencies",
-    # "dev_one_const": "deviation from Single Constituency",
-    # "dev_all_adj":   "deviation from All Adjustment Seats"
 }
 VOTE_MEASURES = {
     "sim_votes":  "votes in simulations",

@@ -94,21 +94,6 @@ class MeasureGroups(dict):
         group = self.group[grp]
         return group.get_measures()
 
-statisticsHeadings = {
-    # "avg": "Averages for all simulations",
-    # "min": "Maxima for all simulations",
-    # "max": "Standard deviations for all simulations",
-    # "std": "Minima for all simulations",
-    # "skw": "Skewness for all simulations",
-    # "kur": "Kurtosis for all simulations"
-    "avg": "AVERAGE",
-    "min": "MINIMUM",
-    "max": "MAXIMUM",
-    "std": "STD.DEV.",
-    "skw": "SKEWNESS",
-    "kur": "KURTOSIS"
-}
-
 headingType = {
     "seatShares": "systems",
     "other":      "empty",

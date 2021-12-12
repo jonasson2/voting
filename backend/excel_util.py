@@ -6,7 +6,8 @@ from measure_groups import MeasureGroups
 from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
                          RULE_NAMES as DRN, \
-                         GENERATING_METHOD_NAMES as GMN
+                         GENERATING_METHOD_NAMES as GMN, \
+                         STATISTICS_HEADINGS
 
 def prepare_formats(workbook):
     formats = {}
@@ -305,11 +306,13 @@ def simulation_to_xlsx(simulation, filename):
 
     row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
     col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
+    generating_method = next((v['text'] for v in GMN
+                              if v['value'] == 'beta'), None)
     sim_settings = [
         {"label": "Number of simulations run",
             "data": simulation.iteration},
         {"label": "Generating method",
-            "data": GMN[simulation.variate]},
+            "data": generating_method},
         {"label": "Coefficient of variation",
             "data": simulation.var_coeff},
         {"label": "Apply randomness to",
@@ -375,12 +378,8 @@ def simulation_to_xlsx(simulation, filename):
     stats = ["avg", "min", "max", "std", "skw", "kur"]
     edata = {}
     edata["stats"] = stats
-    edata["stat_headings"] = {"avg": "Average of indicated measures for all simulations",
-                                "min": "Minima for all simulations",
-                                "max": "Maxima for all simulations",
-                                "std": "Standard deviations for all simulations",
-                                "skw": "Skewness for all simulations",
-                                "kur": "Kurtosis for all simulations"}
+    edata["stat_headings"] = STATISTICS_HEADINGS
+
     for (id, group) in groups.items():
         edata[id] = []
         for (measure, _) in group["rows"].items():

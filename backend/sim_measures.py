@@ -2,7 +2,8 @@
 # simulation results
 
 from measure_groups import MeasureGroups, fractional_digits
-from measure_groups import headingType, statisticsHeadings
+from measure_groups import headingType
+from dictionaries import STATISTICS_HEADINGS
 from util import disp
 from copy import deepcopy
 
@@ -17,11 +18,11 @@ def add_vuedata(sim_results):
     data = sim_results["data"]
     systems = sim_results["systems"]
     groups = MeasureGroups(systems)
-    stats = list(statisticsHeadings.keys())
+    stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
     vuedata = {}
     vuedata["stats"] = stats
-    vuedata["stat_headings"] = statisticsHeadings
+    vuedata["stat_headings"] = STATISTICS_HEADINGS
     vuedata["headingType"] = headingType
     vuedata["system_names"] = [sys["name"] for sys in systems]
     vuedata["group_ids"] = []

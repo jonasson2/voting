@@ -287,16 +287,6 @@ def api_simulate_check():
         return jsonify({"error": msg})
     return jsonify({"status": status, "results": results})
 
-@app.route('/api/script/', methods=["POST"])
-def handle_api():
-    script = request.get_json(force=True)
-    if not script or script == {}:
-        return jsonify({"error": "No script sent"})
-    e = run_script(script)
-    if type(e) == dict:
-        return jsonify(e)
-    return jsonify(e.get_results_dict())
-
 @app.route('/api/capabilities/', methods=["POST"])
 def api_capabilities():
     constituencies = request.get_json(force=True)
