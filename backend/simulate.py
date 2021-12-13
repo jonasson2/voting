@@ -13,7 +13,7 @@ from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
 from util import hms, shape
 from copy import deepcopy
-from util import disp, dispv
+from util import disp, dispv, remove_prefix
 
 # logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 
@@ -253,7 +253,7 @@ class Simulation:
 
     def deviation_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_const", "one_const"]:
-            option = measure.removeprefix("dev_")
+            option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
             comparison_election = voting.Election(comparison_system, election.m_votes)
             comparison_results = comparison_election.run()

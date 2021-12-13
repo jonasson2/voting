@@ -2,7 +2,7 @@ import json
 from copy import copy, deepcopy
 
 from system import System
-from util import load_constituencies, disp
+from util import load_constituencies, disp, remove_prefix
 from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
     ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
@@ -75,7 +75,7 @@ class ElectionSystem(System):
             raise ValueError(f"{rule} is not a known rule")
 
     def generate_system(self, option, vote_table = []):
-        option = option.removeprefix("make_")
+        option = remove_prefix(option, "make_")
         sys = (
             deepcopy(self) if option == "refer"
             else self.generate_all_const_system() if option == "all_const"

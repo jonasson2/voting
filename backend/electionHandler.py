@@ -4,7 +4,7 @@ from voting import Election
 from table_util import add_totals
 from input_util import check_vote_table, check_systems
 from excel_util import elections_to_xlsx
-from util import disp
+from util import disp, remove_prefix
 from copy import deepcopy
 
 class ElectionHandler:
@@ -49,7 +49,7 @@ def update_constituencies(vote_table, systems):
     constituencies = []
     for system in systems:
         opt = system["seat_spec_option"]
-        opt = opt.removeprefix("make_")
+        opt = remove_prefix(opt, "make_")
         const = deepcopy(vote_table["constituencies"])
         if "constituencies" not in system:
             system["constituencies"] = const        

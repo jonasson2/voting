@@ -10,6 +10,16 @@ import configparser
 import codecs
 from distutils.util import strtobool
 
+def remove_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
+
+def remove_suffix(text, suffix):
+    if text.endswith(suffix):
+        return text[:-len(suffix)]
+    return text
+
 def shape(M):
     # Simply assume that all rows have equal length
     if not isinstance(M,list): return None
@@ -415,9 +425,9 @@ def short_traceback(trace):
     from pathlib import Path
     def traceline(line):
         word = line.split()
-        file = word[1].removeprefix('"').removesuffix('",')
+        file = remove_suffix(remove_prefix(word[1], '"'), '",')
         file = Path(file).name
-        lineno = word[3].removesuffix(',')
+        lineno = remove_suffix(word[3], ',')
         function = word[5]
         return f"{function}, {file} line {lineno}"
         
