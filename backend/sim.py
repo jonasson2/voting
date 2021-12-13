@@ -8,7 +8,7 @@ import json
 from util import disp
 n_reps = 1
 n_betasim = 2
-n_unifsim = 1
+n_unifsim = 1000
 
 def disp(title, value, depth=99):
     from pprint import PrettyPrinter
@@ -19,8 +19,8 @@ def disp(title, value, depth=99):
 def read_data():
     # Read votes table and electoral systems to simulate
     #vote_file = "aldarkosning.csv"
-    vote_file = "2-by-2-example.csv"
-    #vote_file = "aldarkosning.csv"
+    #vote_file = "2-by-2-example.csv"
+    vote_file = "aldarkosning.csv"
     #sys_file = "11kerfi.json"
     #sys_file = "../data/tests/default-rule.json"
     sys_file = "~/hermir/2reglur.json"

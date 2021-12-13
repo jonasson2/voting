@@ -18,6 +18,11 @@ def prepare_formats(workbook):
     formats["center"] = workbook.add_format()
     formats["center"].set_align('center')
 
+    formats["h_center"] = workbook.add_format()
+    formats["h_center"].set_bold()
+    formats["h_center"].set_align('center')
+    formats["h_center"].set_font_size(11)
+
     formats["right"] = workbook.add_format()
     formats["right"].set_align('right')
 
@@ -306,13 +311,12 @@ def simulation_to_xlsx(simulation, filename):
 
     row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
     col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
-    generating_method = next((v['text'] for v in GMN
-                              if v['value'] == 'beta'), None)
+    gen_method = next((g["text"] for g in GMN if g["value"]=='gamma'),None)
     sim_settings = [
         {"label": "Number of simulations run",
             "data": simulation.iteration},
         {"label": "Generating method",
-            "data": generating_method},
+            "data": gen_method},
         {"label": "Coefficient of variation",
             "data": simulation.var_coeff},
         {"label": "Apply randomness to",
@@ -348,9 +352,9 @@ def simulation_to_xlsx(simulation, filename):
         {"abbr": "avg",  "cell_format": fmt["sim"],
          "heading": "Avg. simulated values"},
         {"abbr": "min",  "cell_format": fmt["base"],
-         "heading": "Maximum values"},
-        {"abbr": "max",  "cell_format": fmt["base"],
          "heading": "Minimum values"},
+        {"abbr": "max",  "cell_format": fmt["base"],
+         "heading": "Maximum values"},
         {"abbr": "std",  "cell_format": fmt["sim"],
          "heading": "Standard deviations"}
         # {"abbr": "skw",  "cell_format": fmt["sim"],
@@ -394,18 +398,18 @@ def simulation_to_xlsx(simulation, filename):
     worksheet.freeze_panes(2,2)
     toprow = 0
     c = 0
-    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["basic_h"])
+    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["h_big"])
     worksheet.set_column(c,c,16)
     c += 1
     worksheet.set_column(c,c,25)
-    worksheet.write(toprow+1,c,"Tested systems: ",fmt["right"])
+    worksheet.write(toprow+1,c,"Tested systems: ",fmt["h_right"])
     c += 1
 
     for stat in stats:
         worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
         worksheet.set_column(c,c+len(simulation.systems)-1,15)
         for system in simulation.systems:
-            worksheet.write(toprow+1,c,system["name"],fmt["center"])
+            worksheet.write(toprow+1,c,system["name"],fmt["h_center"])
             c += 1
         worksheet.set_column(c,c,3)
         c += 1
@@ -483,6 +487,7 @@ def simulation_to_xlsx(simulation, filename):
             "skw": {
                 "v" : simulation.list_data[-1]["sim_votes"  ]["skw"],
                 "vs": simulation.list_data[-1]["sim_shares" ]["skw"],
+
                 "cs": simulation.list_data[ r]["const_seats"]["skw"],
                 "as": simulation.list_data[ r]["adj_seats"  ]["skw"],
                 "ts": simulation.list_data[ r]["total_seats"]["skw"],
@@ -550,7 +555,7 @@ def simulation_to_xlsx(simulation, filename):
         for table in tables:
             is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
             worksheet.write(toprow, col, table["heading"], fmt["basic_h"])
-            worksheet.write_row(toprow+1, col, parties[:-1] if is_percentages_table else parties, fmt["center"])
+            worksheet.write_row(toprow+1, col, parties[:-1] if is_percentages_table else parties, fmt["h_center"])
             col += len(parties[:-1] if is_percentages_table else parties)+1
             worksheet.set_column(col-1,col-1,3)
 

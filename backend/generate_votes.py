@@ -3,7 +3,7 @@ from random import randint, uniform
 import dictionaries
 
 def shake(vote):
-    return vote + uniform(-0.01, 0.01)
+    return max(0.01, vote + uniform(-0.01, 0.01))
 
 def generate_votes (
     base_votes,   # 2d - votes for each list
@@ -25,14 +25,15 @@ def generate_votes (
     num_parties = len(base_votes[0])
     for c in range(num_constit):
         generated_votes.append([])
+        apply_randomness = apply_random == -1 or c == apply_random
         for p in range(num_parties):
             # mean = xtd_shares[c][p]
             mean = base_votes[c][p]
             # assert 0 <= mean and mean <= 1
-            if mean == 0 or c == apply_random:
-                vote = mean
-            else:
+            if apply_randomness:
                 vote = rand(mean, var_coeff)
+            else:
+                vote = mean
             if vote >= 1:
                 vote = round(vote)
             vote = shake(vote)

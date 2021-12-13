@@ -105,10 +105,22 @@ th, td {
   white-space:nowrap;  
   border:1px solid #c7c7c7;
   padding: 2px 6px 3px 6px;
+  border-left-width:0
 }
 
-.bold {
-  font-weight:bold
+
+th {
+  font-weight:bold;
+  background: #eee;
+  text-align:center;
+}
+
+th.top {
+  border-top-width: 0px;
+}
+
+th:not(.top),td:not(.top) {
+  border-top-width:0;
 }
 
 td {
@@ -119,27 +131,7 @@ td {
   text-align:left;
   position: sticky;
   background: #eee;
-  border-left-width: 0;
-  border-right-width: 0;
   left: 0;
-}
-
-th:not(.firstcol),td:not(.firstcol) {
-  border-left-width: 0;
-}
-
-th:.top {
-  border-left-width: 1px;
-}
-
-th {
-  font-weight:bold;
-  background: #eee;
-  text-align:center;
-}
-
-th:not(.top),td:not(.top) {
-  border-top-width:0;
 }
 
 .gap {
@@ -148,27 +140,17 @@ th:not(.top),td:not(.top) {
 }
 
 .middle {
-  border-left-width:0;
   border-right-width:0;
 }
 
-.last {
-  border-left-width:0;
-}
-
-.top.firstcol {
+.firstcol.top {
   border-top-width:0
 }
 
 .firstcol.topleft {
   border-top-width:0;
-  border-left-width:0;
-  box-shadow: 0 1px 0 white inset;
   background: white;
-  z-index: 10;
 }
-
-.bold{testweight:bold;}
 
 .blank {
   border-right-width:0;
