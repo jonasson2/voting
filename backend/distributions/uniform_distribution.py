@@ -8,5 +8,5 @@ def uniform_distribution(mu, var_coeff):
     sigma = var_coeff*mu
     d = sqrt(3)*sigma
     a = max(0, mu - d)
-    b = min(1, mu + d)
+    b = mu + d
     return uniform(a, b)

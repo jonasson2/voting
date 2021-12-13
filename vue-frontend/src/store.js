@@ -92,14 +92,6 @@ const store = new Vuex.Store({
 
     newNumbering(state, idx) {findNumbering(state, idx)},
 
-    showSimulate(state) {
-      state.results = []
-      state.show_systems = false
-      state.show_simulate = true
-      console.log("showSimulate")
-      console.log("sim_settings=", state.sim_settings)
-    },
-    
     showVoteMatrix(state) {
       state.results = []
       state.show_systems = false
@@ -157,6 +149,14 @@ const store = new Vuex.Store({
       context.state.show_systems = false
       context.state.show_simulate = false
       context.dispatch("calculate_results")
+    },
+    
+    showSimulate(context) {
+      context.state.results = []
+      context.state.show_systems = false
+      context.state.show_simulate = true
+      context.dispatch("recalc_sys_const")
+      console.log("showSimulate")
     },
     
     uploadElectoralSystems(context, payload) {
@@ -243,12 +243,14 @@ const store = new Vuex.Store({
           if (response.body.error) {
             context.commit("serverError", response.body.error)
           } else {
+            console.log("response.body", response.body)
             response.body.constituencies.forEach(
               (c,i) => context.state.systems[i].constituencies = c
             )
+            console.log("sys_const[0]=", context.state.systems[0].constituencies)
           }
           console.log("recalc_sys_const")
-          console.log("sim_settings=", context.state.sim_settings)
+          console.log("& sys_const[0]=", context.state.systems[0].constituencies)
           context.commit("clearWaitingForData")
         })
     },

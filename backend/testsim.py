@@ -23,8 +23,8 @@ def LoadAll(file):
     return systems, sim_settings, vote_table
     
 # vote_table = load_votes("iceland-2021-first.csv", preset=True)
-vote_table = load_votes(ELEC + "aldarkosning.csv")
-# vote_table = load_votes(ELEC + "2-by-2-example.csv")
+# vote_table = load_votes(ELEC + "aldarkosning.csv")
+vote_table = load_votes(ELEC + "2-by-2-example.csv")
 # vote_table["votes"][0][0] = 0
 # all_file = "~/hermir/krass.json"
 # all_file = "~/hermir/altscaling.json"

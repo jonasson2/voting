@@ -1,6 +1,6 @@
 <template>
 <!-- <b-form style = "margin-left:16px;margin-right:16px"> -->
-  <b-form style = "margin-left:16px;margin-right:16px">
+  <b-form style="margin-left:16px;margin-right:16px" v-if="!waiting_for_data">
     <b-row>
       <b-col cols=4>
         <b-form-group
@@ -132,6 +132,7 @@ export default {
       'sim_settings',
       'sim_capabilities',
       'systems',
+      'waiting_for_data'
     ]),
     system_names: function() {
       let sysnames = this.systems.map(system => system.name)

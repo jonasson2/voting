@@ -86,8 +86,8 @@ ADJUSTMENT_METHOD_NAMES = {
 }
 
 GENERATING_METHODS = {
-    "beta": symmetric_beta_distribution,
     "gamma": gamma_distribution,
+    "beta": symmetric_beta_distribution,
     "uniform": uniform_distribution,
     "maxchange": None
 }

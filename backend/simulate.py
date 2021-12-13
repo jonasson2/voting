@@ -366,6 +366,7 @@ class Simulation:
                 break
             self.iteration = i + 1
             votes = next(gen)
+            #disp('votes', votes)a
             self.run_and_collect_measures(votes)  # This allocates seats
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()

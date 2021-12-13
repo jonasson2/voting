@@ -306,13 +306,12 @@ def simulation_to_xlsx(simulation, filename):
 
     row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
     col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
-    generating_method = next((v['text'] for v in GMN
-                              if v['value'] == 'beta'), None)
+    gen_method = next((g["text"] for g in GMN if g["value"]=='gamma'),None)
     sim_settings = [
         {"label": "Number of simulations run",
             "data": simulation.iteration},
         {"label": "Generating method",
-            "data": generating_method},
+            "data": gen_method},
         {"label": "Coefficient of variation",
             "data": simulation.var_coeff},
         {"label": "Apply randomness to",
@@ -483,6 +482,7 @@ def simulation_to_xlsx(simulation, filename):
             "skw": {
                 "v" : simulation.list_data[-1]["sim_votes"  ]["skw"],
                 "vs": simulation.list_data[-1]["sim_shares" ]["skw"],
+
                 "cs": simulation.list_data[ r]["const_seats"]["skw"],
                 "as": simulation.list_data[ r]["adj_seats"  ]["skw"],
                 "ts": simulation.list_data[ r]["total_seats"]["skw"],
