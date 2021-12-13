@@ -1,29 +1,30 @@
+#!/usr/bin/env python3
 from multiprocessing import Pool
 from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
 from time import sleep
 from math import sqrt
 from copy import deepcopy, copy
+from datetime import datetime
+from pathlib import Path
 import json
-from util import disp
-n_reps = 1
-n_betasim = 2
-n_unifsim = 1000
+from util import disp, dispv
 
-def disp(title, value, depth=99):
-    from pprint import PrettyPrinter
-    pp = PrettyPrinter(compact=False, width=120, depth=depth).pprint
-    print("\n" + title.upper() + ":")
-    pp(value)
+n_proc = 8
+n_reps = 1
+n_beta_sim = n_proc*n_reps
+n_unif_sim = 200
+
+#vote_file = "aldarkosning.csv"
+#vote_file = "2-by-2-example.csv"
+vote_file = "21st-century-avg.csv"
+#vote_file = "iceland-2021-first.csv"
+sys_file = "~/hermir/10kerfi.json"
+#sys_file = "../data/tests/default-rule.json"
+#sys_file = "~/hermir/2reglur.json"
 
 def read_data():
     # Read votes table and electoral systems to simulate
-    #vote_file = "aldarkosning.csv"
-    #vote_file = "2-by-2-example.csv"
-    vote_file = "aldarkosning.csv"
-    #sys_file = "11kerfi.json"
-    #sys_file = "../data/tests/default-rule.json"
-    sys_file = "~/hermir/2reglur.json"
     votes = load_votes("../data/elections/" + vote_file)
     systems, sim_settings = load_systems(sys_file)
     # results = single_election(votes, systems)
@@ -36,7 +37,6 @@ def simulate_votes(votes, systems, sim_settings):
     # Run one step of simulation and return the simulated votes
     settings = copy(sim_settings)
     settings["simulation_count"] = 1
-    print("In simulate_votes")
     results = run_simulation(votes, systems, settings)
     return results["vote_data"][0]["sim_votes"]["avg"]
 
@@ -57,7 +57,7 @@ def get_sim_settings(sim_settings, gen_method, *, dist_param=None, nsim=None):
 (votes, systems, sim_settings) = read_data()
 # disp("systems", systems)
 sim_beta_settings = get_sim_settings(sim_settings, "beta",    dist_param=0.25)
-sim_unif_settings = get_sim_settings(sim_settings, "uniform", dist_param=0.01, nsim=n_unifsim)
+sim_unif_settings = get_sim_settings(sim_settings, "uniform", dist_param=0.01, nsim=n_unif_sim)
 
 def colmean(A):
     # Return column means of "non-numpy" Matrix
@@ -79,7 +79,8 @@ def simulate(idx):
     nsys = len(systems)
     avg = []
     std = []
-    for idx_beta in range(n_betasim):
+    for idx_beta in range(n_reps):
+        if idx==0: print(f"Rep {idx_beta+1} out of {n_reps}")
         #disp("votes", votes)
         matrix = simulate_votes(votes, systems, sim_beta_settings)
         #disp("matrix", matrix)
@@ -87,7 +88,8 @@ def simulate(idx):
         #disp("sim_votes", sim_votes)
         #disp("systems", systems)[]
         #disp("sim_unif_settings", sim_unif_settings)
-        res = run_simulation(sim_votes, systems, sim_unif_settings)
+        res = run_simulation(sim_votes, systems, sim_unif_settings,
+                             sensitivity = True)
         dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
                        for i in range(nsys)]
         dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
@@ -97,27 +99,38 @@ def simulate(idx):
         std.append(dev_ref_std)
     #disp("res", res)
     sysnames = [sys["name"] for sys in systems]
-    avg = dict(zip(sysnames, colmean(avg)))
-    std = dict(zip(sysnames, colmean(std)))
-    return avg, std
+    return avg,std
 
 systemnames = [s["name"] for s in systems]
 
 #sim_beta_settings["simulate"] = True
 #disp("sim_beta_settings", sim_beta_settings)
 #matrix = simulate_votes(votes, systems, sim_beta_settings)
-(avg,std) = simulate(1)
-disp('Avereage', avg)
-disp('Std.dev.', std)
-if False: #__name__ == "__main__":
+#(avg,std) = simulate(1)
+#disp('Avereage', avg)
+#disp('Std.dev.', std)
+import numpy as np
+A = []
+S = []
+if __name__ == "__main__":
     nsys = len(systems)
-    p = Pool(n_reps)
-    #result = p.map(simulate, list(range(n_reps)))
-    result = [simulate(1)]
-    means = [r[0] for r in result]
-    sdevs = [r[1] for r in result]
-    #printcsv("means.dat", means)
-    #printcsv("sdevs.dat", sdevs)
-    #disp("means", means)
-    #plot(means, systemnames)
-None
+    p = Pool(n_proc)
+    results = p.map(simulate, list(range(n_proc)))
+    for result in results:
+        A.extend([r for r in result[0]])
+        S.extend([r for r in result[1]])
+    results = {
+        "n_beta_sim":      n_beta_sim,
+        "n_unif_sim":      n_unif_sim,
+        "system_file":     sys_file,
+        "vote_file":       votes,
+        "system_names":    systemnames,
+        "sim_settings":    sim_settings,
+        "mean_alloc_diff": A,
+        "std_alloc_diff":  S,
+    }
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    result_filename=f"{Path.home()}/simresults-{date}.json"
+    with open(result_filename, 'w', encoding='utf-8') as jsonfile:
+        json.dump(results, jsonfile, ensure_ascii=False, indent=2)
+    None

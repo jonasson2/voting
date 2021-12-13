@@ -223,18 +223,22 @@ class Simulation:
             self.stat["seat_shares"][i].update(sh)
             self.stat["ideal_seats"][i].update(ids)
 
-    def run_and_collect_measures(self, votes):
+    def run_and_collect_measures(self, votes, sensitivity):
         # allocate seats according to votes:
         #print("it", self.iteration)
         self.election_handler.run_elections(votes) # A
         self.collect_votes(votes)
         self.collect_list_measures()
-        self.collect_general_measures()
+        self.collect_general_measures(sensitivity)
 
-    def collect_general_measures(self):
+    def collect_general_measures(self, sensitivity):
         deviations = Collect()
         elections = self.election_handler.elections
         for (election, system) in zip(elections, self.systems):
+            self.add_deviation(election, "dev_ref", system.reference_results,
+                               deviations)
+            if sensitivity:
+                continue
             deviations.add("entropy", election.entropy())
             for (cmp_election, cmp_system) in zip(elections, self.systems):
                 if cmp_system["compare_with"]:
@@ -254,7 +258,6 @@ class Simulation:
             comparison_election = voting.Election(comparison_system, election.m_votes)
             comparison_results = comparison_election.run()
             self.add_deviation(election, measure, comparison_results, deviations)
-        self.add_deviation(election, "dev_ref", system.reference_results, deviations)
 
     @staticmethod
     def add_deviation(election, measure, comparison_results, deviations):
@@ -353,11 +356,11 @@ class Simulation:
         ])
         return dh_sum
 
-    def simulate(self):
+    def simulate(self, sensitivity=False):
         # Simulate many elections.
         gen = self.gen_votes()
         ntot = self.sim_count
-        if ntot == 0:
+        if ntot == 0 and not sensitivity:
             self.run_and_collect_measures(self.election_handler.votes)
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
@@ -367,7 +370,8 @@ class Simulation:
             self.iteration = i + 1
             votes = next(gen)
             #disp('votes', votes)a
-            self.run_and_collect_measures(votes)  # This allocates seats
+            self.run_and_collect_measures(votes, sensitivity)  # This allocates
+            # seats
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)
