@@ -17,27 +17,27 @@
           <td class="firstcol blank"></td>
         </tr>
         <tr>
-          <td :class="groupclass(id)">
+          <th :class="groupclass(id)">
             {{group_titles[id]}}                     <!-- GROUP TITLE -->
-          </td>
+          </th>
           <template v-if="headingType[id]=='systems'">
             <template v-for="idx in nstat">
-              <template v-for="(sysname, s) in system_names"> 
-                <td :class="sysclass(s)">
+              <template v-for="(sysname, s) in system_names"> <!-- SYS HEADING -->
+                <th :class="sysclass(s)">
                   {{sysname}}
-                </td>
+                </th>
               </template>
             </template>
           </template>
-          <template v-else-if="headingType[id]=='stats'">
+          <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
             <template v-for="stat in stats">
               <th :colspan="nsys" :key="stat" class="top">
                 {{stat_headings[stat]}}
               </th>
             </template>
           </template>
-          <template v-else>
-            <th :colspan="nsys*nstat" class="topright"></th>
+          <template v-else>                               <!-- NO HEADING -->
+            <th :colspan="nsys*nstat" class="gap"></th>
           </template>
         </tr>
         <tr v-for="(row, rowidx) in vuedata[id]"
@@ -54,7 +54,7 @@
           </template>
         </tr>
         <tr v-if="vuedata[id].length>0">
-          <td class="firstcol gap"></td>
+          <td class="firstcol blank"></td>
         </tr>
       </template>
       <tr><td class="firstcol blank"></td></tr>
@@ -85,9 +85,9 @@ export default {
     },
     groupclass: function(id) {
       if (this.headingType[id] == 'systems')
-        return "firstcol bold"
+        return "firstcol"
       else
-        return "firstcol bold top"
+        return "firstcol top"
     }
   }
 }
@@ -97,13 +97,13 @@ export default {
 table {
   table-layout: auto;
   font-size:90%;
-  border-collapse:separate;
+  border-collapse:collapse;
   border-spacing:0;
 }
 
 th, td {
   white-space:nowrap;  
-  border:1px solid #ccc;
+  border:1px solid #c7c7c7;
   padding: 2px 6px 3px 6px;
 }
 
@@ -118,53 +118,65 @@ td {
 .firstcol {
   text-align:left;
   position: sticky;
-  background: white;
+  background: #eee;
+  border-left-width: 0;
+  border-right-width: 0;
   left: 0;
 }
 
 th:not(.firstcol),td:not(.firstcol) {
-  border-left: unset;
+  border-left-width: 0;
+}
+
+th:.top {
+  border-left-width: 1px;
 }
 
 th {
   font-weight:bold;
+  background: #eee;
   text-align:center;
 }
 
 th:not(.top),td:not(.top) {
-  border-top:unset;
+  border-top-width:0;
 }
 
-.topright {
-  border-right:unset;
+.gap {
+  background: white;
+  border-right-width:0;
 }
 
 .middle {
-  border-left:unset;
-  border-right:unset;
+  border-left-width:0;
+  border-right-width:0;
 }
 
 .last {
-  border-left:unset;
+  border-left-width:0;
 }
 
-.topleft {
-  border-left:unset;
-  border-top:unset;
+.top.firstcol {
+  border-top-width:0
+}
+
+.firstcol.topleft {
+  border-top-width:0;
+  border-left-width:0;
+  box-shadow: 0 1px 0 white inset;
+  background: white;
+  z-index: 10;
 }
 
 .bold{testweight:bold;}
 
-.top {}
-
 .blank {
-  border:unset;
-  padding:4px
-}
-
-.gap {
-  border:unset;
-  padding:4px;
+  border-right-width:0;
+  border-bottom-width:0;
+  border-left-width:0;
+  border-right-width:0;
+  background: white;
+  padding:6px
 }
 
 </style>
