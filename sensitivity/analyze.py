@@ -51,9 +51,9 @@ def table(system_names, A):
     print(f"\nSeat change count with {icv*100:.1f}% change in votes:\n")
     h1 = "Voting system"
     ns = max([len(h1), *(len(s) for s in system_names)])
-    print(f"{h1:{ns}}  Mean   SE    SD  90-pctile")
+    print(f"{h1:{ns}}  Mean    SE     SD  90-pctile")
     print("–"*(ns + 3*6 + 10))
     for (sys,m,se,s,p) in zip(system_names, mean, stderr, std, p90):
-        print(f"{sys:{ns}}  {m:4.2f}  {se:4.2f}  {s:4.2f}   {p:4.2f}")
+        print(f"{sys:{ns}}  {m:5.3f}  {se:5.3f}  {s:4.2f}   {p:4.2f}")
 
 table(system_names, A)

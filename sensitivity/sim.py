@@ -4,28 +4,63 @@ sys.path.append("../backend")
 from multiprocessing import Pool
 from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
-from time import sleep
-from math import sqrt
 from copy import deepcopy, copy
 from datetime import datetime
 import json
-import sys
 from util import disp, dispv
-from pathlib import Path
+import numpy as np
 
-n_proc         = 32
-n_reps         = 112
+n_proc         = 2
+n_reps         = 1
 n_gamma_sim    = n_proc*n_reps
-n_unif_sim     = 1000
+n_unif_sim     = 100
 inner_var_coef = 0.001
 
 #vote_file = "aldarkosning.csv"
 #vote_file = "2-by-2-example.csv"
-vote_file = "21st-century-avg.csv"
 #vote_file = "iceland-2021-first.csv"
-sys_file = "~/hermir/10kerfi.json"
 #sys_file = "../data/tests/default-rule.json"
 #sys_file = "~/hermir/2reglur.json"
+
+vote_file = "21st-century-avg.csv"
+sys_file = "10kerfi.json"
+
+def read_data():
+    votes = load_votes("../data/elections/" + vote_file)
+    systems, sim_settings = load_systems(sys_file)
+    return votes, systems, sim_settings
+
+(votes, systems, sim_settings) = read_data()
+
+def main():
+    jsonfile, meanfile, stdfile, logfile = filenames()
+    systemnames = [s["name"] for s in systems]
+    with open(logfile,'w'):
+        pass
+    A = []
+    S = []
+    nsys = len(systems)
+    pars = ((idx, logfile) for idx in range(n_proc))
+    p = Pool(n_proc)
+    results = p.starmap(simulate, pars)
+    
+    for result in results:
+        A.extend([r for r in result[0]])
+        S.extend([r for r in result[1]])
+        
+    metadata = {
+        "n_gamma_sim":     n_gamma_sim,
+        "n_unif_sim":      n_unif_sim,
+        "system_file":     sys_file,
+        "vote_file":       vote_file,
+        "system_names":    systemnames,
+        "outer_settings":  sim_gamma_settings(),
+        "inner_settings":  sim_unif_settings(),
+    }
+    with open(jsonfile, 'w', encoding='utf-8') as fd:
+        json.dump(metadata, fd, ensure_ascii=False, indent=2)
+    writecsv(meanfile, A)
+    writecsv(stdfile, S)    
 
 def filenames():
     from pathlib import Path
@@ -34,11 +69,12 @@ def filenames():
     else:
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         filestem=f"simresults-{date}"
-    filestem = "results/" + filestem
+    filestem = "results/" + filestem    
     jsonfile = filestem + ".json"
     meanfile = filestem + ".m.csv"
     stdfile = filestem + ".s.csv"
-    return jsonfile, meanfile, stdfile
+    logfile = filestem + ".log"
+    return jsonfile, meanfile, stdfile, logfile
 
 def read_data():
     # Read votes table and electoral systems to simulate
@@ -71,18 +107,12 @@ def get_sim_settings(sim_settings, gen_method, *, dist_param=None, nsim=None):
     if nsim       != None: settings["simulation_count"] = nsim
     return settings
 
-(votes, systems, sim_settings) = read_data()
-# disp("systems", systems)
-sim_gamma_settings = get_sim_settings(
-    sim_settings,
-    "gamma",
-    dist_param = 0.25,
-    nsim=1)
-sim_unif_settings = get_sim_settings(
-    sim_settings,
-    "uniform",
-    dist_param = inner_var_coef,
-    nsim = n_unif_sim)
+def sim_gamma_settings():
+    return get_sim_settings(sim_settings, "gamma", dist_param=0.25, nsim=1)
+
+def sim_unif_settings():
+    return get_sim_settings(sim_settings, "uniform", dist_param=inner_var_coef,
+                            nsim = n_unif_sim)
 
 def colmean(A):
     # Return column means of "non-numpy" Matrix
@@ -93,68 +123,36 @@ def colmean(A):
         avg[i] = sum([a[i] for a in A])/m
     return avg
 
-def printcsv(file,L):
+def writecsv(file,L):
     import csv
     with open(file, "w") as f:
         writer = csv.writer(f)
         writer.writerows(L)
 
-def simulate(idx):
+def simulate(idx, logfile):
+    import socket
+    host = socket.gethostname()
+    print(idx,logfile)
     sim_votes = deepcopy(votes)
     nsys = len(systems)
     avg = []
     std = []
     for idx_gamma in range(n_reps):
-        if idx==0: print(f"Rep {idx_gamma+1} out of {n_reps}")
-        #disp("votes", votes)
-        matrix = simulate_votes(votes, systems, sim_gamma_settings)
-        #disp("matrix", matrix)
+        if idx==0:
+            with open(logfile, 'a') as logf:
+                for f in [sys.stdout, logf]:
+                    print(f"Host {host}, rep {idx_gamma+1} out of {n_reps}", file=f)
+        matrix = simulate_votes(votes, systems, sim_gamma_settings())
         sim_votes["votes"] = matrix2votes(matrix)
-        #disp("sim_votes", sim_votes)
-        #disp("systems", systems)[]
-        #disp("sim_unif_settings", sim_unif_settings)
-        res = run_simulation(sim_votes, systems, sim_unif_settings,
+        res = run_simulation(sim_votes, systems, sim_unif_settings(),
                              sensitivity = True)
         dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
                        for i in range(nsys)]
         dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
                        for i in range(nsys)]
-        #disp("dev_ref_avg", dev_ref_avg)
         avg.append(dev_ref_avg)
         std.append(dev_ref_std)
-    #disp("res", res)
-    sysnames = [sys["name"] for sys in systems]
     return avg,std
 
-systemnames = [s["name"] for s in systems]
-
-#sim_gamma_settings["simulate"] = True
-#disp("sim_gamma_settings", sim_gamma_settings)
-#matrix = simulate_votes(votes, systems, sim_gamma_settings)
-#(avg,std) = simulate(1)
-#disp('Avereage', avg)
-#disp('Std.dev.', std)
-import numpy as np
-A = []
-S = []
 if __name__ == "__main__":
-    nsys = len(systems)
-    p = Pool(n_proc)
-    results = p.map(simulate, list(range(n_proc)))
-    for result in results:
-        A.extend([r for r in result[0]])
-        S.extend([r for r in result[1]])
-    results = {
-        "n_gamma_sim":     n_gamma_sim,
-        "n_unif_sim":      n_unif_sim,
-        "system_file":     sys_file,
-        "vote_file":       vote_file,
-        "system_names":    systemnames,
-        "outer_settings":  sim_gamma_settings,
-        "inner_settings":  sim_unif_settings,
-    }
-    jsonfile, meanfile, stdfile = filenames()
-    with open(jsonfile, 'w', encoding='utf-8') as fd:
-        json.dump(results, fd, ensure_ascii=False, indent=2)
-    printcsv(meanfile, A)
-    printcsv(stdfile, S)
+    main()
