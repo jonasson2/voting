@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+sys.path.append("../backend")
 from multiprocessing import Pool
 from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
@@ -6,14 +8,16 @@ from time import sleep
 from math import sqrt
 from copy import deepcopy, copy
 from datetime import datetime
-from pathlib import Path
 import json
+import sys
 from util import disp, dispv
+from pathlib import Path
 
-n_proc = 8
-n_reps = 1
-n_beta_sim = n_proc*n_reps
-n_unif_sim = 200
+n_proc         = 32
+n_reps         = 112
+n_gamma_sim    = n_proc*n_reps
+n_unif_sim     = 1000
+inner_var_coef = 0.001
 
 #vote_file = "aldarkosning.csv"
 #vote_file = "2-by-2-example.csv"
@@ -22,6 +26,19 @@ vote_file = "21st-century-avg.csv"
 sys_file = "~/hermir/10kerfi.json"
 #sys_file = "../data/tests/default-rule.json"
 #sys_file = "~/hermir/2reglur.json"
+
+def filenames():
+    from pathlib import Path
+    if len(sys.argv) > 1:
+        filestem = sys.argv[1]
+    else:
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        filestem=f"simresults-{date}"
+    filestem = "results/" + filestem
+    jsonfile = filestem + ".json"
+    meanfile = filestem + ".m.csv"
+    stdfile = filestem + ".s.csv"
+    return jsonfile, meanfile, stdfile
 
 def read_data():
     # Read votes table and electoral systems to simulate
@@ -36,7 +53,7 @@ def read_data():
 def simulate_votes(votes, systems, sim_settings):
     # Run one step of simulation and return the simulated votes
     settings = copy(sim_settings)
-    settings["simulation_count"] = 1
+    assert settings["simulation_count"] == 1
     results = run_simulation(votes, systems, settings)
     return results["vote_data"][0]["sim_votes"]["avg"]
 
@@ -56,8 +73,16 @@ def get_sim_settings(sim_settings, gen_method, *, dist_param=None, nsim=None):
 
 (votes, systems, sim_settings) = read_data()
 # disp("systems", systems)
-sim_beta_settings = get_sim_settings(sim_settings, "beta",    dist_param=0.25)
-sim_unif_settings = get_sim_settings(sim_settings, "uniform", dist_param=0.01, nsim=n_unif_sim)
+sim_gamma_settings = get_sim_settings(
+    sim_settings,
+    "gamma",
+    dist_param = 0.25,
+    nsim=1)
+sim_unif_settings = get_sim_settings(
+    sim_settings,
+    "uniform",
+    dist_param = inner_var_coef,
+    nsim = n_unif_sim)
 
 def colmean(A):
     # Return column means of "non-numpy" Matrix
@@ -79,10 +104,10 @@ def simulate(idx):
     nsys = len(systems)
     avg = []
     std = []
-    for idx_beta in range(n_reps):
-        if idx==0: print(f"Rep {idx_beta+1} out of {n_reps}")
+    for idx_gamma in range(n_reps):
+        if idx==0: print(f"Rep {idx_gamma+1} out of {n_reps}")
         #disp("votes", votes)
-        matrix = simulate_votes(votes, systems, sim_beta_settings)
+        matrix = simulate_votes(votes, systems, sim_gamma_settings)
         #disp("matrix", matrix)
         sim_votes["votes"] = matrix2votes(matrix)
         #disp("sim_votes", sim_votes)
@@ -103,9 +128,9 @@ def simulate(idx):
 
 systemnames = [s["name"] for s in systems]
 
-#sim_beta_settings["simulate"] = True
-#disp("sim_beta_settings", sim_beta_settings)
-#matrix = simulate_votes(votes, systems, sim_beta_settings)
+#sim_gamma_settings["simulate"] = True
+#disp("sim_gamma_settings", sim_gamma_settings)
+#matrix = simulate_votes(votes, systems, sim_gamma_settings)
 #(avg,std) = simulate(1)
 #disp('Avereage', avg)
 #disp('Std.dev.', std)
@@ -120,17 +145,16 @@ if __name__ == "__main__":
         A.extend([r for r in result[0]])
         S.extend([r for r in result[1]])
     results = {
-        "n_beta_sim":      n_beta_sim,
+        "n_gamma_sim":     n_gamma_sim,
         "n_unif_sim":      n_unif_sim,
         "system_file":     sys_file,
-        "vote_file":       votes,
+        "vote_file":       vote_file,
         "system_names":    systemnames,
-        "sim_settings":    sim_settings,
-        "mean_alloc_diff": A,
-        "std_alloc_diff":  S,
+        "outer_settings":  sim_gamma_settings,
+        "inner_settings":  sim_unif_settings,
     }
-    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-    result_filename=f"{Path.home()}/simresults-{date}.json"
-    with open(result_filename, 'w', encoding='utf-8') as jsonfile:
-        json.dump(results, jsonfile, ensure_ascii=False, indent=2)
-    None
+    jsonfile, meanfile, stdfile = filenames()
+    with open(jsonfile, 'w', encoding='utf-8') as fd:
+        json.dump(results, fd, ensure_ascii=False, indent=2)
+    printcsv(meanfile, A)
+    printcsv(stdfile, S)
