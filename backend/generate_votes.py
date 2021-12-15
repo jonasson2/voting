@@ -6,11 +6,11 @@ def shake(vote):
     return max(0.01, vote + uniform(-0.01, 0.01))
 
 def generate_votes (
-    base_votes,   # 2d - votes for each list
-    var_coeff,    # coefficient of variation, SD/mean
-    distribution, # "beta", "uniform"...
-    apply_random, # -1: apply randomness to all constituencies
-    #             # otherwise only to constituency rand_constit
+    base_votes,      # 2d - votes for each list
+    var_coeff,       # coefficient of variation, SD/mean
+    distribution,    # "beta", "uniform"...
+    apply_random=-1, # -1: apply randomness to all constituencies
+    #                # otherwise only to constituency rand_constit
 ):
     """
     Generate a set of random votes using 'base_votes' as reference.

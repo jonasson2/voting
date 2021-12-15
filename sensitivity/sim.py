@@ -10,11 +10,12 @@ import json
 from util import disp, dispv
 import numpy as np
 
-n_proc         = 2
+n_proc         = 8
 n_reps         = 1
-n_gamma_sim    = n_proc*n_reps
-n_unif_sim     = 100
-inner_var_coef = 0.001
+#n_gamma_sim    = n_proc*n_reps
+n_gamma_sim    = 10
+n_unif_sim     = 1
+inner_var_coef = 0.01
 
 #vote_file = "aldarkosning.csv"
 #vote_file = "2-by-2-example.csv"
@@ -32,21 +33,36 @@ def read_data():
 
 (votes, systems, sim_settings) = read_data()
 
+def sum_histograms(H):
+    nhist = max([np.shape(x)[1] for x in H]) + 5 # for safety
+    nrows = np.shape(H[0])[0]
+    hist = np.zeros((nrows, nhist), dtype=int)
+    for h in H:
+        nh = np.shape(h)[1]
+        for i in range(nh):
+            hist[:,i] += h[:,i]
+    return hist
+
 def main():
-    jsonfile, meanfile, stdfile, logfile = filenames()
+    jsonfile, meanfile, stdfile, histfile, logfile = filenames()
     systemnames = [s["name"] for s in systems]
-    with open(logfile,'w'):
-        pass
+    # with open(logfile,'w'):
+    #     pass
     A = []
     S = []
     nsys = len(systems)
-    pars = ((idx, logfile) for idx in range(n_proc))
+    pars = ((idx,) for idx in range(n_proc))
+    #simulate(0, logfile)
     p = Pool(n_proc)
     results = p.starmap(simulate, pars)
-    
-    for result in results:
-        A.extend([r for r in result[0]])
-        S.extend([r for r in result[1]])
+
+    hist = sum_histograms(results)
+    #for result in results:
+    #    print(result)
+    #print(hist)
+    None
+    #     A.extend([r for r in result[0]])
+    #     S.extend([r for r in result[1]])
         
     metadata = {
         "n_gamma_sim":     n_gamma_sim,
@@ -59,22 +75,27 @@ def main():
     }
     with open(jsonfile, 'w', encoding='utf-8') as fd:
         json.dump(metadata, fd, ensure_ascii=False, indent=2)
-    writecsv(meanfile, A)
-    writecsv(stdfile, S)    
+    print(histfile)
+    writecsv(histfile, hist)
+    #writecsv(meanfile, A)
+    #writecsv(stdfile, S)
 
 def filenames():
     from pathlib import Path
+    from os import makedirs
     if len(sys.argv) > 1:
-        filestem = sys.argv[1]
+        folder = sys.argv[1]
     else:
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-        filestem=f"simresults-{date}"
-    filestem = "results/" + filestem    
-    jsonfile = filestem + ".json"
-    meanfile = filestem + ".m.csv"
-    stdfile = filestem + ".s.csv"
-    logfile = filestem + ".log"
-    return jsonfile, meanfile, stdfile, logfile
+        folder = f"simresults-{date}"
+    folder = "results/" + folder
+    makedirs(folder, exist_ok=True)
+    jsonfile = folder + "/meta.json"
+    meanfile = folder + "/m.csv"
+    stdfile = folder + "/s.csv"
+    histfile = folder + "/h.csv"
+    logfile = folder + "/sim.log"
+    return jsonfile, meanfile, stdfile, histfile, logfile
 
 def read_data():
     # Read votes table and electoral systems to simulate
@@ -98,17 +119,20 @@ def matrix2votes(A):
     B = [[round(x) for x in a[:-1]] for a in A[:-1]]
     return B
 
-def get_sim_settings(sim_settings, gen_method, *, dist_param=None, nsim=None):
+def get_sim_settings(sim_settings, gen_method, *,
+                     dist_param=None, nsim=None, sens_cv=0.01):
     # Return version of sim_settings with specified changes
     # e.g. get_sim_settings(sim_settings, nsim=300)
     settings = deepcopy(sim_settings)
     settings["gen_method"] = gen_method
     if dist_param != None: settings["distribution_parameter"] = dist_param
     if nsim       != None: settings["simulation_count"] = nsim
+    if sens_cv    != None: settings["sens_cv"] = sens_cv
     return settings
 
 def sim_gamma_settings():
-    return get_sim_settings(sim_settings, "gamma", dist_param=0.25, nsim=1)
+    return get_sim_settings(sim_settings, "gamma", dist_param=0.25,
+                            nsim=n_gamma_sim, sens_cv=inner_var_coef)
 
 def sim_unif_settings():
     return get_sim_settings(sim_settings, "uniform", dist_param=inner_var_coef,
@@ -129,30 +153,34 @@ def writecsv(file,L):
         writer = csv.writer(f)
         writer.writerows(L)
 
-def simulate(idx, logfile):
+def simulate(idx, logfile=None):
     import socket
     host = socket.gethostname()
-    print(idx,logfile)
+    #print(idx,logfile)
     sim_votes = deepcopy(votes)
     nsys = len(systems)
     avg = []
     std = []
     for idx_gamma in range(n_reps):
-        if idx==0:
+        if idx==0 and logfile:
             with open(logfile, 'a') as logf:
                 for f in [sys.stdout, logf]:
                     print(f"Host {host}, rep {idx_gamma+1} out of {n_reps}", file=f)
-        matrix = simulate_votes(votes, systems, sim_gamma_settings())
-        sim_votes["votes"] = matrix2votes(matrix)
-        res = run_simulation(sim_votes, systems, sim_unif_settings(),
-                             sensitivity = True)
-        dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
-                       for i in range(nsys)]
-        dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
-                       for i in range(nsys)]
-        avg.append(dev_ref_avg)
-        std.append(dev_ref_std)
-    return avg,std
+        # matrix = simulate_votes(votes, systems, sim_gamma_settings())
+        # sim_votes["votes"] = matrix2votes(matrix)
+        sim_settings = sim_gamma_settings()
+        ls,ps = run_simulation(votes, systems, sim_settings, sensitivity = True)
+        ls = np.array(ls)
+        ps = np.array(ps)
+        None
+        # dev_ref_avg = [res["data"][i]["measures"]["dev_ref"]["avg"]
+        #                for i in range(nsys)]
+        # dev_ref_std = [res["data"][i]["measures"]["dev_ref"]["std"]
+        #                for i in range(nsys)]
+
+        # avg.append(dev_ref_avg)
+        # std.append(dev_ref_std)
+    return ls
 
 if __name__ == "__main__":
     main()

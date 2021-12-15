@@ -13,19 +13,9 @@ from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
 from util import hms, shape
 from copy import deepcopy
-from util import disp, dispv, remove_prefix
+from util import disp, dispv, remove_prefix, sum_abs_diff
 
 # logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-
-def dev(results, ref):  # Compute sum of absolute values of ref minus results
-    if shape(results) != shape(ref):
-        return None
-    d = 0
-    for c in range(len(results)):
-        assert (len(results[c]) == len(ref[c]))
-        for p in range(len(results[c])):
-            d += abs(results[c][p] - ref[c][p])
-    return d
 
 class Collect(dict):
     # collect values into dictionaries of arrays
@@ -56,22 +46,23 @@ class SimulationSettings(System):
 class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
-        #random.seed(42)
+        random.seed(42)
         min_votes = 0.5
+        election_handler = ElectionHandler(vote_table, systems, min_votes)
+        self.election_handler = election_handler
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
-        self.election_handler = ElectionHandler(vote_table, systems, min_votes)
-        elections = self.election_handler.elections
-        self.systems = [election.system for election in elections]
+        self.systems = [election.system
+                        for election in election_handler.elections]
         self.nsys = len(self.systems)
-        for (election, system) in zip(elections, self.systems):
-            system.reference_results = deepcopy(election.results)
+        for (election, sys) in zip(election_handler.elections, self.systems):
+            sys.reference_results = deepcopy(election.results)
         self.parties = vote_table["parties"]
-        self.xtd_votes = add_totals(self.election_handler.votes)
+        self.xtd_votes = add_totals(election_handler.votes)
         self.xtd_vote_shares = find_xtd_shares(self.xtd_votes)
         self.sim_settings = sim_settings
         self.sim_count = self.sim_settings["simulation_count"]
-        self.variate = self.sim_settings["gen_method"]
+        self.distribution = self.sim_settings["gen_method"]
         self.var_coeff = self.sim_settings["distribution_parameter"]
         self.iteration = 0
         self.terminate = False
@@ -83,11 +74,13 @@ class Simulation:
         self.vote_table = vote_table
         self.num_parties = len(self.parties)
         self.num_constituencies = len(self.constituencies)
+        self.sensitivity = False
         # --------
         self.apply_random = self.index_of_const_to_apply_randomness_to()
         self.data = [{} for _ in range(self.nsys)]
         self.list_data = [{} for _ in range(self.nsys + 1)]
         self.vote_data = [{} for _ in range(self.nsys)]
+        #
         self.initialize_stat_counters()
         self.run_initial_elections()
 
@@ -122,6 +115,10 @@ class Simulation:
                 measure = "cmp_" + cmp_system["name"]
                 self.stat[measure] = Running_stats(ns)
                 self.stat[measure + "_tot"] = Running_stats(ns)
+        for measure in ["party_sens", "list_sens"]:
+            self.stat[measure] = [None]*ns
+            for i in range(ns):
+                self.stat[measure][i] = Running_stats(1, binwidth=1)
 
     @staticmethod
     def find_datadict(statentry):
@@ -158,8 +155,32 @@ class Simulation:
                     D[s] = dd[s]
                 self.list_data[i][m] = D
 
+    def gethistograms(self, type):
+        stat = self.stat[type + "_sens"]
+        kmax = 0
+        for s in stat:
+            keys = s.histogram()[0]
+            kmax = max(kmax, max(keys[0]))
+        assert kmax % 2 == 0
+        kmax //= 2
+        counts = []
+        for s in stat:
+            count = [0]*(kmax+1)
+            (keys, vals) = s.histogram()
+            for (k,v) in zip(keys[0],vals[0]):
+                assert k % 2 == 0
+                if k//2 >= kmax:
+                    None
+                count[k//2] = v
+            counts.append(count)
+        return counts
+
     def analysis(self):
         # Calculate averages and variances of various quality measures.
+        if self.sensitivity:
+            self.list_sensitivity = self.gethistograms("list")
+            self.party_sensitivity = self.gethistograms("party")
+            return
         self.analyze_general()
         self.analyze_list_data()
         self.analyze_vote_data()
@@ -189,14 +210,14 @@ class Simulation:
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
-            if self.variate == "maxchange":
+            if self.distribution == "maxchange":
                 votes = generate_maxchange_votes(
                     self.election_handler.votes, self.var_coeff,
                     self.apply_random)
             else:
                 votes = generate_votes(
                     self.election_handler.votes, self.var_coeff,
-                    self.variate, self.apply_random)
+                    self.distribution, self.apply_random)
             yield votes
 
     def collect_votes(self, votes):
@@ -223,22 +244,23 @@ class Simulation:
             self.stat["seat_shares"][i].update(sh)
             self.stat["ideal_seats"][i].update(ids)
 
-    def run_and_collect_measures(self, votes, sensitivity):
+    def run_and_collect_measures(self, votes):
         # allocate seats according to votes:
         #print("it", self.iteration)
         self.election_handler.run_elections(votes) # A
+        if self.sensitivity:
+            self.run_sensitivity(votes)
+            return
         self.collect_votes(votes)
         self.collect_list_measures()
-        self.collect_general_measures(sensitivity)
+        self.collect_general_measures()
 
-    def collect_general_measures(self, sensitivity):
+    def collect_general_measures(self):
         deviations = Collect()
         elections = self.election_handler.elections
-        for (election, system) in zip(elections, self.systems):
+        for (system, election) in zip(self.systems, elections):
             self.add_deviation(election, "dev_ref", system.reference_results,
                                deviations)
-            if sensitivity:
-                continue
             deviations.add("entropy", election.entropy())
             for (cmp_election, cmp_system) in zip(elections, self.systems):
                 if cmp_system["compare_with"]:
@@ -261,14 +283,14 @@ class Simulation:
 
     @staticmethod
     def add_deviation(election, measure, comparison_results, deviations):
-        deviation = dev(election.results, comparison_results)
+        deviation = sum_abs_diff(election.results, comparison_results)
         if deviation:
             deviations.add(measure, deviation)
         else:
             deviations.add(measure, 0)
         totals = [sum(x) for x in zip(*election.results)]
         comparison_totals = [sum(x) for x in zip(*comparison_results)]
-        deviation = dev([totals], [comparison_totals])
+        deviation = sum_abs_diff([totals], [comparison_totals])
         deviations.add(measure + "_tot", deviation)
 
     def other_measures(self, election, deviations):
@@ -288,7 +310,7 @@ class Simulation:
         if len(self.parties) > 1 and election.num_constituencies > 1:
             row_constraints = self.sim_settings["scaling"] in {"both", "const"}
             col_constraints = self.sim_settings["scaling"] in {"both", "party"}
-            while round(error, 5) != 0.0:
+            while round(error, 5) != 0.0: #TODO look at this
                 niter += 1
                 error = 0
                 if row_constraints:
@@ -309,12 +331,6 @@ class Simulation:
                             mult += rein*(1 - mult)
                             for c in range(election.num_constituencies):
                                 ideal_seats[c][p] *= mult
-        try:
-            assert [sum(x) for x in zip(*ideal_seats)] == election.v_desired_col_sums
-            assert [sum(x) for x in ideal_seats] == election.v_desired_row_sums
-        except AssertionError:
-            pass
-
         return ideal_seats
 
     # Loosemore-Hanby
@@ -356,8 +372,29 @@ class Simulation:
         ])
         return dh_sum
 
+    def run_sensitivity(self, votes):
+        elections = self.election_handler.elections
+        variation_coefficient = self.sim_settings["sens_cv"]
+        sens_votes = generate_votes(votes, variation_coefficient, "uniform")
+        pd = []
+        ld = []
+        for (i, (election, system)) in enumerate(zip(elections, self.systems)):
+            sens_election = voting.Election(system, sens_votes)
+            sens_election.run()
+            party_seats1 = election.v_desired_col_sums
+            party_seats2 = sens_election.v_desired_col_sums
+            party_seat_diff = sum_abs_diff(party_seats1, party_seats2)
+            if party_seat_diff > 0:
+                self.stat["party_sens"][i].update(party_seat_diff)
+            else:
+                list_seats1 = election.results
+                list_seats2 = sens_election.results
+                list_seat_diff = sum_abs_diff(list_seats1, list_seats2)
+                self.stat["list_sens"][i].update(list_seat_diff)
+
     def simulate(self, sensitivity=False):
         # Simulate many elections.
+        self.sensitivity = sensitivity
         gen = self.gen_votes()
         ntot = self.sim_count
         if ntot == 0 and not sensitivity:
@@ -369,9 +406,7 @@ class Simulation:
                 break
             self.iteration = i + 1
             votes = next(gen)
-            #disp('votes', votes)a
-            self.run_and_collect_measures(votes, sensitivity)  # This allocates
-            # seats
+            self.run_and_collect_measures(votes)  # This allocates
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)

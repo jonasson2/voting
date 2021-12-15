@@ -6,10 +6,10 @@ import json
 import sys
 from util import disp, dispv
 
-filestem = sys.argv[1]
-jsonfile = filestem + ".json"
-meanfile = filestem + ".m.csv"
-stdfile = filestem + ".s.csv"
+dir = sys.argv[1]
+jsonfile = dir + "/meta.json"
+meanfile = dir + "/m.csv"
+stdfile = dir + "/s.csv"
 with open(jsonfile) as f:
     results = json.load(f)
 A = np.loadtxt(meanfile, delimiter=',')
@@ -47,13 +47,14 @@ def table(system_names, A):
     std = np.std(A, axis=0)
     stderr = std/np.sqrt(len(A))
     p90 = np.percentile(A, 90, axis=0) 
+    p99 = np.percentile(A, 99, axis=0) 
     
     print(f"\nSeat change count with {icv*100:.1f}% change in votes:\n")
     h1 = "Voting system"
     ns = max([len(h1), *(len(s) for s in system_names)])
-    print(f"{h1:{ns}}  Mean    SE     SD  90-pctile")
-    print("–"*(ns + 3*6 + 10))
-    for (sys,m,se,s,p) in zip(system_names, mean, stderr, std, p90):
-        print(f"{sys:{ns}}  {m:5.3f}  {se:5.3f}  {s:4.2f}   {p:4.2f}")
+    print(f"{h1:{ns}}  Mean    SE     SD  90-pctile 99-pctile")
+    print("–"*(ns + 3*6 + 2*11))
+    for (sys,m,se,s,p,q) in zip(system_names, mean, stderr, std, p90, p99):
+        print(f"{sys:{ns}}  {m:5.3f}  {se:5.3f}  {s:4.2f}   {p:4.2f}      {q:4.2f}")
 
 table(system_names, A)

@@ -20,6 +20,17 @@ def remove_suffix(text, suffix):
         return text[:-len(suffix)]
     return text
 
+def sum_abs_diff(a, b):  # Compute sum of absolute values of a minus b
+    if shape(a) != shape(b):
+        return None
+    s = 0
+    if isinstance(a[0],list):
+        for (rowa,rowb) in zip(a,b):
+            s += sum(abs(x-y) for (x,y) in zip(rowa,rowb))
+    else:
+        s += sum(abs(x-y) for (x,y) in zip(a,b))
+    return s
+
 def shape(M):
     # Simply assume that all rows have equal length
     if not isinstance(M,list): return None

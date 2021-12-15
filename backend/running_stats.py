@@ -11,12 +11,15 @@ class Running_stats:
         self.big = np.zeros(shape)
         self.binwidth = binwidth
         if binwidth:
-            self.histcounts = [{}]*prod(shape)
+            self.shape = (shape,) if isinstance(shape, (int,float)) else shape
+            self.histcounts = []
+            for i in range(prod(self.shape)):
+                self.histcounts.append({})
         self.small = np.zeros(shape)
 
     def histupdate(self, A):
         for (a,hc) in zip(np.nditer(A), self.histcounts):
-            bin = int(a/self.binwidth)
+            bin = a//self.binwidth
             if bin in hc:
                 hc[bin] += 1
             else:
@@ -72,12 +75,16 @@ class Running_stats:
         N = prod(self.shape)
         x = []
         height = []
-        for i in range(prod(self.shape)):
-            x.append(np.array(self.histcounts[i].keys()) + self.binwidth/2)
-            height.append(np.array(self.histcounts[i].values()))
-        width = self.binwidth*0.9
-        return (x,height,width)
-
+        if self.binwidth==1:
+            keys = list(h.keys() for h in self.histcounts)
+            vals = list(h.values() for h in self.histcounts)
+            return (keys, vals)
+        else:
+            for i in range(prod(self.shape)): ## This is buggy
+                x.append(np.array(self.histcounts[i].keys()) + self.binwidth/2)
+                height.append(np.array(self.histcounts[i].values()))
+            width = self.binwidth*0.9
+            return (x,height,width)
 # References:
 #
 # https://www.johndcook.com/blog/skewness_kurtosis/

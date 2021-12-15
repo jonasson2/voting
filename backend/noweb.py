@@ -14,7 +14,6 @@ import simulate
 from sim_measures import add_vuedata
 
 def load_votes(f, preset=False):
-    import os
     if preset: f = "../data/elections/" + f
     res = util.load_votes_from_stream(open(f, "r"), f)
     return res
@@ -28,7 +27,7 @@ def load_all(f):
     return file_content
 
 def load_systems(f):
-    '''returns systems, sim_settings from file json-file f'''
+    # returns systems, sim_settings from file json-file f
     if isinstance(f,str):
         f = os.path.expanduser(f)
         with open(f) as file: file_content = json.load(file)
@@ -88,9 +87,12 @@ def run_simulation(votes, systems, sim_settings, excelfile = None,
     sim.simulate(sensitivity)
     if excelfile != None:
         sim.to_xlsx(excelfile)
-    results = sim.get_results_dict()
-    add_vuedata(results)
-    return results
+    if sensitivity:
+        return sim.list_sensitivity, sim.party_sensitivity
+    else:
+        results = sim.get_results_dict()
+        add_vuedata(results)
+        return results
 
 def start_simulation(votes, systems, sim_settings):
     global SIMULATIONS

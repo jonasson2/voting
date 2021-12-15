@@ -13,7 +13,7 @@ import traceback as tb
 from util import disp, subtract_m
 from copy import deepcopy
 
-def dispSeats(totSeats, adjSeats):
+def display_seats(totSeats, adjSeats):
     if adjSeats > 0:
         return f"{totSeats} ({adjSeats})"
     elif totSeats > 0:
@@ -54,7 +54,7 @@ class Election:
         totSeats = add_totals(self.results)
         adjSeats = add_totals(self.m_adj_seats)
         for (totrow, adjrow) in zip(totSeats, adjSeats):
-            dispRow = [dispSeats(r,a) for (r,a) in zip(totrow, adjrow)]
+            dispRow = [display_seats(r,a) for (r,a) in zip(totrow, adjrow)]
             dispResult.append(dispRow)
         return dispResult
 
@@ -221,21 +221,3 @@ class Election:
         else:
             self.demonstration_table = {"headers": ["Not available"],
                                         "steps": []}
-
-def run_script_election(systems):
-    rs = ElectionSystem()
-    if "election_system" not in systems:
-        return {"error": "No election systems supplied."}
-
-    rs.update(systems["election_system"])
-
-    if not "votes" in rs:
-        return {"error": "No votes supplied"}
-
-    election = Election(rs, rs["votes"])
-    election.run()
-
-    return election
-
-if __name__ == "__main__":
-    pass
