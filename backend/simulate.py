@@ -287,7 +287,8 @@ class Simulation:
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
         variation_coefficient = self.sim_settings["sens_cv"]
-        sens_votes = generate_votes(votes, variation_coefficient, "uniform")
+        sens_method = self.sim_settings["sens_method"]
+        sens_votes = generate_votes(votes, variation_coefficient, sens_method)
         pd = []
         ld = []
         for (i, (election, system)) in enumerate(zip(elections, self.systems)):

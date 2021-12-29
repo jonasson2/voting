@@ -7,7 +7,6 @@ from noweb import load_votes, load_systems, single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
 from histogram import combine_counts
 from copy import deepcopy, copy
-from datetime import datetime
 import json
 from util import disp, dispv
 import numpy as np
@@ -19,7 +18,7 @@ vote_file = "iceland-2021-first.csv"
 #sys_file = "~/hermir/2reglur.json"
 
 #vote_file = "21st-century-avg.csv"
-sys_file = "10kerfi.json"
+sys_file = "~/hermir/10kerfi.json"
 
 def get_arguments():
     from argparse import ArgumentParser
@@ -52,9 +51,10 @@ def set_sim_settings(sim_settings, n_sim, sens_cv, cv):
 
 def filenames(folder, n_cores, n_sim):
     from pathlib import Path
-    import socket, time
+    from datetime import datetime
+    import socket
     host = socket.gethostname()
-    # now = datetime.now().strftime('%Y.%m.%dT%H.%M')
+    now = datetime.now().strftime('%Y.%m.%dT%H.%M')
     result_folder = Path.home() / 'runpar' / host / folder
     result_folder.mkdir(parents=True, exist_ok=True)
     jsonfile = result_folder / "meta.json"
@@ -63,7 +63,7 @@ def filenames(folder, n_cores, n_sim):
     with open(logfile, 'w') as logf:
         def log(s): print(s, file=logf)
         log(f'Host: {host}')
-        log(f'Time: {time.time}')
+        log(f'Time: {now}')
         log(f'n_cores: {n_cores}')
         log(f'reps/core: {n_sim}')
     return jsonfile, histfile, logfile
@@ -102,7 +102,6 @@ def combine_histogram_lists(hist_list):
 
 def main():
     #random.seed(11)
-    sim_settings["sensitivity"] = True
     systemnames = [s["name"] for s in systems]
     pars = range(n_cores)
     if n_cores > 1:
