@@ -148,6 +148,8 @@ def check_simul_settings(sim_settings):
             raise ValueError("Coefficient of variation must be less than 1")
     if "sens_cv" not in sim_settings:
         sim_settings["sens_cv"] = 0.01
+    if "sensitivity" not in sim_settings:
+        sensitivity = False
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     if sim_count > 2000 and digoce:

@@ -23,7 +23,7 @@ class Running_stats:
             if bin in hc:
                 hc[bin] += 1
             else:
-                hc[bin] = 0
+                hc[bin] = 1
         
     def update(self, A): # A should have shape "shape"
         A = np.array(A)

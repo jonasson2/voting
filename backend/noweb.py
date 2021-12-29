@@ -78,16 +78,15 @@ def run_thread_simulation(sid):
     sim.simulate()
     thread.done = True
 
-def run_simulation(votes, systems, sim_settings, excelfile = None,
-                   sensitivity = False):
+def run_simulation(votes, systems, sim_settings, excelfile=None, logfile=None):
     # not threaded
     # sim_settings = simulate.SimulationSettings()
     sim_settings.update(check_simul_settings(sim_settings))
     sim = simulate.Simulation(sim_settings, systems, votes)
-    sim.simulate(sensitivity)
+    sim.simulate(logfile)
     if excelfile != None:
         sim.to_xlsx(excelfile)
-    if sensitivity:
+    if sim_settings["sensitivity"]:
         return sim.list_sensitivity, sim.party_sensitivity
     else:
         results = sim.get_results_dict()

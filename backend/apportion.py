@@ -1,6 +1,5 @@
 from copy import copy, deepcopy
 from table_util import find_shares_1d
-
 import numpy as np
 from util import dispv
 
