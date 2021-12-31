@@ -447,3 +447,10 @@ def short_traceback(trace):
     last = traceline(trace[-3])
     error = trace[-1]
     return f"Server error ({first},..., {last}):\n{error}"
+
+def writecsv(file, L):
+    # Writes list of lists L to csv-file
+    import csv
+    with open(file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(L)

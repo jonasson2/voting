@@ -2,7 +2,7 @@ from table_util import add_totals, find_xtd_shares
 from random import randint, uniform
 import dictionaries
 
-def shake(vote):
+def adjustment(vote):
     return max(0.01, vote + uniform(-0.01, 0.01))
 
 def generate_votes (
@@ -36,7 +36,7 @@ def generate_votes (
                 vote = mean
             if vote >= 1:
                 vote = round(vote)
-            vote = shake(vote)
+            vote = adjustment(vote)
             generated_votes[c].append(vote)
 
     return generated_votes

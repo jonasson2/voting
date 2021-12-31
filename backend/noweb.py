@@ -14,6 +14,7 @@ import simulate
 from sim_measures import add_vuedata
 
 def load_votes(f, preset=False):
+    f = str(f)
     if preset: f = "../data/elections/" + f
     res = util.load_votes_from_stream(open(f, "r"), f)
     return res
@@ -28,6 +29,7 @@ def load_all(f):
 
 def load_systems(f):
     # returns systems, sim_settings from file json-file f
+    f = str(f)
     if isinstance(f,str):
         f = os.path.expanduser(f)
         with open(f) as file: file_content = json.load(file)
