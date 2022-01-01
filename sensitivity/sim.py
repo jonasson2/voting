@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import sys, math, time
-from run_util import get_arguments
+from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from multiprocessing import Pool
-from noweb import load_votes, load_systems, single_election
+from noweb import load_votes
+from noweb import load_systems
+from noweb import single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
@@ -40,9 +42,7 @@ def set_sim_settings(sim_settings, n_sim, sens_cv, cv):
 
 def filenames(sens_cv, n_cores, n_sim):
     from datetime import datetime
-    import socket
-    host = socket.gethostname()
-    host = remove_suffix(host, '.local')
+    host = get_hostname()
     fraccv = f'{sens_cv}'[2:]
     now = datetime.now().strftime('%Y.%m.%dT%H.%M')
     votestem = remove_suffix(vote_file, '.csv')
@@ -101,5 +101,6 @@ def simulate(idx):
     #party_sens = np.array(ps)
     return list_sens
 
+print("name=",__name__)
 if __name__ == "__main__":
     main()

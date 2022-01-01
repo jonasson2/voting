@@ -1,6 +1,13 @@
 from argparse import ArgumentParser
 from subprocess import run, Popen, PIPE
 from pathlib import Path
+import time, socket, sys
+sys.path.append("../backend")
+from util import remove_suffix
+
+def get_hostname():
+    host = remove_suffix(socket.gethostname(), '.local')
+    return host
 
 def get_arguments(args, description=None, epilog=None):
     # Get arguments from command line and provide help. Returns a list
@@ -24,13 +31,13 @@ def get_arguments(args, description=None, epilog=None):
     n = p.parse_args()
     return vars(n).values()
 
-def run_parallel(node, command):
-    curdir = str(Path.cwd())
-    runcmd = f'cd {curdir}; {command} > /dev/null & echo $!'
-    p = Popen(['ssh', node, runcmd], start_new_session=True, stdout = PIPE)
-    pid = p.communicate()[0].decode().strip()
-    return pid
-
 def runshell(command):
     result = run(command, stdout=PIPE, shell=True).stdout.decode().splitlines()
     return result
+
+def run_parallel(node, command, errorfile=Path("/dev/null")):
+    curdir = Path.cwd()
+    runcmd = f'cd {curdir}; {command} > {errorfile} 2>&1 & echo $!'
+    p = Popen(['ssh', node, runcmd], start_new_session=True, stdout = PIPE)
+    pid = p.communicate()[0].decode().strip()
+    return pid

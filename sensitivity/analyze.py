@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import sys, json, math, scipy.stats as stat, numpy as np, socket
+import sys, json, math, scipy.stats as stat, numpy as np
 from pathlib import Path
-from run_util import get_arguments
+from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from util import remove_suffix
 
@@ -19,8 +19,7 @@ from util import remove_suffix
 
 dir = Path.home()/'runpar'/cv/votes
 if local:
-    host = socket.gethostname()
-    host = remove_suffix(host, '.local')
+    host = get_hostname()
     dir /= host
 jsonfile = dir/"meta.json"
 histfile = dir/"h.csv"

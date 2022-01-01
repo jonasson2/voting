@@ -5,7 +5,6 @@ import sys #??????
 from tabulate import tabulate
 import io
 import os
-import openpyxl
 import configparser
 import codecs
 from distutils.util import strtobool
@@ -56,6 +55,7 @@ def read_csv(filename):
             yield [cell for cell in row]
 
 def read_xlsx(filename):
+    import openpyxl
     book = openpyxl.load_workbook(filename)
     sheet = book.active
     for row in sheet.rows:
@@ -94,6 +94,7 @@ def load_votes_from_stream(stream, filename):
     elif filename.endswith(".xlsx"):
         if not hasattr(stream, "seekable") and hasattr(stream, "_file"):
             stream.seekable = stream._file.seekable  # TODO: Remove this monkeypatch once this issue has been resolved.
+        import openpyxl
         book = openpyxl.load_workbook(stream)
         sheet = book.active
         for row in sheet.rows:
