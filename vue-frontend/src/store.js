@@ -27,7 +27,7 @@ const store = new Vuex.Store({
     },
     systems: [],
     system_numbering: [],
-    activeTabIndex: -1,   // Includes the <-- and --> tabs
+    activeSystemIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
     sim_capabilities: {},
     results: [],
@@ -68,7 +68,7 @@ const store = new Vuex.Store({
     deleteAllSystems(state) {
       state.systems.splice(0, state.systems.length)
       state.numbering = []
-      state.activeTabIndex = -1
+      state.activeSystemIndex = -1
     },
     
     updateSystems(state, systems) {state.systems = systems},
@@ -84,13 +84,18 @@ const store = new Vuex.Store({
 
     setSimulateCreated(state) {state.simulateCreated = true},
 
-    setActiveTabIndex(state, idx) {state.activeTabIndex = idx},
+    setActiveSystemIndex(state, idx) {
+      state.activeSystemIndex = idx
+    },
 
     setSeatSpecOption(state, payload) {
       state.systems[payload.idx].seat_spec_option = payload.opt
     },
 
-    newNumbering(state, idx) {findNumbering(state, idx)},
+    newNumbering(state, idx) {
+      findNumbering(state, idx)
+      console.log("newNumbering")
+    },
 
     showVoteMatrix(state) {
       state.results = []
@@ -350,7 +355,7 @@ function findNumbering(state, asi) {
     if (n > 1 && i < n-1 && i == asi) num.push(-1)
   }
   state.system_numbering = num
-  if (asi==0) state.activeTabIndex = 0;
+  state.activeSystemIndex = asi
 }
 
 function eventListener(e) {

@@ -1,15 +1,28 @@
 #!/usr/bin/env python3
-import sys
+import sys, json, math, scipy.stats as stat, numpy as np
+from pathlib import Path
+from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
-import numpy as np
-import json
-import sys
-if "google.colab" in sys.modules:
-  dir = "results/newres01a"
-else:
-  dir = sys.argv[1]
-jsonfile = dir + "/meta.json"
-histfile = dir + "/h.csv"
+from util import remove_suffix
+
+(cv, votes, local) = get_arguments(
+    args=[
+        ['cv',     str,  'fractional part of coefficient of variation'],
+        ['votes',  str,  'stem of vote file'],
+        ['-local', bool, 'use results from simulation on local host']
+    ],
+    description = "Analyze results from sensitivity simulation",
+    epilog = ("Reads the files <dir>/{h.csv,meta.json} and prints a table with "
+              "simulation results; <dir> is ~/runpar/<cv>/<votes> or, when "
+              "-local is specified, ~/runpar/<cv>/<votes>/<host>")
+)
+
+dir = Path.home()/'runpar'/cv/votes
+if local:
+    host = get_hostname()
+    dir /= host
+jsonfile = dir/"meta.json"
+histfile = dir/"h.csv"
 with open(jsonfile) as f:
     results = json.load(f)
 H = np.loadtxt(histfile, delimiter=',')
@@ -32,10 +45,20 @@ print(f"  coefficient of variation = {vote_cv}")
 print(f"Adjustment simulation:")
 print(f"  distribution             = {adjustment_dist}")
 print(f"  coefficient of variation = {adjust_cv}")
+print(f"Accuracy (99%) for specific p:")
+z = - stat.norm.ppf(0.005)
+for p in [0.5, 0.1, 0.02, 0.005, 0.001]:
+    n_reps = round(5e6)
+    accuracy = z*math.sqrt(p*(1-p)/n_reps)
+    print(f"  p={p*100:5.2f}%: ± {100*accuracy:.3f}%")
 
-def table(system_names, A, hdr, mean, symbol=" "):
+def table(system_names, A, hdr, mean, symbol=" ", ncol=None):
     print()
-    _,ncol = np.shape(A)
+    _, ncolA = np.shape(A)
+    if not ncol:
+        ncol = ncolA
+    else:
+        ncol = min(ncol, ncolA)
     h1 = "Voting system"
     ws = max([len(h1), *(len(s) for s in system_names)])
     wm = 7
@@ -65,11 +88,11 @@ def tables(system_names, H):
     Hf = H*f    
     mean = np.sum(Hf,1)/np.sum(H,1)
     Hp = H/(np.sum(H,1).reshape(-1,1))*100
-    S = np.zeros((10,7))
+    S = np.zeros((nsys,maxf))
     for i in range(nsys):
         for j in range(maxf):
             S[i,j] = sum(Hp[i,j:])
-    table(system_names, Hp, "Number of seat changes", mean)
-    table(system_names, S, "Cumulative seat changes", mean, '≥')
+    table(system_names, Hp, "Number of seat changes", mean, ' ', 7)
+    table(system_names, S, "Cumulative seat changes", mean, '≥', 7)
     
 tables(system_names, H)

@@ -1,12 +1,10 @@
 import json
 from copy import copy, deepcopy
-
 from system import System
 from util import load_constituencies, disp, remove_prefix
 from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
     ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
-
 class ElectionSystem(System):
     """A set of rules for an election to follow."""
 

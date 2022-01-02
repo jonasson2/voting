@@ -309,6 +309,8 @@ def api_presets_load():
     # TODO: This is silly but it paves the way to a real database
     for p in prs:
         if p['id'] == qv['eid']:
+            print('p=', p)
+            print(type(p['filename']))
             res = load_votes(p['filename'], preset=True)
             return jsonify(res)
 

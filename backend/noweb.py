@@ -10,17 +10,18 @@ import util
 from util import disp
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
+from pathlib import Path
 
 from sim_measures import add_vuedata
 
 def load_votes(f, preset=False):
-    if preset: f = "../data/elections/" + f
+    if isinstance(f, 'str') and preset:
+        f = "../data/elections/" + f
     res = util.load_votes_from_stream(open(f, "r"), f)
     return res
 
 def load_all(f):
-    if isinstance(f,str):
-        f = os.path.expanduser(f)
+    if isinstance(f,Path):
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
@@ -28,8 +29,7 @@ def load_all(f):
 
 def load_systems(f):
     # returns systems, sim_settings from file json-file f
-    if isinstance(f,str):
-        f = os.path.expanduser(f)
+    if isinstance(f,Path):
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)

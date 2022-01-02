@@ -133,13 +133,21 @@ export default {
       'waiting_for_data'
     ]),
     activeTabIndex: {
-      get() { return this.$store.state.activeTabIndex },
-      set(val) { this.setActiveTabIndex(val) }
+      get() {
+        let asi = this.activeSystemIndex        
+        return asi == 0 ? asi : asi + 1
+      },
+      set(val) {
+        null
+        //this.setActiveTabIndex(val)
+      }
     },
     activeSystemIndex: {
       get() {
-        let ati = this.activeTabIndex
-        return ati == 0 ? ati : ati - 1
+        return this.$store.state.activeSystemIndex
+      },
+      set(val) {
+        this.setActiveSystemIndex(val)
       }
     },
     tabCount: function() {
@@ -168,7 +176,7 @@ export default {
       "clearWaitingForData",
       "addBeforeunload",
       "newNumbering",
-      "setActiveTabIndex",
+      "setActiveSystemIndex",
     ]),
     ...mapActions([
       "downloadFile",
@@ -181,30 +189,27 @@ export default {
       [a[i], a[i+1]] = [a[i+1], a[i]]
     },
     reorder(sysidx,idx) {
-      console.log("in reorder")
+      console.log("in reorderx<")
       console.log("idx", idx)
       console.log("sysidx", sysidx)
       console.log("activeTabIndex", this.activeTabIndex)
       console.log("activeSystemIndex", this.activeSystemIndex)
-      let ati = this.activeTabIndex
-      if (idx == ati)
+      let asi = this.activeSystemIndex
+      if (sysidx == asi)
         return
       else if (sysidx == -2) { // left arrow
         this.swap(this.systems, this.activeSystemIndex - 1)
-        ati -= ati==2 ? 2 : 1
+        asi -= 1
       }
       else if (sysidx == -1) { // right arrow
         this.swap(this.systems, this.activeSystemIndex)
-        ati += ati==0 ? 2 : 1
+        asi += 1
       }
-      else if (idx < ati)
-        ati = idx + (idx==0 ? 0 : 1)
-      else if (idx > ati)
-        ati = idx - (idx==2 ? 0 : 1)
-      this.setActiveTabIndex(ati)
-      console.log("new activeTabIndex", ati)
-      console.log("new activeSystemIndex", this.activeSystemIndex)
+      else
+        asi = sysidx
+      this.activeSystemIndex = asi
       this.newNumbering(this.activeSystemIndex)
+      console.log("new activeSystemIndex", this.activeSystemIndex)
     },
     saveSettings: function () {
       let promise;
@@ -226,16 +231,13 @@ export default {
       this.uploadElectoralSystems({"formData":formData, "replace":this.replace})
     },
     deleteCurrentSystem() {
-      let asi = this.activeSystemIndex, nsys = this.systems.length
-      if (asi == nsys - 1)
-        this.setActiveTabIndex(this.activeTabIndex - (nsys > 1 ? 1 : 2))
       this.deleteSystem(this.activeSystemIndex)
     },
     addNewSystem() {
       this.setWaitingForData()
       this.adding_system = true
       let nsys = this.systems.length
-      this.setActiveTabIndex(nsys == 0 ? 0 : nsys + 1)
+      this.activeSystemIndex = nsys
       this.$http.post(
         '/api/capabilities',
         this.vote_table.constituencies,
