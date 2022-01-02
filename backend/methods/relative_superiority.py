@@ -132,7 +132,7 @@ def present_allocation_sequence(rules, allocation_sequence):
 
     for allocation in allocation_sequence:
         seat_number += 1
-        superiority = round(allocation["superiority"], 3) \
+        superiority = f'{allocation["superiority"]:.3f}' \
             if "superiority" in allocation else "N/A"
         data.append([
             seat_number,

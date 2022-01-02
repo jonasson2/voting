@@ -124,7 +124,7 @@ def present_switching_sequence(rules, steps):
         const_name = rules["constituencies"][switch["constituency"]]["name"]
         from_party = rules["parties"][switch["from"]]
         to_party   = rules["parties"][switch["to"]]
-        ratio      = round(switch["sensitivity"], 3)
+        ratio      = f'{switch["sensitivity"]:.3f}'
         if switch_number < len(steps["initial_allocation"]):
             data[switch_number-1][5] = switch_number
             data[switch_number-1][6] = const_name

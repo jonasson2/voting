@@ -88,7 +88,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            round(allocation["min"], 3),
+            f'{allocation["min"]:.3f}'
         ])
 
     return headers, data
