@@ -2,6 +2,7 @@
 import xlsxwriter
 from datetime import datetime
 from measure_groups import MeasureGroups
+from util import disp
 
 from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
@@ -321,7 +322,7 @@ def simulation_to_xlsx(simulation, filename):
             "data": simulation.var_coeff},
         {"label": "Apply randomness to",
             "data": "All constituencies" if simulation.apply_random == -1 else None},
-        {"label": "Scaling of reference seat shares",
+        {"label": "Scaling of votes for reference seat shares",
             "data": "within both constituencies and parties" if row_constraints and col_constraints
             else "within constituencies" if row_constraints
             else "within parties" if col_constraints

@@ -46,7 +46,7 @@ def norw_ice_apportionment(m_votes,
         v_allocations[party] += 1
         allocation_sequence.append({
             "constituency": const, "party": party,
-            "reason": "Max quotient of proper seat shares",
+            "reason": "Max quotient of const. seat share",
             "max": maximum,
         })
 

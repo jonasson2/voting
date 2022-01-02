@@ -14,7 +14,7 @@ def icelandic_apportionment(
     **kwargs
 ):
     """
-    Apportion based on Icelandic law nr. 24/2000.
+    Apportion based on Icelandic law nr. 112/2021.
     """
     m_allocations = deepcopy(m_prior_allocations)
 
@@ -107,7 +107,7 @@ def icelandic_apportionment(
 def print_seats(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "National vote quotient", "Quotient of list votes as percentage"]
+        "Criteria", "i) National vote quotient", "ii) Quotient of list votes as perc."]
     data = []
     seat_number = 0
     for allocation in allocation_sequence:

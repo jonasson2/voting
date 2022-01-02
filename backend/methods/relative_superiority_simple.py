@@ -99,7 +99,7 @@ def relative_superiority_simple(m_votes,
                 if item["divided_votes"] > greatest:
                     greatest = item["divided_votes"]
                     first = item
-            first["reason"] = "Can't fill this constituency without this list"
+            first["reason"] = "Only list available"
         elif available:
             # Allocate seat in constituency where the calculated
             #  relative superiority is highest:

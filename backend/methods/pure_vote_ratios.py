@@ -44,7 +44,7 @@ def pure_vote_ratios_apportionment(m_votes,
         m_allocations[c][p] += 1
         allocation_sequence.append({
             "constituency": c, "party": p,
-            "reason": "Max quotient of list votes",
+            "reason": "Max quotient of const. vote perc.",
             "max_list_share": maximum,
         })
 
