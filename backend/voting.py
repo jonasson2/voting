@@ -23,7 +23,7 @@ def display_seats(totSeats, adjSeats):
 
 class Election:
     """A single election."""
-    def __init__(self, system, votes, min_votes=0):
+    def __init__(self, system, votes, min_votes=0, name=''):
         cons = system["constituencies"]
         one_const = len(cons) == 1 and cons[0]["name"] == "All"
         self.num_constituencies = len(system["constituencies"])
@@ -31,6 +31,7 @@ class Election:
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
+        self.name = name
 
     def entropy(self):
         return entropy(self.m_votes, self.results, self.gen)

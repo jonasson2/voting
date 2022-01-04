@@ -1,7 +1,8 @@
 import json
 from copy import copy, deepcopy
 from system import System
-from util import load_constituencies, disp, remove_prefix
+#from util import load_constituencies
+from util import disp, remove_prefix
 from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
     ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
@@ -42,11 +43,11 @@ class ElectionSystem(System):
         self["show_entropy"] = False
         self["output"] = "simple"
 
-    def __setitem__(self, key, value):
-        if key == "constituencies" and type(value) == str:
-            value = load_constituencies(value)
+    # def __setitem__(self, key, value):
+    #     if key == "constituencies" and type(value) == str:
+    #         value = load_constituencies(value)
 
-        super(ElectionSystem, self).__setitem__(key, value)
+    #     super(ElectionSystem, self).__setitem__(key, value)
 
     def __deepcopy__(self, memo):
         ES = ElectionSystem()

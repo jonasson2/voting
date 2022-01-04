@@ -151,7 +151,7 @@ def check_simul_settings(sim_settings):
     if "sens_method" not in sim_settings:
         sim_settings["sens_method"] = "uniform"
     if "sensitivity" not in sim_settings:
-        sensitivity = False
+        sim_settings["sensitivity"] = False
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     if sim_count > 2000 and digoce:

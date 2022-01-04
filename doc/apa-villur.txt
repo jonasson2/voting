@@ -1,0 +1,34 @@
+VALUE OF RESPONSE AFTER API POSTING:
+
+Call:
+Vue.http.post(
+  '/api/.../',
+  argument-dictionary
+).then(
+  success-function(response){...},  [or response => {...}]
+  failure-function(response){...}   [ditto]
+)
+
+SUCCESS:
+ok:true
+status:200
+statusText:'OK'
+body:{results: ...,systems:...} (for example)
+
+CAUGHT EXCEPTION  [calls success-function]
+ok:true
+status: 200
+statusText:'OK'
+body:{error: "error-message"}
+
+UNCAUGHT EXCEPTION:
+ok:false
+status:500
+statusTest:'INTERNAL SERVER ERROR'
+body:'<!DOCTYPE HTML...>...<!/p>'
+
+SERVER DOWN:
+ok:false
+status: 0
+statusText: ""
+body: ''

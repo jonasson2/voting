@@ -46,6 +46,7 @@ const store = new Vuex.Store({
       setVoteSums(state)
     },
     updateVoteSums(state) {
+      console.log('updateVoteSums')
       setVoteSums(state)
     },
     addSystem(state, system) {
@@ -80,7 +81,10 @@ const store = new Vuex.Store({
 
     setWaitingForData(state) { state.waiting_for_data = true },
     
-    clearWaitingForData(state) {Vue.nextTick(()=>{state.waiting_for_data=false})},
+    clearWaitingForData(state) {
+      state.server_error = ''
+      Vue.nextTick(()=>{state.waiting_for_data=false})
+    },
 
     setSimulateCreated(state) {state.simulateCreated = true},
 
@@ -107,6 +111,7 @@ const store = new Vuex.Store({
       console.log("SERVER ERROR: ", message)
       state.server_error = message.split(/\n/g);
       console.log("lengths", message.length, state.server_error.length)
+      Vue.nextTick(()=>{state.waiting_for_data=false})
     },
     
     clearServerError(state) { state.server_error = '' },
@@ -114,14 +119,16 @@ const store = new Vuex.Store({
     initialize(state) {
       console.log("initialize")
       Vue.http.post('/api/capabilities', {}).then(response => {
-        state.sim_capabilities = response.body.capabilities;
-        state.sim_settings = response.body.sim_settings
-        //state.commit("updateSimSettings", response.body.sim_settings)
-        //his.$nextTick(()=>this.setSimulateCreated())
-        console.log("Created SimulationSettings")
-      }, response => {
-        this.serverError = true;
-      });
+        if (response.body.error) {
+          context.commit("serverError", response.body.error)
+        } else {
+          state.sim_capabilities = response.body.capabilities;
+          state.sim_settings = response.body.sim_settings
+          //state.commit("updateSimSettings", response.body.sim_settings)
+          //his.$nextTick(()=>this.setSimulateCreated())
+          console.log("Created SimulationSettings")
+        }
+      })
     },
 
     addBeforeunload(state) {
@@ -166,37 +173,42 @@ const store = new Vuex.Store({
     
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
-      if (payload.replace){
-        context.commit("deleteAllSystems")
-      }
-      Vue.http.post('/api/settings/upload/', payload.formData).then(response => {
-        let systems = response.data.systems
-        for (var i=0; i < systems.length; i++) {
-          if (!("compare_with" in systems[i])) systems[i].compare_with = false
-          context.commit("addSystem", systems[i])
-        }
-        findNumbering(context.state, 0)
-        context.commit("updateSimSettings", response.data.sim_settings);
-        context.commit("clearWaitingForData")
-      });
+      Vue.http.post('/api/settings/upload/', payload.formData).then(
+        response => {
+          if (response.body.error) {
+            context.commit("serverError", response.body.error)
+          } else {
+            if (payload.replace){
+              context.commit("deleteAllSystems")
+            }
+            let systems = response.data.systems
+            for (var i=0; i < systems.length; i++) {
+              if (!("compare_with" in systems[i])) systems[i].compare_with = false
+              context.commit("addSystem", systems[i])
+            }
+            findNumbering(context.state, 0)
+            context.commit("updateSimSettings", response.data.sim_settings);
+            context.dispatch("recalc_sys_const")
+            //context.commit("clearWaitingForData")
+          }
+        })
     },
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
       context.commit("deleteAllSystems")
       Vue.http.post("/api/votes/uploadall/", formData).then(
         (response) => {
-          console.log("response", response)
-          context.commit("updateVoteTable", response.data.vote_table)
-          context.commit("updateSystems", response.data.systems)
-          context.commit("updateSimSettings", response.data.sim_settings)
-          findNumbering(context.state, 0)
-          context.commit("clearWaitingForData")
-        },
-        (response) => {
-          context.commit("serverError", "Cannot upload votes from this file")
-          context.commit("clearWaitingForData")
-        },
-      )
+          if (response.body.error) {
+            context.commit("serverError", response.body.error)
+          } else {
+            console.log("response", response)
+            context.commit("updateVoteTable", response.data.vote_table)
+            context.commit("updateSystems", response.data.systems)
+            context.commit("updateSimSettings", response.data.sim_settings)
+            findNumbering(context.state, 0)
+            context.commit("clearWaitingForData")
+          }
+        })
     },
     saveAll(context) {
       let promise;
@@ -222,15 +234,17 @@ const store = new Vuex.Store({
         {
           vote_table:     context.state.vote_table,
           systems:        context.state.systems,
-        }).then(response => {
-          if (response.body.error) {
-            context.commit("serverError", response.body.error)
-          } else {
-            context.state.results = response.body.results
-            context.state.systems = response.body.systems
-          }
-          context.commit("clearWaitingForData")
-        })
+        }).then(
+          response => {
+            if (response.body.error) {
+              context.commit("serverError", response.body.error)
+            } else {
+              context.state.results = response.body.results
+              context.state.systems = response.body.systems
+            }
+            context.commit("clearWaitingForData")
+          },
+        )
     },
     recalc_sys_const(context) {
       // Refresh the constituencies property of each system according to the value
@@ -334,9 +348,18 @@ function setVoteSums(state) {
   let vt = state.vote_table
   let vs = state.vote_sums
   let vc = vt.constituencies
-  vs.row = vt.votes.map(y => y.reduce((a, b) => a+b))
-  vs.col = vt.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
-  vs.tot = vs.row.reduce((a, b) => a + b, 0)
+  if (vt.parties.length > 0) {
+    vs.row = vt.votes.map(y => y.reduce((a, b) => a+b))
+    vs.tot = vs.row.reduce((a, b) => a + b, 0)
+  }
+  else {
+    vs.row = 0
+    vs.tot = 0
+  }
+  if (vt.constituencies.length > 0)
+    vs.col = vt.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
+  else
+    vs.col = 0
   vs.cseats = 0
   vs.aseats = 0
   for (var i=0; i<vc.length; i++) {

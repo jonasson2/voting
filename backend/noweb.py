@@ -1,24 +1,24 @@
 import threading
 import random
-import os
+import os, csv
 from datetime import datetime, timedelta
 import json
 from hashlib import sha256
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-import util
-from util import disp
+from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
 from pathlib import Path
 
 from sim_measures import add_vuedata
 
-def load_votes(f, preset=False):
-    if isinstance(f, 'str') and preset:
-        f = "../data/elections/" + f
-    res = util.load_votes_from_stream(open(f, "r"), f)
-    return res
+def load_votes(filename):
+    with open(filename,"r") as f:
+        reader = csv.reader(f, skipinitialspace=True)
+        lines = list(reader)
+    result = check_votes(lines, filename)
+    return result
 
 def load_all(f):
     if isinstance(f,Path):
@@ -29,7 +29,7 @@ def load_all(f):
 
 def load_systems(f):
     # returns systems, sim_settings from file json-file f
-    if isinstance(f,Path):
+    if isinstance(f,Path) or isinstance(f,str):
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
@@ -103,7 +103,7 @@ def start_simulation(votes, systems, sim_settings):
     h.update(sidbytes)
     sid = h.hexdigest()
     simulation = simulate.Simulation(sim_settings, systems, votes)
-    cleanup_expired_simulations()
+    #cleanup_expired_simulations()
     expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
     # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
     thread = threading.Thread(target=run_thread_simulation, args=(sid,))
@@ -134,15 +134,15 @@ def simulation_to_excel(sid, file):
     (sim, _, _) = SIMULATIONS[sid]
     sim.to_xlsx(file)
 
-def cleanup_expired_simulations():
-    global SIMULATIONS
-    try:
-        for sid in SIMULATIONS:
-            expires = SIMULATIONS[sid][2]
-            if expires < datetime.now():
-                del(SIMULATIONS[sid])
-    except RuntimeError:
-        pass
+# def cleanup_expired_simulations():
+#     global SIMULATIONS
+#     try:
+#         for sid in SIMULATIONS:
+#             expires = SIMULATIONS[sid][2]
+#             if expires < datetime.now():
+#                 del(SIMULATIONS[sid])
+#     except RuntimeError:
+#         pass
 
 def get_new_download_id():
     global DOWNLOADS_IDX

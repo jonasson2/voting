@@ -182,9 +182,7 @@ export default {
             window.clearInterval(this.checktimer);
           }
         }
-      }, response => {
-        this.serverError(response.body)
-      });
+      })
     },
     recalculate: function() {
       console.log("Starting simulation")
@@ -198,8 +196,7 @@ export default {
         sim_settings:   this.sim_settings,
       }).then(response => {
         if (response.body.error) {
-          console.log("ERROR-1")
-          this.serverError(response.body.error)          
+          this.serverError(response.body.error) 
         } else {
           console.log("simulation started")
           this.sid = response.body.sid
@@ -208,12 +205,9 @@ export default {
           this.checktimer = window.setInterval(this.check_simulation, 250)
           this.addBeforeunload()
         }
-      }, response => {
-        console.log("ERROR-2")
-        this.serverError(response.body)          
       });
     },
-    
+      
     saveSimulationResults: function() {
       let promise = axios({
         method: "post",

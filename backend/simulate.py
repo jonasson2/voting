@@ -2,8 +2,8 @@
 from datetime import datetime
 from measure_groups import MeasureGroups
 import dictionaries as dicts
-import voting
 import random
+from voting import Election
 from dictionaries import LIST_MEASURES, VOTE_MEASURES
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
@@ -48,8 +48,8 @@ class SimulationSettings(System):
 class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
-        min_votes = 0.5
-        election_handler = ElectionHandler(vote_table, systems, min_votes)
+        self.min_votes = 0.5
+        election_handler = ElectionHandler(vote_table, systems, self.min_votes)
         self.election_handler = election_handler
         self.measure_groups = MeasureGroups(systems)
         self.base_allocations = []
@@ -228,7 +228,8 @@ class Simulation:
         for measure in ["dev_all_adj", "dev_all_const", "one_const"]:
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
-            comparison_election = voting.Election(comparison_system, election.m_votes)
+            comparison_election = Election(comparison_system, election.m_votes,
+                                           self.min_votes)
             comparison_results = comparison_election.run()
             self.add_deviation(election, measure, comparison_results, deviations)
 
@@ -292,7 +293,7 @@ class Simulation:
         pd = []
         ld = []
         for (i, (election, system)) in enumerate(zip(elections, self.systems)):
-            sens_election = voting.Election(system, sens_votes)
+            sens_election = Election(system, sens_votes, self.min_votes)
             sens_election.run()
             party_seats1 = election.v_desired_col_sums
             party_seats2 = sens_election.v_desired_col_sums

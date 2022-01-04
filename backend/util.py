@@ -8,6 +8,7 @@ import os
 import configparser
 import codecs
 from distutils.util import strtobool
+from traceback import format_exc
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
@@ -61,84 +62,48 @@ def read_xlsx(filename):
     for row in sheet.rows:
         yield [cell.value for cell in row]
 
-def load_constituencies(confile):
-    """Load constituencies from a file."""
-    if confile.endswith("csv"):
-        reader = read_csv(confile)
-    else:
-        reader = read_xlsx(confile)
-    cons = []
-    for row in reader:
-        try:
-            assert(int(row[1]) + int(row[2]) > 0)
-        except Exception as e:
-            print(row[1:3])
-            raise Exception("Error loading constituency file: "
-                            "constituency seats and adjustment seats "
-                            "must add to a nonzero number.")
-        cons.append({
-            "name": row[0],
-            "num_const_seats": int(row[1]),
-            "num_adj_seats": int(row[2])})
-    return cons
+# def load_constituencies(confile):
+#     """Load constituencies from a file."""
+#     if confile.endswith("csv"):
+#         reader = read_csv(confile)
+#     else:
+#         reader = read_xlsx(confile)
+#     cons = []
+#     for row in reader:
+#         try:
+#             assert(int(row[1]) + int(row[2]) > 0)
+#         except Exception as e:
+#             print(row[1:3])
+#             raise Exception("Error loading constituency file: "
+#                             "constituency seats and adjustment seats "
+#                             "must add to a nonzero number.")
+#         cons.append({
+#             "name": row[0],
+#             "num_const_seats": int(row[1]),
+#             "num_adj_seats": int(row[2])})
+#     return cons
 
-def load_votes_from_stream(stream, filename):
-    rd = []
-    if filename.endswith(".csv"):
-        if isinstance(stream, io.TextIOWrapper) and stream.encoding != 'utf-8':
-            stream.reconfigure(encoding='utf-8')
-        if isinstance(stream, io.BytesIO):
-            stream = codecs.iterdecode(stream, 'utf-8')
-        for row in csv.reader(stream, skipinitialspace=True):
-            rd.append(row)
-    elif filename.endswith(".xlsx"):
-        if not hasattr(stream, "seekable") and hasattr(stream, "_file"):
-            stream.seekable = stream._file.seekable  # TODO: Remove this monkeypatch once this issue has been resolved.
-        import openpyxl
-        book = openpyxl.load_workbook(stream)
-        sheet = book.active
-        for row in sheet.rows:
-            rd.append([cell.value for cell in row])
-    else:
-        return None, None, None
+def isint(L):
+    def ok(x):
+        return isinstance(x,int) and x >= 0 or x.isdigit and x.isascii
+    return all(ok(x) for x in L)
 
-    name_incl = rd[0][0].lower() != u"kjördæmi" if rd[0][0] else False
-    const_seats_incl = rd[0][1].lower() == "cons"
-    expected = 2 if const_seats_incl else 1
-    adj_seats_incl = rd[0][expected].lower() == "adj"
+def load_votes_from_excel(stream, filename):
+    lines = []
+    if not hasattr(stream, "seekable") and hasattr(stream, "_file"):
+        stream.seekable = stream._file.seekable
+        # TODO: Remove this monkeypatch once this issue has been resolved.
+    import openpyxl
+    book = openpyxl.load_workbook(stream)
+    sheet = book.active
+    for row in sheet.rows:
+        lines.append([cell.value for cell in row])
+    return lines
 
-    return parse_input(
-        input=rd,
-        name_included=name_incl,
-        parties_included=True,
-        const_included=True,
-        const_seats_included=const_seats_incl,
-        adj_seats_included=adj_seats_incl,
-        filename=filename
-    )
-
-def parse_input(
-    input,
-    name_included,
-    parties_included,
-    const_included,
-    const_seats_included,
-    adj_seats_included,
-    filename=''
-):
-    name_included = strtobool(str(name_included))
-    parties_included = strtobool(str(parties_included))
-    const_included = strtobool(str(const_included))
-    const_seats_included = strtobool(str(const_seats_included))
-    adj_seats_included = strtobool(str(adj_seats_included))
-
+def parse_input(rows, const_seats_included, adj_seats_included, filename=''):
+    name_included = rows[0][0].lower() != u"kjördæmi" if rows[0][0] else False
     res = {}
-    start_row = 0
-    if name_included or parties_included:
-        start_row += 1
-    start_col = 0
-    if name_included or const_included:
-        start_col += 1
+    start_col = 1
     if const_seats_included:
         const_col = start_col
         start_col += 1
@@ -147,28 +112,46 @@ def parse_input(
         start_col += 1
 
     res["votes"] = [[parsint(v) for v in row[start_col:]]
-                    for row in input[start_row:]]
+                    for row in rows[1:]]
 
-    if parties_included:
-        res["parties"] = input[0][start_col:]
-        while res["parties"] and not res["parties"][-1]:
-            res["parties"] = res["parties"][:-1]
-        num_parties = len(res["parties"])
-        res["votes"] = [row[:num_parties] for row in res["votes"]]
-    else:
-        num_parties = max(len(row) for row in res["votes"])
-        res["parties"] = ['']*num_parties
+    res["parties"] = rows[0][start_col:]
+    num_parties = len(res["parties"])
 
     res["constituencies"] = [{
-        "name": row[0] if const_included else '',
+        "name": row[0],
         "num_const_seats": parsint(row[const_col]) if const_seats_included else 0,
         "num_adj_seats": parsint(row[adj_col]) if adj_seats_included else 0,
-    } for row in input[start_row:]]
+    } for row in rows[1:]]
 
-    table_name = input[0][0] if name_included else ''
+    table_name = rows[0][0] if name_included else ''
     res["name"] = determine_table_name(table_name,filename)
 
     return res
+
+def check_votes(rows, filename):
+    n = [len(row) for row in rows]
+    if min(n) < max(n):
+        return 'Not all rows have equal length'
+    n = n[0]
+    if n < 2:
+        return 'Fewer than two columns'
+    elif len(rows) < 2:
+        return 'Only one row'
+    toprow = rows[0]
+    const_seats_incl = toprow[1].lower() == "cons"
+    expected = 2 if const_seats_incl else 1
+    adj_seats_incl = toprow[expected].lower() == "adj"
+    skip = 1 + const_seats_incl + adj_seats_incl
+    votes = [row[skip:] for row in rows[1:]]
+    if not all(toprow[skip:]):
+        return 'Some party names are blank'
+    if not all(l[0] for l in rows[1:]):
+        return 'Some constituency names are blank'
+    if not all(isint(row) for row in votes):
+        return 'All votes must be nonnegative integer numbers'
+
+    result = parse_input(rows, const_seats_incl, adj_seats_incl, filename)
+    return result
 
 def parsint(value):
     return int(value) if value else 0
@@ -176,31 +159,31 @@ def parsint(value):
 def determine_table_name(first,filename):
     return first if first else os.path.basename(os.path.splitext(filename)[0])
 
-def load_votes(votefile, consts):
-    """Load votes from a file."""
-    if votefile.endswith("csv"):
-        reader = read_csv(votefile)
-    else:
-        reader = read_xlsx(votefile)
-    parties = next(reader)[3:]
-    votes = [[] for i in range(len(consts))]
-    c_names = [x["name"] for x in consts]
+# def load_votes(votefile, consts):
+#     """Load votes from a file."""
+#     if votefile.endswith("csv"):
+#         reader = read_csv(votefile)
+#     else:
+#         reader = read_xlsx(votefile)
+#     parties = next(reader)[3:]
+#     votes = [[] for i in range(len(consts))]
+#     c_names = [x["name"] for x in consts]
 
-    for row in reader:
-        try:
-            v = votes[c_names.index(row[0])]
-        except:
-            print(row)
-            raise Exception("Constituency '%s' not found in constituency file"
-                            % row[0])
-        for x in row[3:]:
-            try:
-                r = float(x)
-            except:
-                r = 0
-            v.append(r)
+#     for row in reader:
+#         try:
+#             v = votes[c_names.index(row[0])]
+#         except:
+#             print(row)
+#             raise Exception("Constituency '%s' not found in constituency file"
+#                             % row[0])
+#         for x in row[3:]:
+#             try:
+#                 r = float(x)
+#             except:
+#                 r = 0
+#             v.append(r)
 
-    return parties, votes
+#     return parties, votes
 
 def print_table(data, header, labels, output, f_string=None):
     """
@@ -447,6 +430,7 @@ def short_traceback(trace):
     first = traceline(trace[1])
     last = traceline(trace[-3])
     error = trace[-1]
+    # print("trace=", trace)
     return f"Server error ({first},..., {last}):\n{error}"
 
 def writecsv(file, L):
