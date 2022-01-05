@@ -108,6 +108,14 @@ const store = new Vuex.Store({
     },
 
     serverError(state, message) {
+      if (Number.isInteger(message)) {
+        if (message == 500)
+          message = "Uncaught exception in backend (possibly logged to console)"
+        else if (message == 0)
+          message = "Error: Server not responding"
+        else
+          message = "Unknown"
+      }        
       console.log("SERVER ERROR: ", message)
       state.server_error = message.split(/\n/g);
       console.log("lengths", message.length, state.server_error.length)
@@ -191,7 +199,11 @@ const store = new Vuex.Store({
             context.dispatch("recalc_sys_const")
             //context.commit("clearWaitingForData")
           }
-        })
+        },
+        response => {
+          context.commit('serverError', response.status)
+        }
+      )
     },
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
