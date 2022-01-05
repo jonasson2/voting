@@ -1,6 +1,6 @@
 <template>
 <div v-if="results.length > 0">
-  <h3>Results based on source Votes and seats</h3>
+  <h3>Results based on "Source votes and seats"</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"

@@ -32,7 +32,7 @@ class MeasureGroups(dict):
         self["other"] = {
             "title": "Specific quality indices for seat allocations",
             "rows": {
-                "entropy":      ("Entropy (logarithmic)", ""),
+                "entropy":      ("Sum of logs of votes per seat", ""),
                 "min_seat_val": ("Minimum reference seat share per seat", "")
             }
         }

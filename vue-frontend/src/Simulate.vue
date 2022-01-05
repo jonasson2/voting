@@ -44,7 +44,7 @@
         time remaining: {{time_left}}
       </span>
       <span v-if="simulation_done">
-        time remaining: {{time_left}}, simulation time: {{total_time}}
+        Simulation time: {{total_time}}, Time remaining: {{time_left}}
       </span>
     </b-col>
     <b-col cols="2">

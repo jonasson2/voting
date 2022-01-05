@@ -72,14 +72,14 @@ ADJUSTMENT_METHODS = {
     "B-alternating-scaling": alt_scaling,
 }
 ADJUSTMENT_METHOD_NAMES = {
-    "1-icelandic-law":        "Icelandic law 24/2000",
+    "1-icelandic-law":        "Icelandic law 112/2021",
     "2-ice-shares":           "Icelandic law based on constituency seat shares",
     "3-norwegian-law":        "Norwegian law 20/2002",
     "4-norwegian-icelandic":  "Maximum constituency seat share",
     "5-pure-vote-ratios":     "Maximum constituency vote percentage",
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
-    "8-nearest-neighbor":     "Nearest neighbor",
+    "8-nearest-neighbor":     "Next-to-last",
     # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",

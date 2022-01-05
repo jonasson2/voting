@@ -68,7 +68,7 @@
         <b-form-group style="font-size:110%"
                       description='Scaled seat shares are used as reference in quality 
                                    measurements; "Help" for more details'>
-          <label> <b>Scaling of reference seat shares:</b> </label>
+          <label> <b>Scaling of votes for reference seat shares:</b> </label>
           <b-form-radio-group
             id="A"
             v-model="sim_settings.scaling"

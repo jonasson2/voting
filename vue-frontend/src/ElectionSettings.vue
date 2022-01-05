@@ -47,7 +47,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Basic rule used to apportion adjustment seats betwwen parties 
+          title="Basic rule used to apportion adjustment seats between parties 
                  based on total votes for all lists of the same party."
           >
           <b-form-select
@@ -77,7 +77,7 @@
       <legend style = "margin-left:0px">Allocation of adjustment seats to lists</legend>
       <b-col cols="5">
         <b-form-group
-          label="Basic rule"
+          label="Rule"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"

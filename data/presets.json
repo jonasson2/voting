@@ -8,14 +8,14 @@
   },
   {
     "id": 2,
-    "name": "21st century average",
+    "name": "Alþingi, typical 21st century",
     "country": "Iceland",
     "year": "2003–2021",
     "filename": "21st-century-avg.csv"
   },
   {
     "id": 3,
-    "name": "21st century average (old version)",
+    "name": "Alþingi, typical 21st century (old version)",
     "country": "Iceland",
     "year": "2003–2017",
     "filename": "aldarkosning.csv"
