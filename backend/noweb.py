@@ -27,42 +27,39 @@ def load_all(f):
         file_content = json.load(f.stream)
     return file_content
 
-def load_systems(f):
+def load_json(f):
     # returns systems, sim_settings from file json-file f
     if isinstance(f,Path) or isinstance(f,str):
         with open(f) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
-    if type(file_content) == dict and "e_settings" in file_content:
-        electoral_system_list = file_content["e_settings"]
-        assert "sim_settings" in file_content
-        sim_settings = check_simul_settings(file_content["sim_settings"])
-    else:
-        electoral_system_list = file_content
-        sim_settings = None
-    assert type(electoral_system_list) == list
-    #disp("esl", electoral_system_list)
-
-    keys = ["name", "seat_spec_option", "constituencies",
-            "constituency_threshold", "constituency_allocation_rule",
-            "adjustment_threshold", "adjustment_division_rule",
-            "adjustment_method", "adjustment_allocation_rule"]
-    systems = []
-    for item in electoral_system_list:
-        for info in keys:
-            if info not in item:
-                raise KeyError(f"{info} is missing from a system in file.")
-        if item["seat_spec_option"] == "refer":
-            item["seat_spec_option"] = "refer"
-        system = ElectionSystem()
-        system.update(item)
-        system["primary_divider"] = item["constituency_allocation_rule"]
-        system["adj_determine_divider"] = item["adjustment_division_rule"]
-        system["adj_alloc_divider"] = item["adjustment_allocation_rule"]
-        systems.append(system)
-
-    systems = check_systems(systems)
-    return systems, sim_settings
+    assert type(file_content) == dict
+    if "e_settings" in file_content:
+        file_content["systems"] = file_content["e_settings"]
+        del file_content["e_settings"]
+    assert "sim_settings" in file_content
+    assert "systems" in file_content
+    file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
+    assert type(file_content["systems"]) == list
+    # keys = ["name", "seat_spec_option", "constituencies",
+    #         "constituency_threshold", "constituency_allocation_rule",
+    #         "adjustment_threshold", "adjustment_division_rule",
+    #         "adjustment_method", "adjustment_allocation_rule"]
+    # systems = []
+    # for item in electoral_system_list:
+    #     for info in keys:
+    #         if info not in item:
+    #             raise KeyError(f"{info} is missing from a system in file.")
+    #     if item["seat_spec_option"] == "refer":
+    #         item["seat_spec_option"] = "refer"
+    #     system = ElectionSystem()
+    #     system.update(item)
+    #     system["primary_divider"] = item["constituency_allocation_rule"]
+    #     system["adj_determine_divider"] = item["adjustment_division_rule"]
+    #     system["adj_alloc_divider"] = item["adjustment_allocation_rule"]
+    #     systems.append(system)
+    #systems = check_systems(systems) # Remove for the time being
+    return file_content
 
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
@@ -83,6 +80,8 @@ def run_simulation(votes, systems, sim_settings, excelfile=None, logfile=None):
     # sim_settings = simulate.SimulationSettings()
     sim_settings.update(check_simul_settings(sim_settings))
     sim = simulate.Simulation(sim_settings, systems, votes)
+    if sim.sim_count == 0:
+        return None
     sim.simulate(logfile)
     if excelfile != None:
         sim.to_xlsx(excelfile)

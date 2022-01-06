@@ -79,7 +79,7 @@ ADJUSTMENT_METHOD_NAMES = {
     "5-pure-vote-ratios":     "Maximum constituency vote percentage",
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
-    "8-nearest-neighbor":     "Next-to-last",
+    "8-nearest-neighbor":     "Nearest-to-last",
     # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",
@@ -88,15 +88,13 @@ ADJUSTMENT_METHOD_NAMES = {
 GENERATING_METHODS = {
     "gamma": gamma_distribution,
     "beta": symmetric_beta_distribution,
-    "uniform": uniform_distribution,
-    "maxchange": None
+    "uniform": uniform_distribution
 }
 
 GENERATING_METHOD_NAMES = [
     {"value": "gamma",     "text": "Gamma distribution"},
     {"value": "beta",      "text": "Symmetric beta distribution"},
     {"value": "uniform",   "text": "Uniform distribution"},
-    {"value": "maxchange", "text": "Maximum change method"}
 ]
 
 SEAT_SPECIFICATION_OPTIONS = {

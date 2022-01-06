@@ -7,7 +7,7 @@ from voting import Election
 from dictionaries import LIST_MEASURES, VOTE_MEASURES
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
-from generate_votes import generate_maxchange_votes, generate_votes
+from generate_votes import generate_votes
 from running_stats import Running_stats
 from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
@@ -133,10 +133,10 @@ class Simulation:
 
     def simulate(self, logfile=None):
         # Simulate many elections.
-        gen = self.gen_votes()
         ntot = self.sim_count
-        if ntot == 0 and not self.sensitivity:
-            self.run_and_collect_measures(self.election_handler.votes)
+        if ntot == 0:
+            return None
+        gen = self.gen_votes()
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
         for i in range(ntot):
@@ -161,14 +161,9 @@ class Simulation:
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
-            if self.distribution == "maxchange":
-                votes = generate_maxchange_votes(
-                    self.election_handler.votes, self.var_coeff,
-                    self.apply_random)
-            else:
-                votes = generate_votes(
-                    self.election_handler.votes, self.var_coeff,
-                    self.distribution, self.apply_random)
+            votes = generate_votes(
+                self.election_handler.votes, self.var_coeff,
+                self.distribution, self.apply_random)
             yield votes
 
     def collect_votes(self, votes):

@@ -98,7 +98,6 @@ const store = new Vuex.Store({
 
     newNumbering(state, idx) {
       findNumbering(state, idx)
-      console.log("newNumbering")
     },
 
     showVoteMatrix(state) {
@@ -208,7 +207,7 @@ const store = new Vuex.Store({
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
       context.commit("deleteAllSystems")
-      Vue.http.post("/api/votes/uploadall/", formData).then(
+      Vue.http.post("/api/uploadall/", formData).then(
         (response) => {
           if (response.body.error) {
             context.commit("serverError", response.body.error)
@@ -226,7 +225,7 @@ const store = new Vuex.Store({
       let promise;
       promise = axios({
         method: "post",
-        url: "/api/votes/saveall",
+        url: "/api/saveall",
         data: {
           vote_table: context.state.vote_table,
           systems: context.state.systems,
@@ -304,7 +303,6 @@ const store = new Vuex.Store({
             if (response.headers["content-type"] == "application/json") {
               let s,x
               s = String.fromCharCode.apply(null, new Uint8Array(response.data))
-              console.log("s=", s)
               eval("x = " + s)
               if ("error" in x) {
                 // API returned error instead of actual blob

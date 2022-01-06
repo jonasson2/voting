@@ -16,7 +16,7 @@ def nearest_neighbor(m_votes,
     num_allocated = sum([sum(x) for x in m_allocations])
     num_total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
-    for n in range(num_total_seats-num_allocated):
+    for n in range(num_total_seats - num_allocated):
         m_votes = threshold_elimination_constituencies(m_votes, 0.0,
                     v_desired_col_sums, m_allocations)
         neighbor_ratio = []

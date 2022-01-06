@@ -20,7 +20,7 @@ from input_util import check_simul_settings
 import voting
 import simulate
 from util import disp, short_traceback, check_votes, load_votes_from_excel
-from noweb import load_votes, load_systems, single_election, load_all
+from noweb import load_votes, load_json, single_election, load_all
 from noweb import start_simulation, check_simulation, SIMULATIONS
 from noweb import simulation_to_excel
 from traceback import format_exc
@@ -148,13 +148,46 @@ def api_settings_save():
 def api_settings_upload():
     try:
         f = getfileparam()
-        systems, sim_settings = load_systems(f)
-        return jsonify({"systems": systems, "sim_settings": sim_settings})
+        settings = load_json(f)
+        if "vote_table" in settings:
+            return errormsg(f'File {f.filename} contains votes and must '
+                            'be uploaded with "Load all"')
+        return jsonify(settings)
     except Exception as e:
         if type(e).__name__ == "JSONDecodeError":
             return errormsg(f'Illegal settings file: {f.filename}')
         else:
             return errormsg()
+
+@app.route('/api/saveall/', methods=['POST'])
+def api_votes_save_all():
+    try:
+        param_list = ("vote_table", "systems", "sim_settings")
+        param = getparam(*param_list)
+        contents = dict(zip(param_list, param))
+        tmpfilename = tempfile.mktemp(prefix='simulator-')
+        with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
+            json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        download_filename = "simulator-" + date + ".json"
+        return save_file(tmpfilename, download_filename)
+    except Exception:
+        return errormsg()    
+
+@app.route('/api/uploadall/', methods=['POST'])
+def api_votes_uploadall():
+    try:
+        f = getfileparam()
+        content = load_json(f)
+        if set(content) == {"systems", "sim_settings"}:
+            return errormsg(f'File {f.filename} contains no votes and must '
+                            'be uploaded with "Load from file"')
+        elif set(content) == {"systems", "sim_settings", "vote_table"}:
+            return jsonify(content)
+        else:
+            return errormsg(f'Not a legal json-file for "Load all"')
+    except Exception:
+        return errormsg()        
 
 @app.route('/api/votes/save/', methods=['POST'])
 def api_votes_save():
@@ -176,30 +209,6 @@ def api_votes_save():
         return save_file(tmpfilename, download_name);
     except Exception:
         return errormsg()    
-
-@app.route('/api/votes/saveall/', methods=['POST'])
-def api_votes_save_all():
-    try:
-        param_list = ("vote_table", "systems", "sim_settings")
-        param = getparam(*param_list)
-        contents = dict(zip(param_list, param))
-        tmpfilename = tempfile.mktemp(prefix='simulator-')
-        with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
-            json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
-        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-        download_filename = "simulator-" + date + ".json"
-        return save_file(tmpfilename, download_filename)
-    except Exception:
-        return errormsg()    
-
-@app.route('/api/votes/uploadall/', methods=['POST'])
-def api_votes_uploadall():
-    try:
-        f = getfileparam()
-        content = load_all(f)
-        return jsonify(content)
-    except Exception:
-        return errormsg()        
 
 @app.route('/api/presets/load/', methods=['POST'])
 def api_presets_load():
@@ -241,8 +250,12 @@ def api_simulate():
     try:
         (votes, systems, sim_settings) = getparam("vote_table", "systems",
                                                   "sim_settings")
+        if sim_settings["simulation_count"] <= 0:
+            raise ValueError("Number of simulations must be positive")
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
+    except ValueError as e:
+        return errormsg(f"Error: {e}")
     except Exception:
         return errormsg()        
 
