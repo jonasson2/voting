@@ -3,33 +3,33 @@
     "constituencies": [
       {
         "name": "Norðvestur",
-        "num_adj_seats": 1,
-        "num_const_seats": 7
+        "num_adj_seats": 5,
+        "num_const_seats": 4
       },
       {
         "name": "Norðaustur",
-        "num_adj_seats": 1,
-        "num_const_seats": 9
+        "num_adj_seats": 5,
+        "num_const_seats": 5
       },
       {
         "name": "Suður",
-        "num_adj_seats": 1,
-        "num_const_seats": 9
+        "num_adj_seats": 5,
+        "num_const_seats": 5
       },
       {
         "name": "Suðvestur",
-        "num_adj_seats": 2,
-        "num_const_seats": 11
+        "num_adj_seats": 7,
+        "num_const_seats": 6
       },
       {
         "name": "Reykjavík suður",
-        "num_adj_seats": 2,
-        "num_const_seats": 9
+        "num_adj_seats": 6,
+        "num_const_seats": 5
       },
       {
         "name": "Reykjavík norður",
-        "num_adj_seats": 2,
-        "num_const_seats": 9
+        "num_adj_seats": 6,
+        "num_const_seats": 5
       }
     ],
     "name": "Iceland 21st c. avg",
@@ -110,19 +110,19 @@
     {
       "adj_alloc_divider": "1-dhondt",
       "adj_determine_divider": "1-dhondt",
-      "adjustment_method": "8-nearest-neighbor",
+      "adjustment_method": "8-nearest-to-last",
       "adjustment_threshold": 5,
       "compare_with": false,
       "constituencies": [
         {
           "name": "Norðvestur",
-          "num_adj_seats": 8,
-          "num_const_seats": 0
+          "num_adj_seats": 7,
+          "num_const_seats": 1
         },
         {
           "name": "Norðaustur",
-          "num_adj_seats": 10,
-          "num_const_seats": 0
+          "num_adj_seats": 9,
+          "num_const_seats": 1
         },
         {
           "name": "Suður",
@@ -151,7 +151,7 @@
       "output": "simple",
       "parties": [],
       "primary_divider": "1-dhondt",
-      "seat_spec_option": "make_all_adj",
+      "seat_spec_option": "refer",
       "show_entropy": false
     }
   ],

@@ -411,7 +411,7 @@
     {
       "adjustment_allocation_rule": "1-dhondt",
       "adjustment_division_rule": "1-dhondt",
-      "adjustment_method": "8-nearest-neighbor",
+      "adjustment_method": "8-nearest-to-last",
       "adjustment_threshold": 5,
       "compare_with": false,
       "constituencies": [

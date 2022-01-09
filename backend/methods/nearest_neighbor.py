@@ -10,7 +10,7 @@ def nearest_neighbor(m_votes,
                      **kwargs):
 
     assert("last" in kwargs)
-    last = kwargs["last"]
+    last = [l["active_votes"] for l in kwargs["last"]]
 
     m_allocations = deepcopy(m_prior_allocations)
     num_allocated = sum([sum(x) for x in m_allocations])
@@ -66,6 +66,8 @@ def nearest_neighbor(m_votes,
         least = min(neighbor_ratio)
         idx = neighbor_ratio.index(least)
         m_allocations[idx][first_in[idx]] += 1
+        print(1/least)
+        print(idx, first_in[idx])
         allocation_sequence.append({
             "constituency": idx, "party": first_in[idx],
             "reason": reason[idx],

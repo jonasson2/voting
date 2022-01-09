@@ -6,7 +6,7 @@ from methods.alternating_scaling import alt_scaling
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 # from methods.monge import monge
-from methods.nearest_neighbor import nearest_neighbor
+from methods.nearest_to_last import nearest_to_last
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
@@ -65,7 +65,7 @@ ADJUSTMENT_METHODS = {
     "5-pure-vote-ratios": pure_vote_ratios_apportionment,
     "6-relative-superiority": relative_superiority,
     "7-relative-sup-simple": relative_superiority_simple,
-    "8-nearest-neighbor": nearest_neighbor,
+    "8-nearest-to-last": nearest_to_last,
     # "9-monge": monge,
     # "opt-entropy": opt_entropy,
     "A-switching": switching,
@@ -79,7 +79,7 @@ ADJUSTMENT_METHOD_NAMES = {
     "5-pure-vote-ratios":     "Maximum constituency vote percentage",
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
-    "8-nearest-neighbor":     "Nearest-to-last",
+    "8-nearest-to-last":      "Nearest-to-last",
     # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, math, time
+import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from multiprocessing import Pool
@@ -38,7 +38,7 @@ def read_data():
         if not vote_file:
             print('No votes specified, using "typical 21st century"')
             vote_file = 'icel-21st-c.csv'
-        load_votes(data / vote_file)
+        votes = load_votes(data / vote_file)
     return votes, systems, sim_settings
 
 def set_sim_settings(sim_settings, n_sim, sens_cv, cv):
@@ -76,7 +76,7 @@ sim_settings = set_sim_settings(sim_settings, n_sim, sens_cv, cv)
 (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_sim)
 
 def main():
-    #random.seed(11)
+    random.seed(42)
     systemnames = [s["name"] for s in systems]
     pars = range(n_cores)
     if sim_settings['simulation_count'] == 0: return
