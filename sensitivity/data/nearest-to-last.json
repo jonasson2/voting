@@ -3,13 +3,13 @@
     "constituencies": [
       {
         "name": "Norðvestur",
-        "num_adj_seats": 5,
-        "num_const_seats": 4
+        "num_adj_seats": 9,
+        "num_const_seats": 0
       },
       {
         "name": "Norðaustur",
-        "num_adj_seats": 5,
-        "num_const_seats": 5
+        "num_adj_seats": 10,
+        "num_const_seats": 0
       },
       {
         "name": "Suður",

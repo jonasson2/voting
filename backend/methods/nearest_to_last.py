@@ -76,6 +76,7 @@ def nearest_to_last(m_votes,
         reason = "VOTE" if alloc_const[maxC] == 1 else "MAX"
         allocation = {"constituency": maxC, "last":last_index[maxC],
                       "ratio": max_ratio, "party": maxP, "reason": reason}
+        last_index[maxC] = maxP
         allocation_sequence.append(allocation)
     return alloc_list.tolist(), (allocation_sequence, present_allocation_sequence)
 
@@ -83,20 +84,20 @@ def present_allocation_sequence(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
     headers = ["Adj. seat #", "Constituency", "Next party", "Last party",
                "Criteria", "Ratio"]
-    reason = {}
-    reason["MAX"] = "No const. seat, thus using max list vote"
-    reason["VOTE"] = "Max ratio of next-in and last in vote quotients"
+    criterion = {}
+    criterion["MAX"] = "Max ratio of next-in and last in vote quotients"
+    criterion["VOTE"] = "No const. seat, thus using max list vote"
     data = []
     for (seat_number, allocation) in enumerate(allocation_sequence):
         reason = allocation["reason"]
         last_index = allocation["last"]
-        last_party = rules["parties"][last_index] if last_index else "–"
+        last_party = rules["parties"][last_index] if last_index!=None else "–"
         data.append([
             seat_number + 1,
             rules["constituencies"][allocation["constituency"]]["name"],            
             rules["parties"][allocation["party"]],
             last_party,
-            reason,
+            criterion[reason],
             round(allocation["ratio"], 3 if reason == "MAX" else 0),
         ])
 

@@ -46,19 +46,12 @@ def load_json(f):
     #         "adjustment_threshold", "adjustment_division_rule",
     #         "adjustment_method", "adjustment_allocation_rule"]
     # systems = []
-    # for item in electoral_system_list:
-    #     for info in keys:
-    #         if info not in item:
-    #             raise KeyError(f"{info} is missing from a system in file.")
-    #     if item["seat_spec_option"] == "refer":
-    #         item["seat_spec_option"] = "refer"
-    #     system = ElectionSystem()
-    #     system.update(item)
-    #     system["primary_divider"] = item["constituency_allocation_rule"]
-    #     system["adj_determine_divider"] = item["adjustment_division_rule"]
-    #     system["adj_alloc_divider"] = item["adjustment_allocation_rule"]
-    #     systems.append(system)
-    #systems = check_systems(systems) # Remove for the time being
+    for item in file_content["systems"]:
+        if item["adjustment_method"] == "8-nearest-neighbor":
+            item["adjustment_method"] = "8-nearest-to-last";
+        item["primary_divider"] = item["constituency_allocation_rule"]
+        item["adj_determine_divider"] = item["adjustment_division_rule"]
+        item["adj_alloc_divider"] = item["adjustment_allocation_rule"]
     return file_content
 
 def single_election(votes, systems):
