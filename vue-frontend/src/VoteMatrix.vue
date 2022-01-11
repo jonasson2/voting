@@ -298,13 +298,14 @@ export default {
     console.log("Creating VoteMatrix")
     this.$http.get("/api/presets").then(
       (response) => {
-        this.presets = response.body;
-        this.updateVoteSums()
-      },
-      (response) => {
-        console.log("Error, response.body", response.body)
+        if (response.body.error) {
+          this.serverError(response.body.error) 
+        } else {
+          this.presets = response.body;
+          this.updateVoteSums()
+        }
       }
-    );
+    )
     console.log("Created VoteMatrix");
   },
   methods: {
@@ -352,14 +353,15 @@ export default {
       let v = [];
       for (let con in this.vote_table.votes) {
         v = Array(this.vote_table.votes[con].length).fill(0);
-        this.$set(this.vote_table.votes, con, v);
+        this.$set(this.vote_table.votes, con, v)
       }
     },
     clearAll: function () {
-      this.vote_table.name = "";
-      this.vote_table.constituencies = [];
-      this.vote_table.parties = [];
-      this.vote_table.votes = [];
+      this.vote_table.name = ""
+      this.vote_table.constituencies = []
+      this.vote_table.parties = []
+      this.vote_table.votes = []
+      this.updateVoteSums()
     },
     save: function () {
       let promise;
@@ -371,18 +373,17 @@ export default {
       });
       this.downloadFile(promise)
     },
-    loadPreset: function (eid) {
+    loadPreset: function (election_id) {
       this.setWaitingForData()
-      this.$http.post("/api/presets/load/", { eid: eid }).then(
+      this.$http.post("/api/presets/load/", {election_id: election_id }).then(
         (response) => {
-          this.updateVoteTable(response.data)
-          this.clearWaitingForData()
-        },
-        (response) => {
-          this.serverError("Illegal format of presets file")
-          this.clearWaitingForData()
-        }
-      )
+          if (response.body.error) {
+            this.serverError(response.body.error) 
+          } else {
+            this.updateVoteTable(response.data)
+            this.clearWaitingForData()
+          }
+        })
     },
     uploadVotes: function (evt) {
       this.setWaitingForData()
@@ -391,14 +392,13 @@ export default {
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.$http.post("/api/votes/upload/", formData).then(
         (response) => {
-          this.updateVoteTable(response.data)
-          this.clearWaitingForData()
-        },
-        (response) => {
-          this.serverError("Cannot upload votes from this file")
-          this.clearWaitingForData()
-        },
-      )
+          if (response.body.error) {
+            this.serverError(response.body.error) 
+          } else {
+            this.updateVoteTable(response.data)
+            this.clearWaitingForData()
+          }
+        })
     },
     loadAll: function (evt) {
       if (!this.uploadfile) evt.preventDefault();

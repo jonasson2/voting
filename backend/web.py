@@ -14,14 +14,13 @@ import csv
 import dictionaries
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-import util
 from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
 import voting
 import simulate
-from util import disp, short_traceback
-from noweb import load_votes, load_systems, single_election, load_all
+from util import disp, short_traceback, check_votes, load_votes_from_excel
+from noweb import load_votes, load_json, single_election, load_all
 from noweb import start_simulation, check_simulation, SIMULATIONS
 from noweb import simulation_to_excel
 from traceback import format_exc
@@ -50,31 +49,6 @@ def serve_index():
     #indexfile = "index.html"
     return render_template(indexfile)
 
-@app.route('/static/<path:path>')
-def send_static(path):
-    return send_from_directory('static/', path)
-
-DOWNLOADS = {}
-DOWNLOADS_IDX = 0
-
-@app.route('/api/downloads/get/', methods=['GET'])
-def api_downloads_get():
-    global DOWNLOADS
-    if "id" not in request.args:
-        return jsonify({'error': 'Please supply a download id.'})
-    if request.args["id"] not in DOWNLOADS:
-        return jsonify({"error": "Please supply a valid download id."})
-    tmpfilename, attachment_filename = DOWNLOADS[request.args["id"]]
-
-    content = send_from_directory(
-        directory=os.path.dirname(tmpfilename),
-        path=os.path.basename(tmpfilename),
-        attachment_filename=attachment_filename,
-        as_attachment=False
-    )
-
-    return content
-
 def save_file(tmpfilename, download_name):
     import mimetypes
     (mimetype, encoding) = mimetypes.guess_type(download_name)
@@ -87,293 +61,258 @@ def save_file(tmpfilename, download_name):
     )
     return response
 
+def getparam(*args):
+    data = request.get_json(force=True)
+    parameters = (data[a] for a in args)
+    return parameters if len(args) > 1 else next(parameters)
+
+def getfileparam():
+    return request.files["file"]
+
+def errormsg(message = None):
+    if not message:
+        message = short_traceback(format_exc())
+    return jsonify({'error': message}) 
+
 @app.route('/api/election/', methods=["POST"])
 def api_election():
     try:
-        data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems"])
-        data = check_input(data, ["vote_table", "systems"])
-        vote_table = data["vote_table"]
-        systems = data["systems"]
-        if len(systems) == 0 or len(systems[0]) == 0:
-            raise Exception("/api/election posted with no electoral system")
+        (vote_table, systems) = getparam('vote_table', 'systems')
         constituencies = update_constituencies(vote_table, systems)
         for (c,s) in zip(constituencies, systems):
             s["constituencies"] = c
         results = single_election(vote_table, systems);
         return jsonify({"results": results, "systems": systems})
     except Exception:
-        message = format_exc()
-        print("ERROR: ", message)
-        return jsonify({"error": message})
+        return errormsg()
 
 @app.route('/api/election/save/', methods=['POST'])
 def api_election_save():
     try:
-        data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems"])
-        systems = data["systems"]
-        vote_table = data["vote_table"]
+        (vote_table, systems) = getparam('vote_table', 'systems')
         handler = ElectionHandler(vote_table, systems)
         tmpfilename = tempfile.mktemp(prefix='election-')
         handler.to_xlsx(tmpfilename)
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name=f"Election-{date}.xlsx"
+        return save_file(tmpfilename, download_name)
     except Exception:
-        message = format_exc()
-        return jsonify({"error": message})
-    return save_file(tmpfilename, download_name)
+        return errormsg()
 
 @app.route('/api/settings/update_constituencies/', methods=["POST"])
 def api_update_constituencies():
     # Update constituencies in electoral systems according to
     # the current vote table and systems[:]["seat_spec_option"]
-    data = request.get_json(force=True)
-    vote_table = data["vote_table"]
-    systems = data["systems"]
     try:
+        (vote_table, systems) = getparam('vote_table', 'systems')
         constituencies = update_constituencies(vote_table, systems)
         return jsonify({"constituencies": constituencies})
     except Exception:
-        message = format_exc()
-        print("ERROR: ", message)
-        return jsonify({"error": message})
+        return errormsg()
 
 @app.route('/api/settings/save/', methods=['POST'])
 def api_settings_save():
-    data = request.get_json(force=True)
     try:
-        check_input(data, ["systems", "sim_settings"])
+        (systems, sim_settings) = getparam("systems", "sim_settings")
+        keys = [
+            "name", "seat_spec_option", "constituencies",
+            "compare_with",
+            "constituency_threshold", #"constituency_allocation_rule",
+            "adjustment_threshold", #"adjustment_division_rule",
+            "adjustment_method", #"adjustment_allocation_rule"
+        ]
+        names = []
+        electoral_system_list = []
+        for system in systems:
+            names.append(system["name"])
+            item = {key: system[key] for key in keys}
+            item["constituency_allocation_rule"] = system["primary_divider"]
+            item["adjustment_division_rule"] = system["adj_determine_divider"]
+            item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
+            electoral_system_list.append(item)
+        file_content = {
+            "e_settings": electoral_system_list,
+            "sim_settings": check_simul_settings(sim_settings)
+        }
+        tmpfilename = tempfile.mktemp(prefix='e_settings-')
+        with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
+            json.dump(file_content, jsonfile, ensure_ascii=False, indent=2)
+        filename = secure_filename(".".join(names))
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        download_filename=f"{filename}-{date}.json"
+        return save_file(tmpfilename, download_filename)
     except Exception:
-        print("caught exception")
-        message = format_exc()
-        return jsonify({"error": message})
-    systems = data["systems"]
-    systems = check_systems(systems)
+        return errormsg()
     
-    #no need to expose more than the following keys
-    keys = [
-        "name", "seat_spec_option", "constituencies",
-        "compare_with",
-        "constituency_threshold", #"constituency_allocation_rule",
-        "adjustment_threshold", #"adjustment_division_rule",
-        "adjustment_method", #"adjustment_allocation_rule"
-    ]
-
-    names = []
-    electoral_system_list = []
-    for system in systems:
-        names.append(system["name"])
-        #electoral_system_list.append({key: system[key] for key in keys})
-        item = {key: system[key] for key in keys}
-        item["constituency_allocation_rule"] = system["primary_divider"]
-        item["adjustment_division_rule"]     = system["adj_determine_divider"]
-        item["adjustment_allocation_rule"]   = system["adj_alloc_divider"]
-        electoral_system_list.append(item)
-
-    file_content = {
-        "e_settings": electoral_system_list,
-        "sim_settings": check_simul_settings(data["sim_settings"]),
-    }
-    tmpfilename = tempfile.mktemp(prefix='e_settings-')
-    with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
-        json.dump(file_content, jsonfile, ensure_ascii=False, indent=2)
-    filename = secure_filename(".".join(names))
-    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-    download_filename=f"{filename}-{date}.json"
-    return save_file(tmpfilename, download_filename)
-
 @app.route('/api/settings/upload/', methods=['POST'])
 def api_settings_upload():
-    if 'file' not in request.files:
-        return jsonify({'error': 'must upload a file.'})
-    f = request.files['file']
-    systems, sim_settings = load_systems(f)
-    return jsonify({"systems": systems, "sim_settings": sim_settings})
+    try:
+        f = getfileparam()
+        settings = load_json(f)
+        if "vote_table" in settings:
+            return errormsg(f'File {f.filename} contains votes and must '
+                            'be uploaded with "Load all"')
+        return jsonify(settings)
+    except Exception as e:
+        if type(e).__name__ == "JSONDecodeError":
+            return errormsg(f'Illegal settings file: {f.filename}')
+        else:
+            return errormsg()
+
+@app.route('/api/saveall/', methods=['POST'])
+def api_votes_save_all():
+    try:
+        param_list = ("vote_table", "systems", "sim_settings")
+        param = getparam(*param_list)
+        contents = dict(zip(param_list, param))
+        tmpfilename = tempfile.mktemp(prefix='simulator-')
+        with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
+            json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        download_filename = "simulator-" + date + ".json"
+        return save_file(tmpfilename, download_filename)
+    except Exception:
+        return errormsg()    
+
+@app.route('/api/uploadall/', methods=['POST'])
+def api_votes_uploadall():
+    try:
+        f = getfileparam()
+        content = load_json(f)
+        if set(content) == {"systems", "sim_settings"}:
+            return errormsg(f'File {f.filename} contains no votes and must '
+                            'be uploaded with "Load from file"')
+        elif set(content) == {"systems", "sim_settings", "vote_table"}:
+            return jsonify(content)
+        else:
+            return errormsg(f'Not a legal json-file for "Load all"')
+    except Exception:
+        return errormsg()        
 
 @app.route('/api/votes/save/', methods=['POST'])
 def api_votes_save():
-    data = request.get_json(force=True)    
-    vote_table = check_vote_table(data["vote_table"])
-    file_matrix = [
-        [vote_table["name"], "cons", "adj"] + vote_table["parties"],
-    ] + [
-        [
-            vote_table["constituencies"][c]["name"],
-            vote_table["constituencies"][c]["num_const_seats"],
-            vote_table["constituencies"][c]["num_adj_seats"],
-        ] + vote_table["votes"][c]
-        for c in range(len(vote_table["constituencies"]))
-    ]    
-    tmpfilename = tempfile.mktemp(prefix='vote_table-')
-    save_votes_to_xlsx(file_matrix, tmpfilename)
-    download_name = secure_filename(vote_table['name']) + ".xlsx"
-    return save_file(tmpfilename, download_name);
+    try:
+        vote_table = getparam("vote_table")
+        file_matrix = [
+            [vote_table["name"], "cons", "adj"] + vote_table["parties"],
+        ] + [
+            [
+                vote_table["constituencies"][c]["name"],
+                vote_table["constituencies"][c]["num_const_seats"],
+                vote_table["constituencies"][c]["num_adj_seats"],
+            ] + vote_table["votes"][c]
+            for c in range(len(vote_table["constituencies"]))
+        ]    
+        tmpfilename = tempfile.mktemp(prefix='vote_table-')
+        save_votes_to_xlsx(file_matrix, tmpfilename)
+        download_name = secure_filename(vote_table['name']) + ".xlsx"
+        return save_file(tmpfilename, download_name);
+    except Exception:
+        return errormsg()    
 
-@app.route('/api/votes/saveall/', methods=['POST'])
-def api_votes_save_all():
-    data = request.get_json(force=True)
-    contents = {
-        "vote_table": data["vote_table"],
-        "systems": data["systems"],
-        "sim_settings": data["sim_settings"]
-    }
-    tmpfilename = tempfile.mktemp(prefix='simulator-')
-    with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
-        json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
-    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-    download_filename = "simulator-" + date + ".json"
-    return save_file(tmpfilename, download_filename)
-
-@app.route('/api/votes/uploadall/', methods=['POST'])
-def api_votes_uploadall():
-    f = request.files['file']
-    content = load_all(f)
-    return jsonify(content)
+@app.route('/api/presets/load/', methods=['POST'])
+def api_presets_load():
+    try:
+        presets_dict = get_presets_dict()
+        election_id = getparam('election_id')
+        preset_ids = [p['id'] for p in presets_dict]
+        if election_id not in preset_ids:
+            raise ValueError("Unexpected missing id in presets_dict")
+        idx = preset_ids.index(election_id)
+        filename = "../data/elections/" + presets_dict[idx]['filename']
+        result = load_votes(filename)
+        return jsonify(result)
+    except Exception:
+        return errormsg()     
 
 @app.route('/api/votes/upload/', methods=['POST'])
 def api_votes_upload():
-    if 'file' not in request.files:
-        return jsonify({'error': 'must upload a file.'})
-    f = request.files['file']
-    res = util.load_votes_from_stream(f.stream, f.filename)
-    return jsonify(res)
-
-@app.route('/api/votes/paste/', methods=['POST'])
-def api_votes_paste():
-    data = request.get_json(force=True)
-
-    if "csv" not in data:
-        return jsonify({'error': 'must provide csv'})
-
-    rd = []
-    for row in csv.reader(StringIO(data["csv"]), skipinitialspace=True):
-        rd.append(row)
-
-    return jsonify(util.parse_input(
-        input=rd,
-        name_included=data["has_name"],
-        parties_included=data["has_parties"],
-        const_included=data["has_constituencies"],
-        const_seats_included=data["has_constituency_seats"],
-        adj_seats_included=data["has_constituency_adjustment_seats"]
-    ))
+    try:
+        f = getfileparam()
+        filename = f.filename
+        if filename.endswith('.csv'):
+            flines = f.read().decode('utf-8').splitlines()
+            frows = list(csv.reader(flines, skipinitialspace=True))
+        elif filename.endswith('xlsx'):
+            frows = load_votes_from_excel(f, filename)
+        else:
+            return errormsg('Neither .csv nor .xlsx file')
+        result = check_votes(frows, f.filename)
+        if isinstance(result, str):
+            return errormsg(f"Illegal vote file: {result}")
+        else:
+            return jsonify(result)
+    except Exception:
+        return errormsg()        
 
 @app.route('/api/simulate/', methods=['POST'])
 def api_simulate():
     try:
-        data = request.get_json(force=True)
-        data = check_input(data, ["vote_table", "systems", "sim_settings"])
-        votes = data["vote_table"]
-        systems = data["systems"]
-        sim_settings = data["sim_settings"]
+        (votes, systems, sim_settings) = getparam("vote_table", "systems",
+                                                  "sim_settings")
+        if sim_settings["simulation_count"] <= 0:
+            raise ValueError("Number of simulations must be positive")
         sid = start_simulation(votes, systems, sim_settings)
         return jsonify({"started": True, "sid": sid})
+    except ValueError as e:
+        return errormsg(f"Error: {e}")
     except Exception:
-        message = short_traceback(format_exc())
-        print("Length of message = ", len(message))
-        print("Error; message = ", message)
-        return jsonify({"started": False, "error": message})
+        return errormsg()        
 
 @app.route('/api/simulate/check/', methods=['POST'])
 def api_simulate_check():
-    data = request.get_json(force=True)
     try:
-        sid = data["sid"]
-        stop = data["stop"]
+        (sid,stop) = getparam("sid", "stop")
         (status, results) = check_simulation(sid, stop)
+        return jsonify({"status": status, "results": results})
     except Exception:
-        msg = short_traceback(format_exc())
-        return jsonify({"error": msg})
-    return jsonify({"status": status, "results": results})
+        return errormsg()        
 
 @app.route('/api/capabilities/', methods=["POST"])
 def api_capabilities():
-    constituencies = request.get_json(force=True)
-    capabilities_dict = get_capabilities_dict()
-    capabilities_dict["constituencies"] = constituencies
-    #disp("capabilities_dict", capabilities_dict)
-    return jsonify(capabilities_dict)
+    try:
+        constituencies = request.get_json(force=True)
+        election_system = ElectionSystem()
+        capabilities_dict = {
+            "election_system": election_system,
+            "sim_settings": simulate.SimulationSettings(),
+            "capabilities": {
+                "systems": dictionaries.RULE_NAMES,
+                "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
+                "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
+                "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
+                "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,
+            },
+            "constituencies": constituencies
+        }
+        return jsonify(capabilities_dict)
+    except Exception:
+        return errormsg()        
 
 @app.route('/api/presets/', methods=["GET"])
 def api_presets():
-    presets_dict = get_presets_dict()
-    return jsonify(presets_dict)
-
-@app.route('/api/presets/load/', methods=['POST'])
-def api_presets_load():
-    qv = request.get_json(force=True)
-    if 'eid' not in qv:
-        return jsonify({'error': 'Must supply eid'})
-    prs = get_presets_dict()
-    # TODO: This is silly but it paves the way to a real database
-    for p in prs:
-        if p['id'] == qv['eid']:
-            print('p=', p)
-            print(type(p['filename']))
-            res = load_votes(p['filename'], preset=True)
-            return jsonify(res)
+    try:
+        presets_dict = get_presets_dict()
+        return jsonify(presets_dict)
+    except Exception:
+        return errormsg()        
 
 @app.route('/api/simdownload/', methods=['GET','POST'])
 def api_simdownload():
     try:
-        data = request.get_json(force=True)
-        sid = data["sid"]
+        sid = getparam('sid')
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{sid[:6]}')
-        print("tmpfilename", tmpfilename)
         simulation_to_excel(sid, tmpfilename)
+        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+        download_name = f"simulation-{date}.xlsx"
+        return save_file(tmpfilename, download_name);
     except Exception:
-        message = format_exc()
-        return jsonify({"error": message})
-    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-    download_name = f"simulation-{date}.xlsx"
-    print("download_name", download_name)
-    return save_file(tmpfilename, download_name);
-
-def get_capabilities_dict():
-    election_system = ElectionSystem()
-    return {
-        "election_system": election_system,
-        "sim_settings": simulate.SimulationSettings(),
-        "capabilities": {
-            "systems": dictionaries.RULE_NAMES,
-            "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
-            "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
-            "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
-            "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,
-        },
-    }
+        return errormsg()
 
 def get_presets_dict():
-    try:
-        with open('../data/presets.json', encoding='utf-8') as js:
-            data = json.load(js)
-    except IOError:
-        data = {'error': 'Could not load presets: database lost?'}
-    except Exception:
-        data = {'error': format_exc()}
-        
-    #except json.decoder.JSONDecodeError:
-    #    data = {'error': 'Could not load presets due to parse error.'}
-
+    with open('../data/presets.json', encoding='utf-8') as js:
+        data = json.load(js)
     return data
-
-def run_script(systems):
-    if type(systems) in ["str", "unicode"]:
-        with open(systems, "r") as read_file:
-            systems = json.load(read_file)
-
-    if type(systems) != dict:
-        return {"error": "Incorrect script format."}
-
-    if systems["action"] not in ["simulation", "election"]:
-        return {"error": "Script action must be election or simulation."}
-
-    if systems["action"] == "election":
-        return voting.run_script_election(systems)
-
-    else:
-        return simulate.run_script_simulation(systems)
 
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"

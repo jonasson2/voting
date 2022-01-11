@@ -9,8 +9,8 @@
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
-          title="How many simulations should be run?
-                 Select 0 to use only reference data instead of any simulated data."
+          title="How many vote tables should be generated?
+                 (How simulations should be run?)"
           >
           <b-form-input
             type="number"
@@ -18,7 +18,7 @@
             min="0"/>
         </b-form-group>
         <b-form-group
-          label="Generating method"
+          label="Generating distribution"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500

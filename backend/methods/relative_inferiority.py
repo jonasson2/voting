@@ -8,7 +8,7 @@ def relative_inferiority(m_votes, v_desired_row_sums, v_desired_col_sums,
     """Apportion by Þorkell Helgason's Relative Inferiority method."""
 
     assert("last" in kwargs)
-    last = kwargs["last"]
+    last = [l["active_votes"] for l in kwargs["last"]]
 
     m_allocations = deepcopy(m_prior_allocations)
     num_allocated = sum([sum(x) for x in m_allocations])

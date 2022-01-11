@@ -12,6 +12,7 @@ from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 import traceback as tb
 from util import disp, subtract_m
 from copy import deepcopy
+from methods.nearest_to_last import nearest_to_last
 
 def display_seats(totSeats, adjSeats):
     if adjSeats > 0:
@@ -23,7 +24,7 @@ def display_seats(totSeats, adjSeats):
 
 class Election:
     """A single election."""
-    def __init__(self, system, votes, min_votes=0):
+    def __init__(self, system, votes, min_votes=0, name=''):
         cons = system["constituencies"]
         one_const = len(cons) == 1 and cons[0]["name"] == "All"
         self.num_constituencies = len(system["constituencies"])
@@ -31,6 +32,7 @@ class Election:
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
+        self.name = name
 
     def entropy(self):
         return entropy(self.m_votes, self.results, self.gen)
@@ -133,10 +135,10 @@ class Election:
                     threshold=self.system["constituency_threshold"]
                 )
                 assert last_in #last_in is not None because num_seats > 0
-                self.last.append(last_in["active_votes"])
+                self.last.append(last_in)
             else:
                 alloc = [0]*self.num_parties
-                self.last.append(0)
+                self.last.append({'idx':None, 'active_votes':0})
             m_allocations.append(alloc)
             # self.order.append(seats)
 
@@ -195,19 +197,19 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        self.results, self.adj_seats_info = method(
-            m_votes             = self.m_votes_eliminated,
-            v_desired_row_sums  = self.v_desired_row_sums,
-            v_desired_col_sums  = self.v_desired_col_sums,
-            m_prior_allocations = self.m_const_seats,
-            divisor_gen         = self.gen,
-            adj_seat_gen        = self.adj_seat_gen,
-            threshold           = self.system["adjustment_threshold"],
-            orig_votes          = self.m_votes,
-            v_const_seats       = [con["num_const_seats"] for con in consts],
-            last                = self.last
-                                #for nearest_neighbor and relative_inferiority
-        )
+        self.results, self.adj_seats_info = method (
+                m_votes             = self.m_votes_eliminated,
+                v_desired_row_sums  = self.v_desired_row_sums,
+                v_desired_col_sums  = self.v_desired_col_sums,
+                m_prior_allocations = self.m_const_seats,
+                divisor_gen         = self.gen,
+                adj_seat_gen        = self.adj_seat_gen,
+                threshold           = self.system["adjustment_threshold"],
+                orig_votes          = self.m_votes,
+                v_const_seats       = [con["num_const_seats"] for con in consts],
+                last                = self.last
+                                    #for nearest_neighbor and relative_inferiority
+            )
         self.m_adj_seats = subtract_m(self.results, self.m_const_seats)
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]

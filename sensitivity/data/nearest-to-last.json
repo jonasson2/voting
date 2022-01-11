@@ -1,0 +1,169 @@
+{
+  "vote_table": {
+    "constituencies": [
+      {
+        "name": "Norðvestur",
+        "num_adj_seats": 9,
+        "num_const_seats": 0
+      },
+      {
+        "name": "Norðaustur",
+        "num_adj_seats": 10,
+        "num_const_seats": 0
+      },
+      {
+        "name": "Suður",
+        "num_adj_seats": 5,
+        "num_const_seats": 5
+      },
+      {
+        "name": "Suðvestur",
+        "num_adj_seats": 7,
+        "num_const_seats": 6
+      },
+      {
+        "name": "Reykjavík suður",
+        "num_adj_seats": 6,
+        "num_const_seats": 5
+      },
+      {
+        "name": "Reykjavík norður",
+        "num_adj_seats": 6,
+        "num_const_seats": 5
+      }
+    ],
+    "name": "Iceland 21st c. avg",
+    "parties": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H"
+    ],
+    "votes": [
+      [
+        3845,
+        3021,
+        4320,
+        2677,
+        1210,
+        693,
+        973,
+        512
+      ],
+      [
+        4651,
+        3844,
+        5620,
+        4672,
+        1555,
+        1017,
+        1333,
+        845
+      ],
+      [
+        6953,
+        6002,
+        6659,
+        3132,
+        2283,
+        1309,
+        2294,
+        1082
+      ],
+      [
+        16549,
+        12356,
+        8174,
+        6192,
+        4732,
+        4489,
+        2927,
+        3189
+      ],
+      [
+        9186,
+        7500,
+        3862,
+        4868,
+        3593,
+        2646,
+        1857,
+        1991
+      ],
+      [
+        8445,
+        8018,
+        3767,
+        5072,
+        3934,
+        2400,
+        1612,
+        1871
+      ]
+    ]
+  },
+  "systems": [
+    {
+      "adj_alloc_divider": "1-dhondt",
+      "adj_determine_divider": "1-dhondt",
+      "adjustment_method": "8-nearest-to-last",
+      "adjustment_threshold": 5,
+      "compare_with": false,
+      "constituencies": [
+        {
+          "name": "Norðvestur",
+          "num_adj_seats": 7,
+          "num_const_seats": 1
+        },
+        {
+          "name": "Norðaustur",
+          "num_adj_seats": 9,
+          "num_const_seats": 1
+        },
+        {
+          "name": "Suður",
+          "num_adj_seats": 10,
+          "num_const_seats": 0
+        },
+        {
+          "name": "Suðvestur",
+          "num_adj_seats": 13,
+          "num_const_seats": 0
+        },
+        {
+          "name": "Reykjavík suður",
+          "num_adj_seats": 11,
+          "num_const_seats": 0
+        },
+        {
+          "name": "Reykjavík norður",
+          "num_adj_seats": 11,
+          "num_const_seats": 0
+        }
+      ],
+      "constituency_threshold": 0,
+      "debug": false,
+      "name": "prufa fyrir Nearest-to-last",
+      "output": "simple",
+      "parties": [],
+      "primary_divider": "1-dhondt",
+      "seat_spec_option": "refer",
+      "show_entropy": false
+    }
+  ],
+  "sim_settings": {
+    "distribution_parameter": 0.25,
+    "gen_method": "gamma",
+    "scaling": "both",
+    "selected_rand_constit": "All constituencies",
+    "sens_cv": 0.01,
+    "sens_method": "uniform",
+    "sensitivity": false,
+    "simulate": false,
+    "simulation_count": 200
+  }
+}

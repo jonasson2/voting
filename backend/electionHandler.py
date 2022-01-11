@@ -13,7 +13,7 @@ class ElectionHandler:
     A class for managing comparison of results from different electoral systems,
     on a common vote table.
     """
-    def __init__(self, vote_table, systems, min_votes):
+    def __init__(self, vote_table, systems, min_votes=0):
         systems = check_systems(systems)
         self.votes = deepcopy(vote_table["votes"])
         self.set_min_votes(min_votes)
@@ -34,7 +34,8 @@ class ElectionHandler:
             system["constituencies"] = constituencies
             electionSystem = ElectionSystem()
             electionSystem.update(system)
-            election = Election(electionSystem, self.votes)
+            name = vote_table["name"] + ":" + system["name"]
+            election = Election(electionSystem, self.votes, name=name)
             self.elections.append(election)
 
     def to_xlsx(self, filename):

@@ -40,12 +40,7 @@
       </b-progress>
     </b-col>
     <b-col cols="12">
-      <span v-if="!simulation_done">
-        time remaining: {{time_left}}
-      </span>
-      <span v-if="simulation_done">
-        Simulation time: {{total_time}}, Time remaining: {{time_left}}
-      </span>
+      Simulation time: {{total_time}}. Time remaining: {{time_left}}
     </b-col>
     <b-col cols="2">
       
@@ -155,6 +150,7 @@ export default {
   methods: {
     ...mapMutations([
       "serverError",
+      "clearServerError",
       "addBeforeunload"
     ]),
     ...mapActions([
@@ -162,6 +158,10 @@ export default {
     ]),
     check_simulation: function() {
       this.checkstatus(false)
+    },
+    finish_simulation: function(response) {
+      this.simulation_done = true;
+      window.clearInterval(this.checktimer);
     },
     checkstatus: function(stop) {
       this.$http.post('/api/simulate/check/', {
@@ -176,18 +176,17 @@ export default {
           this.current_iteration = status.iteration;
           this.total_time = status.total_time;
           this.time_left = status.time_left;
-          this.results = response.body.results;
-          this.vuedata = response.body.results.vuedata;
-          if (this.simulation_done) {
-            window.clearInterval(this.checktimer);
+          if (status.done) {
+            this.results = response.body.results;
+            this.vuedata = response.body.results.vuedata;
+            this.finish_simulation()
           }
         }
-      }, response => {
-        this.serverError(response.body)
-      });
+      })
     },
     recalculate: function() {
       console.log("Starting simulation")
+      this.clearServerError()
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
       this.sid = "";
@@ -198,8 +197,9 @@ export default {
         sim_settings:   this.sim_settings,
       }).then(response => {
         if (response.body.error) {
-          console.log("ERROR-1")
-          this.serverError(response.body.error)          
+          console.log("Finish simulation")
+          this.finish_simulation()
+          this.serverError(response.body.error) 
         } else {
           console.log("simulation started")
           this.sid = response.body.sid
@@ -208,12 +208,9 @@ export default {
           this.checktimer = window.setInterval(this.check_simulation, 250)
           this.addBeforeunload()
         }
-      }, response => {
-        console.log("ERROR-2")
-        this.serverError(response.body)          
       });
     },
-    
+      
     saveSimulationResults: function() {
       let promise = axios({
         method: "post",
