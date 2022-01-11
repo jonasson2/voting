@@ -217,8 +217,12 @@ class Election:
 
         if self.adj_seats_info is not None:
             allocation_sequence, present = self.adj_seats_info
-            headers, steps = present(self.system, allocation_sequence)
-            self.demonstration_table = {"headers": headers, "steps": steps}
+            try:
+                headers, steps = present(self.system, allocation_sequence)
+                self.demonstration_table = {"headers": headers, "steps": steps}
+            except ValueError:
+                headers, steps, sup_headers = present(self.system, allocation_sequence)
+                self.demonstration_table = {"headers": headers, "steps": steps, "sup_headers": sup_headers}
             self.set_forced_reasons()
         else:
             self.demonstration_table = {"headers": ["Not available"],

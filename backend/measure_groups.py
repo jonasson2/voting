@@ -24,9 +24,9 @@ class MeasureGroups(dict):
         self["seatShares"] = {
             "title": "Allocated seats minus reference seat shares",
             "rows": {
-                "sum_abs":  ("Sum of absolute values", ""),
-                "sum_pos":  ("Sum of positive values", ""),
-                "sum_sq":   ("Sum of squared values", "")
+                "sum_abs":  ("Sum of absolute values over all lists", ""),
+                "sum_pos":  ("Sum of positive values over all lists", ""),
+                "sum_sq":   ("Sum of squared values over all lists", "")
             }
         }
         self["other"] = {
