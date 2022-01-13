@@ -1,6 +1,6 @@
 import threading
 import random
-import os, csv
+import os, csv, warnings
 from datetime import datetime, timedelta
 import json
 from hashlib import sha256
@@ -10,8 +10,10 @@ from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
 import simulate
 from pathlib import Path
-
+from dictionaries import CONSTANTS
 from sim_measures import add_vuedata
+
+warnings.filterwarnings("error")
 
 def load_votes(filename):
     with open(filename,"r") as f:
@@ -49,15 +51,19 @@ def load_json(f):
     for item in file_content["systems"]:
         if item["adjustment_method"] == "8-nearest-neighbor":
             item["adjustment_method"] = "8-nearest-to-last";
-        item["primary_divider"] = item["constituency_allocation_rule"]
-        item["adj_determine_divider"] = item["adjustment_division_rule"]
-        item["adj_alloc_divider"] = item["adjustment_allocation_rule"]
+        if "constituency_allocation_rule" in item:
+            item["primary_divider"] = item["constituency_allocation_rule"]
+        if "adjustment_division_rule" in item:
+            item["adj_determine_divider"] = item["adjustment_division_rule"]
+        if "adjustment_allocation_rule" in item:
+            item["adj_alloc_divider"] = item["adjustment_allocation_rule"]
     return file_content
 
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
-    elections = ElectionHandler(votes, systems, min_votes=0.5).elections
+    min_votes = CONSTANTS["minimum_votes"]
+    elections = ElectionHandler(votes, systems, min_votes=min_votes).elections
     results = [election.get_results_dict() for election in elections]
     return results
 

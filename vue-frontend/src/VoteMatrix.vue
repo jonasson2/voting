@@ -298,8 +298,8 @@ export default {
     console.log("Creating VoteMatrix")
     this.$http.get("/api/presets").then(
       (response) => {
-        if (response.body.error) {
-          this.serverError(response.body.error) 
+        if (!response.body || response.body.error) {
+          this.serverError(response.body) 
         } else {
           this.presets = response.body;
           this.updateVoteSums()
@@ -377,8 +377,8 @@ export default {
       this.setWaitingForData()
       this.$http.post("/api/presets/load/", {election_id: election_id }).then(
         (response) => {
-          if (response.body.error) {
-            this.serverError(response.body.error) 
+          if (!response.body || response.body.error) {
+            this.serverError(response.body) 
           } else {
             this.updateVoteTable(response.data)
             this.clearWaitingForData()
@@ -392,8 +392,8 @@ export default {
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.$http.post("/api/votes/upload/", formData).then(
         (response) => {
-          if (response.body.error) {
-            this.serverError(response.body.error) 
+          if (!response.body || response.body.error) {
+            this.serverError(response.body) 
           } else {
             this.updateVoteTable(response.data)
             this.clearWaitingForData()

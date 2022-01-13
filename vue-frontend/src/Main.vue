@@ -69,7 +69,12 @@ export default {
     Intro,
   },
   
-  computed: mapState(['server_error']),
+  computed: {
+    ...mapState([
+      'server_error'
+    ]),
+  },
+  //computed: mapState(['server_error']),
   
   data: function() {
     return {

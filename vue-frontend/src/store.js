@@ -82,7 +82,7 @@ const store = new Vuex.Store({
     setWaitingForData(state) { state.waiting_for_data = true },
     
     clearWaitingForData(state) {
-      state.server_error = ''
+      console.log('clearWaitingForData')
       Vue.nextTick(()=>{state.waiting_for_data=false})
     },
 
@@ -107,18 +107,24 @@ const store = new Vuex.Store({
     },
 
     serverError(state, message) {
-      if (Number.isInteger(message)) {
+      if (!message)
+        message = "Error: Unknown error with null message"
+      else if ('error' in message)
+        message = message.error
+      else if (Number.isInteger(message)) {
         if (message == 500)
-          message = "Uncaught exception in backend (possibly logged to console)"
+          message = "Error: Uncaught exception in backend (possibly logged to console)"
         else if (message == 0)
           message = "Error: Server not responding"
         else
-          message = "Unknown"
-      }        
+          message = "Unknown error"
+      }
+      else if (!(typeof message === "string"))
+        message = "Error: Unknown error with non-string message"
       console.log("SERVER ERROR: ", message)
       state.server_error = message.split(/\n/g);
       console.log("lengths", message.length, state.server_error.length)
-      Vue.nextTick(()=>{state.waiting_for_data=false})
+      //Vue.nextTick(()=>{state.waiting_for_data=false})
     },
     
     clearServerError(state) { state.server_error = '' },
@@ -126,8 +132,8 @@ const store = new Vuex.Store({
     initialize(state) {
       console.log("initialize")
       Vue.http.post('/api/capabilities', {}).then(response => {
-        if (response.body.error) {
-          context.commit("serverError", response.body.error)
+        if (error(response)) {
+          context.commit("serverError", response.body)
         } else {
           state.sim_capabilities = response.body.capabilities;
           state.sim_settings = response.body.sim_settings
@@ -182,8 +188,8 @@ const store = new Vuex.Store({
       context.commit("setWaitingForData")
       Vue.http.post('/api/settings/upload/', payload.formData).then(
         response => {
-          if (response.body.error) {
-            context.commit("serverError", response.body.error)
+          if (error(response)) {
+            context.commit("serverError", response.body)
           } else {
             if (payload.replace){
               context.commit("deleteAllSystems")
@@ -196,7 +202,7 @@ const store = new Vuex.Store({
             findNumbering(context.state, 0)
             context.commit("updateSimSettings", response.data.sim_settings);
             context.dispatch("recalc_sys_const")
-            //context.commit("clearWaitingForData")
+            context.commit("clearWaitingForData")
           }
         },
         response => {
@@ -209,8 +215,8 @@ const store = new Vuex.Store({
       context.commit("deleteAllSystems")
       Vue.http.post("/api/uploadall/", formData).then(
         (response) => {
-          if (response.body.error) {
-            context.commit("serverError", response.body.error)
+          if (error(response)) {
+            context.commit("serverError", response.body)
           } else {
             console.log("response", response)
             context.commit("updateVoteTable", response.data.vote_table)
@@ -247,14 +253,15 @@ const store = new Vuex.Store({
           systems:        context.state.systems,
         }).then(
           response => {
-            if (response.body.error) {
-              context.commit("serverError", response.body.error)
+            console.log('response from /api/election =', response)
+            if (error(response)) {
+              context.commit("serverError", response.body)
             } else {
               context.state.results = response.body.results
               context.state.systems = response.body.systems
             }
             context.commit("clearWaitingForData")
-          },
+          }
         )
     },
     recalc_sys_const(context) {
@@ -270,8 +277,8 @@ const store = new Vuex.Store({
           vote_table:     context.state.vote_table,
           systems:        context.state.systems
         }).then(response => {
-          if (response.body.error) {
-            context.commit("serverError", response.body.error)
+          if (error(response)) {
+            context.commit("serverError", response.body)
           } else {
             console.log("response.body", response.body)
             response.body.constituencies.forEach(
@@ -292,7 +299,7 @@ const store = new Vuex.Store({
           const status = response.status;
           if (status != 200) {
             console.log("Server error", response.body.error)
-            context.commit("serverError", response.body.error)
+            context.commit("serverError", response.body)
           }
           else {
             console.log("Inside status==200")
@@ -389,6 +396,10 @@ function findNumbering(state, asi) {
   }
   state.system_numbering = num
   state.activeSystemIndex = asi
+}
+
+function error(response) {
+  return !response.body || response.body.error
 }
 
 function eventListener(e) {

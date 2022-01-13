@@ -4,7 +4,7 @@ from measure_groups import MeasureGroups
 import dictionaries as dicts
 import random
 from voting import Election
-from dictionaries import LIST_MEASURES, VOTE_MEASURES
+from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
 from generate_votes import generate_votes
@@ -38,7 +38,7 @@ class SimulationSettings(System):
         self["simulate"] = False
         self["simulation_count"] = 200
         self["gen_method"] = "gamma"
-        self["distribution_parameter"] = 0.25
+        self["distribution_parameter"] = CONSTANTS["CoeffVar"]
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False
@@ -48,7 +48,7 @@ class SimulationSettings(System):
 class Simulation:
     # Simulate a set of elections.
     def __init__(self, sim_settings, systems, vote_table):
-        self.min_votes = 0.5
+        self.min_votes = CONSTANTS["minimum_votes"]
         election_handler = ElectionHandler(vote_table, systems, self.min_votes)
         self.election_handler = election_handler
         self.measure_groups = MeasureGroups(systems)

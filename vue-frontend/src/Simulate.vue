@@ -168,8 +168,8 @@ export default {
         sid: this.sid,
         stop: stop
       }).then(response => {
-        if (response.body.error) {
-          this.serverError(response.body.error)
+        if (!response.body || response.body.error) {
+          this.serverError(response.body)
         } else {
           let status = response.body.status
           this.simulation_done = status.done;
@@ -196,10 +196,9 @@ export default {
         systems:        this.systems,
         sim_settings:   this.sim_settings,
       }).then(response => {
-        if (response.body.error) {
-          console.log("Finish simulation")
+        if (!response.body || response.body.error) {
           this.finish_simulation()
-          this.serverError(response.body.error) 
+          this.serverError(response.body) 
         } else {
           console.log("simulation started")
           this.sid = response.body.sid

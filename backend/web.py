@@ -17,7 +17,6 @@ from electionHandler import ElectionHandler, update_constituencies
 from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
-import voting
 import simulate
 from util import disp, short_traceback, check_votes, load_votes_from_excel
 from noweb import load_votes, load_json, single_election, load_all
@@ -82,8 +81,11 @@ def api_election():
         for (c,s) in zip(constituencies, systems):
             s["constituencies"] = c
         results = single_election(vote_table, systems);
+        print('results=', results)
+        print(jsonify({"results": results}))
         return jsonify({"results": results, "systems": systems})
     except Exception:
+        print('Caught Exception')
         return errormsg()
 
 @app.route('/api/election/save/', methods=['POST'])

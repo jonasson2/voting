@@ -9,6 +9,7 @@ from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
 from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
+from dictionaries import CONSTANTS
 import traceback as tb
 from util import disp, subtract_m
 from copy import deepcopy
@@ -109,7 +110,7 @@ class Election:
         over = [None]*self.num_constituencies
         for c in range(self.num_constituencies):
             for p in range(self.num_parties):
-                over[c] = [r > 0 and v < 1
+                over[c] = [r > 0 and v == CONSTANTS["minimum_votes"]
                            for (r,v) in zip(self.results[c], self.m_votes[c])]
         return over
 

@@ -19,6 +19,11 @@ from distributions.symmetric_beta_distribution import symmetric_beta_distributio
 from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
 
+CONSTANTS = {
+    'minimum_votes': 1e-6,
+    'CoeffVar': 0.25
+}
+
 DIVIDER_RULES = {
     "1-dhondt": dhondt_gen,
     "2-sainte-lague": sainte_lague_gen,
