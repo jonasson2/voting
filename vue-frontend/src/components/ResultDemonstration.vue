@@ -1,6 +1,11 @@
 <template>
   <b-container fluid v-if="table.steps.length > 0">
     <table class="demomatrix">
+      <tr v-if="table.sup_headers">
+        <th v-for="sh in table.sup_headers" v-bind:colspan="sh.colspan">
+          {{ sh.text }}
+        </th>
+      </tr>
       <tr>
         <th v-for="header in table.headers">
           {{ header }}

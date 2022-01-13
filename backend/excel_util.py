@@ -257,6 +257,19 @@ def elections_to_xlsx(elections, filename):
             "Allocation of adjustment seats step-by-step", fmt["h"]
         )
         toprow += 1
+        try:
+            startcoltemp = startcol
+            for sh in election.demonstration_table["sup_headers"]:
+                worksheet.merge_range(
+                    toprow, startcoltemp,
+                    toprow, startcoltemp + sh["colspan"] - 1,
+                    sh["text"], fmt["h_center"]
+                )
+                startcoltemp += sh["colspan"]
+            toprow += 1
+        except KeyError:
+            None
+
         worksheet.write_row(toprow, startcol, h, fmt["step_h"])
         toprow += 1
         for i in range(len(data)):
