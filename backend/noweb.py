@@ -1,6 +1,9 @@
 import threading
 import random
-import os, csv, warnings
+import os, csv
+import warnings
+# Catch NumPy warnings (e.g. zero divide):
+warnings.filterwarnings('error', category=RuntimeWarning)
 from datetime import datetime, timedelta
 import json
 from hashlib import sha256
@@ -8,12 +11,13 @@ from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
 from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
+
 import simulate
 from pathlib import Path
 from dictionaries import CONSTANTS
 from sim_measures import add_vuedata
 
-warnings.filterwarnings("error")
+#warnings.filterwarnings("error")
 
 def load_votes(filename):
     with open(filename,"r") as f:

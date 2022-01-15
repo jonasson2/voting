@@ -1,5 +1,4 @@
 import numpy as np
-
 def maxi(A, openC, openP):
     # Max of A and corresponding indices for non-full constituencies and parties
     amax = 0
@@ -27,7 +26,7 @@ def nearest_to_last(m_votes,
     desired_party = np.array(v_desired_col_sums)
 
     # LAST=VOTES/N FOR LAST IN, LAST=1 IN CONSTITUENCIES WITHOUT ALLOCATIONS
-    last_quot = np.array([l["active_votes"] for l in kwargs["last"]])
+    last_quot = np.array([l["active_votes"] for l in kwargs["last"]], float)
     last_index = np.array([l["idx"] for l in kwargs["last"]])
     last_quot[alloc_const==0] = 1
 

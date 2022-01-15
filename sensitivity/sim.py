@@ -3,7 +3,9 @@ import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from multiprocessing import Pool
-from noweb import load_votes, load_json, single_election
+from noweb import load_votes
+from noweb import load_json
+from noweb import single_election
 from noweb import start_simulation, check_simulation, run_simulation, SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
@@ -20,15 +22,18 @@ defaultfile = '10kerfi-aldarkosning.json'
     args = [
         ['n_reps',   int,   'total number of simulations',                10          ],
         ['n_cores',  int,   'number of cores',                            1           ],
-        ['json',     str,   'json file with settings and possibly votes', defaultfile ],
+        ['json_file',str,   'json file with settings and possibly votes', defaultfile ],
         ['-votes',   str,   'vote file',                                  ''          ],
         ['-sens_cv', float, 'coefficient of variation for adjustment',   0.01         ],
         ['-cv',      float, 'variation coefficient for vote generation', 0.25        ]],
     description="Simulate sensitivity of elections")
 
 def read_data():
-    global vote_file
-    jsondata = load_json(data / json_file)
+    global vote_file, json_file
+    json_file = Path(json_file).expanduser()
+    if json_file.parent.samefile('.'):
+        json_file = data/json_file
+    jsondata = load_json(json_file)
     systems = jsondata["systems"]
     sim_settings = jsondata["sim_settings"]
     if "vote_table" in jsondata and not vote_file: # save-all file
@@ -54,7 +59,7 @@ def filenames(sens_cv, n_cores, n_sim):
     host = get_hostname()
     fraccv = f'{sens_cv}'[2:]
     now = datetime.now().strftime('%Y.%m.%dT%H.%M')
-    votestem = remove_suffix(vote_file, '.csv')
+    votestem = vote_file.stem
     folder = Path.home() / 'runpar' / fraccv / votestem / host
     folder.mkdir(parents=True, exist_ok=True)
     metadatafile = folder / "meta.json"
@@ -85,14 +90,14 @@ def main():
         p = Pool(n_cores)
         results = p.map(simulate, pars)
     else:
+        pass
         results = [simulate(0)]
     hist = combine_histogram_lists(results)
     hist_array = histograms2array(hist)
 
     metadata = {
         "n_reps":        n_reps,
-        "system_file":   json_file,
-        "vote_file":     vote_file,
+        "vote_file":     str(vote_file),
         "system_names":  systemnames,
         "sim_settings":  sim_settings,
     }
