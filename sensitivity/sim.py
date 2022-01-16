@@ -36,14 +36,17 @@ def read_data():
     jsondata = load_json(json_file)
     systems = jsondata["systems"]
     sim_settings = jsondata["sim_settings"]
-    if "vote_table" in jsondata and not vote_file: # save-all file
-        votes = jsondata["vote_table"]
-        vote_file = json_file # for reporting in metadata
-    else:
-        if not vote_file:
+    if not vote_file:
+        if "vote_table" in jsondata:
+            votes = jsondata["vote_table"]
+            vote_file = json_file # for reporting in metadata
+        else:
             print('No votes specified, using "typical 21st century"')
             vote_file = 'icel-21st-c.csv'
-        votes = load_votes(data / vote_file)
+    vote_file = Path(vote_file).expanduser()
+    if vote_file.parent.samefile('.'):
+        vote_file = data/vote_file
+    votes = load_votes(vote_file)
     return votes, systems, sim_settings
 
 def set_sim_settings(sim_settings, n_sim, sens_cv, cv):
@@ -85,6 +88,7 @@ def main():
     systemnames = [s["name"] for s in systems]
     pars = range(n_cores)
     if sim_settings['simulation_count'] == 0: return
+    sim_settings["sensitivity"] = False
     beginning_time = time.time()
     if n_cores > 1:
         p = Pool(n_cores)
@@ -92,19 +96,22 @@ def main():
     else:
         pass
         results = [simulate(0)]
-    hist = combine_histogram_lists(results)
-    hist_array = histograms2array(hist)
+    if sim_settings["sensitivity"]:
+        hist = combine_histogram_lists(results)
+        hist_array = histograms2array(hist)
 
-    metadata = {
-        "n_reps":        n_reps,
-        "vote_file":     str(vote_file),
-        "system_names":  systemnames,
-        "sim_settings":  sim_settings,
-    }
-    with open(metadatafile, 'w', encoding='utf-8') as fd:
-        json.dump(metadata, fd, ensure_ascii=False, indent=2)
-    print(histfile)
-    writecsv(histfile, hist_array)
+        metadata = {
+            "n_reps":        n_reps,
+            "vote_file":     str(vote_file),
+            "system_names":  systemnames,
+            "sim_settings":  sim_settings,
+        }
+        with open(metadatafile, 'w', encoding='utf-8') as fd:
+            json.dump(metadata, fd, ensure_ascii=False, indent=2)
+        print(histfile)
+        writecsv(histfile, hist_array)
+    else:
+        disp('results', results)
     elapsed_time = hms(time.time() - beginning_time)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:
@@ -113,8 +120,12 @@ def main():
 def simulate(idx):
     logfile0 = logfile if idx == 0 else None
     result = run_simulation(votes, systems, sim_settings, logfile=logfile0)
-    list_sens,_ = result
-    return list_sens
+    if sim_settings["sensitivity"]:
+        list_sens,_ = result
+        return list_sens
+    else:
+        return result
+
 
 print("name=",__name__)
 if __name__ == "__main__":

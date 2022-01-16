@@ -4,7 +4,7 @@ This module contains the core voting system logic.
 """
 from tabulate import tabulate
 
-from table_util import entropy, add_totals
+from table_util import entropy, add_totals, scale_matrix
 from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
 from electionSystem import ElectionSystem
@@ -113,6 +113,9 @@ class Election:
                 over[c] = [r > 0 and v == CONSTANTS["minimum_votes"]
                            for (r,v) in zip(self.results[c], self.m_votes[c])]
         return over
+
+    def any_voteless(self):
+        return any(v for x in self.voteless_seats() for v in x)
 
     def run_primary_apportionment(self):
         """Conduct primary apportionment"""
@@ -228,3 +231,37 @@ class Election:
         else:
             self.demonstration_table = {"headers": ["Not available"],
                                         "steps": []}
+
+    def calculate_ideal_seats(self, scaling):
+        scalar = float(self.total_seats)/sum(sum(x) for x in self.m_votes)
+        ideal_seats = scale_matrix(self.m_votes, scalar)
+        # assert self.solvable
+        rein = 0
+        error = 1
+        niter = 0
+        if self.num_parties > 1 and self.num_constituencies > 1:
+            row_constraints = scaling in {"both", "const"}
+            col_constraints = scaling in {"both", "party"}
+            while round(error, 7) != 0.0: #TODO look at this
+                niter += 1
+                error = 0
+                if row_constraints:
+                    for c in range(self.num_constituencies):
+                        s = sum(ideal_seats[c])
+                        if s != 0:
+                            mult = float(self.v_desired_row_sums[c])/s
+                            error += abs(1 - mult)
+                            mult += rein*(1 - mult)
+                            for p in range(self.num_parties):
+                                ideal_seats[c][p] *= mult
+                if col_constraints:
+                    for p in range(self.num_parties):
+                        s = sum([c[p] for c in ideal_seats])
+                        if s != 0:
+                            mult = float(self.v_desired_col_sums[p])/s
+                            error += abs(1 - mult)
+                            mult += rein*(1 - mult)
+                            for c in range(self.num_constituencies):
+                                ideal_seats[c][p] *= mult
+        self.ideal_seats = ideal_seats
+

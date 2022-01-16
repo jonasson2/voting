@@ -10,7 +10,7 @@ from excel_util import simulation_to_xlsx
 from generate_votes import generate_votes
 from running_stats import Running_stats
 from system import System
-from table_util import add_totals, find_xtd_shares, m_subtract, scale_matrix
+from table_util import add_totals, find_xtd_shares, m_subtract, find_bias
 from util import hms, shape
 from copy import deepcopy
 from util import disp, dispv, remove_prefix, sum_abs_diff
@@ -120,8 +120,8 @@ class Simulation:
             xtd_const_seats = add_totals(election.m_const_seats)
             xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
             xtd_seat_shares = find_xtd_shares(xtd_total_seats)
-            ideal_seats = self.calculate_ideal_seats(election)
-            xtd_ideal_seats = add_totals(ideal_seats)
+            election.calculate_ideal_seats(self.sim_settings["scaling"])
+            xtd_ideal_seats = add_totals(election.ideal_seats)
             self.base_allocations.append({
                 "xtd_const_seats": xtd_const_seats,
                 "xtd_adj_seats":   xtd_adj_seats,
@@ -157,7 +157,6 @@ class Simulation:
         self.analysis()
         # self.test_generated() --- needs to be rewritten,
         # (statistical test of simulated data)
-
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
@@ -175,13 +174,11 @@ class Simulation:
 
     def collect_list_measures(self):
         import numpy as np
-        cs = []
-        ts = []
-        ids = []
         for (i,election) in enumerate(self.election_handler.elections):
             cs = np.array(add_totals(election.m_const_seats))
             ts = np.array(add_totals(election.results))
-            ids = np.array(add_totals(self.calculate_ideal_seats(election)))
+            election.calculate_ideal_seats(self.sim_settings["scaling"])
+            ids = np.array(add_totals(election.ideal_seats))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
             self.stat["const_seats"][i].update(cs)
@@ -241,52 +238,18 @@ class Simulation:
         deviations.add(measure + "_tot", deviation)
 
     def other_measures(self, election, deviations):
-        ideal_seats = self.calculate_ideal_seats(election)
-        deviations.add("sum_abs", self.sum_abs(election, ideal_seats))
-        deviations.add("sum_pos", self.sum_pos(election, ideal_seats))
-        deviations.add("sum_sq", self.sum_sq(election, ideal_seats))
-        deviations.add("min_seat_val", self.min_seat_val(election, ideal_seats))
-
-    def calculate_ideal_seats(self, election):
-        scalar = float(election.total_seats)/sum(sum(x) for x in election.m_votes)
-        ideal_seats = scale_matrix(election.m_votes, scalar)
-        # assert election.solvable
-        rein = 0
-        error = 1
-        niter = 0
-        if len(self.parties) > 1 and election.num_constituencies > 1:
-            row_constraints = self.sim_settings["scaling"] in {"both", "const"}
-            col_constraints = self.sim_settings["scaling"] in {"both", "party"}
-            while round(error, 5) != 0.0: #TODO look at this
-                niter += 1
-                error = 0
-                if row_constraints:
-                    for c in range(election.num_constituencies):
-                        s = sum(ideal_seats[c])
-                        if s != 0:
-                            mult = float(election.v_desired_row_sums[c])/s
-                            error += abs(1 - mult)
-                            mult += rein*(1 - mult)
-                            for p in range(len(self.parties)):
-                                ideal_seats[c][p] *= mult
-                if col_constraints:
-                    for p in range(len(self.parties)):
-                        s = sum([c[p] for c in ideal_seats])
-                        if s != 0:
-                            mult = float(election.v_desired_col_sums[p])/s
-                            error += abs(1 - mult)
-                            mult += rein*(1 - mult)
-                            for c in range(election.num_constituencies):
-                                ideal_seats[c][p] *= mult
-        return ideal_seats
+        #ideal_seats = self.calculate_ideal_seats(election)
+        deviations.add("sum_abs", self.sum_abs(election))
+        deviations.add("sum_pos", self.sum_pos(election))
+        deviations.add("sum_sq", self.sum_sq(election))
+        deviations.add("min_seat_val", self.min_seat_val(election))
+        deviations.add("bias", self.bias(election))
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
         variation_coefficient = self.sim_settings["sens_cv"]
         sens_method = self.sim_settings["sens_method"]
         sens_votes = generate_votes(votes, variation_coefficient, sens_method)
-        pd = []
-        ld = []
         for (i, (election, system)) in enumerate(zip(elections, self.systems)):
             sens_election = Election(system, sens_votes, self.min_votes)
             sens_election.run()
@@ -350,7 +313,6 @@ class Simulation:
         return counts
 
     def get_results_dict(self):
-        self.analysis()
         return {
             "systems":   self.systems,
             "parties":   self.parties,
@@ -367,29 +329,35 @@ class Simulation:
             ]
         }
 
+    def bias(self, election):
+        slope = find_bias(election.results, election.ideal_seats)
+        return slope
+
     # Loosemore-Hanby
-    def sum_abs(self, election, ideal_seats):
+    def sum_abs(self, election):
         lh = sum([
-            abs(ideal_seats[c][p] - election.results[c][p])
+            abs(election.ideal_seats[c][p] - election.results[c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies)
         ])
         return lh
 
     # Minimized by Sainte Lague
-    def sum_sq(self, election, ideal_seats):
+    def sum_sq(self, election):
+        ids = election.ideal_seats
         stl = sum([
-            (ideal_seats[c][p] - election.results[c][p])**2/ideal_seats[c][p]
+            (ids[c][p] - election.results[c][p])**2/ids[c][p]
             for p in range(len(self.parties))
             for c in range(election.num_constituencies)
-            if ideal_seats[c][p] != 0
+            if ids[c][p] != 0
         ])
         return stl
 
     # Maximized by d'Hondt
-    def min_seat_val(self, election, ideal_seats):
+    def min_seat_val(self, election):
+        ids = election.ideal_seats
         dh_min = min([
-            ideal_seats[c][p]/float(election.results[c][p])
+            ids[c][p]/float(election.results[c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies)
             if election.results[c][p] != 0
@@ -397,12 +365,13 @@ class Simulation:
         return dh_min
 
     # Minimized by d'Hondt
-    def sum_pos(self, election, ideal_seats):
+    def sum_pos(self, election):
+        ids = election.ideal_seats
         dh_sum = sum([
-            max(0, ideal_seats[c][p] - election.results[c][p])/ideal_seats[c][p]
+            max(0, ids[c][p] - election.results[c][p])/ids[c][p]
             for p in range(len(self.parties))
             for c in range(election.num_constituencies)
-            if ideal_seats[c][p] != 0
+            if ids[c][p] != 0
         ])
         return dh_sum
 

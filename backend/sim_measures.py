@@ -38,6 +38,9 @@ def add_vuedata(sim_results):
             for stat in stats:
                 row[stat] = []
                 for s in range(len(systems)):
+                    if measure not in data[s]["measures"]:
+                        disp("data", data)
+                        disp('data-measures', data[s]["measures"])
                     entry = data[s]["measures"][measure][stat]
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")

@@ -124,7 +124,8 @@ def check_simulation(sid, stop):
         "target": sim.sim_settings["simulation_count"],
     }
     sim_results = sim.get_results_dict()
-    add_vuedata(sim_results)
+    if sim_status["done"]:
+        add_vuedata(sim_results)
     #disp("sim_status", sim_status)
     if stop:
         sim.terminate = True
