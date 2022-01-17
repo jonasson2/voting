@@ -6,8 +6,8 @@ def find_bias(seats, seat_shares):
     seat_shares = np.array(seat_shares).flatten()
     seats = np.array(seats).flatten()
     excess = seats - seat_shares
-    share = seat_shares/sum(seat_shares)
-    (_,slope) = np.polyfit(share, excess, 1)
+    share = seat_shares
+    (slope,_) = np.polyfit(share, excess, 1)
     return slope
 
 def v_subtract(u, v):

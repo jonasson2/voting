@@ -34,7 +34,7 @@ class MeasureGroups(dict):
             "rows": {
                 "entropy":      ("Sum of logs of votes per seat", ""),
                 "min_seat_val": ("Minimum reference seat share per seat", ""),
-                "bias":         ("Slope of seat excess regressed on shares", "")
+                "bias":         ("Slope of seat excess regressed on ref. seat shares", "")
             }
         }
         self["compTitle"] = {
