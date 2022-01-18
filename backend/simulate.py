@@ -239,11 +239,13 @@ class Simulation:
 
     def other_measures(self, election, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)
+        (slope, corr) = self.bias(election)
         deviations.add("sum_abs", self.sum_abs(election))
         deviations.add("sum_pos", self.sum_pos(election))
         deviations.add("sum_sq", self.sum_sq(election))
         deviations.add("min_seat_val", self.min_seat_val(election))
-        deviations.add("bias", self.bias(election))
+        deviations.add("bias_slope", slope)
+        deviations.add("bias_corr", corr)
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
@@ -330,8 +332,8 @@ class Simulation:
         }
 
     def bias(self, election):
-        slope = find_bias(election.results, election.ideal_seats)
-        return slope
+        (slope,corr) = find_bias(election.results, election.ideal_seats)
+        return slope,corr
 
     # Loosemore-Hanby
     def sum_abs(self, election):
