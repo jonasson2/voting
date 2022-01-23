@@ -98,7 +98,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["parties"][allocation["party"]],
             last_party,
             criterion[reason],
-            round(allocation["ratio"], 3 if reason == "MAX" else 0),
+            f'{allocation["ratio"]:.3f}' if reason == "MAX" else round(allocation["ratio"])
         ])
 
     return headers, data

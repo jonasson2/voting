@@ -82,7 +82,7 @@
       :values="system.list_measures.const_seats.avg"
       :stddev="system.list_measures.const_seats.std"
       :title="system.name"
-      :round="2">
+      :round="3">
     </SimResultMatrix>
     <h4>Adjustment seats</h4>
     <SimResultMatrix
@@ -93,7 +93,7 @@
       :values="system.list_measures.adj_seats.avg"
       :stddev="system.list_measures.adj_seats.std"
       :title="system.name"
-      :round="2">
+      :round="3">
     </SimResultMatrix>
     <h4>Total seats</h4>
     <SimResultMatrix
@@ -104,7 +104,7 @@
       :values="system.list_measures.total_seats.avg"
       :stddev="system.list_measures.total_seats.std"
       :title="system.name"
-      :round="2"
+      :round="3"
       >
     </SimResultMatrix>
   </div>
