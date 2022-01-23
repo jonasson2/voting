@@ -14,6 +14,7 @@ from methods.norwegian_icelandic import norw_ice_apportionment
 from methods.pure_vote_ratios import pure_vote_ratios_apportionment
 from methods.opt_entropy import opt_entropy
 from methods.switching import switching
+from methods.farthest_from_next import farthest_from_next
 
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
@@ -66,6 +67,7 @@ ADJUSTMENT_METHODS = {
     "6-relative-superiority": relative_superiority,
     "7-relative-sup-simple": relative_superiority_simple,
     "8-nearest-to-last": nearest_to_last,
+    "9-farthest-from-next": farthest_from_next,
     # "9-monge": monge,
     # "opt-entropy": opt_entropy,
     "A-switching": switching,
@@ -80,6 +82,7 @@ ADJUSTMENT_METHOD_NAMES = {
     "6-relative-superiority": "Relative superiority",
     "7-relative-sup-simple":  "Relative superiority, simplified",
     "8-nearest-to-last":      "Nearest-to-last",
+    "9-farthest-from-next":   "Farthest-from-next",
     # "9-monge":                "Monge",
     "A-switching":            "Switching of seats",
     "B-alternating-scaling":  "Optimal divisor method",
