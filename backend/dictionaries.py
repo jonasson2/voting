@@ -21,7 +21,8 @@ from distributions.uniform_distribution import uniform_distribution
 
 CONSTANTS = {
     'minimum_votes': 1e-6,
-    'CoeffVar': 0.25
+    'CoeffVar': 0.25,
+    'simulation_id_length': 1
 }
 
 DIVIDER_RULES = {
@@ -53,14 +54,17 @@ RULE_NAMES = {
     "7-droop":           "Droop quota",
 }
 
-STATISTICS_HEADINGS = {
-    "avg": "AVERAGE",
-    "min": "MINIMUM",
-    "max": "MAXIMUM",
-    "std": "STD.DEV.",
-    "skw": "SKEWNESS",
-    "kur": "KURTOSIS"
-}
+def STATISTICS_HEADINGS(parallel):
+    headings = {
+        "avg": "AVERAGE",
+        "min": "MINIMUM",
+        "max": "MAXIMUM",
+        "std": "STD.DEV."}
+    if not parallel:
+        headings.update({
+            "skw": "SKEWNESS",
+            "kur": "KURTOSIS"})
+    return headings
 
 ADJUSTMENT_METHODS = {
     "1-icelandic-law": icelandic_apportionment,
@@ -159,13 +163,8 @@ VOTE_MEASURES = {
     "sim_votes":  "votes in simulations",
     "sim_shares": "shares in simulations",
 }
-AGGREGATES = {
-    "avg": "Average",
-    "std": "Std. dev",
-    "max": "Max",
-    "min": "Min",
-    "skw": "Skewness",
-    "kur": "Kurtosis",
-}
 
-STAT_LIST = AGGREGATES.keys()
+SENS_MEASURES = [
+    "party_sens",
+    "list_sens"
+]

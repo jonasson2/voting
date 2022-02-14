@@ -8,7 +8,7 @@ from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
                          RULE_NAMES as DRN, \
                          GENERATING_METHOD_NAMES as GMN, \
-                         STATISTICS_HEADINGS
+                         STATISTICS_HEADINGS as STH
 
 def prepare_formats(workbook):
     formats = {}
@@ -323,8 +323,10 @@ def simulation_to_xlsx(simulation, filename):
             cformat = fmt["base"]
         write_matrix(worksheet, row, col, matrix, cformat, False, totalsformat)
 
-    row_constraints = simulation.sim_settings["scaling"] in {"both","const"} and simulation.num_parties > 1
-    col_constraints = simulation.sim_settings["scaling"] in {"both","party"} and simulation.num_constituencies > 1
+    row_constraints = (simulation.sim_settings["scaling"] in {"both","const"} and
+                       simulation.num_parties > 1)
+    col_constraints = (simulation.sim_settings["scaling"] in {"both","party"}
+                       and simulation.num_constituencies > 1)
     gen_method = next((g["text"] for g in GMN if g["value"]=='gamma'),None)
     sim_settings = [
         {"label": "Number of simulations run",
@@ -336,10 +338,12 @@ def simulation_to_xlsx(simulation, filename):
         {"label": "Apply randomness to",
             "data": "All constituencies" if simulation.apply_random == -1 else None},
         {"label": "Scaling of votes for reference seat shares",
-            "data": "within both constituencies and parties" if row_constraints and col_constraints
-            else "within constituencies" if row_constraints
-            else "within parties" if col_constraints
-            else None}
+         "data": ("within both constituencies and parties" 
+                  if row_constraints and col_constraints
+                  else "within constituencies" if row_constraints
+                  else "within parties" if col_constraints
+                  else None)
+        }
     ]
 
     worksheet = workbook.add_worksheet("Common settings")
@@ -389,20 +393,20 @@ def simulation_to_xlsx(simulation, filename):
                         + ["Total"]
 
     #Measures
+    STAT_LIST = simulation.STAT_LIST
     results = simulation.get_results_dict()
     data = results["data"]
     systems = results["systems"]
     groups = MeasureGroups(systems)
-    stats = ["avg", "min", "max", "std", "skw", "kur"]
     edata = {}
-    edata["stats"] = stats
-    edata["stat_headings"] = STATISTICS_HEADINGS
+    edata["stats"] = STAT_LIST
+    edata["stat_headings"] = {stat:STH(True)[stat] for stat in STAT_LIST}
 
     for (id, group) in groups.items():
         edata[id] = []
         for (measure, _) in group["rows"].items():
             row = {}
-            for stat in stats:
+            for stat in STAT_LIST:
                 row[stat] = []
                 for s in range(len(systems)):
                     row[stat].append(data[s]["measures"][measure][stat])
@@ -419,7 +423,7 @@ def simulation_to_xlsx(simulation, filename):
     worksheet.write(toprow+1,c,"Tested systems: ",fmt["h_right"])
     c += 1
 
-    for stat in stats:
+    for stat in STAT_LIST:
         worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
         worksheet.set_column(c,c+len(simulation.systems)-1,15)
         for system in simulation.systems:
@@ -434,14 +438,19 @@ def simulation_to_xlsx(simulation, filename):
     for (id, group) in groups.items():
         worksheet.write(toprow,c,group["title"],fmt["basic_h"])
         toprow += 1
-        worksheet.write_column(toprow,c,[val[0] for (_, val) in group["rows"].items()])
-        worksheet.write_column(toprow,c+1,[val[1] for (_, val) in group["rows"].items()])
+        worksheet.write_column(toprow,c,
+                               [val[0] for (_, val) in group["rows"].items()])
+        worksheet.write_column(toprow,c+1,
+                               [val[1] for (_, val) in group["rows"].items()])
         
-        for stat in stats:
+        for stat in STAT_LIST:
             if stat in ["min","max"] and id in ["seatSpec","expected","cmpSys"]:
-                write_matrix(worksheet,toprow,c+2,[row[stat] for row in edata[id]],fmt["base"],True)
+                write_matrix(worksheet,toprow,c+2,
+                             [row[stat] for row in edata[id]],fmt["base"],True)
             else:
-                write_matrix(worksheet,toprow,c+2,[row[stat] for row in edata[id]],fmt["cell"],True,zeroesformat=fmt["base"])
+                write_matrix(worksheet,toprow,c+2,
+                             [row[stat] for row in edata[id]],
+                             fmt["cell"],True,zeroesformat=fmt["base"])
             c += len(simulation.systems) + 1
         nrows = len(group["rows"])
         toprow += nrows + 1 if nrows > 0 else 0
@@ -461,72 +470,28 @@ def simulation_to_xlsx(simulation, filename):
                 "ts": simulation.base_allocations[r]["xtd_total_seats"],
                 "ss": simulation.base_allocations[r]["xtd_seat_shares"],
                 "id": simulation.base_allocations[r]["xtd_ideal_seats"],
-            },
-            "avg": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["avg"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["avg"],
-                "cs": simulation.list_data[ r]["const_seats"]["avg"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["avg"],
-                "ts": simulation.list_data[ r]["total_seats"]["avg"],
-                "ss": simulation.list_data[ r]["seat_shares"]["avg"],
-                "id": simulation.list_data[ r]["ideal_seats"]["avg"],
-            },
-            "std": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["std"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["std"],
-                "cs": simulation.list_data[ r]["const_seats"]["std"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["std"],
-                "ts": simulation.list_data[ r]["total_seats"]["std"],
-                "ss": simulation.list_data[ r]["seat_shares"]["std"],
-                "id": simulation.list_data[ r]["ideal_seats"]["std"],
-            },
-            "min": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["min"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["min"],
-                "cs": simulation.list_data[ r]["const_seats"]["min"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["min"],
-                "ts": simulation.list_data[ r]["total_seats"]["min"],
-                "ss": simulation.list_data[ r]["seat_shares"]["min"],
-                "id": simulation.list_data[ r]["ideal_seats"]["min"],
-            },
-            "max": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["max"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["max"],
-                "cs": simulation.list_data[ r]["const_seats"]["max"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["max"],
-                "ts": simulation.list_data[ r]["total_seats"]["max"],
-                "ss": simulation.list_data[ r]["seat_shares"]["max"],
-                "id": simulation.list_data[ r]["ideal_seats"]["max"],
-            },
-            "skw": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["skw"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["skw"],
-
-                "cs": simulation.list_data[ r]["const_seats"]["skw"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["skw"],
-                "ts": simulation.list_data[ r]["total_seats"]["skw"],
-                "ss": simulation.list_data[ r]["seat_shares"]["skw"],
-                "id": simulation.list_data[ r]["ideal_seats"]["skw"],
-            },
-            "kur": {
-                "v" : simulation.list_data[-1]["sim_votes"  ]["kur"],
-                "vs": simulation.list_data[-1]["sim_shares" ]["kur"],
-                "cs": simulation.list_data[ r]["const_seats"]["kur"],
-                "as": simulation.list_data[ r]["adj_seats"  ]["kur"],
-                "ts": simulation.list_data[ r]["total_seats"]["kur"],
-                "ss": simulation.list_data[ r]["seat_shares"]["kur"],
-                "id": simulation.list_data[ r]["ideal_seats"]["kur"],
-            },
+            }
         }
-
+        for stat in STAT_LIST:
+            data_matrix[stat] = {
+                "v" : simulation.list_data[-1]["sim_votes"  ][stat],
+                "vs": simulation.list_data[-1]["sim_shares" ][stat],
+                "cs": simulation.list_data[ r]["const_seats"][stat],
+                "as": simulation.list_data[ r]["adj_seats"  ][stat],
+                "ts": simulation.list_data[ r]["total_seats"][stat],
+                "ss": simulation.list_data[ r]["seat_shares"][stat],
+                "id": simulation.list_data[ r]["ideal_seats"][stat],
+            }
         alloc_info = [{
             "left_span": 2, "center_span": 4, "right_span": 1, "info": [
                 {"label": "Allocation of constituency seats",
                     "rule": DRN[simulation.systems[r]["primary_divider"]],
-                    "threshold": simulation.systems[r]["constituency_threshold"]/100.0},
+                    "threshold": (simulation.systems[r]
+                                  ["constituency_threshold"]/100.0)},
                 {"label": "Apportionment of adjustment seats to parties",
                     "rule": DRN[simulation.systems[r]["adj_determine_divider"]],
-                    "threshold": simulation.systems[r]["adjustment_threshold"]/100.0},
+                    "threshold": (simulation.systems[r]
+                                  ["adjustment_threshold"]/100.0)},
                 {"label": "Allocation of adjustment seats to lists",
                     "rule": DRN[simulation.systems[r]["adj_alloc_divider"]],
                     "threshold": None}
@@ -558,7 +523,8 @@ def simulation_to_xlsx(simulation, filename):
                 worksheet.write(toprow, c1, info["label"], fmt["basic"])
                 worksheet.write(toprow, c2, info["rule"], fmt["basic"])
                 if group["right_span"] > 0:
-                    worksheet.write(toprow, c3, info["threshold"], fmt["threshold"])
+                    worksheet.write(toprow, c3, info["threshold"],
+                                    fmt["threshold"])
                 toprow += 1
 
         toprow += 1
@@ -567,9 +533,12 @@ def simulation_to_xlsx(simulation, filename):
         
         col = 2
         for table in tables:
-            is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
+            is_percentages_table = (table["heading"].endswith("shares") and
+                                    not table["heading"].startswith("Reference"))
             worksheet.write(toprow, col, table["heading"], fmt["basic_h"])
-            worksheet.write_row(toprow+1, col, parties[:-1] if is_percentages_table else parties, fmt["h_center"])
+            worksheet.write_row(toprow+1, col,
+                                parties[:-1] if is_percentages_table else parties,
+                                fmt["h_center"])
             col += len(parties[:-1] if is_percentages_table else parties)+1
             worksheet.set_column(col-1,col-1,3)
 
@@ -583,7 +552,9 @@ def simulation_to_xlsx(simulation, filename):
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
             for table in tables:
-                is_percentages_table = table["heading"].endswith("shares") and not table["heading"].startswith("Reference")
+                is_percentages_table = \
+                    table["heading"].endswith("shares") and \
+                    not table["heading"].startswith("Reference")
                 draw_block(worksheet, row=toprow, col=col,
                     heading=table["heading"],
                     matrix=data_matrix[category["abbr"]][table["abbr"]],

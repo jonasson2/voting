@@ -4,19 +4,21 @@ from measure_groups import MeasureGroups
 import dictionaries as dicts
 import random
 from voting import Election
-from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS
+from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
+from dictionaries import STATISTICS_HEADINGS
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
 from generate_votes import generate_votes
 from running_stats import Running_stats
-from system import System
+#from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, find_bias
-from util import hms, shape
+from util import hms, shape, get_cpu_count
 from copy import deepcopy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 
-# logging.basicConfig(filename='logs/simulate.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+# logging.basicConfig(filename='logs/simulate.log', filemode='w',
+# format='%(name)s - %(levelname)s - %(message)s')
 
 class Collect(dict):
     # collect values into dictionaries of arrays
@@ -26,17 +28,18 @@ class Collect(dict):
         else:
             self[key] = [x]
 
-class SimulationSettings(System):
+class SimulationSettings(dict):
     def __init__(self):
-        super(SimulationSettings, self).__init__()
+        # super(SimulationSettings, self).__init__()
         # Simulation systems
-        self.value_rules = {
-            # Fair share constraints:
-            "row_constraints": {True, False},
-            "col_constraints": {True, False},
-        }
+        # self.value_rules = {
+        #     # Fair share constraints:
+        #     "row_constraints": {True, False},
+        #     "col_constraints": {True, False},
+        # }
         self["simulate"] = False
         self["simulation_count"] = 200
+        self["cpu_count"] = get_cpu_count()
         self["gen_method"] = "gamma"
         self["distribution_parameter"] = CONSTANTS["CoeffVar"]
         self["scaling"] = "both"
@@ -45,13 +48,13 @@ class SimulationSettings(System):
         # self["row_constraints"] = True
         # self["col_constraints"] = True
 
-class Simulation:
+class Simulation():
     # Simulate a set of elections.
-    def __init__(self, sim_settings, systems, vote_table):
+    def __init__(self, sim_settings, systems, vote_table, nr=0):
         self.min_votes = CONSTANTS["minimum_votes"]
         election_handler = ElectionHandler(vote_table, systems, self.min_votes)
         self.election_handler = election_handler
-        self.measure_groups = MeasureGroups(systems)
+        self.measure_groups = MeasureGroups(systems, nr)
         self.base_allocations = []
         self.systems = [election.system
                         for election in election_handler.elections]
@@ -65,54 +68,54 @@ class Simulation:
         self.sim_count = self.sim_settings["simulation_count"]
         self.distribution = self.sim_settings["gen_method"]
         self.var_coeff = self.sim_settings["distribution_parameter"]
-        self.iteration = 0
-        self.terminate = False
-        self.total_time = 0
-        self.time_left = 0
         self.iterations_with_no_solution = 0
+        self.terminate = False
         # ---- Following properties are only used by excel_util.py
         self.constituencies = self.systems[0]["constituencies"]
         self.vote_table = vote_table
         self.num_parties = len(self.parties)
         self.num_constituencies = len(self.constituencies)
         self.sensitivity = sim_settings["sensitivity"]
-        # --------
         self.apply_random = self.index_of_const_to_apply_randomness_to()
+        # --------
+        self.iteration = 0
+        self.total_time = 0
+        self.time_left = 0
+        #
         self.data = [{} for _ in range(self.nsys)]
         self.list_data = [{} for _ in range(self.nsys + 1)]
         self.vote_data = [{} for _ in range(self.nsys)]
-        #
         self.initialize_stat_counters()
         self.run_initial_elections()
+        print("ncpus =", sim_settings["cpu_count"])
 
     def initialize_stat_counters(self):
         ns = self.nsys
-        elections = self.election_handler.elections
         nclist = [len(sys["constituencies"]) for sys in self.systems]
         np = len(self.parties)
-        self.measures = self.measure_groups.get_all_measures()
+        self.MEASURES = self.measure_groups.get_all_measures()
+        parallel = self.sim_settings["cpu_count"] > 1
+        self.STAT_LIST = list(STATISTICS_HEADINGS(parallel).keys())
         self.stat = {}
         for measure in VOTE_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
-                self.stat[measure][i] = Running_stats((nc + 1, np + 1))
+                self.stat[measure][i] = Running_stats((nc + 1, np + 1), parallel)
         for measure in LIST_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
-                self.stat[measure][i] = Running_stats((nc + 1, np + 1))
-        for measure in self.measures:  # MEASURES:
-            self.stat[measure] = Running_stats(ns)
-        for (cmp_election, cmp_system) in zip(elections, self.systems):
-            if cmp_system["compare_with"]:
-                measure = "cmp_" + cmp_system["name"]
-                self.stat[measure] = Running_stats(ns)
-                self.stat[measure + "_tot"] = Running_stats(ns)
-        for measure in ["party_sens", "list_sens"]:
+                self.stat[measure][i] = Running_stats((nc + 1, np + 1), parallel)
+        for measure in SENS_MEASURES:
             self.stat[measure] = [None]*ns
             for i in range(ns):
                 self.stat[measure][i] = Histogram()
-
-    stat_list = ["avg", "std", "skw", "kur", "min", "max"]
+        for measure in self.MEASURES:  # Was MEASURES in earlier version
+            self.stat[measure] = Running_stats(ns, parallel)
+        for cmp_system in self.systems:
+            if cmp_system["compare_with"]:
+                measure = "cmp_" + cmp_system["name"]
+                self.stat[measure] = Running_stats(ns, parallel)
+                self.stat[measure + "_tot"] = Running_stats(ns, parallel)
 
     def run_initial_elections(self):
         for election in self.election_handler.elections:
@@ -131,32 +134,32 @@ class Simulation:
                 "step_info":       election.adj_seats_info,
             })
 
-    def simulate(self, logfile=None):
+    def simulate(self, tasknr=0, monitor=None):
         # Simulate many elections.
-        ntot = self.sim_count
-        if ntot == 0:
+        if self.sim_count == 0:
             return None
         gen = self.gen_votes()
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
-        for i in range(ntot):
-            if logfile:
-                with open(logfile, 'a') as logf:
-                    if i % 100 == 0:
-                        print(f"Core 0, rep {i} of {ntot}", file=logf)
-            if self.terminate and i > 0:
-                break
+        for i in range(self.sim_count):
             self.iteration = i + 1
             votes = next(gen)
             self.run_and_collect_measures(votes)  # This allocates
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)
-            self.time_left = hms(time_pr_iter*(ntot - i))
+            self.time_left = hms(time_pr_iter*(self.sim_count - i))
             self.total_time = hms(elapsed)
-        self.analysis()
+            if monitor:
+                self.terminate = monitor.monitor(tasknr, self.iteration)
+            if self.terminate:
+                    break
+        print(f'return from simulate {tasknr}')
+        #self.analysis()
+        
         # self.test_generated() --- needs to be rewritten,
         # (statistical test of simulated data)
+
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
@@ -209,7 +212,8 @@ class Simulation:
                 if cmp_system["compare_with"]:
                     cmp_results = cmp_election.results
                     measure = "cmp_" + cmp_system["name"]
-                    self.add_deviation(election, measure, cmp_results, deviations)
+                    self.add_deviation(election, measure, cmp_results,
+                                       deviations)
             self.deviation_measures(election, system, deviations)
             self.other_measures(election, deviations)
         for m in deviations.keys():
@@ -220,10 +224,11 @@ class Simulation:
         for measure in ["dev_all_adj", "dev_all_const", "one_const"]:
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
-            comparison_election = Election(comparison_system, election.m_votes,
-                                           self.min_votes)
+            comparison_election = Election(comparison_system,
+                                           election.m_votes, self.min_votes)
             comparison_results = comparison_election.run()
-            self.add_deviation(election, measure, comparison_results, deviations)
+            self.add_deviation(election, measure, comparison_results,
+                               deviations)
 
     @staticmethod
     def add_deviation(election, measure, comparison_results, deviations):
@@ -266,30 +271,135 @@ class Simulation:
                 list_seat_diff = sum_abs_diff(list_seats1, list_seats2)
                 self.stat["list_sens"][i].update(list_seat_diff)
 
+    def bias(self, election):
+        (slope,corr) = find_bias(election.results, election.ideal_seats)
+        return slope,corr
+
+    # Loosemore-Hanby
+    def sum_abs(self, election):
+        lh = sum([
+            abs(election.ideal_seats[c][p] - election.results[c][p])
+            for p in range(len(self.parties))
+            for c in range(election.num_constituencies())
+        ])
+        return lh
+
+    # Minimized by Sainte Lague
+    def sum_sq(self, election):
+        ids = election.ideal_seats
+        stl = sum([
+            (ids[c][p] - election.results[c][p])**2/ids[c][p]
+            for p in range(len(self.parties))
+            for c in range(election.num_constituencies())
+            if ids[c][p] != 0
+        ])
+        return stl
+
+    # Maximized by d'Hondt
+    def min_seat_val(self, election):
+        ids = election.ideal_seats
+        dh_min = min([
+            ids[c][p]/float(election.results[c][p])
+            for p in range(len(self.parties))
+            for c in range(election.num_constituencies())
+            if election.results[c][p] != 0
+        ])
+        return dh_min
+
+    # Minimized by d'Hondt
+    def sum_pos(self, election):
+        ids = election.ideal_seats
+        dh_sum = sum([
+            max(0, ids[c][p] - election.results[c][p])/ids[c][p]
+            for p in range(len(self.parties))
+            for c in range(election.num_constituencies())
+            if ids[c][p] != 0
+        ])
+        return dh_sum
+
+    def index_of_const_to_apply_randomness_to(self):
+        sel_rand = self.sim_settings["selected_rand_constit"]
+        cons = [c["name"] for c in self.constituencies]
+        if sel_rand not in cons or sel_rand == "All constituencies":
+            index = -1
+        else:
+            index = cons.index(sel_rand)
+        return index
+
+    def to_xlsx(self, filename):
+        simulation_to_xlsx(self, filename)
+
+    def get_raw_result(self):
+        result = {}
+        result["iteration"] = self.iteration
+        result["total_time"] = self.total_time
+        result["systems"] = self.systems
+        result["parties"] = self.parties
+        result["MEASURES"] = self.measure_groups.get_all_measures()
+        result["STAT_LIST"] = self.STAT_LIST
+        result["stat"] = self.stat
+        #disp('result', result)
+        return result
+        
+class Sim_result:
+    def __init__(self, result):
+        self.iteration = result["iteration"]
+        self.total_time = result["total_time"]
+        self.parties = result["parties"]
+        self.systems = result["systems"]
+        self.nsys = len(self.systems)
+        self.MEASURES = result["MEASURES"]
+        self.STAT_LIST = result["STAT_LIST"]
+        self.data = [{} for _ in range(self.nsys)]
+        self.list_data = [{} for _ in range(self.nsys + 1)]
+        self.vote_data = [{} for _ in range(self.nsys)]
+        self.stat = result["stat"]
+
+    def combine(self, sim_result):
+        self.iteration += sim_result.iteration
+        self.total_time += sim_result.total_time
+        nclist = [len(sys["constituencies"]) for sys in self.systems]
+        for measure in VOTE_MEASURES:
+            for (i,nc) in enumerate(nclist):
+                self.stat[measure][i].combine(sim_result.stat[measure][i])
+        for measure in LIST_MEASURES:
+            for (i,nc) in enumerate(nclist):
+                self.stat[measure][i].combine(sim_result.stat[measure][i])
+        for measure in SENS_MEASURES:
+            for i in range(len(self.systems)):
+                self.stat[measure][i].combine(self.stat[measure][i])
+        for measure in self.MEASURES:  # Was MEASURES in earlier version
+            self.stat[measure] = Running_stats(len(self.systems))
+        for cmp_system in self.systems:
+            if cmp_system["compare_with"]:
+                measure = "cmp_" + cmp_system["name"]
+                self.stat[measure].combine(self.stat[measure])
+                self.stat[measure + "_tot"].combine(self.stat[measure + "_tot"])
+    
     def analyze_general(self):
-        for m in self.measures:
+        for m in self.MEASURES:
             dd = self.find_datadict(self.stat[m])
             for i in range(self.nsys):
-                self.data[i][m] = dict((s, dd[s][i]) for s in self.stat_list)
+                self.data[i][m] = dict((s, dd[s][i]) for s in self.STAT_LIST)
 
     def analyze_vote_data(self):
         for m in VOTE_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm)
-                self.vote_data[i][m] = dict((s, dd[s]) for s in self.stat_list)
+                self.vote_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
 
     def analyze_list_data(self):
         for m in LIST_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm)
                 D = {}
-                for s in self.stat_list:
+                for s in self.STAT_LIST:
                     D[s] = dd[s]
                 self.list_data[i][m] = D
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.
-        if self.sensitivity:
+        if hasattr(self, 'sensitivity') and self.sensitivity:
             self.list_sensitivity = self.gethistograms("list")
             self.party_sensitivity = self.gethistograms("party")
         else:
@@ -297,10 +407,25 @@ class Simulation:
             self.analyze_list_data()
             self.analyze_vote_data()
             self.list_data[-1] = self.vote_data[0]  # used by excel_util
-        # Það er villa sem á eftir að leiðrétta þegar búið er að "mergja" Excel útskrift
-        # (des. 2021). Vote-data er bara skrifað út fyrir fyrsta kerfið í list_data[-1]
-        # en ef sum kerfin eru með sameinuð kjördæmi (í "All") þá getur vote-datað
-        # orðið misjafnt milli kerfa; excel_util.py ræður bara við að skrifa eitt vote_data.
+        # Það er villa sem á eftir að leiðrétta þegar búið er að "mergja" Excel
+        # útskrift (des. 2021). Vote-data er bara skrifað út fyrir fyrsta kerfið
+        # í list_data[-1] en ef sum kerfin eru með sameinuð kjördæmi (í "All")
+        # þá getur vote-datað orðið misjafnt milli kerfa; excel_util.py ræður
+        # bara við að skrifa eitt vote_data.
+
+    def find_datadict(self, statentry):
+        stat_function = {
+            "avg": statentry.mean,
+            "std": statentry.std,
+            "skw": statentry.skewness,
+            "kur": statentry.kurtosis,
+            "min": statentry.minimum,
+            "max": statentry.maximum
+        }
+        datadict = {}
+        for stat in self.STAT_LIST:
+            datadict[stat] = stat_function[stat]()
+        return datadict
 
     def gethistograms(self, type):
         # Get list of histograms, one for each system, divide keys by 2
@@ -319,7 +444,8 @@ class Simulation:
             "systems":   self.systems,
             "parties":   self.parties,
             "testnames": [systems["name"] for systems in self.systems],
-            "methods":   [systems["adjustment_method"] for systems in self.systems],
+            "methods":   [systems["adjustment_method"]
+                          for systems in self.systems],
             "vote_data": self.vote_data,
             "data":      [{
                 "name":          self.systems[sysnr]["name"],
@@ -330,73 +456,3 @@ class Simulation:
                 for sysnr in range(len(self.systems))
             ]
         }
-
-    def bias(self, election):
-        (slope,corr) = find_bias(election.results, election.ideal_seats)
-        return slope,corr
-
-    # Loosemore-Hanby
-    def sum_abs(self, election):
-        lh = sum([
-            abs(election.ideal_seats[c][p] - election.results[c][p])
-            for p in range(len(self.parties))
-            for c in range(election.num_constituencies)
-        ])
-        return lh
-
-    # Minimized by Sainte Lague
-    def sum_sq(self, election):
-        ids = election.ideal_seats
-        stl = sum([
-            (ids[c][p] - election.results[c][p])**2/ids[c][p]
-            for p in range(len(self.parties))
-            for c in range(election.num_constituencies)
-            if ids[c][p] != 0
-        ])
-        return stl
-
-    # Maximized by d'Hondt
-    def min_seat_val(self, election):
-        ids = election.ideal_seats
-        dh_min = min([
-            ids[c][p]/float(election.results[c][p])
-            for p in range(len(self.parties))
-            for c in range(election.num_constituencies)
-            if election.results[c][p] != 0
-        ])
-        return dh_min
-
-    # Minimized by d'Hondt
-    def sum_pos(self, election):
-        ids = election.ideal_seats
-        dh_sum = sum([
-            max(0, ids[c][p] - election.results[c][p])/ids[c][p]
-            for p in range(len(self.parties))
-            for c in range(election.num_constituencies)
-            if ids[c][p] != 0
-        ])
-        return dh_sum
-
-    def index_of_const_to_apply_randomness_to(self):
-        sel_rand = self.sim_settings["selected_rand_constit"]
-        cons = [c["name"] for c in self.constituencies]
-        if sel_rand not in cons or sel_rand == "All constituencies":
-            index = -1
-        else:
-            index = cons.index(sel_rand)
-        return index
-
-    @staticmethod
-    def find_datadict(statentry):
-        datadict = {
-            "avg": statentry.mean(),
-            "std": statentry.std(),
-            "skw": statentry.skewness(),
-            "kur": statentry.kurtosis(),
-            "min": statentry.minimum(),
-            "max": statentry.maximum()
-        }
-        return datadict
-
-    def to_xlsx(self, filename):
-        simulation_to_xlsx(self, filename)

@@ -96,6 +96,8 @@ def check_systems(electoral_systems):
         # the frontend can't reach a state where that option would be corrupted.
         # But let's just check all, to be helpful also
         # in case POST data does not come from frontend but elsewhere.
+        if "compare_with" not in electoral_system:
+            electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:
             if "name" not in const: # or not const["name"]:
                 #can never happen in case of input from frontend
@@ -134,6 +136,12 @@ def check_simul_settings(sim_settings):
     for key in ["simulation_count", "gen_method", "scaling"]:
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
+    sim_settings.setdefault("cpu_count",   4)
+    sim_settings.setdefault("sens_cv",     0.01)
+    sim_settings.setdefault("sens_method", "uniform")
+    sim_settings.setdefault("sensitivity", False)
+    sim_settings.setdefault("selected_rand_constit", "All constituencies")
+        
     if "distribution_parameter" not in sim_settings:
         raise KeyError("Missing data ('sim_settings.distribution_parameter')")
     variance_coefficient = sim_settings["distribution_parameter"]
@@ -146,12 +154,8 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] == "gamma":
         if variance_coefficient >= 1:
             raise ValueError("Coefficient of variation must be less than 1")
-    if "sens_cv" not in sim_settings:
-        sim_settings["sens_cv"] = 0.01
-    if "sens_method" not in sim_settings:
-        sim_settings["sens_method"] = "uniform"
-    if "sensitivity" not in sim_settings:
-        sim_settings["sensitivity"] = False
+    if sim_settings["selected_rand_constit"] == "All":
+        sim_settings["selected_rand_constit"] = "All constituencies"
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     if sim_count > 2000 and digoce:

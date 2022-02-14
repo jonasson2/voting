@@ -3,8 +3,8 @@
   <b-modal
     size="lg"
     id="modalupload"
+    ref="modaluploadref"
     title="Upload CSV or XLSX file"
-    @ok="uploadVotes"
     >
     <p>
       The file provided must be a CSV or an Excel XLSX file formatted with
@@ -20,16 +20,24 @@
     </p>
     <b-form-file
       v-model="uploadfile"
+      accept=".csv, .xlsx"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
+      @input="$refs.modaluploadref.hide();
+              loadVotes();"
       ></b-form-file>
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">
+        Cancel
+      </b-button>
+    </template>
   </b-modal>
   
   <b-modal
     size="lg"
     id="modaluploadall"
+    ref="modaluploadallref"
     title="Upload json file with vote table and settings"
-    @ok="loadAll"
     >
     <p>
       The file provided should be a JSON file formatted lika a file
@@ -37,10 +45,43 @@
     </p>
     <b-form-file
       v-model="uploadfile"
+      accept=".json"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
+      @input="$refs.modaluploadallref.hide();
+              loadAll();"
       ></b-form-file>
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">
+        Cancel
+      </b-button>
+    </template>
   </b-modal>
+
+  <!-- <b-modal -->
+  <!--   size="lg" -->
+  <!--   id="modaluploadall" -->
+  <!--   ref="modaluploadallref" -->
+  <!--   title="Upload json file with vote table and settings"     -->
+  <!--   > -->
+  <!--   <p> -->
+  <!--     The file provided should be a JSON file formatted lika a file -->
+  <!--     downloaded from here using the SAVE ALL button. -->
+  <!--   </p> -->
+  <!--   <b-form-file -->
+  <!--     v-model="uploadfile" -->
+  <!--     accept=".json" -->
+  <!--     :state="Boolean(uploadfile)" -->
+  <!--     placeholder="Choose a file..." -->
+  <!--     @input="$refs.modaluploadallref.hide(); -->
+  <!--             uploadAll();" -->
+  <!--     ></b-form-file> -->
+  <!--   <template #modal-footer="{ cancel }"> -->
+  <!--     <b-button size="sm" @click="cancel()"> -->
+  <!--       Cancel -->
+  <!--     </b-button> -->
+  <!--   </template> -->
+  <!-- </b-modal> -->
   
   <b-modal
     size="xl"
@@ -62,7 +103,6 @@
       </template>
     </b-table>
   </b-modal>
-
   <b-button-toolbar key-nav aria-label="Vote tools">
     <b-button-group class="mx-1">
       <b-button
@@ -128,8 +168,7 @@
     </b-button-group>
   </b-button-toolbar>
   <br />
-  <h6>
-    These source votes and seats are used as basis for allocation in the Single
+  <h6> These source votes and seats are used as basis for allocation in the Single
     election tab and as expected values in the Simulated elections tab
   </h6>
   <table class="votematrix">
@@ -385,9 +424,8 @@ export default {
           }
         })
     },
-    uploadVotes: function (evt) {
+    loadVotes: function() {
       this.setWaitingForData()
-      if (!this.uploadfile) evt.preventDefault();
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.$http.post("/api/votes/upload/", formData).then(
@@ -400,8 +438,7 @@ export default {
           }
         })
     },
-    loadAll: function (evt) {
-      if (!this.uploadfile) evt.preventDefault();
+    loadAll: function() {
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.uploadAll(formData)

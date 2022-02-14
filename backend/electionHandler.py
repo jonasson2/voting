@@ -1,5 +1,6 @@
 from electionSystem import ElectionSystem
-from electionSystem import set_one_const, set_all_adj, set_all_const, set_custom
+from electionSystem import set_one_const, set_all_adj, set_all_const
+from electionSystem import set_custom, set_copy
 from voting import Election
 from table_util import add_totals
 from input_util import check_vote_table, check_systems
@@ -51,13 +52,16 @@ def update_constituencies(vote_table, systems):
     for system in systems:
         opt = system["seat_spec_option"]
         opt = remove_prefix(opt, "make_")
-        const = deepcopy(vote_table["constituencies"])
-        if "constituencies" not in system:
-            system["constituencies"] = const        
-        sysconst = system["constituencies"]
-        if opt=="all_const":   set_all_const(const)
-        elif opt=="all_adj":   set_all_adj(const)
-        elif opt=="one_const": set_one_const(const)
-        elif opt =="custom":   set_custom(const, sysconst)
+        voteconst = vote_table["constituencies"]
+        if opt=="all_const":   const = set_all_const(voteconst)
+        elif opt=="all_adj":   const = set_all_adj(voteconst)
+        elif opt=="one_const": const = set_one_const(voteconst)
+        elif opt=="refer":     const = set_copy(voteconst)
+        elif opt=="custom":
+            if "constituencies" in system:
+                sysconst = system["constituencies"]
+                const = set_custom(voteconst, sysconst)
+            else:
+                const = set_copy(voteconst)
         constituencies.append(const)
     return constituencies

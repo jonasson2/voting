@@ -10,7 +10,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="How many vote tables should be generated?
-                 (How simulations should be run?)"
+                 (How many simulations should be run?)"
           >
           <b-form-input
             type="number"
@@ -18,11 +18,27 @@
             min="0"/>
         </b-form-group>
         <b-form-group
+          label="Number of cpus"
+          label-cols="auto"
+          style="font-size:110%"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          :title="max_cpu_count_text"
+          >
+          <b-form-select
+            v-model="sim_settings.cpu_count"
+            :options="sim_capabilities.cpu_counts"
+            />
+        </b-form-group>
+        <b-form-group
           label="Generating distribution"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
+          title="Distribution used to simulate votes of each list, with the
+                 specified coefficient of variation and the source votes as 
+                 expected values"
           >
           <b-form-select
             v-model="sim_settings.gen_method"
@@ -35,9 +51,8 @@
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
-          title="This is the standard deviation of simulated votes
-                 divided by their mean. Valid range 0–0.75 (beta), 
-                 0–1 (gamma), 0–0.577 (uniform)."
+          title="Standard deviation of simulated votes divided by their mean.
+                 Valid range 0–0.75 (beta), 0–1 (gamma), 0–0.577 (uniform)."
           >
           <b-input-group>
             <b-form-input
@@ -139,6 +154,11 @@ export default {
       console.log("NAMES=", sysnames)
       console.log("comparison_systems=", this.comparison_systems)
       return sysnames
+    },
+    max_cpu_count_text: function() {
+      let text = "How many cpus (cores) should be used? (out of a maximum of "
+        + Math.max(...this.sim_capabilities.cpu_counts) + ")"
+      return text
     },
     const_names: function() {
       console.log("this.systems=", this.systems)

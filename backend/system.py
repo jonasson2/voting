@@ -10,6 +10,7 @@ class System(dict):
         super(System, self).__init__()
 
     def __setitem__(self, key, value):
+        print('self=', self)
         if key in self.value_rules and value not in self.value_rules[key]:
             raise ValueError("Cannot set %s to '%s'. Allowed values: %s" %
                              (key, value, self.value_rules[key]))

@@ -92,12 +92,12 @@ export default {
     ...mapMutations([
       "clearServerError",
       "showVoteMatrix",
-      "initialize"
     ]),
     ...mapActions([
       "showElection",
       "showElectoralSystems",
       "showSimulate",
+      "initialize"
     ]),
   },
   mounted: function() {

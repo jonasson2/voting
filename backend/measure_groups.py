@@ -20,7 +20,7 @@
 from util import disp
 
 class MeasureGroups(dict):
-    def __init__(self, systems):
+    def __init__(self, systems, nr=0):
         self["seatShares"] = {
             "title": "Allocated seats minus reference seat shares",
             "rows": {
@@ -63,12 +63,16 @@ class MeasureGroups(dict):
             "title": "– compared with following electoral systems",
             "rows": {}
         }
-        self._add_systems(systems)
+        self._add_systems(systems, nr)
 
-    def _add_systems(self, systems):
+    def _add_systems(self, systems, nr=0):
         sysGroup = self["cmpSys"]["rows"]
         firstcol = "Individual lists"
         for sys in systems:
+            p = "compare_with" in sys
+            if not p:
+                raise ValueError
+            compare = sys["compare_with"]
             if sys["compare_with"]:
                 measure = "cmp_" + sys["name"]
                 sysGroup[measure] = (firstcol, sys["name"])

@@ -127,6 +127,17 @@ export default {
       'show_simulate',
       'simulateCreated'
     ]),
+    check_interval_ms: function() {
+      // milliseconds between updating simulation progress bar
+      return this.sim_settings.cpu_count > 1 ? 1000 : 250
+    },
+    results_available: function() {
+      if (typeof results !== "undefined") {
+        console.log('results', results)
+        console.log('results.data.length', results.data.length)
+      }
+      return typeof results !== "undefined" && results.data.length > 0
+    }      
   },
   created: function() {
     console.log("Created Simulate")
@@ -165,7 +176,7 @@ export default {
     },
     checkstatus: function(stop) {
       this.$http.post('/api/simulate/check/', {
-        sid: this.sid,
+        simid: this.simid,
         stop: stop
       }).then(response => {
         if (!response.body || response.body.error) {
@@ -176,10 +187,14 @@ export default {
           this.current_iteration = status.iteration;
           this.total_time = status.total_time;
           this.time_left = status.time_left;
-          if (status.done) {
-            this.results = response.body.results;
-            this.vuedata = response.body.results.vuedata;
-            this.finish_simulation()
+          this.results = response.body.results
+          if (this.results.data.length > 0) {
+            console.log('results', this.results)
+            this.vuedata = response.body.results.vuedata
+            if (status.done) {
+              console.log('finish simulation')
+              this.finish_simulation()
+            }
           }
         }
       })
@@ -189,7 +204,7 @@ export default {
       this.clearServerError()
       this.current_iteration = 0
       this.results = { measures: [], methods: [], data: [] }
-      this.sid = "";
+      this.simid = "";
       console.log("Simulate (recalculate): this.sim_settings = ", this.sim_settings)
       this.$http.post('/api/simulate/', {
         vote_table:     this.vote_table,
@@ -201,10 +216,10 @@ export default {
           this.serverError(response.body) 
         } else {
           console.log("simulation started")
-          this.sid = response.body.sid
+          this.simid = response.body.simid
           this.simulation_done = !response.body.started
-          // 250 ms between updating simulation progress bar
-          this.checktimer = window.setInterval(this.check_simulation, 250)
+          this.checktimer = window.setInterval(this.check_simulation,
+                                               this.check_interval_ms)
           this.addBeforeunload()
         }
       });
@@ -214,7 +229,7 @@ export default {
       let promise = axios({
         method: "post",
         url: "/api/simdownload/",
-        data: { sid: this.sid },
+        data: { simid: this.simid },
         responseType: "arraybuffer",
       });
       this.downloadFile(promise)

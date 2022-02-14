@@ -1,23 +1,18 @@
-import threading
-import random
-import os, csv
-import warnings
-# Catch NumPy warnings (e.g. zero divide):
-warnings.filterwarnings('error', category=RuntimeWarning)
+import threading, random, os, csv, warnings, json, time, par_util
+from pathlib import Path
+from par_util import write_sim_settings, write_sim_stop, read_sim_results, clean
+from par_util import read_sim_status
 from datetime import datetime, timedelta
-import json
-from hashlib import sha256
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
 from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
-
-import simulate
-from pathlib import Path
+from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from sim_measures import add_vuedata
 
-#warnings.filterwarnings("error")
+# Catch NumPy warnings (e.g. zero divide):
+warnings.filterwarnings('error', category=RuntimeWarning)
 
 def load_votes(filename):
     with open(filename,"r") as f:
@@ -26,15 +21,8 @@ def load_votes(filename):
     result = check_votes(lines, filename)
     return result
 
-def load_all(f):
-    if isinstance(f,Path):
-        with open(f) as file: file_content = json.load(file)
-    else:
-        file_content = json.load(f.stream)
-    return file_content
-
-def load_json(f):
-    # returns systems, sim_settings from file json-file f
+def load_settings(f):
+    # returns systems and sim_settings from json-file f
     if isinstance(f,Path) or isinstance(f,str):
         with open(f) as file: file_content = json.load(file)
     else:
@@ -54,7 +42,7 @@ def load_json(f):
     # systems = []
     for item in file_content["systems"]:
         if item["adjustment_method"] == "8-nearest-neighbor":
-            item["adjustment_method"] = "8-nearest-to-last";
+            item["adjustment_method"] = "8-nearest-to-last"
         if "constituency_allocation_rule" in item:
             item["primary_divider"] = item["constituency_allocation_rule"]
         if "adjustment_division_rule" in item:
@@ -71,90 +59,74 @@ def single_election(votes, systems):
     results = [election.get_results_dict() for election in elections]
     return results
 
-def run_thread_simulation(sid):
-    global SIMULATIONS
-    (sim, thread, _) = SIMULATIONS[sid]
+def run_thread_simulation(simid):
+    SIM = SIMULATIONS[simid]
+    sim = SIM['sim']
+    thread = SIM['thread']
     thread.done=False
     sim.simulate()
     thread.done = True
 
-def run_simulation(votes, systems, sim_settings, excelfile=None, logfile=None):
-    # not threaded
-    # sim_settings = simulate.SimulationSettings()
-    sim_settings.update(check_simul_settings(sim_settings))
-    sim = simulate.Simulation(sim_settings, systems, votes)
-    if sim.sim_count == 0:
-        return None
-    sim.simulate(logfile)
-    if excelfile != None:
-        sim.to_xlsx(excelfile)
-    if sim_settings["sensitivity"]:
-        return sim.list_sensitivity, sim.party_sensitivity
-    else:
-        results = sim.get_results_dict()
-        add_vuedata(results)
-        return results
-
-def start_simulation(votes, systems, sim_settings):
+def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
-    global SIMULATION_IDX
-    SIMULATION_IDX += 1
-    h = sha256()
-    sidbytes = (str(SIMULATION_IDX) + ":"
-                + str(random.randint(1, 100000000))).encode('utf-8')
-    h.update(sidbytes)
-    sid = h.hexdigest()
-    simulation = simulate.Simulation(sim_settings, systems, votes)
-    #cleanup_expired_simulations()
-    expires = datetime.now() + timedelta(seconds=24*3600) # 24 hrs
-    # Allt þetta "expiry" þarf eitthvað að skoða og hugsa
-    thread = threading.Thread(target=run_thread_simulation, args=(sid,))
-    SIMULATIONS[sid] = [simulation, thread, expires]
-    thread.start()
-    return sid
+    parallel = sim_settings["cpu_count"] > 1
+    simid = par_util.get_id()
+    now = time.time()
+    timestamp = time.strftime("%H:%M:%S")
+    SIMULATIONS[simid] = {'time':now}
+    if not parallel:
+        simulation = Simulation(sim_settings, systems, votes)
+        thread = threading.Thread(target=run_thread_simulation, args=(simid,))
+        SIMULATIONS[simid].update({'sim':simulation, 'thread':thread})
+        thread.start()
+    else:
+        data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
+        write_sim_settings(simid, data)
+        pid = par_util.start_python_command('parsim.py', simid)
+        SIMULATIONS[simid].update({'pid':pid, 'thread':None})
+    return simid
 
-def check_simulation(sid, stop):
-    (sim, thread, _) = SIMULATIONS[sid]
-    sim.iteration -= sim.iterations_with_no_solution
-    sim_status = {
-        "done": thread.done,
-        "iteration": sim.iteration,
-        "time_left": sim.time_left,
-        "total_time": sim.total_time,
-        "target": sim.sim_settings["simulation_count"],
-    }
-    sim_results = sim.get_results_dict()
-    if sim_status["done"]:
-        add_vuedata(sim_results)
-    #disp("sim_status", sim_status)
-    if stop:
-        sim.terminate = True
-        # thread.join() finishes the thread and sets thread.done to True
-        thread.join()
+def check_simulation(simid, stop=False):
+    import os, time
+    if not simid in SIMULATIONS:
+        raise KeyError('Simulation has stopped running')
+    thread = SIMULATIONS[simid]['thread']
+    parallel = thread is None
+    SIMULATIONS[simid]['time'] = time.time()
+    if not parallel:
+        sim = SIMULATIONS[simid]['sim']
+        sim_status = {
+            "done": thread.done,
+            "iteration": sim.iteration,
+            "time_left": sim.time_left,
+            "total_time": sim.total_time,
+        }
+        print('iteration=', sim.iteration)
+        raw_result = sim.get_raw_result()
+        sim_result = Sim_result(raw_result)
+        sim_result.analysis()
+        sim_results = sim_result.get_results_dict()
+        print('data length:', len(sim_results["data"]))
+        #print('stop=', stop)
+        if stop:
+            sim.terminate = True
+            thread.join()
+    else:
+        if stop:
+            write_sim_stop(simid)
+        time.sleep(2)
+        sim_status = read_sim_status(simid)
+        if sim_status["done"]:
+            sim_results = read_sim_results(simid)
+            # raise RuntimeError('Results not available')
+        else:
+            sim_results = {'data': []}
+    add_vuedata(sim_results, parallel)
     return sim_status, sim_results
 
-def simulation_to_excel(sid, file):
-    (sim, _, _) = SIMULATIONS[sid]
+def simulation_to_excel(simid, file):
+    sim = SIMULATIONS[simid]["sim"]
     sim.to_xlsx(file)
-
-# def cleanup_expired_simulations():
-#     global SIMULATIONS
-#     try:
-#         for sid in SIMULATIONS:
-#             expires = SIMULATIONS[sid][2]
-#             if expires < datetime.now():
-#                 del(SIMULATIONS[sid])
-#     except RuntimeError:
-#         pass
-
-def get_new_download_id():
-    global DOWNLOADS_IDX
-    did = DOWNLOADS_IDX = DOWNLOADS_IDX + 1
-    h = sha256()
-    didbytes = (str(did) + ":"
-                + str(random.randint(1, 100000000))).encode('utf-8')
-    h.update(didbytes)
-    return h.hexdigest()
 
 SIMULATIONS = {}
 SIMULATION_IDX = 0

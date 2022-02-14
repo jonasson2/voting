@@ -1,30 +1,30 @@
 import json
 from copy import copy, deepcopy
-from system import System
+#from system import System
 #from util import load_constituencies
 from util import disp, remove_prefix
 from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
     ADJUSTMENT_METHODS
 from dictionaries import SEAT_SPECIFICATION_OPTIONS
-class ElectionSystem(System):
+class ElectionSystem(dict):
     """A set of rules for an election to follow."""
 
     def __init__(self):
-        super(ElectionSystem, self).__init__()
-        self.value_rules = {
-            "primary_divider": RULE_NAMES.keys(),
-            "adj_determine_divider": RULE_NAMES.keys(),
-            "adj_alloc_divider": DIVIDER_RULES.keys(),
-            "adjustment_method": ADJUSTMENT_METHODS.keys(),
-            "seat_spec_option": SEAT_SPECIFICATION_OPTIONS.keys(),
-        }
-        self.range_rules = {
-            "adjustment_threshold": [0, 100],
-            "constituency_threshold": [0, 100],
-        }
-        self.list_rules = [
-            "constituencies", "parties"
-        ]
+        # super(ElectionSystem, self).__init__()
+        # self.value_rules = {
+        #     "primary_divider": RULE_NAMES.keys(),
+        #     "adj_determine_divider": RULE_NAMES.keys(),
+        #     "adj_alloc_divider": DIVIDER_RULES.keys(),
+        #     "adjustment_method": ADJUSTMENT_METHODS.keys(),
+        #     "seat_spec_option": SEAT_SPECIFICATION_OPTIONS.keys(),
+        # }
+        # self.range_rules = {
+        #     "adjustment_threshold": [0, 100],
+        #     "constituency_threshold": [0, 100],
+        # }
+        # self.list_rules = [
+        #     "constituencies", "parties"
+        # ]
         self["name"] = "System"
         
         # Election systems
@@ -37,17 +37,6 @@ class ElectionSystem(System):
         self["seat_spec_option"] = "refer"
         self["compare_with"] = False
         self["parties"] = []
-
-        # Display systems
-        self["debug"] = False
-        self["show_entropy"] = False
-        self["output"] = "simple"
-
-    # def __setitem__(self, key, value):
-    #     if key == "constituencies" and type(value) == str:
-    #         value = load_constituencies(value)
-
-    #     super(ElectionSystem, self).__setitem__(key, value)
 
     def __deepcopy__(self, memo):
         ES = ElectionSystem()
@@ -75,79 +64,57 @@ class ElectionSystem(System):
 
     def generate_system(self, option, vote_table = []):
         option = remove_prefix(option, "make_")
-        sys = (
-            deepcopy(self) if option == "refer"
-            else self.generate_all_const_system() if option == "all_const"
-            else self.generate_all_adj_system() if option == "all_adj"
-            else self.generate_one_const_system() if option == "one_const"
-            else self.generate_custom_system(vote_table) if option == "custom"
-            else None
-        )
+        sys = copy(self)
+        if option == "all_const":
+            sys["constituencies"] = set_all_const(self["constituencies"])
+        elif option == "all_adj":
+            sys["constituencies"] = set_all_adj(self["constituencies"])
+        elif option == "one_const":
+            sys["constituencies"] = set_one_const(self["constituencies"])
+        else:
+            raise ValueError
         return sys
 
-    # def generate_opt_system(self):
-    #     system = ElectionSystem()
-    #     system.update(self)
-    #     system["adjustment_method"] = "B-alternating-scaling"
-    #     return system
-
-    # def generate_law_system(self):
-    #     system = ElectionSystem()
-    #     system.update(self)
-    #     system["adjustment_method"] = "1-icelandic-law"
-    #     system["primary_divider"] = "1-dhondt"
-    #     system["adj_determine_divider"] = "1-dhondt"
-    #     system["adj_alloc_divider"] = "1-dhondt"
-    #     system["adjustment_threshold"] = 5
-    #     system["compare_with"] = False
-    #     return system
-
-    def generate_custom_system(self, vote_table):
-        system = deepcopy(self)
-        set_custom(system["constituencies"], vote_table["constituencies"])
-        return system
-    
-    def generate_one_const_system(self):
-        system = deepcopy(self)
-        set_one_const(system["constituencies"])
-        return system
-
-    def generate_all_adj_system(self):
-        system = deepcopy(self)
-        set_all_adj(system["constituencies"])
-        return system
-
-    def generate_all_const_system(self):
-        system = deepcopy(self)
-        set_all_const(system["constituencies"])
-        return system
+def copyconst(const):
+    constlist = [copy(c) for c in const]
+    return constlist
 
 def set_one_const(constituencies):
-    constituencies[0] = {
+    one_const = [{
         "name": "All",
         "num_const_seats": sum(
             [const["num_const_seats"] for const in constituencies]),
         "num_adj_seats": sum(
             [const["num_adj_seats"] for const in constituencies]),
-    }
-    del constituencies[1:]
+    }]
+    return one_const
 
 def set_all_adj(constituencies):
-    for const in constituencies:
+    all_adj = copyconst(constituencies)
+    for const in all_adj:
         const["num_adj_seats"] += const["num_const_seats"]
         const["num_const_seats"] = 0
+    return all_adj
 
 def set_all_const(constituencies):
-    for const in constituencies:
+    all_const = copyconst(constituencies)
+    for const in all_const:
         const["num_const_seats"] += const["num_adj_seats"]
         const["num_adj_seats"] = 0
+    return all_const
 
-def set_custom(constituencies, customlist):
-    # Return the constituencies that are in constituencies, but with seat
-    # numbers copied from customlist for those constituencies that are there
-    customnames = [c["name"] for c in customlist]
-    for k in range(len(constituencies)):
-        name = constituencies[k]["name"]
-        if name in customnames:
-            l = customnames.index(name)
-            constituencies[k] = deepcopy(customlist[l])
+def set_copy(constituencies):
+    refer = copyconst(constituencies)
+    return refer
+
+def set_custom(voteconst, sysconst):
+    # Return the constituencies that are in voteconst, but with seat
+    # numbers copied from sysconst for those constituencies that are there
+    const = copyconst(voteconst)
+    sysconstnames = [c["name"] for c in sysconst]
+    for k in range(len(const)):
+        name = const[k]["name"]
+        if name in sysconstnames:
+            l = sysconstnames.index(name)
+            const[k] = copy(sysconst[l])
+    return const

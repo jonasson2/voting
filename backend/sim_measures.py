@@ -14,15 +14,17 @@ def combine_titles(titles, last_column1):
     title = column1 + (": " + column2 if column2 else "")
     return title, column1
 
-def add_vuedata(sim_results):
+def add_vuedata(sim_results, parallel):
     data = sim_results["data"]
+    if not data:
+        return
     systems = sim_results["systems"]
     groups = MeasureGroups(systems)
-    stats = list(STATISTICS_HEADINGS.keys())
+    stats = list(STATISTICS_HEADINGS(parallel).keys())
     nsys = len(systems)
     vuedata = {}
     vuedata["stats"] = stats
-    vuedata["stat_headings"] = STATISTICS_HEADINGS
+    vuedata["stat_headings"] = STATISTICS_HEADINGS(parallel)
     vuedata["headingType"] = headingType
     vuedata["system_names"] = [sys["name"] for sys in systems]
     vuedata["group_ids"] = []
@@ -38,9 +40,6 @@ def add_vuedata(sim_results):
             for stat in stats:
                 row[stat] = []
                 for s in range(len(systems)):
-                    if measure not in data[s]["measures"]:
-                        disp("data", data)
-                        disp('data-measures', data[s]["measures"])
                     entry = data[s]["measures"][measure][stat]
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")

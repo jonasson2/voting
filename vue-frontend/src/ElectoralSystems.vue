@@ -3,8 +3,8 @@
   <b-modal
     size="lg"
     id="modaluploadesettings"
+    ref="modaluploadesettingsref"
     title="Upload JSON file"
-    @ok="uploadSystems"
     >
     <p v-if="replace">
       The file provided must be a JSON file formatted like a file downloaded
@@ -18,10 +18,18 @@
     </p>
     <b-form-file
       v-model="uploadfile"
+      accept=".json"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
+      @input="$refs.modaluploadesettingsref.hide();
+              uploadSystems();"      
       >
     </b-form-file>
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">
+        Cancel
+      </b-button>
+    </template>
   </b-modal>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button-toolbar key-nav aria-label="Electoral settings tools"
@@ -224,8 +232,7 @@ export default {
       });
       this.downloadFile(promise)
     },
-    uploadSystems: function(evt) {
-      if (!this.uploadfile) evt.preventDefault();
+    uploadSystems: function() {
       var formData = new FormData();
       formData.append('file', this.uploadfile, this.uploadfile.name);
       this.uploadElectoralSystems({"formData":formData, "replace":this.replace})

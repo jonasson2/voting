@@ -9,6 +9,7 @@ import configparser
 import codecs
 from distutils.util import strtobool
 from traceback import format_exc
+from flask import jsonify
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
@@ -185,88 +186,6 @@ def determine_table_name(first,filename):
 
 #     return parties, votes
 
-def print_table(data, header, labels, output, f_string=None):
-    """
-    Print 'data' in a table with 'header' and rows labelled with 'labels'.
-    """
-    if f_string:
-        data = [[f_string.format(d) if d!=None else d for d in row] for row in data]
-    data = [[labels[i]] + data[i] for i in range(len(data))]
-    data = [[d if d != 0 and d != "0.0%" else None for d in row]
-                for row in data]
-    print(tabulate(data, header, output))
-
-def print_steps_election(election):
-    """Print detailed information about a single election."""
-    systems = election.system
-    out = systems["output"]
-    header = ["Constituency"]
-    header.extend(systems["parties"])
-    header.append("Total")
-    if "constituencies" in systems:
-        const_names = [c["name"] for c in systems["constituencies"]]
-    else:
-        const_names = systems["constituency_names"]
-    const_names.append("Total")
-
-    print("Votes")
-    xtd_votes = add_totals(election.m_votes)
-    print_table(xtd_votes, header, const_names, out)
-
-    print("\nVote shares")
-    xtd_shares = find_xtd_shares(xtd_votes)
-    print_table(xtd_shares, header, const_names, out, "{:.1%}")
-
-    print("\nConstituency seats")
-    xtd_const_seats = add_totals(election.m_const_seats)
-    print_table(xtd_const_seats, header, const_names, out)
-
-    print("\nAdjustment seat apportionment")
-    print("Threshold: {:.1%}".format(systems["adjustment_threshold"]*0.01))
-    v_votes = election.v_votes
-    v_votes.append(sum(election.v_votes))
-    v_elim_votes = election.v_votes_eliminated
-    v_elim_votes.append(sum(election.v_votes_eliminated))
-    v_elim_shares = ["{:.1%}".format(v/v_elim_votes[-1])
-                        for v in v_elim_votes]
-    v_const_seats = election.v_const_seats_alloc
-    v_const_seats.append(sum(election.v_const_seats_alloc))
-    data = [v_votes, v_elim_votes, v_elim_shares, v_const_seats]
-    labels = ["Total votes", "Votes above threshold",
-              "Vote shares above threshold", "Constituency seats"]
-    print_table(data, header[1:], labels, out)
-
-    table = election.demonstration_table
-    print("")
-    print(tabulate(table["steps"], table["headers"], out))
-    print("")
-
-    xtd_total_seats = add_totals(election.results)
-    print("\nAdjustment seats")
-    xtd_adj_seats = matrix_subtraction(xtd_total_seats, xtd_const_seats)
-    print_table(xtd_adj_seats, header, const_names, out)
-
-    print("\nTotal seats")
-    print_table(xtd_total_seats, header, const_names, out)
-
-    print("\nSeat shares")
-    xtd_shares = find_xtd_shares(xtd_total_seats)
-    print_table(xtd_shares, header, const_names, out, "{:.1%}")
-
-def pretty_print_election(election):
-    """Print results of a single election."""
-    systems = election.system
-    header = ["Constituency"]
-    header.extend(systems["parties"])
-    header.append("Total")
-    if "constituencies" in systems:
-        const_names = [c["name"] for c in systems["constituencies"]]
-    else:
-        const_names = systems["constituency_names"]
-    const_names.append("Total")
-    xtd_results = add_totals(election.results)
-    print_table(xtd_results, header, const_names, systems["output"])
-
 def sim_election_rules(rs, test_method):
     """Get preset election systems for simulation from file."""
     config = configparser.ConfigParser()
@@ -299,108 +218,13 @@ def hms(sec):
         s = f"{d} days + " + s
     return s
 
-def print_simulation(simulation):
-    """Print detailed information about a simulation."""
-    for r in range(len(simulation.system)):
-        systems = simulation.system[r]
-        out = systems["output"]
-        print("==========================================")
-        print("Adjustment method:", systems["adjustment_method"])
-        print("==========================================\n")
-        h = ["Constituency"]
-        h.extend(systems["parties"]+["Total"])
-        if "constituencies" in systems:
-            const_names = [c["name"] for c in systems["constituencies"]]
-        else:
-            const_names = systems["constituency_names"]
-        const_names.append("Total")
-
-        print("Reference")
-
-        print("\nVotes")
-        print_table(simulation.xtd_votes, h, const_names, out)
-
-        print("\nVote shares")
-        print_table(simulation.xtd_vote_shares,
-                    h, const_names, out, "{:.1%}")
-
-        print("\nConstituency seats")
-        print_table(simulation.base_allocations[r]["xtd_const_seats"],
-                    h, const_names, out)
-
-        print("\nAdjustment seats")
-        print_table(simulation.base_allocations[r]["xtd_adj_seats"],
-                    h, const_names, out)
-
-        print("\nTotal seats")
-        print_table(simulation.base_allocations[r]["xtd_total_seats"],
-                    h, const_names, out)
-
-        print("\nSeat shares")
-        print_table(simulation.base_allocations[r]["xtd_seat_shares"],
-                    h, const_names, out, "{:.1%}")
-
-        print("\nAverages from simulation")
-
-        print("\nVotes")
-        print_table(simulation.list_data[-1]["sim_votes"]["avg"],
-                    h, const_names, out)
-
-        print("\nVote shares")
-        print_table(simulation.list_data[-1]["sim_shares"]["avg"],
-                    h, const_names, out, "{:.1%}")
-
-        print("\nConstituency seats")
-        print_table(simulation.list_data[r]["const_seats"]["avg"],
-                    h, const_names, out)
-
-        print("\nAdjustment seats")
-        print_table(simulation.list_data[r]["adj_seats"]["avg"],
-                    h, const_names, out)
-
-        print("\nTotal seats")
-        print_table(simulation.list_data[r]["total_seats"]["avg"],
-                    h, const_names, out)
-
-        print("\nSeat shares")
-        print_table(simulation.list_data[r]["seat_shares"]["avg"],
-                    h, const_names, out, "{:.1%}")
-
-        print("\nStandard errors from simulation")
-
-        print("\nVotes")
-        print_table(simulation.list_data[-1]["sim_votes"]["std"],
-                    h, const_names, out, "{:.3f}")
-
-        print("\nVote shares")
-        print_table(simulation.list_data[-1]["sim_shares"]["std"],
-                    h, const_names, out, "{:.1%}")
-
-        print("\nConstituency seats")
-        print_table(simulation.list_data[r]["const_seats"]["std"],
-                    h, const_names, out, "{:.3f}")
-
-        print("\nAdjustment seats")
-        print_table(simulation.list_data[r]["adj_seats"]["std"],
-                    h, const_names, out, "{:.3f}")
-
-        print("\nTotal seats")
-        print_table(simulation.list_data[r]["total_seats"]["std"],
-                    h, const_names, out, "{:.3f}")
-
-        print("\nSeat shares")
-        print_table(simulation.list_data[r]["seat_shares"]["std"],
-                    h, const_names, out, "{:.1%}")
-
-        #print("\nVotes added to change results")
-        #print_table(simulation.votes_to_change, h[:-1], const_names[:-1], out)
-
-def disp(title, value=[]):
-    if not value:
+absent = []
+def disp(title, value=absent):
+    if value is absent:
         value = title
         title=''
     from pprint import PrettyPrinter
-    pp = PrettyPrinter(compact=False, width=80).pprint
+    pp = PrettyPrinter(compact=False, width=120).pprint
     if title:
         print("\n" + title.upper() + ":")
     pp(value)
@@ -415,23 +239,6 @@ def dispv(title, value=None, ndec=3):
     np.set_printoptions(suppress=True, precision=ndec, floatmode="fixed",
                         linewidth=120)
     print(np.array(value))
-    
-def short_traceback(trace):
-    from pathlib import Path
-    def traceline(line):
-        word = line.split()
-        file = remove_suffix(remove_prefix(word[1], '"'), '",')
-        file = Path(file).name
-        lineno = remove_suffix(word[3], ',')
-        function = word[5]
-        return f"{function}, {file} line {lineno}"
-        
-    trace = trace.splitlines()
-    first = traceline(trace[1])
-    last = traceline(trace[-3])
-    error = trace[-1]
-    # print("trace=", trace)
-    return f"Server error ({first},..., {last}):\n{error}"
 
 def writecsv(file, L):
     # Writes list of lists L to csv-file
@@ -439,3 +246,16 @@ def writecsv(file, L):
     with open(file, "w") as f:
         writer = csv.writer(f)
         writer.writerows(L)
+
+def get_cpu_count():
+    from multiprocessing import cpu_count
+    return cpu_count()
+        
+def get_cpu_counts():
+    cpu_counts = []
+    count = 1
+    cpu_count = get_cpu_count()
+    while count <= cpu_count:
+        cpu_counts.append(count)
+        count *= 2
+    return cpu_counts

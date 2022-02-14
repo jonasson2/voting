@@ -26,14 +26,16 @@ def display_seats(totSeats, adjSeats):
 class Election:
     """A single election."""
     def __init__(self, system, votes, min_votes=0, name=''):
-        cons = system["constituencies"]
-        one_const = len(cons) == 1 and cons[0]["name"] == "All"
-        self.num_constituencies = len(system["constituencies"])
-        self.num_parties = len(system["parties"])
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
         self.name = name
+
+    def num_constituencies(self):
+        return len(self.system["constituencies"])
+
+    def num_parties(self):
+        return len(self.system["parties"])
 
     def entropy(self):
         return entropy(self.m_votes, self.results, self.gen)
@@ -44,12 +46,13 @@ class Election:
     def set_votes(self, votes, min_votes=0):
         # m_votes: Matrix of votes (numconst by numpart)
         # v_votes: Vector of votes (numpart, colsums of m_votes)
-        if self.num_constituencies == 1:
+        if self.num_constituencies() == 1:
             self.m_votes = [[sum(x) for x in zip(*votes)]]
         else:
-            assert len(votes) == self.num_constituencies
+            if len(votes) != self.num_constituencies():
+                assert len(votes) == self.num_constituencies()
             self.m_votes = deepcopy(votes)
-        assert all(len(row) == self.num_parties for row in votes)
+        assert all(len(row) == self.num_parties() for row in votes)
         self.v_votes = [sum(x) for x in zip(*votes)]
 
     def display_results(self):
@@ -70,9 +73,6 @@ class Election:
             "step_by_step_demonstration": self.demonstration_table,
             "display_results": self.display_results()
         }
-
-    def get_const(self):
-        return self.system["constituencies"]
 
     def run(self):
         # Run an election based on current systems and votes.
@@ -107,9 +107,9 @@ class Election:
         return any(any(a) for a in A)
 
     def voteless_seats(self):
-        over = [None]*self.num_constituencies
-        for c in range(self.num_constituencies):
-            for p in range(self.num_parties):
+        over = [None]*self.num_constituencies()
+        for c in range(self.num_constituencies()):
+            for p in range(self.num_parties()):
                 over[c] = [r > 0 and v == CONSTANTS["minimum_votes"]
                            for (r,v) in zip(self.results[c], self.m_votes[c])]
         return over
@@ -119,15 +119,13 @@ class Election:
 
     def run_primary_apportionment(self):
         """Conduct primary apportionment"""
-        if self.system["debug"]:
-            print(" + Primary apportionment")
 
         constituencies = self.system["constituencies"]
         parties = self.system["parties"]
 
         m_allocations = []
         self.last = []
-        for i in range(self.num_constituencies):
+        for i in range(self.num_constituencies()):
             num_seats = constituencies[i]["num_const_seats"]
             if num_seats != 0:
                 alloc, _, last_in, _ = apportion1d_general(
@@ -141,7 +139,7 @@ class Election:
                 assert last_in #last_in is not None because num_seats > 0
                 self.last.append(last_in)
             else:
-                alloc = [0]*self.num_parties
+                alloc = [0]*self.num_parties()
                 self.last.append({'idx':None, 'active_votes':0})
             m_allocations.append(alloc)
             # self.order.append(seats)
@@ -156,8 +154,6 @@ class Election:
 
     def run_threshold_elimination(self):
         """Eliminate parties that do not reach the adjustment threshold."""
-        if self.system["debug"]:
-            print(" + Threshold elimination")
         self.m_votes_eliminated = threshold_elimination_constituencies(
             votes=self.m_votes,
             threshold=self.system["adjustment_threshold"]
@@ -169,8 +165,6 @@ class Election:
 
     def run_determine_adjustment_seats(self):
         """Calculate the number of adjustment seats each party gets."""
-        if self.system["debug"]:
-            print(" + Determine adjustment seats")
         self.v_desired_col_sums, self.adj_seat_gen, _, _ \
             = apportion1d_general(
                 v_votes=self.v_votes,
@@ -239,29 +233,29 @@ class Election:
         rein = 0
         error = 1
         niter = 0
-        if self.num_parties > 1 and self.num_constituencies > 1:
+        if self.num_parties() > 1 and self.num_constituencies() > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
             while round(error, 7) != 0.0: #TODO look at this
                 niter += 1
                 error = 0
                 if row_constraints:
-                    for c in range(self.num_constituencies):
+                    for c in range(self.num_constituencies()):
                         s = sum(ideal_seats[c])
                         if s != 0:
                             mult = float(self.v_desired_row_sums[c])/s
                             error += abs(1 - mult)
                             mult += rein*(1 - mult)
-                            for p in range(self.num_parties):
+                            for p in range(self.num_parties()):
                                 ideal_seats[c][p] *= mult
                 if col_constraints:
-                    for p in range(self.num_parties):
+                    for p in range(self.num_parties()):
                         s = sum([c[p] for c in ideal_seats])
                         if s != 0:
                             mult = float(self.v_desired_col_sums[p])/s
                             error += abs(1 - mult)
                             mult += rein*(1 - mult)
-                            for c in range(self.num_constituencies):
+                            for c in range(self.num_constituencies()):
                                 ideal_seats[c][p] *= mult
         self.ideal_seats = ideal_seats
 

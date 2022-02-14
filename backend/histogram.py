@@ -24,6 +24,13 @@ class Histogram:
     def __repr__(self):
         return str(self.histcounts)
 
+    def combine(self, histogram):
+        for (k,v) in histogram.get().items():
+            if k in self.histcounts:
+                self.histcounts[k] += v
+            else:
+                self.histcounts[k] = v
+
 def combine_histograms(hist_list):
     # Creates a combined histogram of all the histograms in hist_list which may
     # be Histograms, dictionaries or arrays.

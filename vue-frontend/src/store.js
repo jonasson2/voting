@@ -129,21 +129,6 @@ const store = new Vuex.Store({
     
     clearServerError(state) { state.server_error = '' },
 
-    initialize(state) {
-      console.log("initialize")
-      Vue.http.post('/api/capabilities', {}).then(response => {
-        if (error(response)) {
-          context.commit("serverError", response.body)
-        } else {
-          state.sim_capabilities = response.body.capabilities;
-          state.sim_settings = response.body.sim_settings
-          //state.commit("updateSimSettings", response.body.sim_settings)
-          //his.$nextTick(()=>this.setSimulateCreated())
-          console.log("Created SimulationSettings")
-        }
-      })
-    },
-
     addBeforeunload(state) {
       if (state.listening) return
       state.listening = true
@@ -162,6 +147,19 @@ const store = new Vuex.Store({
   //ACTIONS
   actions : {
     
+    initialize(context) {
+      console.log("initialize")
+      Vue.http.post('/api/capabilities', {}).then(response => {
+        if (error(response)) {
+          context.commit("serverError", response.body)
+        } else {
+          context.state.sim_capabilities = response.body.capabilities;
+          context.state.sim_settings = response.body.sim_settings
+          console.log("Created SimulationSettings")
+        }
+      })
+    },
+
     showElectoralSystems(context) {
       console.log("showElectoralSystems")
       context.state.results = []
