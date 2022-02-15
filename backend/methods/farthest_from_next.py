@@ -3,7 +3,7 @@ import numpy as np
 def maxi(A, openC, openP):
     amax = 0
     for c in openC:
-        p1 = 0
+        p1 = min(openP)
         for p in openP:
             if A[c,p] > A[c,p1]:
                 p1 = p
@@ -53,7 +53,7 @@ def farthest_from_next(m_votes,
         for p in openP:
             next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p] + 1]
 
-    # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO LAST
+    # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO SECOND NEXT
     allocation_sequence = []
     while num_allocated < num_total_seats:
         (max_ratio, maxC, maxP, nextP) = maxi(next_quot, openC, openP)
