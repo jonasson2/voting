@@ -254,8 +254,8 @@ def get_cpu_count():
 def get_cpu_counts():
     from math import sqrt
     cpu_counts = []
-    count = 1
-    rcount = 1.0
+    rcount = sqrt(2)
+    count = round(rcount)
     cpu_count = get_cpu_count()
     while count <= cpu_count:
         cpu_counts.append(count)

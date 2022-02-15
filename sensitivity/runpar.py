@@ -41,7 +41,6 @@ def runsim():
         errorfiles.append(errorfile(node))
         pid = run_parallel(node, command, errorfiles[-1])
         print(f'{node}: {pid}, nsim={n_sim}, cores={cores}, command={command}')
-    time.sleep(1)
     for file in errorfiles:
         if file.exists() and file.stat().st_size > 0:
             output = runshell(f'echo "{file.name}:"; cat {file}')

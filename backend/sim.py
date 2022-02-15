@@ -91,7 +91,7 @@ def main():
     simid = new_simulation(votes, systems, sim_settings)
     stopped = False
     while True:
-        time.sleep(1)
+        time.sleep(0.5)
         stop = Stop > 0 and not stopped and time.time() > beginning_time + Stop
         if stop:
             stopped = True

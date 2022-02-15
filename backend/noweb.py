@@ -72,13 +72,13 @@ def new_simulation(votes, systems, sim_settings):
     parallel = sim_settings["cpu_count"] > 1
     simid = par_util.get_id()
     now = time.time()
-    timestamp = time.strftime("%H:%M:%S")
+    #timestamp = time.strftime("%H:%M:%S")
     SIMULATIONS[simid] = {'time':now}
     if not parallel:
         simulation = Simulation(sim_settings, systems, votes)
         thread = threading.Thread(target=run_thread_simulation, args=(simid,))
-        SIMULATIONS[simid].update({'sim':simulation, 'thread':thread})
         thread.start()
+        SIMULATIONS[simid].update({'sim':simulation, 'thread':thread})
     else:
         data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
         write_sim_settings(simid, data)
@@ -114,7 +114,6 @@ def check_simulation(simid, stop=False):
     else:
         if stop:
             write_sim_stop(simid)
-        time.sleep(2)
         sim_status = read_sim_status(simid)
         if sim_status["done"]:
             sim_results = read_sim_results(simid)

@@ -53,7 +53,7 @@ def parallel_simulate(simid):
 
     # CHECK FOR STATUS REGULARLY AND WRITE TO DISK
     while True:
-        sleep(0.5)
+        sleep(0.25)
         if read_sim_stop(simid):
             monitor.send_stopsignal()
         sim_status = get_sim_status(monitor, nsim)
