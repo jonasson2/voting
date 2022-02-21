@@ -64,7 +64,7 @@ class Election:
             dispResult.append(dispRow)
         return dispResult
 
-    def get_results_dict(self):
+    def get_result_dict(self):
         # if not self.solvable:
         #     return None
         return {

@@ -267,6 +267,7 @@ def api_simulate_check():
             raise RuntimeError('Results unavailable')
         return jsonify({"status": status, "results": results})
     except Exception:
+        print('CAUGHT EXCEPTION')
         return errormsg()
 
 @app.route('/api/capabilities/', methods=["POST"])

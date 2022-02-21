@@ -1,11 +1,9 @@
-import numpy as np
-from math import prod
-from copy import deepcopy
-
 class Histogram:
     def __init__(self, d=None):
-        if d:
-            self.histcounts = deepcopy(d)
+        if d and 'histcounts' in d:
+            self.histcounts = d['histcounts']
+        elif d:
+            self.histcounts = d
         else:
             self.histcounts = {}
 

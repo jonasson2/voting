@@ -107,10 +107,9 @@ const store = new Vuex.Store({
     },
 
     serverError(state, message) {
+      console.log(message)
       if (!message)
         message = "Error: Unknown error with null message"
-      else if ('error' in message)
-        message = message.error
       else if (Number.isInteger(message)) {
         if (message == 500)
           message = "Error: Uncaught exception in backend (possibly logged to console)"
@@ -119,8 +118,12 @@ const store = new Vuex.Store({
         else
           message = "Unknown error"
       }
-      else if (!(typeof message === "string"))
-        message = "Error: Unknown error with non-string message"
+      else if (typeof message !== "string") {
+        if ('error' in message)
+          message = message.error
+        else
+          message = "Error: Unknown error with non-string message"
+      }
       console.log("SERVER ERROR: ", message)
       state.server_error = message.split(/\n/g);
       console.log("lengths", message.length, state.server_error.length)
@@ -311,6 +314,9 @@ const store = new Vuex.Store({
               eval("x = " + s)
               if ("error" in x) {
                 // API returned error instead of actual blob
+                console.log("Error, not blob")
+                console.log('x=', x)
+                console.log('x["error"]=', x["error"])
                 context.commit("serverError", x["error"])
                 return
               }

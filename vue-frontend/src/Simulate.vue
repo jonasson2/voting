@@ -129,7 +129,7 @@ export default {
     ]),
     check_interval_ms: function() {
       // milliseconds between updating simulation progress bar
-      return this.sim_settings.cpu_count > 1 ? 1000 : 250
+      return this.sim_settings.cpu_count > 1 ? 250 : 250
     },
     results_available: function() {
       if (typeof results !== "undefined") {
@@ -181,6 +181,8 @@ export default {
       }).then(response => {
         if (!response.body || response.body.error) {
           this.serverError(response.body)
+          this.simulation_done = true;
+          window.clearInterval(this.checktimer);
         } else {
           let status = response.body.status
           this.simulation_done = status.done;
@@ -191,6 +193,7 @@ export default {
           if (this.results.data.length > 0) {
             console.log('results', this.results)
             this.vuedata = response.body.results.vuedata
+            console.log('data', this.results.data)
             if (status.done) {
               console.log('finish simulation')
               this.finish_simulation()

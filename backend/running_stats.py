@@ -2,17 +2,25 @@ import numpy as np
 from math import prod
 
 class Running_stats:
-    def __init__(self, shape, parallel = False):
-        self.parallel = parallel
-        self.n = 0
-        self.M1 = np.zeros(shape)
-        self.M2 = np.zeros(shape)
-        if not self.parallel:            
-            self.M3 = np.zeros(shape)
-            self.M4 = np.zeros(shape)
-        self.big = np.zeros(shape)
-        self.small = np.zeros(shape)
-
+    def __init__(self, shape=None, parallel=False):
+        if shape:
+            self.parallel = parallel
+            self.n = 0
+            self.M1 = np.zeros(shape)
+            self.M2 = np.zeros(shape)
+            if not self.parallel:
+                self.M3 = np.zeros(shape)
+                self.M4 = np.zeros(shape)
+            self.big = np.zeros(shape)
+            self.small = np.zeros(shape)
+        
+    @classmethod
+    def from_dict(cls,dictionary):
+        self = cls()
+        for (key,val) in dictionary.items():
+            setattr(self, key, val)
+        return self
+    
     def update(self, A): # A should have shape "shape"
         A = np.array(A)
         n1 = self.n

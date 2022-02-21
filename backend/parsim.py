@@ -11,8 +11,7 @@ def task_simulate(nr, ntask, sim_settings, systems, votes, monitor):
     sim_settings["simulation_count"] = ntask
     sim = Simulation(sim_settings, systems, votes, nr)
     sim.simulate(nr, monitor)
-    raw_result = sim.get_raw_result()
-    return raw_result
+    return sim.attributes()
 
 def get_sim_status(monitor, nsim):
     # GET CURRENT STATUS FROM THE WORKERS
@@ -61,15 +60,16 @@ def parallel_simulate(simid):
             sim_status["done"] = True
             break
         write_sim_status(simid, sim_status)
-    raw_results = asyncres.get()
-    sim0 = Sim_result(raw_results[0])
-    for i in range(1,len(raw_results)):
-        sim_result = Sim_result(raw_results[i])
-        sim0.combine(sim_result)
+    sim_dicts = asyncres.get()
+    sim0 = Sim_result(sim_dicts[0])
+    for i in range(1,len(sim_dicts)):
+        sim_i = Sim_result(sim_dicts[i])
+        sim0.combine(sim_i)
     sim0.analysis()
-    sim_results = sim0.get_results_dict()
-    write_sim_results(simid, sim_results)
-    write_sim_status(simid, sim_status) # write with done after sim_results
+    del sim0.stat
+    sim_dict = vars(sim0)
+    write_sim_dict(simid, sim_dict)
+    write_sim_status(simid, sim_status) # write with done after sim_result_dict
 
 if __name__ == "__main__":
     import sys
@@ -79,4 +79,5 @@ if __name__ == "__main__":
     except:
         trace = "PARSIM ERROR:\n" + long_traceback(format_exc())
         print(trace, file=sys.stderr)
+        write_sim_error(simid, trace)
         raise SystemExit('')

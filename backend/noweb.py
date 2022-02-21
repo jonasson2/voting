@@ -1,7 +1,8 @@
-import threading, random, os, csv, warnings, json, time, par_util
+import random, os, csv, warnings, json, time, par_util, sys
+from threading import Thread, excepthook
 from pathlib import Path
-from par_util import write_sim_settings, write_sim_stop, read_sim_results, clean
-from par_util import read_sim_status
+from par_util import write_sim_settings, write_sim_stop, read_sim_dict, clean
+from par_util import read_sim_status, read_sim_error
 from datetime import datetime, timedelta
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
@@ -9,7 +10,6 @@ from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
-from sim_measures import add_vuedata
 
 # Catch NumPy warnings (e.g. zero divide):
 warnings.filterwarnings('error', category=RuntimeWarning)
@@ -56,76 +56,117 @@ def single_election(votes, systems):
     list of electoral systems'''
     min_votes = CONSTANTS["minimum_votes"]
     elections = ElectionHandler(votes, systems, min_votes=min_votes).elections
-    results = [election.get_results_dict() for election in elections]
+    results = [election.get_result_dict() for election in elections]
     return results
 
+def exc(args):
+    print('In excepthook')
+
 def run_thread_simulation(simid):
-    SIM = SIMULATIONS[simid]
-    sim = SIM['sim']
-    thread = SIM['thread']
-    thread.done=False
-    sim.simulate()
-    thread.done = True
+    print('running thread-simulation')
+    try:
+        global SIMULATIONS
+        SIM = SIMULATIONS[simid]
+        sim = SIM['sim']
+        thread = SIM['thread']
+        thread.done=False
+        sim.simulate()
+        thread.done = True
+    except Exception as e:
+        SIM['exception'] = e
 
 def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
     parallel = sim_settings["cpu_count"] > 1
+    threaded = sim_settings["cpu_count"] == 1
     simid = par_util.get_id()
     now = time.time()
-    #timestamp = time.strftime("%H:%M:%S")
-    SIMULATIONS[simid] = {'time':now}
-    if not parallel:
-        simulation = Simulation(sim_settings, systems, votes)
-        thread = threading.Thread(target=run_thread_simulation, args=(simid,))
+    SIMULATIONS[simid] = {'time':now, 'exception':None}
+    if threaded:
+        sim = Simulation(sim_settings, systems, votes)
+        thread = Thread(target=run_thread_simulation, args=(simid,))
+        SIMULATIONS[simid] |= {'kind':'threaded', 'sim':sim, 'thread':thread}
         thread.start()
-        SIMULATIONS[simid].update({'sim':simulation, 'thread':thread})
-    else:
+        print('started thread')
+    elif parallel:
         data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
         write_sim_settings(simid, data)
         pid = par_util.start_python_command('parsim.py', simid)
-        SIMULATIONS[simid].update({'pid':pid, 'thread':None})
+        SIMULATIONS[simid] |= {'kind':'parallel', 'pid':pid}
+    else:
+        sim = Simulation(sim_settings, systems, votes)
+        sim.simulate()
+        SIMULATIONS[simid] |= {'kind':'sequential', 'sim':sim}
     return simid
 
+def get_sim_status(done, sim):
+    sim_status = {
+        "done":       done,
+        "iteration":  sim.iteration,
+        "time_left":  sim.time_left,
+        "total_time": sim.total_time,
+    }
+    return sim_status
+
 def check_simulation(simid, stop=False):
+    global SIMULATIONS
     import os, time
     if not simid in SIMULATIONS:
         raise KeyError('Simulation has stopped running')
-    thread = SIMULATIONS[simid]['thread']
-    parallel = thread is None
-    SIMULATIONS[simid]['time'] = time.time()
-    if not parallel:
-        sim = SIMULATIONS[simid]['sim']
-        sim_status = {
-            "done": thread.done,
-            "iteration": sim.iteration,
-            "time_left": sim.time_left,
-            "total_time": sim.total_time,
-        }
-        print('iteration=', sim.iteration)
-        raw_result = sim.get_raw_result()
-        sim_result = Sim_result(raw_result)
+    SIM = SIMULATIONS[simid]
+    SIM['time'] = time.time()
+    kind = SIM['kind']
+    if kind == 'threaded':
+        thread = SIM['thread']
+        if SIM['exception']:
+            thread.join()
+            raise SIM['exception']
+        sim = SIM['sim']
+        if not hasattr(thread, 'done'):
+            thread.done = False
+        sim_status = get_sim_status(thread.done, sim)
+        sim_result = Sim_result(sim.attributes())
         sim_result.analysis()
-        sim_results = sim_result.get_results_dict()
-        print('data length:', len(sim_results["data"]))
-        #print('stop=', stop)
         if stop:
             sim.terminate = True
             thread.join()
-    else:
+    elif kind == 'parallel':
+        message = read_sim_error(simid)
+        if message:
+            message = '; '.join(message.split('\n'))
+            raise RuntimeError(message)
         if stop:
             write_sim_stop(simid)
         sim_status = read_sim_status(simid)
+        print('sim_status=', sim_status)
+        if not sim_status:
+            sim_status = {
+                'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
         if sim_status["done"]:
-            sim_results = read_sim_results(simid)
-            # raise RuntimeError('Results not available')
+            sim_dict = read_sim_dict(simid)
+            #disp('sim_dict', sim_dict)
+            sim_result = Sim_result(sim_dict)
+            disp('sim_result', vars(sim_result))
         else:
-            sim_results = {'data': []}
-    add_vuedata(sim_results, parallel)
-    return sim_status, sim_results
+            sim_result = None
+            # raise RuntimeError('Results not available')
+    else: # kind == 'sequential'
+        sim = SIM['sim']
+        sim_status = get_sim_status(True, sim)
+        sim_dict = sim.attributes()
+        sim_result = Sim_result(sim_dict)
+        sim_result.analysis()
+    if sim_result:
+        parallel = kind=='parallel'
+        sim_result_dict = sim_result.get_result_dict(parallel)
+    else:
+        sim_result_dict = {'data': []}
+    SIMULATIONS[simid]['result'] = sim_result
+    return sim_status, sim_result_dict
 
 def simulation_to_excel(simid, file):
-    sim = SIMULATIONS[simid]["sim"]
-    sim.to_xlsx(file)
+    sim_result_dict = SIMULATIONS[simid]["results"]
+    simulation_to_xlsx(sim_result, file)
 
 SIMULATIONS = {}
 SIMULATION_IDX = 0

@@ -1,4 +1,10 @@
-p {margin-left: 15px}
+p {
+  margin-left: 15px;
+}
+
+td {
+  font-variant-numeric: tabular-nums;
+}  
 
 .navbar-brand {
   font-size:1.5rem !important;

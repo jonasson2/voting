@@ -91,7 +91,7 @@ def main():
     simid = new_simulation(votes, systems, sim_settings)
     stopped = False
     while True:
-        time.sleep(0.5)
+        time.sleep(0.25)
         stop = Stop > 0 and not stopped and time.time() > beginning_time + Stop
         if stop:
             stopped = True
@@ -114,7 +114,7 @@ def main():
         writecsv(histfile, hist_array)
     else:
         pass
-        #disp('results', results)
+        disp('vuedata', results['vuedata'])
     elapsed_time = hms(time.time() - beginning_time)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:

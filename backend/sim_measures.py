@@ -6,6 +6,7 @@ from measure_groups import headingType
 from dictionaries import STATISTICS_HEADINGS
 from util import disp
 from copy import deepcopy
+from math import sqrt
 
 def combine_titles(titles, last_column1):
     (column1, column2) = titles
@@ -14,14 +15,15 @@ def combine_titles(titles, last_column1):
     title = column1 + (": " + column2 if column2 else "")
     return title, column1
 
-def add_vuedata(sim_results, parallel):
-    data = sim_results["data"]
+def add_vuedata(sim_result_dict, parallel):
+    data = sim_result_dict["data"]
     if not data:
         return
-    systems = sim_results["systems"]
+    systems = sim_result_dict["systems"]
     groups = MeasureGroups(systems)
     stats = list(STATISTICS_HEADINGS(parallel).keys())
     nsys = len(systems)
+    nsim = sim_result_dict["iteration"]
     vuedata = {}
     vuedata["stats"] = stats
     vuedata["stat_headings"] = STATISTICS_HEADINGS(parallel)
@@ -40,12 +42,18 @@ def add_vuedata(sim_results, parallel):
             for stat in stats:
                 row[stat] = []
                 for s in range(len(systems)):
+                    print('>>>', measure)
+                    print('>>>', data[s]["measures"])
                     entry = data[s]["measures"][measure][stat]
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")
+                    if stat == "avg" and entry != 0:
+                        std = data[s]["measures"][measure]["std"]
+                        CI = 1.96*std/sqrt(nsim)
+                        row[stat][-1] += f" ± {CI:.{ndig}f}"
             vuedata[id].append(row)
             
-    sim_results["vuedata"] = vuedata
+    sim_result_dict["vuedata"] = vuedata
 
 # Statistic ids are an array in                        vuedata["stats"]
 # Statistic headings are a dictionary stat–>heading in vuedata["stat_headings"]

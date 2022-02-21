@@ -12,10 +12,11 @@ from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, find_bias
-from util import hms, shape, get_cpu_count
+from util import hms, shape
 from copy import deepcopy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
+from sim_measures import add_vuedata
 
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
@@ -39,7 +40,7 @@ class SimulationSettings(dict):
         # }
         self["simulate"] = False
         self["simulation_count"] = 200
-        self["cpu_count"] = get_cpu_count()
+        self["cpu_count"] = CONSTANTS['default_cpu_count']
         self["gen_method"] = "gamma"
         self["distribution_parameter"] = CONSTANTS["CoeffVar"]
         self["scaling"] = "both"
@@ -49,7 +50,7 @@ class SimulationSettings(dict):
         # self["col_constraints"] = True
 
 class Simulation():
-    # Simulate a set of elections.
+    # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
         self.min_votes = CONSTANTS["minimum_votes"]
         election_handler = ElectionHandler(vote_table, systems, self.min_votes)
@@ -70,7 +71,7 @@ class Simulation():
         self.var_coeff = self.sim_settings["distribution_parameter"]
         self.iterations_with_no_solution = 0
         self.terminate = False
-        # ---- Following properties are only used by excel_util.py
+        # ------- Following properties are only used by excel_util.py
         self.constituencies = self.systems[0]["constituencies"]
         self.vote_table = vote_table
         self.num_parties = len(self.parties)
@@ -81,10 +82,6 @@ class Simulation():
         self.iteration = 0
         self.total_time = 0
         self.time_left = 0
-        #
-        self.data = [{} for _ in range(self.nsys)]
-        self.list_data = [{} for _ in range(self.nsys + 1)]
-        self.vote_data = [{} for _ in range(self.nsys)]
         self.initialize_stat_counters()
         self.run_initial_elections()
         print("ncpus =", sim_settings["cpu_count"])
@@ -131,7 +128,6 @@ class Simulation():
                 "xtd_total_seats": xtd_total_seats,
                 "xtd_seat_shares": xtd_seat_shares,
                 "xtd_ideal_seats": xtd_ideal_seats,
-                "step_info":       election.adj_seats_info,
             })
 
     def simulate(self, tasknr=0, monitor=None):
@@ -326,34 +322,62 @@ class Simulation():
             index = cons.index(sel_rand)
         return index
 
-    def to_xlsx(self, filename):
-        simulation_to_xlsx(self, filename)
-
-    def get_raw_result(self):
-        result = {}
-        result["iteration"] = self.iteration
-        result["total_time"] = self.total_time
-        result["systems"] = self.systems
-        result["parties"] = self.parties
-        result["MEASURES"] = self.measure_groups.get_all_measures()
-        result["STAT_LIST"] = self.STAT_LIST
-        result["stat"] = self.stat
-        #disp('result', result)
-        return result
+    def attributes(self):
+        dictionary = vars(self)
+        del dictionary["election_handler"]
+        stat = dictionary['stat']
+        for (key,val) in stat.items():
+            if isinstance(val, list):
+                for i in range(len(val)):
+                    val[i] = vars(val[i]) if val[i] else {}
+            else:
+                stat[key] = vars(stat[key])                
+        return dictionary
+    
+    # def get_raw_result(self):
+    #     # Used to transfer simulation results to Sim_result object
+    #     # Must be a dictionary to make it through multiprocessing interface
+    #     result = {}
+    #     result["apply_random"] = self.apply_random
+    #     result["base_allocations"] = self.base_allocations
+    #     result["constituencies"] = self.constituencies
+    #     result["iteration"] = self.iteration
+    #     result["MEASURES"] = self.measure_groups.get_all_measures()
+    #     result["parties"] = self.parties
+    #     result["sim_settings"] = self.sim_settings
+    #     result["stat"] = self.stat
+    #     result["STAT_LIST"] = self.STAT_LIST
+    #     result["systems"] = self.systems
+    #     result["total_time"] = self.total_time
+    #     result["var_coef"] = self.var_coef
+    #     result["vote_table"] = self.vote_table
+    #     result["xtd_vote_shares"] = self.xtd_vote_shares
+    #     result["xtd_votes"] = self.xtd_votes
+    #     #disp('result', result)
+    #     return result
         
 class Sim_result:
-    def __init__(self, result):
-        self.iteration = result["iteration"]
-        self.total_time = result["total_time"]
-        self.parties = result["parties"]
-        self.systems = result["systems"]
-        self.nsys = len(self.systems)
-        self.MEASURES = result["MEASURES"]
-        self.STAT_LIST = result["STAT_LIST"]
-        self.data = [{} for _ in range(self.nsys)]
-        self.list_data = [{} for _ in range(self.nsys + 1)]
-        self.vote_data = [{} for _ in range(self.nsys)]
-        self.stat = result["stat"]
+    # Results from one simulation, or several combined simulations
+    def __init__(self, dictionary):
+        for (key,val) in dictionary.items():
+            if key=='stat':
+                for statkey, statval in val.items():
+                    if isinstance(statval,list):
+                        for i in range(len(statval)):
+                            if statkey.endswith('sens'):
+                                statval[i] = Histogram(statval[i])
+                            else:
+                                statval[i] = Running_stats.from_dict(statval[i])
+                    else:
+                        if statkey.endswith('sens'):
+                            val[statkey] = Histogram(statval[i])
+                        else:
+                            val[statkey] = Running_stats.from_dict(statval)
+            setattr(self, key, val)
+
+        # self.data = [{} for _ in range(self.nsys)]
+        # self.list_data = [{} for _ in range(self.nsys + 1)]
+        # self.vote_data = [{} for _ in range(self.nsys)]
 
     def combine(self, sim_result):
         self.iteration += sim_result.iteration
@@ -367,14 +391,14 @@ class Sim_result:
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in SENS_MEASURES:
             for i in range(len(self.systems)):
-                self.stat[measure][i].combine(self.stat[measure][i])
+                self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in self.MEASURES:  # Was MEASURES in earlier version
-            self.stat[measure] = Running_stats(len(self.systems))
+            self.stat[measure].combine(sim_result.stat[measure])
         for cmp_system in self.systems:
             if cmp_system["compare_with"]:
                 measure = "cmp_" + cmp_system["name"]
-                self.stat[measure].combine(self.stat[measure])
-                self.stat[measure + "_tot"].combine(self.stat[measure + "_tot"])
+                self.stat[measure].combine(sim_result.stat[measure])
+                self.stat[measure + "_tot"].combine(sim_result.stat[measure + "_tot"])
     
     def analyze_general(self):
         for m in self.MEASURES:
@@ -399,6 +423,9 @@ class Sim_result:
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.
+        self.data = [{} for _ in range(self.nsys)]
+        self.list_data = [{} for _ in range(self.nsys + 1)]
+        self.vote_data = [{} for _ in range(self.nsys)]
         if hasattr(self, 'sensitivity') and self.sensitivity:
             self.list_sensitivity = self.gethistograms("list")
             self.party_sensitivity = self.gethistograms("party")
@@ -439,8 +466,9 @@ class Sim_result:
             counts.append(count)
         return counts
 
-    def get_results_dict(self):
-        return {
+    def get_result_dict(self, parallel):
+        result_dict = {
+            "iteration": self.iteration,
             "systems":   self.systems,
             "parties":   self.parties,
             "testnames": [systems["name"] for systems in self.systems],
@@ -456,3 +484,8 @@ class Sim_result:
                 for sysnr in range(len(self.systems))
             ]
         }
+        add_vuedata(result_dict, parallel)
+        return result_dict
+
+    def to_xlsx(self, filename):
+        simulation_to_xlsx(self, filename)

@@ -14,6 +14,7 @@ from methods.norwegian_icelandic import norw_ice_apportionment
 from methods.pure_vote_ratios import pure_vote_ratios_apportionment
 from methods.opt_entropy import opt_entropy
 from methods.switching import switching
+from util import get_cpu_count
 
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
@@ -22,7 +23,8 @@ from distributions.uniform_distribution import uniform_distribution
 CONSTANTS = {
     'minimum_votes': 1e-6,
     'CoeffVar': 0.25,
-    'simulation_id_length': 1
+    'simulation_id_length': 1,
+    'default_cpu_count': get_cpu_count()/2
 }
 
 DIVIDER_RULES = {
@@ -56,7 +58,7 @@ RULE_NAMES = {
 
 def STATISTICS_HEADINGS(parallel):
     headings = {
-        "avg": "AVERAGE",
+        "avg": "AVG 95%-CI",
         "min": "MINIMUM",
         "max": "MAXIMUM",
         "std": "STD.DEV."}

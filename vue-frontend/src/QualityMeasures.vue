@@ -108,7 +108,6 @@ th, td {
   border-left-width:0
 }
 
-
 th {
   font-weight:bold;
   background: #eee;

@@ -36,18 +36,33 @@ def read_json(simid, suffix):
     except (ValueError, FileNotFoundError):
         return None
 
-def write_sim_settings(simid, data):   write_json(simid, data, 'settings')
-def read_sim_settings(simid):          return read_json(simid, 'settings')
+def write_sim_settings(simid, data): write_json(simid, data, 'settings')
+def read_sim_settings(simid):        return read_json(simid, 'settings')
 
-def write_sim_status(simid, status):   write_json(simid, status, 'status')
-def read_sim_status(simid):            return read_json(simid, 'status')
+def write_sim_status(simid, status): write_json(simid, status, 'status')
+def read_sim_status(simid):          return read_json(simid, 'status')
 
-def write_sim_results(simid, results): write_json(simid, results, 'results')
-def read_sim_results(simid):           return read_json(simid, 'results')
+def write_sim_dict(simid, results):  write_json(simid, results, 'results')
+def read_sim_dict(simid):            return read_json(simid, 'results')
 
-def write_sim_stop(simid):             write_json(simid, {'stop':True}, 'stop')
-def read_sim_stop(simid):              return read_json(simid, 'stop')
+def write_sim_stop(simid):           write_json(simid, {'stop':True}, 'stop')
+def read_sim_stop(simid):            return read_json(simid, 'stop')
 
+def write_sim_error(simid, message):
+    dir = get_dir()
+    filename = dir/f'{simid}-error.txt'
+    with open(filename, 'w', encoding='utf-8') as fd:
+        fd.write(message)
+
+def read_sim_error(simid):
+    dir = get_dir()
+    filename = dir/f'{simid}-error.txt'
+    try:
+        with open(filename) as fd:
+            message = fd.read()
+            return message
+    except (ValueError, FileNotFoundError):
+        return None
 
 def start_python_command(command, simid):
     from subprocess import Popen
