@@ -300,7 +300,7 @@ def elections_to_xlsx(elections, filename):
 
     workbook.close()
 
-def simulation_to_xlsx(sim_result, filename):
+def simulation_to_xlsx(sim_result, filename, parallel):
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -394,7 +394,7 @@ def simulation_to_xlsx(sim_result, filename):
 
     #Measures
     STAT_LIST = sim_result.STAT_LIST
-    results = sim_result.get_result_dict()
+    results = sim_result.get_result_dict(parallel)
     data = results["data"]
     systems = results["systems"]
     groups = MeasureGroups(systems)

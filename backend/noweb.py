@@ -10,6 +10,7 @@ from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
+from excel_util import simulation_to_xlsx
 
 # Catch NumPy warnings (e.g. zero divide):
 warnings.filterwarnings('error', category=RuntimeWarning)
@@ -143,7 +144,6 @@ def check_simulation(simid, stop=False):
                 'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
         if sim_status["done"]:
             sim_dict = read_sim_dict(simid)
-            #disp('sim_dict', sim_dict)
             sim_result = Sim_result(sim_dict)
         else:
             sim_result = None
@@ -163,8 +163,9 @@ def check_simulation(simid, stop=False):
     return sim_status, sim_result_dict
 
 def simulation_to_excel(simid, file):
-    sim_result_dict = SIMULATIONS[simid]["results"]
-    simulation_to_xlsx(sim_result, file)
+    sim_result = SIMULATIONS[simid]["result"]
+    parallel = SIMULATIONS[simid]["kind"] == 'parallel'
+    simulation_to_xlsx(sim_result, file, parallel)
 
 SIMULATIONS = {}
 SIMULATION_IDX = 0

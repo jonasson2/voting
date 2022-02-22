@@ -13,7 +13,7 @@ from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_xtd_shares, m_subtract, find_bias
 from util import hms, shape
-from copy import deepcopy
+from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
@@ -323,7 +323,7 @@ class Simulation():
         return index
 
     def attributes(self):
-        dictionary = vars(self)
+        dictionary = copy(vars(self))
         del dictionary["election_handler"]
         stat = dictionary['stat']
         for (key,val) in stat.items():
@@ -486,6 +486,3 @@ class Sim_result:
         }
         add_vuedata(result_dict, parallel)
         return result_dict
-
-    def to_xlsx(self, filename):
-        simulation_to_xlsx(self, filename)
