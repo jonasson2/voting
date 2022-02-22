@@ -13,6 +13,7 @@
 /lib
 /local
 /share
+/temp
 /sensitivity/results/
 /pip-selfcheck.json
 venv/

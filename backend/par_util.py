@@ -17,8 +17,9 @@ def get_id():
     return token
 
 def get_dir():
-    #return Path(tempfile.gettempdir())
-    return Path()
+    temp = Path(__file__).parents[1]/"temp"
+    temp.mkdir(parents=True, exist_ok=True)
+    return temp
 
 def write_json(simid, data, suffix):
     dir = get_dir()

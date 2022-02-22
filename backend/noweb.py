@@ -138,7 +138,6 @@ def check_simulation(simid, stop=False):
         if stop:
             write_sim_stop(simid)
         sim_status = read_sim_status(simid)
-        print('sim_status=', sim_status)
         if not sim_status:
             sim_status = {
                 'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
@@ -146,7 +145,6 @@ def check_simulation(simid, stop=False):
             sim_dict = read_sim_dict(simid)
             #disp('sim_dict', sim_dict)
             sim_result = Sim_result(sim_dict)
-            disp('sim_result', vars(sim_result))
         else:
             sim_result = None
             # raise RuntimeError('Results not available')

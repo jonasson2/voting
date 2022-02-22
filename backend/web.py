@@ -214,7 +214,7 @@ def api_presets_load():
     try:
         presets_dict = get_presets_dict()
         election_id = getparam('election_id')
-        preset_ids = [p['ID'] for p in presets_dict]
+        preset_ids = [p['id'] for p in presets_dict]
         if election_id not in preset_ids:
             raise ValueError("Unexpected missing ID in presets_dict")
         idx = preset_ids.index(election_id)

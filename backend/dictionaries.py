@@ -23,7 +23,7 @@ from distributions.uniform_distribution import uniform_distribution
 CONSTANTS = {
     'minimum_votes': 1e-6,
     'CoeffVar': 0.25,
-    'simulation_id_length': 1,
+    'simulation_id_length': 20,
     'default_cpu_count': get_cpu_count()/2
 }
 

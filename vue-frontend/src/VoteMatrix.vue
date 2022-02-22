@@ -58,31 +58,6 @@
     </template>
   </b-modal>
 
-  <!-- <b-modal -->
-  <!--   size="lg" -->
-  <!--   id="modaluploadall" -->
-  <!--   ref="modaluploadallref" -->
-  <!--   title="Upload json file with vote table and settings"     -->
-  <!--   > -->
-  <!--   <p> -->
-  <!--     The file provided should be a JSON file formatted lika a file -->
-  <!--     downloaded from here using the SAVE ALL button. -->
-  <!--   </p> -->
-  <!--   <b-form-file -->
-  <!--     v-model="uploadfile" -->
-  <!--     accept=".json" -->
-  <!--     :state="Boolean(uploadfile)" -->
-  <!--     placeholder="Choose a file..." -->
-  <!--     @input="$refs.modaluploadallref.hide(); -->
-  <!--             uploadAll();" -->
-  <!--     ></b-form-file> -->
-  <!--   <template #modal-footer="{ cancel }"> -->
-  <!--     <b-button size="sm" @click="cancel()"> -->
-  <!--       Cancel -->
-  <!--     </b-button> -->
-  <!--   </template> -->
-  <!-- </b-modal> -->
-  
   <b-modal
     size="xl"
     id="modalpreset"
@@ -103,6 +78,7 @@
       </template>
     </b-table>
   </b-modal>
+  
   <b-button-toolbar key-nav aria-label="Vote tools">
     <b-button-group class="mx-1">
       <b-button
@@ -414,6 +390,7 @@ export default {
     },
     loadPreset: function (election_id) {
       this.setWaitingForData()
+      console.log('election_id', election_id)
       this.$http.post("/api/presets/load/", {election_id: election_id }).then(
         (response) => {
           if (!response.body || response.body.error) {

@@ -114,7 +114,6 @@ def main():
         writecsv(histfile, hist_array)
     else:
         pass
-        disp('vuedata', results['vuedata'])
     elapsed_time = hms(time.time() - beginning_time)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:

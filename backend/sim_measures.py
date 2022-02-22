@@ -42,8 +42,6 @@ def add_vuedata(sim_result_dict, parallel):
             for stat in stats:
                 row[stat] = []
                 for s in range(len(systems)):
-                    print('>>>', measure)
-                    print('>>>', data[s]["measures"])
                     entry = data[s]["measures"][measure][stat]
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")
