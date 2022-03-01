@@ -2,7 +2,7 @@ import random, os, csv, warnings, json, time, par_util, sys
 from threading import Thread, excepthook
 from pathlib import Path
 from par_util import write_sim_settings, write_sim_stop, read_sim_dict, clean
-from par_util import read_sim_status, read_sim_error
+from par_util import read_sim_status, read_sim_error, parallel_dir
 from datetime import datetime, timedelta
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
@@ -11,9 +11,11 @@ from input_util import check_input, check_systems, check_simul_settings
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx
+import psutil
 
 # Catch NumPy warnings (e.g. zero divide):
 warnings.filterwarnings('error', category=RuntimeWarning)
+warnings.filterwarnings('error', category=UserWarning)
 
 def load_votes(filename):
     with open(filename,"r") as f:
@@ -36,11 +38,6 @@ def load_settings(f):
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
     assert type(file_content["systems"]) == list
-    # keys = ["name", "seat_spec_option", "constituencies",
-    #         "constituency_threshold", "constituency_allocation_rule",
-    #         "adjustment_threshold", "adjustment_division_rule",
-    #         "adjustment_method", "adjustment_allocation_rule"]
-    # systems = []
     for item in file_content["systems"]:
         if item["adjustment_method"] == "8-nearest-neighbor":
             item["adjustment_method"] = "8-nearest-to-last"
@@ -60,9 +57,6 @@ def single_election(votes, systems):
     results = [election.get_result_dict() for election in elections]
     return results
 
-def exc(args):
-    print('In excepthook')
-
 def run_thread_simulation(simid):
     print('running thread-simulation')
     try:
@@ -78,11 +72,12 @@ def run_thread_simulation(simid):
 
 def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
+    terminate_old_simulations(maxminutes = 2)
     parallel = sim_settings["cpu_count"] > 1
     threaded = sim_settings["cpu_count"] == 1
     simid = par_util.get_id()
-    now = time.time()
-    SIMULATIONS[simid] = {'time':now, 'exception':None}
+    starttime = time.time()
+    SIMULATIONS[simid] = {'time':starttime, 'exception':None}
     if threaded:
         sim = Simulation(sim_settings, systems, votes)
         thread = Thread(target=run_thread_simulation, args=(simid,))
@@ -92,8 +87,9 @@ def new_simulation(votes, systems, sim_settings):
     elif parallel:
         data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
         write_sim_settings(simid, data)
-        pid = par_util.start_python_command('parsim.py', simid)
-        SIMULATIONS[simid] |= {'kind':'parallel', 'pid':pid}
+        process = par_util.start_python_command('parsim.py', simid)
+        print(f'starting parallel simulation {simid}, pid={process.pid}')
+        SIMULATIONS[simid] |= {'kind':'parallel', 'process':process}
     else:
         sim = Simulation(sim_settings, systems, votes)
         sim.simulate()
@@ -115,7 +111,8 @@ def check_simulation(simid, stop=False):
     if not simid in SIMULATIONS:
         raise KeyError('Simulation has stopped running')
     SIM = SIMULATIONS[simid]
-    SIM['time'] = time.time()
+    checktime = time.time()
+    SIM['time'] = checktime
     kind = SIM['kind']
     if kind == 'threaded':
         thread = SIM['thread']
@@ -145,10 +142,13 @@ def check_simulation(simid, stop=False):
         if sim_status["done"]:
             sim_dict = read_sim_dict(simid)
             sim_result = Sim_result(sim_dict)
+            process = SIM['process']
+            process.wait()
+            delete_tempfiles(simid)
         else:
             sim_result = None
             # raise RuntimeError('Results not available')
-    else: # kind == 'sequential'
+    else: # kind == 'sequential'; used for debugging
         sim = SIM['sim']
         sim_status = get_sim_status(True, sim)
         sim_dict = sim.attributes()
@@ -167,5 +167,34 @@ def simulation_to_excel(simid, file):
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
     simulation_to_xlsx(sim_result, file, parallel)
 
+def delete_tempfiles(simid):
+    pardir = parallel_dir()
+    for p in pardir.glob(f"{simid}*.*"):
+        p.unlink()
+    
+def terminate_old_simulations(maxminutes):
+    for (simid,sim) in SIMULATIONS.items():
+        if time.time() - sim["time"] > maxminutes*60:
+            print(f'simid:{simid}')
+            if sim["kind"] == 'parallel':                
+                process = sim["process"]
+                print(f'Stopping children of process {process.pid}...')
+                parent = psutil.Process(process.pid)
+                for child in parent.children(recursive=True):
+                    child.kill()
+                parent.kill()
+                print('Wait for parent process...')
+                try:
+                    process.wait()
+                except Exception as e:
+                    print(f'Exception: {e}')
+                pardir = parallel_dir()
+                print(f'Removing temporary files {simid}...')
+                delete_tempfiles(simid)
+            elif sim["kind"] == 'threaded':
+                print('Terminate threaded simulation')
+                sim.terminate = True
+                sim['thread'].join()
+    
 SIMULATIONS = {}
 SIMULATION_IDX = 0

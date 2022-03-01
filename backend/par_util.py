@@ -16,19 +16,19 @@ def get_id():
         token = token_urlsafe(NTOK)
     return token
 
-def get_dir():
-    temp = Path(__file__).parents[1]/"temp"
-    temp.mkdir(parents=True, exist_ok=True)
-    return temp
+def parallel_dir():
+    pardir = Path(__file__).parents[1]/"pardir"
+    pardir.mkdir(parents=True, exist_ok=True)
+    return pardir
 
 def write_json(simid, data, suffix):
-    dir = get_dir()
+    dir = parallel_dir()
     filename = dir/f'{simid}-{suffix}.json'
     with open(filename, 'w', encoding='utf-8') as fd:
         json.dump(data, fd, indent=2, ensure_ascii=False)
 
 def read_json(simid, suffix):
-    dir = get_dir()
+    dir = parallel_dir()
     filename = dir/f'{simid}-{suffix}.json'
     try:
         with open(filename, encoding='utf-8') as fd:
@@ -50,13 +50,13 @@ def write_sim_stop(simid):           write_json(simid, {'stop':True}, 'stop')
 def read_sim_stop(simid):            return read_json(simid, 'stop')
 
 def write_sim_error(simid, message):
-    dir = get_dir()
+    dir = parallel_dir()
     filename = dir/f'{simid}-error.txt'
     with open(filename, 'w', encoding='utf-8') as fd:
         fd.write(message)
 
 def read_sim_error(simid):
-    dir = get_dir()
+    dir = parallel_dir()
     filename = dir/f'{simid}-error.txt'
     try:
         with open(filename) as fd:
@@ -69,10 +69,8 @@ def start_python_command(command, simid):
     from subprocess import Popen
     import sys
     python = sys.executable
-    p = Popen([python, command, simid],
-              start_new_session=True)
-    pid = p.pid
-    return pid
+    p = Popen([python, command, simid], start_new_session=True)
+    return p
 
 def kill_process(pid):
     import os
@@ -80,7 +78,7 @@ def kill_process(pid):
     os.kill(pid, signal.SIGTERM)
 
 def clean(simid):
-    dir = get_dir()
+    dir = parallel_dir()
     for file in dir.glob(f'{simid}*.json'):
         file.unlink(missing_ok=True)
 

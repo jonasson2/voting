@@ -36,8 +36,8 @@ def parallel_simulate(simid):
         return None
     votes = data["votes"]
     systems = data["systems"]    
-    nproc = sim_settings["cpu_count"]
     nsim = sim_settings["simulation_count"]
+    nproc = min(nsim, sim_settings["cpu_count"]) # no more processes than nsim
     monitor = Monitor(nproc)
     ntask = [nsim//nproc + (1 if i < nsim % nproc else 0) for i in range(nproc)]
     starttime = time()
@@ -76,7 +76,9 @@ if __name__ == "__main__":
     simid = sys.argv[1]
     try:
         parallel_simulate(simid)
-    except:
+    except BrokenPipeError:
+        print('Caught broken pipe error')
+    except Exception:
         trace = "PARSIM ERROR:\n" + long_traceback(format_exc())
         print(trace, file=sys.stderr)
         write_sim_error(simid, trace)

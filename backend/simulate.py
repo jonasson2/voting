@@ -84,7 +84,6 @@ class Simulation():
         self.time_left = 0
         self.initialize_stat_counters()
         self.run_initial_elections()
-        print("ncpus =", sim_settings["cpu_count"])
 
     def initialize_stat_counters(self):
         ns = self.nsys
