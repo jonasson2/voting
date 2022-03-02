@@ -10,3 +10,4 @@ xlsxwriter
 openpyxl>=3
 configparser
 numpy
+psutil
