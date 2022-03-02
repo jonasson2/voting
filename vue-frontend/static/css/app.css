@@ -176,6 +176,10 @@ th.topleft {
   padding:        6px;
 }
 
+.demomatrix .sup-headers th {
+  text-align: left;
+}
+
 .displaytablename {
   text-align: center;
   padding:        6px;

@@ -1,16 +1,27 @@
 import numpy as np
+
 def maxi(A, openC, openP):
-    # Max of A and corresponding indices for non-full constituencies and parties
     amax = 0
     for c in openC:
+        p1 = min(openP)
         for p in openP:
-            if A[c,p] > amax:
-                cmax = c
-                pmax = p
-                amax = A[c,p]
-    return amax, cmax, pmax
+            if A[c,p] > A[c,p1]:
+                p1 = p
+        p2 = None
+        for p in openP:
+            if p != p1:
+                if p2 is None or A[c,p] > A[c,p2]:
+                    p2 = p
+        
+        ratio = (A[c,p1] / A[c,p2]) if p2 is not None and A[c,p2] != 0 else 0
+        if ratio >= amax:
+            cmax = c
+            pmax = p1
+            pnext = p2 if p2 is not None and A[c,p2] != 0 else None
+            amax = ratio
+    return amax, cmax, pmax, pnext
 
-def nearest_to_last(m_votes,
+def farthest_from_next(m_votes,
                     v_desired_row_sums,
                     v_desired_col_sums,
                     m_prior_allocations,
@@ -25,11 +36,6 @@ def nearest_to_last(m_votes,
     desired_const = np.array(v_desired_row_sums)
     desired_party = np.array(v_desired_col_sums)
 
-    # LAST=VOTES/N FOR LAST IN, LAST=1 IN CONSTITUENCIES WITHOUT ALLOCATIONS
-    last_quot = np.array([l["active_votes"] for l in kwargs["last"]], float)
-    last_index = np.array([l["idx"] for l in kwargs["last"]])
-    last_quot[alloc_const==0] = 1
-
     # CALCULATE DIVISORS
     N = max(max(desired_const), max(desired_party)) + 1
     div_gen = divisor_gen()
@@ -43,16 +49,14 @@ def nearest_to_last(m_votes,
     openC = set(k for (k,open) in enumerate(alloc_const < desired_const) if open)
     openP = set(k for (k,open) in enumerate(alloc_party < desired_party) if open)
     next_quot = np.zeros(alloc_list.shape)
-    ratio = np.zeros(alloc_list.shape)
     for c in openC:
         for p in openP:
             next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p] + 1]
-            ratio[c,p] = next_quot[c,p]/last_quot[c]
 
-    # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO LAST
+    # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO SECOND NEXT
     allocation_sequence = []
     while num_allocated < num_total_seats:
-        (max_ratio, maxC, maxP) = maxi(ratio, openC, openP)
+        (max_ratio, maxC, maxP, nextP) = maxi(next_quot, openC, openP)
         alloc_list[maxC, maxP] += 1
         alloc_const[maxC] += 1
         alloc_party[maxP] += 1
@@ -65,39 +69,35 @@ def nearest_to_last(m_votes,
             openC.remove(maxC)
         else:
             # UPDATE WORK MATRICES IN CONSTITUENCY WITH MAX RATIO
-            last_quot[maxC] = next_quot[maxC, maxP]
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
                                      divisors[alloc_list[maxC, maxP] + 1])
-            for p in openP:
-                ratio[maxC, p] = next_quot[maxC, p]/last_quot[maxC]
 
         # DATA FOR STEP-BY-STEP TABLE
-        reason = "VOTE" if alloc_const[maxC] == 1 else "MAX"
-        allocation = {"constituency": maxC, "last":last_index[maxC],
-                      "ratio": max_ratio, "party": maxP, "reason": reason}
-        last_index[maxC] = maxP
+        reason = "MAX" if max_ratio != 0 else "LAST"
+        allocation = {"constituency": maxC, "party": maxP, "nextParty": nextP,
+                      "ratio": max_ratio, "reason": reason}
         allocation_sequence.append(allocation)
     return alloc_list.tolist(), (allocation_sequence, present_allocation_sequence)
 
 def present_allocation_sequence(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
-    headers = ["Adj. seat #", "Constituency", "Next party", "Last party",
+    headers = ["Adj. seat #", "Constituency", "Next party", "Second next party",
                "Criteria", "Ratio"]
     criterion = {}
-    criterion["MAX"] = "Max ratio of next-in and last in vote quotients"
-    criterion["VOTE"] = "No const. seat, thus using max list vote"
+    criterion["MAX"] = "Max ratio of next to second next quotient of list vote"
+    criterion["LAST"] = "Last list"
     data = []
     for (seat_number, allocation) in enumerate(allocation_sequence):
         reason = allocation["reason"]
-        last_index = allocation["last"]
-        last_party = rules["parties"][last_index] if last_index!=None else "–"
+        next_index = allocation["nextParty"]
+        next_party = rules["parties"][next_index] if next_index != None else "–"
         data.append([
             seat_number + 1,
             rules["constituencies"][allocation["constituency"]]["name"],            
             rules["parties"][allocation["party"]],
-            last_party,
+            next_party,
             criterion[reason],
-            f'{allocation["ratio"]:.3f}' if reason == "MAX" else round(allocation["ratio"])
+            f'{allocation["ratio"]:.3f}' if allocation["ratio"] != 0 else "N/A"
         ])
 
     return headers, data
