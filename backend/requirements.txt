@@ -5,7 +5,6 @@ itsdangerous==2.0.0
 tabulate>=0.7.7
 six>=1.10.0
 Werkzeug==2.0.1
-requirements.txt
 xlsxwriter
 openpyxl>=3
 configparser
