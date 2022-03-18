@@ -51,7 +51,7 @@ def farthest_from_next(m_votes,
     next_quot = np.zeros(alloc_list.shape)
     for c in openC:
         for p in openP:
-            next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p] + 1]
+            next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p]]
 
     # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO SECOND NEXT
     allocation_sequence = []
@@ -67,10 +67,10 @@ def farthest_from_next(m_votes,
             openP.remove(maxP)
         if alloc_const[maxC] == desired_const[maxC]:
             openC.remove(maxC)
-        else:
+        else: # There is no "last_quot" for parties, that explaines this funny if-else
             # UPDATE WORK MATRICES IN CONSTITUENCY WITH MAX RATIO
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
-                                     divisors[alloc_list[maxC, maxP] + 1])
+                                     divisors[alloc_list[maxC, maxP]])
 
         # DATA FOR STEP-BY-STEP TABLE
         reason = "MAX" if max_ratio != 0 else "LAST"

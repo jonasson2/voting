@@ -46,7 +46,7 @@ def nearest_to_last(m_votes,
     ratio = np.zeros(alloc_list.shape)
     for c in openC:
         for p in openP:
-            next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p] + 1]
+            next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p]]
             ratio[c,p] = next_quot[c,p]/last_quot[c]
 
     # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO LAST
@@ -63,11 +63,11 @@ def nearest_to_last(m_votes,
             openP.remove(maxP)
         if alloc_const[maxC] == desired_const[maxC]:
             openC.remove(maxC)
-        else:
+        else: # There is no "last_quot" for parties, that explaines this funny if-else
             # UPDATE WORK MATRICES IN CONSTITUENCY WITH MAX RATIO
             last_quot[maxC] = next_quot[maxC, maxP]
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
-                                     divisors[alloc_list[maxC, maxP] + 1])
+                                     divisors[alloc_list[maxC, maxP]])
             for p in openP:
                 ratio[maxC, p] = next_quot[maxC, p]/last_quot[maxC]
 
