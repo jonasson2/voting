@@ -193,7 +193,7 @@ def terminate_old_simulations(maxminutes):
                     pardir = parallel_dir()
                     print(f'Removing temporary files {simid}...')
                     delete_tempfiles(simid)
-                except NoSuchProcess:
+                except psutil.NoSuchProcess:
                     pass
             elif sim["kind"] == 'threaded':
                 print('Terminate threaded simulation')
