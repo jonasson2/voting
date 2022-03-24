@@ -178,11 +178,12 @@ def terminate_old_simulations(maxminutes):
             print(f'simid:{simid}')
             if sim["kind"] == 'parallel':                
                 process = sim["process"]
-                print(f'Stopping children of process {process.pid}...')
                 try:
+                    print(f'Stopping children of process {process.pid}...')
+
                     parent = psutil.Process(process.pid)
                     for child in parent.children(recursive=True):
-                    child.kill()
+                        child.kill()
                     parent.kill()
                     print('Wait for parent process...')
                     try:
@@ -194,7 +195,6 @@ def terminate_old_simulations(maxminutes):
                     delete_tempfiles(simid)
                 except NoSuchProcess:
                     pass
-                
             elif sim["kind"] == 'threaded':
                 print('Terminate threaded simulation')
                 sim.terminate = True
