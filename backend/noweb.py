@@ -72,7 +72,7 @@ def run_thread_simulation(simid):
 
 def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
-    terminate_old_simulations(maxminutes = 0.2)
+    terminate_old_simulations(maxminutes = 0.5)
     parallel = sim_settings["cpu_count"] > 1
     threaded = sim_settings["cpu_count"] == 1
     simid = par_util.get_id()
