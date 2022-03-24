@@ -72,7 +72,7 @@ def run_thread_simulation(simid):
 
 def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
-    terminate_old_simulations(maxminutes = 2)
+    terminate_old_simulations(maxminutes = 0.2)
     parallel = sim_settings["cpu_count"] > 1
     threaded = sim_settings["cpu_count"] == 1
     simid = par_util.get_id()
@@ -179,18 +179,22 @@ def terminate_old_simulations(maxminutes):
             if sim["kind"] == 'parallel':                
                 process = sim["process"]
                 print(f'Stopping children of process {process.pid}...')
-                parent = psutil.Process(process.pid)
-                for child in parent.children(recursive=True):
-                    child.kill()
-                parent.kill()
-                print('Wait for parent process...')
                 try:
-                    process.wait()
-                except Exception as e:
-                    print(f'Exception: {e}')
-                pardir = parallel_dir()
-                print(f'Removing temporary files {simid}...')
-                delete_tempfiles(simid)
+                    parent = psutil.Process(process.pid)
+                    for child in parent.children(recursive=True):
+                    child.kill()
+                    parent.kill()
+                    print('Wait for parent process...')
+                    try:
+                        process.wait()
+                    except Exception as e:
+                        print(f'Exception: {e}')
+                    pardir = parallel_dir()
+                    print(f'Removing temporary files {simid}...')
+                    delete_tempfiles(simid)
+                except NoSuchProcess:
+                    pass
+                
             elif sim["kind"] == 'threaded':
                 print('Terminate threaded simulation')
                 sim.terminate = True
