@@ -394,6 +394,7 @@ def simulation_to_xlsx(sim_result, filename, parallel):
 
     #Measures
     STAT_LIST = sim_result.STAT_LIST
+    print("STAT_LIST=", STAT_LIST)
     results = sim_result.get_result_dict(parallel)
     data = results["data"]
     systems = results["systems"]

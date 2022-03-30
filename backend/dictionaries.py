@@ -63,7 +63,7 @@ def STATISTICS_HEADINGS(parallel):
         "min": "MINIMUM",
         "max": "MAXIMUM",
         "std": "STD.DEV."}
-    if not parallel:
+    if False: #not parallel:  #TODO: Fix this
         headings.update({
             "skw": "SKEWNESS",
             "kur": "KURTOSIS"})

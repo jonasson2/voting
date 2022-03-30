@@ -173,6 +173,7 @@ def delete_tempfiles(simid):
         p.unlink()
     
 def terminate_old_simulations(maxminutes):
+    return # TODO: Fix this
     for (simid,sim) in SIMULATIONS.items():
         if time.time() - sim["time"] > maxminutes*60:
             print(f'simid:{simid}')
