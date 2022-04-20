@@ -17,7 +17,7 @@ from util import disp, check_votes, load_votes_from_excel, get_cpu_counts
 from trace_util import short_traceback
 from noweb import load_votes, load_settings, single_election
 from noweb import new_simulation, check_simulation
-from noweb import simulation_to_excel
+from noweb import simulation_to_excel, create_SIMULATIONS
 
 def errormsg(message = None):
     if not message:
@@ -325,6 +325,7 @@ if __name__ == '__main__':
     app.debug = debug
     p = Pool(4)
     p.map(loop, list(range(4)))
+    create_SIMULATIONS()
     if os.environ.get("HTTPS", "") == "True":
         print('Running server using HTTPS!')
         app.run(host=host, port=port, debug=debug, ssl_context="adhoc")

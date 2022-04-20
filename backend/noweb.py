@@ -17,6 +17,10 @@ import psutil
 warnings.filterwarnings('error', category=RuntimeWarning)
 warnings.filterwarnings('error', category=UserWarning)
 
+def create_SIMULATIONS():
+    global SIMULATIONS
+    SIMULATIONS = {}
+
 def load_votes(filename):
     with open(filename,"r") as f:
         reader = csv.reader(f, skipinitialspace=True)
@@ -157,9 +161,10 @@ def check_simulation(simid, stop=False):
     if sim_result:
         parallel = kind=='parallel'
         sim_result_dict = sim_result.get_result_dict(parallel)
+        SIMULATIONS[simid]['result'] = sim_result
     else:
         sim_result_dict = {'data': []}
-    SIMULATIONS[simid]['result'] = sim_result
+    print('sim_status', sim_status)
     return sim_status, sim_result_dict
 
 def simulation_to_excel(simid, file):
@@ -201,5 +206,4 @@ def terminate_old_simulations(maxminutes):
                 sim.terminate = True
                 sim['thread'].join()
     
-SIMULATIONS = {}
-SIMULATION_IDX = 0
+#SIMULATIONS = {}
