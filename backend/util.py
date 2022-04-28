@@ -262,3 +262,11 @@ def get_cpu_counts():
         rcount *= sqrt(2)
         count = round(rcount)
     return cpu_counts
+
+def timestamp():
+    from datetime import datetime as dt
+    ts = dt.now().strftime("%H:%M:%S.%f")[:-3]
+    return ts
+
+def timestampmsg(s):
+    print(timestamp() + ": " + s)

@@ -14,6 +14,7 @@ from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
 from util import disp, check_votes, load_votes_from_excel, get_cpu_counts
+from util import timestamp, timestampmsg
 from trace_util import short_traceback
 from noweb import load_votes, load_settings, single_election
 from noweb import new_simulation, check_simulation
@@ -252,19 +253,22 @@ def api_simulate():
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)
+        print(f"{timestamp()}: started simulation {simid}")
         return jsonify({"started": True, "simid": simid})
     except ValueError as e:
         return errormsg(f"Error: {e}")
     except Exception:
-        return errormsg()        
+        return errormsg()
 
 @app.route('/api/simulate/check/', methods=['POST'])
 def api_simulate_check():
     try:
         (simid,stop) = getparam("simid", "stop")
+        print(f"{timestamp()}: checking simulation {simid[:5]}")
         (status, results) = check_simulation(simid, stop)
         if status['done'] and not results:
             raise RuntimeError('Results unavailable')
+        print(f"{timestamp()}: checked simulation {simid[:5]}, status: {status}")
         return jsonify({"status": status, "results": results})
     except Exception:
         print('CAUGHT EXCEPTION')

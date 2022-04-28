@@ -140,6 +140,7 @@ export default {
     }      
   },
   created: function() {
+    console.log(timeStamp())
     console.log("Created Simulate")
   },
   data: function() {
@@ -175,6 +176,7 @@ export default {
       window.clearInterval(this.checktimer);
     },
     checkstatus: function(stop) {
+      console.log("checking simulation:", this.simid, timeStamp())
       this.$http.post('/api/simulate/check/', {
         simid: this.simid,
         stop: stop
@@ -183,8 +185,10 @@ export default {
           this.serverError(response.body)
           this.simulation_done = true;
           window.clearInterval(this.checktimer);
+          console.log("simulation finished", timeStamp())
         } else {
           let status = response.body.status
+          console.log("simulation status:", status, timeStamp())
           this.simulation_done = status.done;
           this.current_iteration = status.iteration;
           this.total_time = status.total_time;
@@ -193,7 +197,6 @@ export default {
           if (this.results.data.length > 0) {
             console.log('results', this.results)
             this.vuedata = response.body.results.vuedata
-            console.log('data', this.results.data)
             if (status.done) {
               console.log('finish simulation')
               this.finish_simulation()
@@ -218,7 +221,7 @@ export default {
           this.finish_simulation()
           this.serverError(response.body) 
         } else {
-          console.log("simulation started")
+          console.log("simulation started", timeStamp())
           this.simid = response.body.simid
           this.simulation_done = !response.body.started
           this.checktimer = window.setInterval(this.check_simulation,
@@ -246,5 +249,11 @@ export default {
       deep: true
     }
   },  
+}
+function timeStamp(){
+  var d = new Date();
+  d = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' +
+    ('0' + d.getSeconds()).slice(-2) + '.' + ('00' + d.getMilliseconds()).slice(-3)
+    return d
 }
 </script>
