@@ -41,6 +41,10 @@ class CustomFlask(Flask):
         comment_end_string='#>',
     ))
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)    
+    
 app = CustomFlask('voting',
             template_folder=os.path.abspath('../vue-frontend/'),
             static_folder=os.path.abspath('../vue-frontend/static/'))
