@@ -1,4 +1,4 @@
-*.pyc
+g*.pyc
 *~
 *.swp
 *.docx
@@ -14,6 +14,8 @@
 /local
 /share
 /temp
+/pardir
+/__pycache__
 /sensitivity/results/
 /pip-selfcheck.json
 venv/
