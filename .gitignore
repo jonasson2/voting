@@ -14,8 +14,8 @@ g*.pyc
 /local
 /share
 /temp
-/pardir
-/__pycache__
+pardir/
+__pycache__/
 /sensitivity/results/
 /pip-selfcheck.json
 venv/
