@@ -92,7 +92,6 @@ def new_simulation(votes, systems, sim_settings):
         data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
         write_sim_settings(simid, data)
         process = par_util.start_python_command('parsim.py', simid)
-        print(f'starting parallel simulation {simid}, pid={process.pid}')
         SIMULATIONS[simid] |= {'kind':'parallel', 'process':process}
     else:
         sim = Simulation(sim_settings, systems, votes)
@@ -148,7 +147,7 @@ def check_simulation(simid, stop=False):
             sim_result = Sim_result(sim_dict)
             process = SIM['process']
             process.wait()
-            delete_tempfiles(simid)
+            #delete_tempfiles(simid)
         else:
             sim_result = None
             # raise RuntimeError('Results not available')

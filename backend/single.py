@@ -13,7 +13,7 @@ from pathlib import Path
 
 #sys_file = "default-rule.json"
 #sys_file = "2reglur.json"
-defaultfile = '10kerfi-aldarkosning.json'
+defaultfile = 'switching.json'
 
 def read_data(vote_file, json_file):
     json_file = Path(json_file).expanduser()

@@ -23,8 +23,8 @@ def switching(m_votes,
     # Allocate adjustment seats as if they were constituency seats
     m_adj_seats = []
     for c in range(len(m_prior_allocations)):
-        votes = [m_votes[c][p] if correct_adj_seats[p] > 0 else 0
-                    for p in range(len(m_votes[c]))]
+        votes = [m_votes[c][p] for p in range(len(m_votes[c]))]
+#                 if correct_adj_seats[p] > 0 else 0
         alloc, div = apportion1d(
             v_votes=votes,
             num_total_seats=v_desired_row_sums[c],
@@ -43,7 +43,7 @@ def switching(m_votes,
 
     # Transfer adjustment seats within constituencies from parties that have
     #  too many seats to parties that have too few seats, prioritized by
-    #  "sensitivity", until all parties have the correct number of seats
+    #  "ratio", until all parties have the correct number of seats
     #  or no more swaps can be made:
 
     switches = []
@@ -54,7 +54,7 @@ def switching(m_votes,
 
         over = [i for i in range(len(diff_party)) if diff_party[i] > 0]
         under = [i for i in range(len(diff_party)) if diff_party[i] < 0]
-        sensitivity = []
+        ratio_heap = []
         for i in range(len(m_votes)):
             for j in over:
                 for k in under:
@@ -67,14 +67,14 @@ def switching(m_votes,
                         k_seats = m_prior_allocations[i][k]+m_adj_seats[i][k]
                         for x in range(k_seats+1):
                             div_k = next(gen_k)
-                        s = (m_votes[i][j]/div_j) / (m_votes[i][k]/div_k)
-                        heapq.heappush(sensitivity, (s,(i,j,k)))
+                        r = (m_votes[i][j]/div_j) / (m_votes[i][k]/div_k)
+                        heapq.heappush(ratio_heap, (r,(i,j,k)))
 
-        done = len(sensitivity) == 0
+        done = len(ratio_heap) == 0
         if not done:
             # Find the constituency and pair of parties with the lowest
-            #  sensitivity, and transfer a seat:
-            s, (i, j, k) = heapq.heappop(sensitivity)
+            # ratio, and transfer a seat:
+            r, (i, j, k) = heapq.heappop(ratio_heap)
             m_adj_seats[i][j] -= 1
             m_adj_seats[i][k] += 1
             switches.append({
@@ -82,7 +82,7 @@ def switching(m_votes,
                 "from": j,
                 "to": k,
                 # "reason": "",
-                "sensitivity": s,
+                "ratio": r,
             })
 
     steps = {
@@ -94,17 +94,17 @@ def switching(m_votes,
                         for p in range(len(m_adj_seats[c]))]
                         for c in range(len(m_adj_seats))]
 
-
     return m_allocations, (steps, present_switching_sequence)
 
 
 
 def present_switching_sequence(rules, steps):
-    sup_headers = [{"text": "Discrepancy of full constituency allocation", "colspan": 4},
+    sup_headers = [{"text": "Nationally apportioned vs. full constituency allocation"
+                    ,"colspan": 4},
                     {"text": "Switching of seats", "colspan": 5}]
     headers = [
-        "Party", "Seats apportioned nationally", "All as const. seats", "Off by",
-        "Nr.", "Constituency", "From", "To", "Ratio"]
+        "Party", "Nationally apportioned", "All as const. seats", "Off by",
+        "No.", "Constituency", "From", "To", "Ratio"]
     data = []
     for party in steps["initial_allocation"]:
         data.append([
@@ -125,7 +125,7 @@ def present_switching_sequence(rules, steps):
         const_name = rules["constituencies"][switch["constituency"]]["name"]
         from_party = rules["parties"][switch["from"]]
         to_party   = rules["parties"][switch["to"]]
-        ratio      = f'{switch["sensitivity"]:.3f}'
+        ratio      = f'{switch["ratio"]:.3f}'
         if switch_number < len(steps["initial_allocation"]):
             data[switch_number-1][4] = switch_number
             data[switch_number-1][5] = const_name
