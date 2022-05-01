@@ -1,6 +1,5 @@
 import os
 from distutils.util import strtobool
-from dictionaries import SEAT_SPECIFICATION_OPTIONS
 from copy import deepcopy
 from util import disp
 def check_input(data, sections):
@@ -86,16 +85,6 @@ def check_systems(electoral_systems):
     electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
-        # option = electoral_system["seat_spec_option"]
-        # assert option in SEAT_SPECIFICATION_OPTIONS.keys(), (
-        #     f"Unexpected seat specification option encountered: {option}.")
-        # if option == "custom":
-        # We only really need to check input if option is "custom",
-        # because in case of the other options this won't be evaluated anyway,
-        # except for option "one_const", and even then,
-        # the frontend can't reach a state where that option would be corrupted.
-        # But let's just check all, to be helpful also
-        # in case POST data does not come from frontend but elsewhere.
         if "compare_with" not in electoral_system:
             electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:

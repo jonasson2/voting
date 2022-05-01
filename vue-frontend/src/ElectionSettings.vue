@@ -214,6 +214,7 @@ export default {
   ],
   created: function() {
     console.log("Creating ElectionSettings")
+    console.log(this.capabilities.systems)
   }
 }
 </script>

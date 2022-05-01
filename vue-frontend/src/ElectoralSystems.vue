@@ -251,6 +251,7 @@ export default {
       ).then(response => {
         let r = response.body
         this.capabilities = r.capabilities;
+        console.log('r.capabilities', r.capabilities)
         this.addSystem(r.election_system)
         this.updateSimSettings(r.sim_settings)
         this.$store.dispatch("recalc_sys_const")

@@ -43,8 +43,8 @@ def load_settings(f):
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
     assert type(file_content["systems"]) == list
     for item in file_content["systems"]:
-        if item["adjustment_method"] == "8-nearest-neighbor":
-            item["adjustment_method"] = "8-nearest-to-last"
+        if item["adjustment_method"] == "nearest-neighbor":
+            item["adjustment_method"] = "nearest-to-last"
         if "constituency_allocation_rule" in item:
             item["primary_divider"] = item["constituency_allocation_rule"]
         if "adjustment_division_rule" in item:
@@ -57,12 +57,12 @@ def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
     min_votes = CONSTANTS["minimum_votes"]
-    elections = ElectionHandler(votes, systems, min_votes=min_votes).elections
+    handler = ElectionHandler(votes, systems, min_votes=min_votes)
+    elections = handler.elections
     results = [election.get_result_dict() for election in elections]
     return results
 
 def run_thread_simulation(simid):
-    print('running thread-simulation')
     try:
         global SIMULATIONS
         SIM = SIMULATIONS[simid]
@@ -87,7 +87,6 @@ def new_simulation(votes, systems, sim_settings):
         thread = Thread(target=run_thread_simulation, args=(simid,))
         SIMULATIONS[simid] |= {'kind':'threaded', 'sim':sim, 'thread':thread}
         thread.start()
-        print('started thread')
     elif parallel:
         data = {'votes':votes, 'systems':systems, 'sim_settings':sim_settings}
         write_sim_settings(simid, data)
@@ -163,7 +162,6 @@ def check_simulation(simid, stop=False):
         SIMULATIONS[simid]['result'] = sim_result
     else:
         sim_result_dict = {'data': []}
-    print('sim_status', sim_status)
     return sim_status, sim_result_dict
 
 def simulation_to_excel(simid, file):

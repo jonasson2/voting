@@ -149,7 +149,6 @@ class Simulation():
                 self.terminate = monitor.monitor(tasknr, self.iteration)
             if self.terminate:
                     break
-        print(f'return from simulate {tasknr}')
         #self.analysis()
         
         # self.test_generated() --- needs to be rewritten,

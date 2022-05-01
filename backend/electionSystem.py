@@ -3,37 +3,20 @@ from copy import copy, deepcopy
 #from system import System
 #from util import load_constituencies
 from util import disp, remove_prefix
-from dictionaries import DIVIDER_RULES, QUOTA_RULES, RULE_NAMES, \
-    ADJUSTMENT_METHODS
-from dictionaries import SEAT_SPECIFICATION_OPTIONS
+from dictionaries import DIVIDER_RULES, QUOTA_RULES, ADJUSTMENT_METHODS
 class ElectionSystem(dict):
     """A set of rules for an election to follow."""
 
     def __init__(self):
-        # super(ElectionSystem, self).__init__()
-        # self.value_rules = {
-        #     "primary_divider": RULE_NAMES.keys(),
-        #     "adj_determine_divider": RULE_NAMES.keys(),
-        #     "adj_alloc_divider": DIVIDER_RULES.keys(),
-        #     "adjustment_method": ADJUSTMENT_METHODS.keys(),
-        #     "seat_spec_option": SEAT_SPECIFICATION_OPTIONS.keys(),
-        # }
-        # self.range_rules = {
-        #     "adjustment_threshold": [0, 100],
-        #     "constituency_threshold": [0, 100],
-        # }
-        # self.list_rules = [
-        #     "constituencies", "parties"
-        # ]
         self["name"] = "System"
         
         # Election systems
-        self["primary_divider"] = "1-dhondt"
-        self["adj_determine_divider"] = "1-dhondt"
-        self["adj_alloc_divider"] = "1-dhondt"
+        self["primary_divider"] = "dhondt"
+        self["adj_determine_divider"] = "dhondt"
+        self["adj_alloc_divider"] = "dhondt"
         self["adjustment_threshold"] = 5
         self["constituency_threshold"] = 0
-        self["adjustment_method"] = "1-icelandic-law"
+        self["adjustment_method"] = "icelandic-law"
         self["seat_spec_option"] = "refer"
         self["compare_with"] = False
         self["parties"] = []

@@ -2,6 +2,7 @@
 import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
+from electionHandler import ElectionHandler
 from noweb import load_votes
 from noweb import load_settings
 from noweb import single_election
@@ -46,6 +47,9 @@ def main():
     #random.seed(42)
     systemnames = [s["name"] for s in systems]
     results = single_election(votes, systems)
+    handler = ElectionHandler(votes, systems)
+    handler.to_xlsx("single.xlsx")
+
     print('results=', results)
 
 if __name__ == "__main__":

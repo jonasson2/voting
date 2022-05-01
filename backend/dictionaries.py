@@ -29,32 +29,60 @@ CONSTANTS = {
 }
 
 DIVIDER_RULES = {
-    "1-dhondt": dhondt_gen,
-    "2-sainte-lague": sainte_lague_gen,
-    "3-nordic": nordic_sainte_lague_gen,
+    "dhondt": dhondt_gen,
+    "sainte-lague": sainte_lague_gen,
+    "nordic": nordic_sainte_lague_gen,
     # "imperiali": imperiali_gen,
-    "4-danish": danish_gen,
-    "5-huntington-hill": huntington_hill_gen,
+    "danish": danish_gen,
+    "huntington-hill": huntington_hill_gen,
 }
-DIVIDER_RULE_NAMES = {
-    "1-dhondt": "D'Hondt",
-    "2-sainte-lague": "Sainte-Laguë",
-    "3-nordic": "Nordic Sainte-Laguë variant",
-    "4-danish": "Danish",
-    "5-huntington-hill": "Huntington-Hill",
-}
+DIVIDER_RULE_NAMES = [
+    {"value": "dhondt",          "text": "D'Hondt"},
+    {"value": "sainte-lague",    "text": "Sainte-Laguë"},
+    {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
+    {"value": "danish",          "text": "Danish"},
+    {"value": "huntington-hill", "text": "Huntington-Hill"},
+]
+RULE_NAMES = [
+    {"value": "dhondt",          "text": "D'Hondt"},
+    {"value": "sainte-lague",    "text": "Sainte-Laguë"},
+    {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
+    {"value": "danish",          "text": "Danish"},
+    {"value": "huntington-hill", "text": "Huntington-Hill"},
+    {"value": "hare",            "text": "Hare quota"},
+    {"value": "droop",           "text": "Droop quota"},
+]
+ADJUSTMENT_METHOD_NAMES = [
+    {"value": "icelandic-law", "text": "Icelandic law 112/2021"},
+    {"value": "ice-shares",    "text": "Icelandic law based on constituency seat shares"},
+    {"value": "norwegian-law", "text": "Norwegian law 20/2002"},
+    {"value": "norwegian-icelandic",  "text": "Maximum constituency seat share"},
+    {"value": "pure-vote-ratios",     "text": "Maximum constituency vote percentage"},
+    {"value": "relative-superiority", "text": "Relative superiority"},
+    {"value": "relative-sup-simple",  "text": "Relative superiority, simplified"},
+    {"value": "nearest-to-last",      "text": "Nearest-to-last"},
+    {"value": "farthest-from-next",   "text": "Farthest-from-next"},
+    # "monge", "text":                "Monge"},
+    {"value": "switching",            "text": "Switching of seats"},
+    {"value": "alternating-scaling",  "text": "Optimal divisor method"},
+]
+SEAT_SPECIFICATION_OPTIONS = [
+    {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
+    {"value": "custom",         "text": "Specify seat numbers by changing individual values"},
+    {"value": "make_all_const", "text": "Make all seats constituency seats"},
+    {"value": "make_all_adj",   "text": "Make all seats adjustment seats"},
+    {"value": "one_const",      "text": "Combine all constituencies into one"},
+]
+
+GENERATING_METHOD_NAMES = [
+    {"value": "gamma",   "text": "Gamma distribution"},
+    {"value": "beta",    "text": "Symmetric beta distribution"},
+    {"value": "uniform", "text": "Uniform distribution"},
+]
+
 QUOTA_RULES = {
-    "6-hare": hare,
-    "7-droop": droop,
-}
-RULE_NAMES = {
-    "1-dhondt":          "D'Hondt",
-    "2-sainte-lague":    "Sainte-Laguë",
-    "3-nordic":          "Nordic Sainte-Laguë variant",
-    "4-danish":          "Danish",
-    "5-huntington-hill": "Huntington-Hill",
-    "6-hare":            "Hare quota",
-    "7-droop":           "Droop quota",
+    "hare": hare,
+    "droop": droop,
 }
 
 def STATISTICS_HEADINGS(parallel):
@@ -70,53 +98,25 @@ def STATISTICS_HEADINGS(parallel):
     return headings
 
 ADJUSTMENT_METHODS = {
-    "1-icelandic-law": icelandic_apportionment,
-    "2-ice-shares": icelandic_share_apportionment,
-    "3-norwegian-law": norwegian_apportionment,
-    "4-norwegian-icelandic": norw_ice_apportionment,
-    "5-pure-vote-ratios": pure_vote_ratios_apportionment,
-    "6-relative-superiority": relative_superiority,
-    "7-relative-sup-simple": relative_superiority_simple,
-    "8-nearest-to-last": nearest_to_last,
-    "9-farthest-from-next": farthest_from_next,
-    # "9-monge": monge,
+    "icelandic-law": icelandic_apportionment,
+    "ice-shares": icelandic_share_apportionment,
+    "norwegian-law": norwegian_apportionment,
+    "norwegian-icelandic": norw_ice_apportionment,
+    "pure-vote-ratios": pure_vote_ratios_apportionment,
+    "relative-superiority": relative_superiority,
+    "relative-sup-simple": relative_superiority_simple,
+    "nearest-to-last": nearest_to_last,
+    "farthest-from-next": farthest_from_next,
+    # "monge": monge,
     # "opt-entropy": opt_entropy,
-    "A-switching": switching,
-    "B-alternating-scaling": alt_scaling,
-}
-ADJUSTMENT_METHOD_NAMES = {
-    "1-icelandic-law":        "Icelandic law 112/2021",
-    "2-ice-shares":           "Icelandic law based on constituency seat shares",
-    "3-norwegian-law":        "Norwegian law 20/2002",
-    "4-norwegian-icelandic":  "Maximum constituency seat share",
-    "5-pure-vote-ratios":     "Maximum constituency vote percentage",
-    "6-relative-superiority": "Relative superiority",
-    "7-relative-sup-simple":  "Relative superiority, simplified",
-    "8-nearest-to-last":      "Nearest-to-last",
-    "9-farthest-from-next":   "Farthest-from-next",
-    # "9-monge":                "Monge",
-    "A-switching":            "Switching of seats",
-    "B-alternating-scaling":  "Optimal divisor method",
+    "switching": switching,
+    "alternating-scaling": alt_scaling,
 }
 
 GENERATING_METHODS = {
     "gamma": gamma_distribution,
     "beta": symmetric_beta_distribution,
     "uniform": uniform_distribution
-}
-
-GENERATING_METHOD_NAMES = [
-    {"value": "gamma",     "text": "Gamma distribution"},
-    {"value": "beta",      "text": "Symmetric beta distribution"},
-    {"value": "uniform",   "text": "Uniform distribution"},
-]
-
-SEAT_SPECIFICATION_OPTIONS = {
-    "refer":          'Use values from "Source votes and seats" tab',
-    "custom":         "Specify seat numbers by changing individual values",
-    "make_all_const": "Make all seats constituency seats",
-    "make_all_adj":   "Make all seats adjustment seats",
-    "one_const":      "Combine all constituencies into one",
 }
 
 # MEASURES = {

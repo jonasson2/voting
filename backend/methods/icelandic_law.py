@@ -118,7 +118,8 @@ def print_seats(rules, allocation_sequence):
             rules["parties"][allocation["party"]],
             allocation["reason"],
             round(allocation["country_num"], 1),
-            "{:.3%}".format(allocation["list_share"])
+            allocation["list_share"]
+            #"{:.3%}".format(allocation["list_share"])
         ])
 
     return header, data

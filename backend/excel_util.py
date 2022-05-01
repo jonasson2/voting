@@ -1,14 +1,17 @@
-
 import xlsxwriter
 from datetime import datetime
 from measure_groups import MeasureGroups
 from util import disp
 
 from table_util import m_subtract, add_totals, find_xtd_shares
-from dictionaries import ADJUSTMENT_METHOD_NAMES as AMN, \
-                         RULE_NAMES as DRN, \
-                         GENERATING_METHOD_NAMES as GMN, \
+from dictionaries import ADJUSTMENT_METHOD_NAMES, \
+                         RULE_NAMES, \
+                         GENERATING_METHOD_NAMES, \
                          STATISTICS_HEADINGS as STH
+
+AMN = {amn["value"]: amn["text"] for amn in ADJUSTMENT_METHOD_NAMES}
+DRN = {rn["value"]: rn["text"] for rn in RULE_NAMES}
+GMN = {gmn["value"]: gmn["text"] for gmn in GENERATING_METHOD_NAMES}
 
 def prepare_formats(workbook):
     formats = {}
@@ -69,6 +72,11 @@ def prepare_formats(workbook):
     formats["step"] = workbook.add_format()
     formats["step"].set_text_wrap()
     formats["step"].set_align('center')
+    #
+    formats["quot"] = workbook.add_format()
+    formats["quot"].set_text_wrap()
+    formats["quot"].set_align('center')
+    formats["quot"].set_num_format('#0.000%')
 
     formats["inter_h"] = workbook.add_format()
     formats["inter_h"].set_align('left')
@@ -266,17 +274,18 @@ def elections_to_xlsx(elections, filename):
                     sh["text"], fmt["h_center"]
                 )
                 startcoltemp += sh["colspan"]
-            toprow += 1
+                toprow += 1
         except KeyError:
             None
 
+        print('fmt_h:', fmt["step_h"])
         worksheet.write_row(toprow, startcol, h, fmt["step_h"])
         toprow += 1
         for i in range(len(data)):
+            print(i, 'fmt:', fmt["step"])
             worksheet.write_row(toprow, startcol, data[i], fmt["step"])
             toprow += 1
-        toprow += 1
-
+            toprow += 1
         col = startcol
         draw_block(worksheet, row=toprow, col=col,
             heading="Adjustment seats", xheaders=parties, yheaders=const_names,

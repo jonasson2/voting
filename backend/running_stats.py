@@ -88,6 +88,6 @@ class Running_stats:
 #
 # Ling, Robert F. (1974). Comparison of Several Algorithms for Computing Sample
 # Means and Variances. Journal of the American Statistical Association, Vol. 69,
-# No. 348, 859-866.
+# No. 348, 85866.
 #
 # Donald Knuth, Art of Computer Programming, Vol 2, page 232, 3rd edition
