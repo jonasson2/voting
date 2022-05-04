@@ -54,10 +54,10 @@ def relative_inferiority(m_votes, v_desired_row_sums, v_desired_col_sums,
             "min": least,
         })
 
-    return m_allocations, (allocation_sequence, present_allocation_sequence)
+    return m_allocations, (allocation_sequence, print_demo_table)
 
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
         "Criteria", "Inferiority"]
     data = []
@@ -73,4 +73,4 @@ def present_allocation_sequence(rules, allocation_sequence):
             f'{allocation["min"]:.3f}'
         ])
 
-    return headers, data
+    return headers, data, None

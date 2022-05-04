@@ -28,6 +28,20 @@ def load_votes(filename):
     result = check_votes(lines, filename)
     return result
 
+def correct_deprecated(L):
+    # Remove 1-, 2- etc. from deprecated values in L["systems"]
+    import re
+    deprec_list = [
+        "adj_alloc_divider",          "adj_determine_divider",
+        "adjustment_allocation_rule", "adjustment_division_rule",
+        "adjustment_method",          "constituency_allocation_rule",
+        "name",                       "primary_divider"]
+    for deprec in deprec_list:
+        for sys in L["systems"]:
+            if deprec in sys:
+                sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
+    return L
+
 def load_settings(f):
     # returns systems and sim_settings from json-file f
     if isinstance(f,Path) or isinstance(f,str):
@@ -44,13 +58,14 @@ def load_settings(f):
     assert type(file_content["systems"]) == list
     for item in file_content["systems"]:
         if item["adjustment_method"] == "nearest-neighbor":
-            item["adjustment_method"] = "nearest-to-last"
+            item["adjustment_method"] = "nearest-to-previous"
         if "constituency_allocation_rule" in item:
             item["primary_divider"] = item["constituency_allocation_rule"]
         if "adjustment_division_rule" in item:
             item["adj_determine_divider"] = item["adjustment_division_rule"]
         if "adjustment_allocation_rule" in item:
             item["adj_alloc_divider"] = item["adjustment_allocation_rule"]
+    file_content = correct_deprecated(file_content)
     return file_content
 
 def single_election(votes, systems):
@@ -60,6 +75,7 @@ def single_election(votes, systems):
     handler = ElectionHandler(votes, systems, min_votes=min_votes)
     elections = handler.elections
     results = [election.get_result_dict() for election in elections]
+    disp('results', results)
     return results
 
 def run_thread_simulation(simid):

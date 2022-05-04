@@ -9,11 +9,11 @@ from apportion import apportion1d_general, \
     threshold_elimination_totals, threshold_elimination_constituencies
 from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
-from dictionaries import CONSTANTS
+from dictionaries import CONSTANTS, DEMO_TABLE_FORMATS
 import traceback as tb
 from util import disp, subtract_m
 from copy import deepcopy
-from methods.nearest_to_last import nearest_to_last
+from methods.nearest_to_previous import nearest_to_previous
 
 def display_seats(totSeats, adjSeats):
     if adjSeats > 0:
@@ -70,7 +70,7 @@ class Election:
         return {
             "voteless_seats": self.voteless_seats(),
             "seat_allocations": add_totals(self.results),
-            "step_by_step_demonstration": self.demonstration_table,
+            "demo_tables": self.demo_tables,
             "display_results": self.display_results()
         }
 
@@ -176,26 +176,25 @@ class Election:
             )
         return self.v_desired_col_sums
 
-    def set_forced_reasons(self):
-        demoTable = self.demonstration_table
-        if "Criteria" not in demoTable["headers"]:
-            return
-        criteria_idx = demoTable["headers"].index("Criteria")
-        for row in demoTable["steps"]:
-            (constituency, party) = row[1:3]
-            const = [c["name"] for c in self.system["constituencies"]]
-            parties = self.system["parties"]
-            constIdx = const.index(constituency)
-            partyIdx = parties.index(party)
-            if self.m_votes[constIdx][partyIdx] < 1:
-                row[criteria_idx] = "Forced allocation"
+    def set_forced_reasons(self, demoTable):
+        if "Criteria" in demoTable["headers"]:
+            criteria_idx = demoTable["headers"].index("Criteria")
+            for row in demoTable["steps"]:
+                (constituency, party) = row[1:3]
+                const = [c["name"] for c in self.system["constituencies"]]
+                parties = self.system["parties"]
+                constIdx = const.index(constituency)
+                partyIdx = parties.index(party)
+                if self.m_votes[constIdx][partyIdx] < 1:
+                    row[criteria_idx] = "Forced allocation"
+        return demoTable
 
     def run_adjustment_apportionment(self):
         """Conduct adjustment seat apportionment."""
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        self.results, self.adj_seats_info = method (
+        self.results, self.demo_table_info = method (
                 m_votes             = self.m_votes_eliminated,
                 v_desired_row_sums  = self.v_desired_row_sums,
                 v_desired_col_sums  = self.v_desired_col_sums,
@@ -206,25 +205,26 @@ class Election:
                 orig_votes          = self.m_votes,
                 v_const_seats       = [con["num_const_seats"] for con in consts],
                 last                = self.last
-                                    #for nearest_neighbor and relative_inferiority
             )
         self.m_adj_seats = subtract_m(self.results, self.m_const_seats)
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]
         self.adj_dev = sum(devs)
 
-        if self.adj_seats_info is not None:
-            allocation_sequence, present = self.adj_seats_info
-            try:
-                headers, steps = present(self.system, allocation_sequence)
-                self.demonstration_table = {"headers": headers, "steps": steps}
-            except ValueError:
-                headers, steps, sup_headers = present(self.system, allocation_sequence)
-                self.demonstration_table = {"headers": headers, "steps": steps, "sup_headers": sup_headers}
-            self.set_forced_reasons()
-        else:
-            self.demonstration_table = {"headers": ["Not available"],
-                                        "steps": []}
+        alloc_sequence = self.demo_table_info[0]
+        self.demo_tables = []
+        format = DEMO_TABLE_FORMATS[self.system["adjustment_method"]]
+        format = [format] if len(self.demo_table_info) == 2 else format
+        for i, print_demo_table in enumerate(self.demo_table_info[1:]):
+            headers, steps, sup_header = print_demo_table(self.system, alloc_sequence)
+            demo_table = {
+                "headers": headers,
+                "steps": steps,
+                "sup_header": sup_header,
+                "format": format[i],
+            }
+            demo_table = self.set_forced_reasons(demo_table)
+            self.demo_tables.append(demo_table)
 
     def calculate_ideal_seats(self, scaling):
         scalar = float(self.total_seats)/sum(sum(x) for x in self.m_votes)

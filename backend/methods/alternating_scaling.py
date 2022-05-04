@@ -35,5 +35,7 @@ def alt_scaling(m_votes,
             v[:,j] = v[:,j]*sigma
         if np.array_equal(x, y):
             break
-    return x.tolist(), None
+    return x.tolist(), ([], print_demo_table)
 
+def print_demo_table(rules, allocation_sequence):
+    return [], [], None

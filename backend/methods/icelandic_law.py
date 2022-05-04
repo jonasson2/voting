@@ -101,25 +101,23 @@ def icelandic_apportionment(
             })
         else:
             invalid.append(idx)
-    return m_allocations, (seats_info, print_seats)
+    return m_allocations, (seats_info, print_demo_table)
 
-
-def print_seats(rules, allocation_sequence):
-    # Return data to print breakdown of adjustment seat apportionment
-    header = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "i) National vote quotient", "ii) Quotient of list votes as perc."]
-    data = []
+def print_demo_table(rules, allocation_sequence):
+    # Return data_table with breakdown of adjustment seat apportionment
+    headers = ["Adj. seat #", "Constituency", "Party",
+        "Criteria", "i) National vote quotient", "ii) Quotient of list votes"]
+    demo_table = []
     seat_number = 0
     for allocation in allocation_sequence:
         seat_number += 1
-        data.append([
+        demo_table.append([
             seat_number,
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
             round(allocation["country_num"], 1),
             allocation["list_share"]
-            #"{:.3%}".format(allocation["list_share"])
         ])
 
-    return header, data
+    return headers, demo_table, None

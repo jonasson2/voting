@@ -50,10 +50,10 @@ def norw_ice_apportionment(m_votes,
             "max": maximum,
         })
 
-    return m_allocations, (allocation_sequence, present_allocation_sequence)
+    return m_allocations, (allocation_sequence, print_demo_table)
 
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
         "Criteria", "Seat share quotient"]
     data = []
@@ -66,7 +66,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            f'{allocation["max"]:.3f}'
+            allocation["max"]
         ])
 
-    return headers, data
+    return headers, data, None

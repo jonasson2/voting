@@ -94,17 +94,11 @@ def switching(m_votes,
                         for p in range(len(m_adj_seats[c]))]
                         for c in range(len(m_adj_seats))]
 
-    return m_allocations, (steps, present_switching_sequence)
+    return m_allocations, (steps, print_demo_table1, print_demo_table2)
 
-
-
-def present_switching_sequence(rules, steps):
-    sup_headers = [{"text": "Nationally apportioned vs. full constituency allocation"
-                    ,"colspan": 4},
-                    {"text": "Switching of seats", "colspan": 5}]
-    headers = [
-        "Party", "Nationally apportioned", "All as const. seats", "Off by",
-        "No.", "Constituency", "From", "To", "Ratio"]
+def print_demo_table1(rules, steps):
+    sup_header = "Nationally apportioned vs. full constituency allocation"
+    headers = ["Party", "Nationally apportioned", "All as const. seats", "Off by"]
     data = []
     for party in steps["initial_allocation"]:
         data.append([
@@ -112,13 +106,14 @@ def present_switching_sequence(rules, steps):
             party["goal"],
             party["actual"],
             party["actual"] - party["goal"],
-            "",
-            "",
-            "",
-            "",
-            "",
         ])
 
+    return headers, data, sup_header 
+
+def print_demo_table2(rules, steps):
+    sup_header = "Switching of seats"
+    headers = ["No.", "Constituency", "From", "To", "Min ratio"]
+    data = []
     switch_number = 0
     for switch in steps["switches"]:
         switch_number += 1
@@ -126,23 +121,12 @@ def present_switching_sequence(rules, steps):
         from_party = rules["parties"][switch["from"]]
         to_party   = rules["parties"][switch["to"]]
         ratio      = f'{switch["ratio"]:.3f}'
-        if switch_number < len(steps["initial_allocation"]):
-            data[switch_number-1][4] = switch_number
-            data[switch_number-1][5] = const_name
-            data[switch_number-1][6] = from_party
-            data[switch_number-1][7] = to_party
-            data[switch_number-1][8] = ratio
-        else:
-            data.append([
-                "",
-                "",
-                "",
-                "",
-                switch_number,
-                const_name,
-                from_party,
-                to_party,
-                ratio,
-            ])
+        data.append([
+            switch_number,
+            const_name,
+            from_party,
+            to_party,
+            ratio,
+        ])
 
-    return headers, data, sup_headers
+    return headers, data, sup_header 

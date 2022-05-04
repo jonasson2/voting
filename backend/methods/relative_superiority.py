@@ -121,10 +121,10 @@ def relative_superiority(m_votes,
         m_allocations[const][party] += 1
         allocation_sequence.append(first)
 
-    return m_allocations, (allocation_sequence, present_allocation_sequence)
+    return m_allocations, (allocation_sequence, print_demo_table)
 
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
         "Criteria", "Superiority"]
     data = []
@@ -142,4 +142,4 @@ def present_allocation_sequence(rules, allocation_sequence):
             superiority,
         ])
 
-    return headers, data
+    return headers, data, None

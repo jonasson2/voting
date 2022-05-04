@@ -77,14 +77,14 @@ def farthest_from_next(m_votes,
         allocation = {"constituency": maxC, "party": maxP, "nextParty": nextP,
                       "ratio": max_ratio, "reason": reason}
         allocation_sequence.append(allocation)
-    return alloc_list.tolist(), (allocation_sequence, present_allocation_sequence)
+    return alloc_list.tolist(), (allocation_sequence, print_demo_table)
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
     headers = ["Adj. seat #", "Constituency", "Next party", "Second next party",
-               "Criteria", "Ratio"]
+               "Criteria", "Max ratio"]
     criterion = {}
-    criterion["MAX"] = "Max ratio of next to second next quotient of list vote"
+    criterion["MAX"] = "Max ratio of next to next-but-one list vote quotients"
     criterion["LAST"] = "Last list"
     data = []
     for (seat_number, allocation) in enumerate(allocation_sequence):
@@ -97,7 +97,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["parties"][allocation["party"]],
             next_party,
             criterion[reason],
-            f'{allocation["ratio"]:.3f}' if allocation["ratio"] != 0 else "N/A"
+            allocation["ratio"] if allocation["ratio"] != 0 else "N/A"
         ])
 
-    return headers, data
+    return headers, data, None

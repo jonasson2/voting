@@ -1,6 +1,6 @@
 <template>
 <div v-if="results.length > 0">
-  <h3>Results based on "Source votes and seats"</h3>
+  <h3>Results based on the source votes</h3>
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"
@@ -42,9 +42,18 @@
           <b-row>
             <br>
             <h4>Allocation of adjustment seats step-by-step</h4>
-            <ResultDemonstration
-              :table="results[activeTabIndex].step_by_step_demonstration">
-            </ResultDemonstration>
+          </b-row>
+          <b-row>
+            <b-col>
+              <ResultDemonstration
+                :table="results[activeTabIndex].demo_tables[0]">
+              </ResultDemonstration>
+            </b-col>
+            <b-col v-if="results[activeTabIndex].demo_tables.length > 1">
+              <ResultDemonstration
+                :table="results[activeTabIndex].demo_tables[1]">
+              </ResultDemonstration>
+            </b-col>
           </b-row>
         </b-container>
       </template>

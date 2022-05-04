@@ -49,7 +49,7 @@ def monge(
         #allocate seat based on best Monge ratio
         allocations[best["constituency"]][best["party"]] += 1
         allocation_sequence.append(best)
-    return allocations, (allocation_sequence, print_seats)
+    return allocations, (allocation_sequence, print_demo_table)
 
 def find_trivial_seats(allocations, p_goals, c_goals):
     num_constituencies = len(allocations)
@@ -227,7 +227,7 @@ def seats_still_available(C, P, c_goals, p_goals, allocations):
     p_left = p_unclaimed(P, p_goals, allocations)
     return min(c_left, p_left)
 
-def print_seats(rules, adj_seats_info):
+def print_demo_table(rules, adj_seats_info):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party", "Criteria",
         "Closest competitor constituency", "Closest competitor party",

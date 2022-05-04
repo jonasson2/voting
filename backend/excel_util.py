@@ -33,8 +33,12 @@ def prepare_formats(workbook):
     formats["share"] = workbook.add_format()
     formats["share"].set_num_format('0.0%')
 
+    formats["left-pct1"] = workbook.add_format()
+    formats["left-pct1"].set_num_format('0.0%')
+    formats["left-pct1"].set_align('left')
+
     formats["threshold"] = workbook.add_format()
-    formats["threshold"].set_num_format('0%')
+    formats["threshold"].set_num_format('0.0%')
     formats["threshold"].set_align('center')
 
     formats["h"] = workbook.add_format()
@@ -66,17 +70,12 @@ def prepare_formats(workbook):
 
     formats["step_h"] = workbook.add_format()
     formats["step_h"].set_bold()
-    formats["step_h"].set_text_wrap()
+    #formats["step_h"].set_text_wrap()
     formats["step_h"].set_align('center')
 
-    formats["step"] = workbook.add_format()
-    formats["step"].set_text_wrap()
-    formats["step"].set_align('center')
-    #
-    formats["quot"] = workbook.add_format()
-    formats["quot"].set_text_wrap()
-    formats["quot"].set_align('center')
-    formats["quot"].set_num_format('#0.000%')
+    #formats["step"] = workbook.add_format()
+    #formats["step"].set_text_wrap()
+    #formats["step"].set_align('center')
 
     formats["inter_h"] = workbook.add_format()
     formats["inter_h"].set_align('left')
@@ -90,9 +89,30 @@ def prepare_formats(workbook):
     formats["sim"] = workbook.add_format()
     formats["sim"].set_num_format('#,##0.000')
 
+    formats["c"] = workbook.add_format()
+    #formats["c"].set_text_wrap()
+    formats["c"].set_align('center')
+
+    formats["l"] = workbook.add_format()
+    #formats["l"].set_text_wrap()
+    formats["l"].set_align('left')
+    
+    formats["1"] = workbook.add_format()
+    formats["1"].set_align('center')
+    formats["1"].set_num_format('#,##0.0')
+    
+    formats["3"] = workbook.add_format()
+    formats["3"].set_align('center')
+    formats["3"].set_num_format('#,##0.000')
+
+    formats["%"] = workbook.add_format()
+    formats["%"].set_align('center')
+    formats["%"].set_num_format('#,##0.000%')
+    
     return formats
 
-def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False, totalsformat = None, zeroesformat = None):
+def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False,
+                 totalsformat = None, zeroesformat = None):
     for c in range(len(matrix)):
         if totalsformat is not None:
             for p in range(len(matrix[c])-1):
@@ -123,6 +143,49 @@ def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=
                             worksheet.write(startrow+c, startcol+p, matrix[c][p],
                                         cformat)
 
+def cell_width(x, fmt):
+    if isinstance(x,str):
+        n = len(x)
+    elif fmt == '1':
+        n = len(f'{x:,.1f}')
+    elif fmt == '3':
+        n = len(f'{x:,.3f}')
+    elif fmt == '%':
+        n = len(f'{x:,.3%}')
+    elif fmt == 'c':
+        n = len(f'{x:d}')
+    else:
+        n = 10
+    return n
+
+def demo_table_to_xlsx(
+        worksheet,
+        row,
+        col,
+        fmt,
+        demo_table
+):
+    headers = demo_table["headers"]
+    steps = demo_table["steps"]
+    row += 1
+    if demo_table["sup_header"]:
+        worksheet.write(row, col, demo_table["sup_header"], fmt["h"])
+        row += 1
+    worksheet.write_row(row, col, headers, fmt["step_h"])
+    width = [len(h) for h in headers]
+    row += 1
+    for i in range(len(steps)):
+        for j,(stp,f) in enumerate(zip(steps[i], demo_table["format"])):
+            if isinstance(stp, str):
+                stp = stp.replace('\n', ',  ')
+            width[j] = max(width[j], cell_width(stp, f))
+            worksheet.write(row, col + j, stp, fmt[f])
+        row += 1
+    for j in range(len(headers)):
+        worksheet.set_column(col + j, col + j, round(1 + width[j]*0.75))
+    col += len(headers) + 1
+    return row, col
+
 def elections_to_xlsx(elections, filename):
     """Write detailed information about an election with a single vote table
     but multiple electoral systems, to an xlsx file.
@@ -138,19 +201,19 @@ def elections_to_xlsx(elections, filename):
     ):
         if heading.endswith("shares"):
             cformat = fmt["share"]
-        worksheet.merge_range(
-            row, col, row, col+len(xheaders), heading, fmt["h"])
+        worksheet.write(row, col, heading, fmt["h"])
         worksheet.write(row+1, col, topleft, fmt["basic"])
         worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
         worksheet.write_column(row+2, col, yheaders, fmt["basic"])
         write_matrix(worksheet, row+2, col+1, matrix, cformat)
+        return row + len(matrix) + 3
 
     for r in range(len(elections)):
         election = elections[r]
         system = election.system
         sheet_name = f'{r+1}-{system["name"]}'
         worksheet = workbook.add_worksheet(sheet_name[:31])
-        worksheet.set_column(0,0, 30)
+        worksheet.set_column(0, 0, 31)
         const_names = [
             const["name"] for const in system["constituencies"]
         ] + ["Total"]
@@ -164,55 +227,56 @@ def elections_to_xlsx(elections, filename):
         threshold = 0.01*election.system["adjustment_threshold"]
         xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
         xtd_final_shares = find_xtd_shares([xtd_final_votes])[0]
-
-        date_label = "Date:"
-        info_groups = [
-            {"left_span": 1, "right_span": 2, "info": [
-                {"label": date_label,
-                    "data": datetime.now()},
-                {"label": "Vote table:",
-                    "data": election.name},
-                {"label": "Electoral system:",
-                    "data": system["name"]},
-            ]},
-            {"left_span": 4, "right_span": 2, "info": [
-                {"label": "Rule for allocating constituency seats:",
-                    "data": DRN[system["primary_divider"]]},
-                {"label": "Threshold for constituency seats:",
-                    "data": system["constituency_threshold"]},
-                {"label": "Rule for apportioning adjustment seats:",
-                    "data": DRN[system["adj_determine_divider"]]},
-                {"label": "Threshold for apportioning adjustment seats:",
-                    "data": system["adjustment_threshold"]},
-                {"label": "Rule for allocating adjustment seats:",
-                    "data": DRN[system["adj_alloc_divider"]]},
-                {"label": "Method for allocating adjustment seats:",
-                    "data": AMN[system["adjustment_method"]]}
-            ]},
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        info = [
+            ["Date:",
+             now,
+             "basic"
+             ],
+            ["Vote table:",
+             election.name,
+             "basic"
+             ],
+            ["Electoral system:",
+             system["name"],
+             "basic"],
+            ["Rule for allocating constituency seats:",
+             DRN[system["primary_divider"]],
+             "basic"
+             ],
+            ["Threshold for constituency seats:",
+             system["constituency_threshold"]/100,
+             "left-pct1"
+             ],
+            ["Rule for apportioning adjustment seats:",
+             DRN[system["adj_determine_divider"]],
+             "basic"
+             ],
+            ["Threshold for adjustment seats:",
+             system["adjustment_threshold"]/100,
+             "left-pct1"
+             ],
+            ["Rule for allocating adjustment seats:",
+             DRN[system["adj_alloc_divider"]],
+             "basic"
+             ],
+            ["Method for allocating adjustment seats:",
+             AMN[system["adjustment_method"]],
+             "basic"
+             ]
         ]
 
-        toprow = 0
-        startcol = 0
-        bottomrow = toprow
-        c1=startcol
+        row = 0
+        col = 0
         #Basic info
-        for group in info_groups:
-            row = toprow
-            c2 = c1 + group["left_span"]
-            for info in group["info"]:
-                if group["left_span"] == 1:
-                    worksheet.write(row,c1,info["label"],fmt["basic_h"])
-                else:
-                    worksheet.merge_range(row,c1,row,c2-1,info["label"],fmt["basic_h"])
-                if info["label"] == date_label:
-                    worksheet.write(row,c2,info["data"],fmt["time"])
-                else:
-                    worksheet.write(row,c2,info["data"],fmt["basic"])
-                row += 1
-            bottomrow = max(row, bottomrow)
-            c1 = c2 + group["right_span"]
+        for group in info:
+            (title,item,f) = group
+            worksheet.write(row, col, title, fmt["basic_h"])
+            worksheet.write(row, col+1, item, fmt[f])
+            row += 1
+        row += 1
 
-        draw_block(worksheet, row=toprow, col=c1+1,
+        row = draw_block(worksheet, row=row, col=col,
             heading="Required number of seats",
             xheaders=["Const.", "Adj.", "Total"],
             yheaders=const_names,
@@ -222,26 +286,21 @@ def elections_to_xlsx(elections, filename):
             ]),
             cformat=fmt["base"]
         )
-        bottomrow = max(2+len(const_names), bottomrow)
-        toprow = bottomrow+2
 
-        col = startcol
-        draw_block(worksheet, row=toprow, col=col,
+        row = draw_block(worksheet, row=row, col=col,
             heading="Votes", xheaders=parties, yheaders=const_names,
             matrix=xtd_votes, cformat=fmt["base"]
         )
-        col += len(parties)+2
-        draw_block(worksheet, row=toprow, col=col,
+
+        row = draw_block(worksheet, row=row, col=col,
             heading="Vote percentages", xheaders=parties, yheaders=const_names,
             matrix=xtd_shares
         )
-        toprow += len(const_names)+3
-        col = startcol
-        draw_block(worksheet, row=toprow, col=col,
+
+        row = draw_block(worksheet, row=row, col=col,
             heading="Constituency seats", xheaders=parties, yheaders=const_names,
             matrix=xtd_const_seats, cformat=fmt["base"]
         )
-        toprow += len(const_names)+3
 
         row_headers = ['Total votes', 'Vote shares', 'Threshold',
                        'Votes above threshold',
@@ -250,62 +309,43 @@ def elections_to_xlsx(elections, filename):
                   xtd_final_votes, xtd_final_shares, xtd_const_seats[-1]]
         formats = [fmt["base"], fmt["share"], fmt["share"],
                    fmt["base"], fmt["share"], fmt["base"]]
-        draw_block(worksheet, row=toprow, col=startcol,
+        row = draw_block(worksheet, row=row, col=col,
             heading="Adjustment seat apportionment", topleft="Party",
             xheaders=parties, yheaders=row_headers,
             matrix=matrix, cformat=formats
         )
-        toprow += len(row_headers)+3
 
-        h = election.demonstration_table["headers"]
-        data = election.demonstration_table["steps"]
-        worksheet.merge_range(
-            toprow, startcol,
-            toprow, startcol+len(parties),
-            "Allocation of adjustment seats step-by-step", fmt["h"]
-        )
-        toprow += 1
-        try:
-            startcoltemp = startcol
-            for sh in election.demonstration_table["sup_headers"]:
-                worksheet.merge_range(
-                    toprow, startcoltemp,
-                    toprow, startcoltemp + sh["colspan"] - 1,
-                    sh["text"], fmt["h_center"]
-                )
-                startcoltemp += sh["colspan"]
-                toprow += 1
-        except KeyError:
-            None
-
-        print('fmt_h:', fmt["step_h"])
-        worksheet.write_row(toprow, startcol, h, fmt["step_h"])
-        toprow += 1
-        for i in range(len(data)):
-            print(i, 'fmt:', fmt["step"])
-            worksheet.write_row(toprow, startcol, data[i], fmt["step"])
-            toprow += 1
-            toprow += 1
-        col = startcol
-        draw_block(worksheet, row=toprow, col=col,
+        row = draw_block(worksheet, row=row, col=col,
             heading="Adjustment seats", xheaders=parties, yheaders=const_names,
             matrix=xtd_adj_seats, cformat=fmt["base"]
         )
-        toprow += len(const_names)+3
-        draw_block(worksheet, row=toprow, col=col,
+
+        row = draw_block(worksheet, row=row, col=col,
             heading="Total seats", xheaders=parties, yheaders=const_names,
             matrix=xtd_total_seats, cformat=fmt["base"]
         )
-        col += len(parties)+2
-        draw_block(worksheet, row=toprow, col=col,
+
+        row = draw_block(worksheet, row=row, col=col,
             heading="Seat shares", xheaders=parties, yheaders=const_names,
             matrix=xtd_seat_shares
         )
-        toprow += len(const_names)+3
-        col = startcol
 
-        worksheet.write(toprow, startcol, 'Entropy:', fmt["h"])
-        worksheet.write(toprow, startcol+1, election.entropy(), fmt["cell"])
+        worksheet.write(row, col, 'Entropy:', fmt["h"])
+        worksheet.write(row, col+1, election.entropy(), fmt["cell"])
+
+        row = 0
+        col = len(parties) + 1
+        worksheet.set_column(1, col-1, 10)
+
+        if election.demo_tables[0]['steps']:
+            worksheet.write(row, col,
+                "Allocation of adjustment seats step-by-step",
+                fmt["h"]
+            )
+        for demo_table in election.demo_tables:
+            (_,col) = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
+
+        #suph = [] if suph is None else suph
 
     workbook.close()
 

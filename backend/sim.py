@@ -5,7 +5,7 @@ sys.path.append("../backend")
 from noweb import load_votes, new_simulation
 from noweb import load_settings
 from noweb import single_election
-from noweb import check_simulation, SIMULATIONS
+from noweb import check_simulation, create_SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
 import json
@@ -68,6 +68,7 @@ def filenames(sens_cv, n_cores, n_sim, vote_path):
     return metadatafile, histfile, logfile
 
 def main():
+    create_SIMULATIONS()
     (n_reps, n_cores, json_file, vote_file, Stop, sens_cv, cv) = get_arguments(
         args=[
             ['n_reps', int, 'total number of simulations', 10],

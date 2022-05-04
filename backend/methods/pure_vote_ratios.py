@@ -49,12 +49,12 @@ def pure_vote_ratios_apportionment(m_votes,
         })
 
 
-    return m_allocations, (allocation_sequence, present_allocation_sequence)
+    return m_allocations, (allocation_sequence, print_demo_table)
 
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "Quotient of list votes as percentage"]
+        "Criteria", "Quotient of list votes"]
     data = []
     seat_number = 0
 
@@ -65,7 +65,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            "{:.3%}".format(allocation["max_list_share"])
+            allocation["max_list_share"]
         ])
 
-    return headers, data
+    return headers, data, None

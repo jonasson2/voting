@@ -62,9 +62,9 @@ def icelandic_share_apportionment(m_votes,
             })
         else:
             invalid.append(idx)
-    return m_allocations, (seats_info, print_seats)
+    return m_allocations, (seats_info, print_demo_table)
 
-def print_seats(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party",
         "Criteria", "i) National vote quotient", "ii) List share"]
@@ -78,7 +78,7 @@ def print_seats(rules, allocation_sequence):
             rules["parties"][allocation["party"]],
             allocation["reason"],
             round(allocation["country_num"], 1),
-            f'{allocation["list_share"]:.3f}'
+            allocation["list_share"]
         ])
 
-    return header, data
+    return header, data, None

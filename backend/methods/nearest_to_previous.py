@@ -10,7 +10,7 @@ def maxi(A, openC, openP):
                 amax = A[c,p]
     return amax, cmax, pmax
 
-def nearest_to_last(m_votes,
+def nearest_to_previous(m_votes,
                     v_desired_row_sums,
                     v_desired_col_sums,
                     m_prior_allocations,
@@ -77,14 +77,14 @@ def nearest_to_last(m_votes,
                       "ratio": max_ratio, "party": maxP, "reason": reason}
         last_index[maxC] = maxP
         allocation_sequence.append(allocation)
-    return alloc_list.tolist(), (allocation_sequence, present_allocation_sequence)
+    return alloc_list.tolist(), (allocation_sequence, print_demo_table)
 
-def present_allocation_sequence(rules, allocation_sequence):
+def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
     headers = ["Adj. seat #", "Constituency", "Next party", "Last party",
-               "Criteria", "Ratio"]
+               "Criteria", "Max ratio"]
     criterion = {}
-    criterion["MAX"] = "Max ratio of next-in and last in vote quotients"
+    criterion["MAX"] = "Max ratio of next-in and last-in vote quotients"
     criterion["VOTE"] = "No const. seat, thus using max list vote"
     data = []
     for (seat_number, allocation) in enumerate(allocation_sequence):
@@ -97,7 +97,7 @@ def present_allocation_sequence(rules, allocation_sequence):
             rules["parties"][allocation["party"]],
             last_party,
             criterion[reason],
-            f'{allocation["ratio"]:.3f}' if reason == "MAX" else round(allocation["ratio"])
+            allocation["ratio"] if reason == "MAX" else round(allocation["ratio"])
         ])
 
-    return headers, data
+    return headers, data, None
