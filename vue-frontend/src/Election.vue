@@ -22,7 +22,7 @@
         </b-alert>
       </template>
       <template v-else>
-        <b-container fluid v-if="results[activeTabIndex] !== undefined">
+        <b-container align-h="start" v-if="results[activeTabIndex] !== undefined">
           <b-row>
             <h4>Seat allocation</h4>
             <ResultMatrix
@@ -42,14 +42,14 @@
           <b-row>
             <br>
             <h4>Allocation of adjustment seats step-by-step</h4>
-          </b-row>
+          </b-row>          
           <b-row>
-            <b-col>
+            <b-col auto>
               <ResultDemonstration
                 :table="results[activeTabIndex].demo_tables[0]">
               </ResultDemonstration>
             </b-col>
-            <b-col v-if="results[activeTabIndex].demo_tables.length > 1">
+            <b-col auto v-if="results[activeTabIndex].demo_tables.length > 1">
               <ResultDemonstration
                 :table="results[activeTabIndex].demo_tables[1]">
               </ResultDemonstration>
