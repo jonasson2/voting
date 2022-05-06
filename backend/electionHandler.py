@@ -16,7 +16,8 @@ class ElectionHandler:
     """
     def __init__(self, vote_table, systems, min_votes=0):
         systems = check_systems(systems)
-        self.votes = deepcopy(vote_table["votes"])
+        vote_table = check_vote_table(vote_table)
+        self.votes = vote_table["votes"]
         self.set_min_votes(min_votes)
         self.elections = []
         self.setup_elections(vote_table, systems)

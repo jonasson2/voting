@@ -25,11 +25,6 @@ def errormsg(message = None):
         message = short_traceback(format_exc())
     return jsonify({'error': message}) 
 
-def loop(n):
-    for k in range(9999999):
-        q = k/7
-    print(n)
-
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
     jinja_options.update(dict(
@@ -331,8 +326,6 @@ if __name__ == '__main__':
     port = os.environ.get("FLASK_RUN_PORT", "5000")
     print(f"Running on {host}:{port}")
     app.debug = debug
-    p = Pool(4)
-    p.map(loop, list(range(4)))
     create_SIMULATIONS()
     if os.environ.get("HTTPS", "") == "True":
         print('Running server using HTTPS!')

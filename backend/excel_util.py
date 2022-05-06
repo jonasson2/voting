@@ -168,6 +168,9 @@ def demo_table_to_xlsx(
     headers = demo_table["headers"]
     steps = demo_table["steps"]
     row += 1
+    if len(steps) == 0:
+        worksheet.write(row, col, "There are no steps to show")
+        return col+1
     if demo_table["sup_header"]:
         worksheet.write(row, col, demo_table["sup_header"], fmt["h"])
         row += 1
@@ -176,6 +179,9 @@ def demo_table_to_xlsx(
     row += 1
     for i in range(len(steps)):
         for j,(stp,f) in enumerate(zip(steps[i], demo_table["format"])):
+            if f=="s": #special
+                maxw = max(len(s[j]) for s in steps)
+                f = "c" if maxw <= 2 else "l"
             if isinstance(stp, str):
                 stp = stp.replace('\n', ',  ')
             width[j] = max(width[j], cell_width(stp, f))
@@ -184,7 +190,7 @@ def demo_table_to_xlsx(
     for j in range(len(headers)):
         worksheet.set_column(col + j, col + j, round(1 + width[j]*0.75))
     col += len(headers) + 1
-    return row, col
+    return col
 
 def elections_to_xlsx(elections, filename):
     """Write detailed information about an election with a single vote table
@@ -337,13 +343,12 @@ def elections_to_xlsx(elections, filename):
         col = len(parties) + 1
         worksheet.set_column(1, col-1, 10)
 
-        if election.demo_tables[0]['steps']:
-            worksheet.write(row, col,
-                "Allocation of adjustment seats step-by-step",
-                fmt["h"]
-            )
+        worksheet.write(row, col,
+            "Allocation of adjustment seats step-by-step",
+            fmt["h"]
+        )
         for demo_table in election.demo_tables:
-            (_,col) = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
+            col = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
 
         #suph = [] if suph is None else suph
 

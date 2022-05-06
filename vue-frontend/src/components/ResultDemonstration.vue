@@ -20,7 +20,7 @@
 </table>
 <table v-else>
   <p>Table demonstrating the step-by-step allocation of adjustment seats
-    is not applicable as there are no steps to show
+    is not applicable as there are no steps to show.
   </p>
 </table>
 </template>

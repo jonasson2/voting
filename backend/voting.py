@@ -225,6 +225,16 @@ class Election:
             }
             demo_table = self.set_forced_reasons(demo_table)
             self.demo_tables.append(demo_table)
+        self.fix_special_formats()
+
+    def fix_special_formats(self):
+        for table in self.demo_tables:
+            fmtlist = list(table['format'])
+            for j,f in enumerate(fmtlist):
+                if f=='s':
+                    maxw = max(len(s[j]) for s in table['steps'])
+                    fmtlist[j] = "c" if maxw <= 2 else "l"
+            table['format'] = "".join(fmtlist)
 
     def calculate_ideal_seats(self, scaling):
         scalar = float(self.total_seats)/sum(sum(x) for x in self.m_votes)

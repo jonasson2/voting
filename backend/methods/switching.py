@@ -24,7 +24,6 @@ def switching(m_votes,
     m_adj_seats = []
     for c in range(len(m_prior_allocations)):
         votes = [m_votes[c][p] for p in range(len(m_votes[c]))]
-#                 if correct_adj_seats[p] > 0 else 0
         alloc, div = apportion1d(
             v_votes=votes,
             num_total_seats=v_desired_row_sums[c],
@@ -120,7 +119,7 @@ def print_demo_table2(rules, steps):
         const_name = rules["constituencies"][switch["constituency"]]["name"]
         from_party = rules["parties"][switch["from"]]
         to_party   = rules["parties"][switch["to"]]
-        ratio      = f'{switch["ratio"]:.3f}'
+        ratio      = switch["ratio"]
         data.append([
             switch_number,
             const_name,

@@ -36,10 +36,18 @@ def correct_deprecated(L):
         "adjustment_allocation_rule", "adjustment_division_rule",
         "adjustment_method",          "constituency_allocation_rule",
         "name",                       "primary_divider"]
+    old_names = {
+        "norwegian-icelandic": "max-const-seat-share",
+        "pure-vote-ratios": "max-const-vote-percentage"
+    }
     for deprec in deprec_list:
         for sys in L["systems"]:
             if deprec in sys:
                 sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
+    for (old,new) in old_names.items():
+        for sys in L["systems"]:
+            if sys["adjustment_method"] == old:
+                sys["adjustment_method"] = new
     return L
 
 def load_settings(f):
@@ -75,7 +83,6 @@ def single_election(votes, systems):
     handler = ElectionHandler(votes, systems, min_votes=min_votes)
     elections = handler.elections
     results = [election.get_result_dict() for election in elections]
-    disp('results', results)
     return results
 
 def run_thread_simulation(simid):

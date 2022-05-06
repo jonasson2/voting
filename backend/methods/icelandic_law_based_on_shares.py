@@ -56,7 +56,7 @@ def icelandic_share_apportionment(m_votes,
             num_allocated += 1
             seats_info.append({
                 "constituency": const[0], "party": idx,
-                "reason": "i) Max quotient of total party votes\nii) Max const. seat share of list",
+                "reason": "i) Max over parties\nii) Max over lists of max party",
                 "country_num": country_num,
                 "list_share": v_proportions[const[0]],
             })
@@ -67,7 +67,7 @@ def icelandic_share_apportionment(m_votes,
 def print_demo_table(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment
     header = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "i) National vote quotient", "ii) List share"]
+        "Criteria", "i) National vote score", "ii) Constituency seat share score"]
     data = []
     seat_number = 0
     for allocation in allocation_sequence:

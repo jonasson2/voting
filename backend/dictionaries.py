@@ -10,8 +10,8 @@ from methods.nearest_to_previous import nearest_to_previous
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
-from methods.norwegian_icelandic import norw_ice_apportionment
-from methods.pure_vote_ratios import pure_vote_ratios_apportionment
+from methods.max_const_seat_share import norw_ice_apportionment
+from methods.max_const_vote_percentage import max_const_vote_percentage_apportionment
 from methods.opt_entropy import opt_entropy
 from methods.switching import switching
 from util import get_cpu_count
@@ -56,28 +56,29 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "icelandic-law", "text": "Icelandic law 112/2021"},
     {"value": "ice-shares",    "text": "Icelandic law based on constituency seat shares"},
     {"value": "norwegian-law", "text": "Norwegian law 20/2002"},
-    {"value": "norwegian-icelandic",  "text": "Maximum constituency seat share"},
-    {"value": "pure-vote-ratios",     "text": "Maximum constituency vote percentage"},
-    {"value": "relative-superiority", "text": "Relative superiority"},
-    {"value": "relative-sup-simple",  "text": "Relative superiority, simplified"},
-    {"value": "nearest-to-previous",  "text": "Nearest-to-previous"},
-    {"value": "farthest-from-next",   "text": "Farthest-from-next"},
+    {"value": "max-const-seat-share",      "text": "Maximum constituency seat share"},
+    {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
+    {"value": "relative-superiority",      "text": "Relative superiority"},
+    {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
+    {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
+    {"value": "farthest-from-next",        "text": "Farthest-from-next"},
     # "monge", "text":                "Monge"},
-    {"value": "switching",            "text": "Switching of seats"},
-    {"value": "alternating-scaling",  "text": "Optimal divisor method"},
+    {"value": "switching",                 "text": "Switching of seats"},
+    {"value": "alternating-scaling",       "text": "Optimal divisor method"},
 ]
 DEMO_TABLE_FORMATS = {
-    "icelandic-law":        "clll1%",
-    "ice-shares":           "clll3",
-    "norwegian-law":        "clll3",
-    "norwegian-icelandic":  "clll3",
-    "pure-vote-ratios":     "clll%",
-    "relative-superiority": "clll3",
-    "relative-sup-simple":  "clll3",
-    "nearest-to-previous":  "cllll3",
-    "farthest-from-next":   "cllll3",
-    "switching":            ("cccc","clcc3"),
-    "alternating-scaling":  ""}
+    "icelandic-law":             "clsl1%",
+    "ice-shares":                "clsl13",
+    "norwegian-law":             "clsl3",
+    "max-const-seat-share":      "clsl3",
+    "max-const-vote-percentage": "clsl%",
+    "relative-superiority":      "clsl3",
+    "relative-sup-simple":       "clsl3",
+    "nearest-to-previous":       "clssl3",
+    "farthest-from-next":        "clssl3",
+    "switching":                 ("sccc","clss3"),
+    "alternating-scaling":       ""}
+# s = special, center if all party names are less than 2 chars, else left
 
 SEAT_SPECIFICATION_OPTIONS = [
     {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
@@ -114,8 +115,8 @@ ADJUSTMENT_METHODS = {
     "icelandic-law": icelandic_apportionment,
     "ice-shares": icelandic_share_apportionment,
     "norwegian-law": norwegian_apportionment,
-    "norwegian-icelandic": norw_ice_apportionment,
-    "pure-vote-ratios": pure_vote_ratios_apportionment,
+    "max-const-seat-share": norw_ice_apportionment,
+    "max-const-vote-percentage": max_const_vote_percentage_apportionment,
     "relative-superiority": relative_superiority,
     "relative-sup-simple": relative_superiority_simple,
     "nearest-to-previous": nearest_to_previous,

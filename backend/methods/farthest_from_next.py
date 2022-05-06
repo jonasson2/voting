@@ -82,9 +82,9 @@ def farthest_from_next(m_votes,
 def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
     headers = ["Adj. seat #", "Constituency", "Next party", "Second next party",
-               "Criteria", "Max ratio"]
+               "Criteria", "Ratio of scores"]
     criterion = {}
-    criterion["MAX"] = "Max ratio of next to next-but-one list vote quotients"
+    criterion["MAX"] = "Max ratio of next-in to next-but-one-in vote score"
     criterion["LAST"] = "Last list"
     data = []
     for (seat_number, allocation) in enumerate(allocation_sequence):
