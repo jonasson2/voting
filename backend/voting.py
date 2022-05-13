@@ -231,7 +231,7 @@ class Election:
         for table in self.demo_tables:
             fmtlist = list(table['format'])
             for j,f in enumerate(fmtlist):
-                if f=='s':
+                if f=='s' and any(table['steps']):
                     maxw = max(len(s[j]) for s in table['steps'])
                     fmtlist[j] = "c" if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)

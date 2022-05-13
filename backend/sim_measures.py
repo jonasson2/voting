@@ -31,11 +31,14 @@ def add_vuedata(sim_result_dict, parallel):
     vuedata["system_names"] = [sys["name"] for sys in systems]
     vuedata["group_ids"] = []
     vuedata["group_titles"] = {}
+    vuedata["footnotes"] = {}
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
         last_column1 = ""
         vuedata[id] = []
+        if "footnote" in group:
+            vuedata["footnotes"][id] = group["footnote"]
         for (measure, titles) in group["rows"].items():
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
             row = {"rowtitle": rowtitle}

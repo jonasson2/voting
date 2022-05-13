@@ -107,7 +107,8 @@ def relative_superiority(m_votes,
                 if item["superiority"] > greatest:
                     greatest = item["superiority"]
                     first = item
-            first["reason"] = "Max ratio of next-in vote score to computed substitue vote score in each const."
+            first["reason"] = ("Max ratio over constit. of next-in vote "
+                               "score to computed substitue vote score")
         else:
             assert violating
             # Allocate violating seats last

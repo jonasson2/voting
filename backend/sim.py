@@ -4,7 +4,7 @@ from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from noweb import load_votes, new_simulation
 from noweb import load_settings
-from noweb import single_election
+from noweb import simulation_to_excel
 from noweb import check_simulation, create_SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
@@ -85,7 +85,6 @@ def main():
 
     #random.seed(42)
     systemnames = [s["name"] for s in systems]
-    pars = range(n_cores)
     if sim_settings['simulation_count'] == 0: return
     sim_settings["sensitivity"] = False
     beginning_time = time.time()
@@ -116,6 +115,7 @@ def main():
     else:
         pass
     elapsed_time = hms(time.time() - beginning_time)
+    simulation_to_excel(simid,'sim.xlsx')
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:
             print(f'Simulation finished, elapsed time: {elapsed_time}', file=f)

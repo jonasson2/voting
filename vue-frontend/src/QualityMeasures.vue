@@ -53,6 +53,9 @@
             </template>
           </template>
         </tr>
+        <tr v-if="id in footnotes">
+          xxxxxxxxxxxxx
+        </tr>
         <tr v-if="vuedata[id].length>0">
           <td class="firstcol blank"></td>
         </tr>
@@ -72,6 +75,7 @@ export default {
     "system_names",
     "group_ids",
     "group_titles",
+    "footnotes",
   ],
   computed: {
     nstat: function() {return this.stats.length},

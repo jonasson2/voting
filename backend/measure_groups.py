@@ -19,15 +19,35 @@
 
 from util import disp
 
+def funabs(q, s):     return abs(q - s)
+def funsq(q, s):      return (q - s)**2
+def funpos(q, s):     return max(0, (s - q)/max(1,q))
+def funneg(q, s):     return max(0, (q - s)/max(1,q))
+def funsqshare(q, s): return (s - q)**2/max(1,q)
+def funsqseat(q, s):  return (s - q)**2/max(1,s)
+
+function_dict = {
+    'abs': funabs,
+    'sq': funsq,
+    'pos': funpos,
+    'neg': funneg,
+    'sqshare': funsqshare,
+    'sqseat': funsqseat,
+}
+
 class MeasureGroups(dict):
     def __init__(self, systems, nr=0):
         self["seatShares"] = {
-            "title": "Allocated seats minus reference seat shares",
+            "title": "Seats minus seat shares, sum over all lists of",
             "rows": {
-                "sum_abs":  ("Sum of absolute values over all lists", ""),
-                "sum_pos":  ("Sum of positive values over all lists", ""),
-                "sum_sq":   ("Sum of squared values over all lists", "")
-            }
+                "sum_abs":     ("absolute values (Hare-quota)", ""),
+                "sum_sq":      ("squared values (Hare-quota)", ""),
+                "sum_pos":     ("pos. values scaled by reciprocal shares (D'Hondt)", ""),
+                "sum_neg":     ("neg. values scaled by reciprocal shares (D'Hondt)", ""),
+                "sum_sqshare": ("sq.val. scaled by reciprocal shares (Sainte-Laguë)", ""),
+                "sum_sqseat":  ("sq.val. scaled by reciproc. seats (Hill-Huntington)", ""),
+            },
+            "footnote": "(single constituency minimizing method in brackets)",            
         }
         self["other"] = {
             "title": "Specific quality indices for seat allocations",

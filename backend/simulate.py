@@ -1,6 +1,6 @@
 # import logging
 from datetime import datetime
-from measure_groups import MeasureGroups
+from measure_groups import MeasureGroups, function_dict
 import dictionaries as dicts
 import random
 from voting import Election
@@ -49,6 +49,11 @@ class SimulationSettings(dict):
         # self["row_constraints"] = True
         # self["col_constraints"] = True
 
+        
+    def abs(q, s):      return abs(q - s)
+    def sq(q, s):       return (q - s)**2
+
+        
 class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
@@ -236,12 +241,24 @@ class Simulation():
         deviation = sum_abs_diff([totals], [comparison_totals])
         deviations.add(measure + "_tot", deviation)
 
+    def sum_func(self, election, function):
+        measure = sum([
+            function(election.ideal_seats[c][p], election.results[c][p])
+            for p in range(len(self.parties))
+            for c in range(election.num_constituencies())
+            if self.vote_table['votes'][c][p] >= 1
+        ])
+        return measure
+
     def other_measures(self, election, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)
+        for (funcname, function) in function_dict.items():
+            measure = "sum_" + funcname
+            deviations.add(measure, self.sum_func(election, function))
+        # deviations.add("sum_abs", self.sum_abs(election))
+        # deviations.add("sum_pos", self.sum_pos(election))
+        # deviations.add("sum_sq", self.sum_sq(election))
         (slope, corr) = self.bias(election)
-        deviations.add("sum_abs", self.sum_abs(election))
-        deviations.add("sum_pos", self.sum_pos(election))
-        deviations.add("sum_sq", self.sum_sq(election))
         deviations.add("min_seat_val", self.min_seat_val(election))
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
@@ -268,7 +285,7 @@ class Simulation():
     def bias(self, election):
         (slope,corr) = find_bias(election.results, election.ideal_seats)
         return slope,corr
-
+    
     # Loosemore-Hanby
     def sum_abs(self, election):
         lh = sum([

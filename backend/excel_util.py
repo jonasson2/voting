@@ -355,6 +355,7 @@ def elections_to_xlsx(elections, filename):
     workbook.close()
 
 def simulation_to_xlsx(sim_result, filename, parallel):
+    print('simulation_to_xlsx')
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -381,7 +382,7 @@ def simulation_to_xlsx(sim_result, filename, parallel):
                        sim_result.num_parties > 1)
     col_constraints = (sim_result.sim_settings["scaling"] in {"both","party"}
                        and sim_result.num_constituencies > 1)
-    gen_method = next((g["text"] for g in GMN if g["value"]=='gamma'),None)
+    gen_method = GMN[sim_result.sim_settings["gen_method"]]
     sim_settings = [
         {"label": "Number of simulations run",
             "data": sim_result.iteration},

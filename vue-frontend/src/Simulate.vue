@@ -71,6 +71,7 @@
       :system_names="vuedata.system_names"
       :group_ids="vuedata.group_ids"
       :group_titles="vuedata.group_titles"
+      :footnotes="vuedata.footnotes"
       >
       </QualityMeasures>
     <h4>Constituency seats</h4>

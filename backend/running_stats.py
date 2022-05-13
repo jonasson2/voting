@@ -48,6 +48,7 @@ class Running_stats:
         n2 = running_stats.n
         self.n = n1 + n2
         delta = running_stats.M1 - self.M1
+        print("self.n =", self.n)
         self.M1 = (n1*self.M1 + n2*running_stats.M1)/self.n
         self.M2 += running_stats.M2 + delta**2*n1*n2/self.n
         self.big = np.maximum(self.big, running_stats.big)

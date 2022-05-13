@@ -95,7 +95,9 @@ def run_thread_simulation(simid):
         sim.simulate()
         thread.done = True
     except Exception as e:
+        print('[zer] caught exception')
         SIM['exception'] = e
+        raise Exception(e)
 
 def new_simulation(votes, systems, sim_settings):
     global SIMULATIONS
