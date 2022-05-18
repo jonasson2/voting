@@ -93,8 +93,8 @@
               title="Adjust the vote shares so that they sum to the total number of seats for
                      each constituency and each party (scale both rows and columns of vote table)"
               value="both"
-              >          
-              within both constituencies and parties
+              >
+              {{scaling_name("both")}}
             </b-form-radio><br>
             <b-form-radio
               v-b-tooltip.hover.bottom.v-primary.ds500
@@ -102,7 +102,7 @@
                      each constituency (scale rows of vote table)"
               value="const"
               >          
-              within constituencies
+              {{scaling_name("const")}}
             </b-form-radio><br>
             <b-form-radio
               v-b-tooltip.hover.bottom.v-primary.ds500
@@ -110,7 +110,7 @@
                      each party (scale columns of vote table)"
               value="party"
               >
-              within parties
+              {{scaling_name("party")}}
             </b-form-radio><br>
             <b-form-radio
               v-b-tooltip.hover.bottom.v-primary.ds500
@@ -118,7 +118,7 @@
                      nationally (scales all entries in vote table by the same factor)"
               value="total"
               >
-              nationally
+              {{scaling_name("total")}}
             </b-form-radio>
           </b-form-radio-group>
         </b-form-group>
@@ -178,6 +178,9 @@ export default {
     // The following function should maybe be moved to startsimulation
     // to force listening to beforeunload if simulation has been run
     //...mapMutations(["setSimulateCreated"])
+    scaling_name: function(scaling) {
+      return this.sim_settings.scaling_names[scaling]
+    },
   },
   watch: {
     comparison_systems: {

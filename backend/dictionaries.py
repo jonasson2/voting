@@ -187,3 +187,10 @@ SENS_MEASURES = [
     "party_sens",
     "list_sens"
 ]
+
+SCALING_NAMES = {
+    "both": "within both constituencies and parties",
+    "const": "within constituencies",
+    "party": "within parties",
+    "total": "nationally",
+}

@@ -5,7 +5,7 @@ import dictionaries as dicts
 import random
 from voting import Election
 from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
-from dictionaries import STATISTICS_HEADINGS
+from dictionaries import STATISTICS_HEADINGS, SCALING_NAMES
 from electionHandler import ElectionHandler
 from excel_util import simulation_to_xlsx
 from generate_votes import generate_votes
@@ -31,13 +31,6 @@ class Collect(dict):
 
 class SimulationSettings(dict):
     def __init__(self):
-        # super(SimulationSettings, self).__init__()
-        # Simulation systems
-        # self.value_rules = {
-        #     # Fair share constraints:
-        #     "row_constraints": {True, False},
-        #     "col_constraints": {True, False},
-        # }
         self["simulate"] = False
         self["simulation_count"] = 200
         self["cpu_count"] = CONSTANTS['default_cpu_count']
@@ -46,9 +39,7 @@ class SimulationSettings(dict):
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False
-        # self["row_constraints"] = True
-        # self["col_constraints"] = True
-
+        self["scaling_names"] = SCALING_NAMES
         
     def abs(q, s):      return abs(q - s)
     def sq(q, s):       return (q - s)**2
@@ -68,8 +59,6 @@ class Simulation():
         for (election, sys) in zip(election_handler.elections, self.systems):
             sys.reference_results = deepcopy(election.results)
         self.parties = vote_table["parties"]
-        self.xtd_votes = add_totals(election_handler.votes)
-        self.xtd_vote_shares = find_xtd_shares(self.xtd_votes)
         self.sim_settings = sim_settings
         self.sim_count = self.sim_settings["simulation_count"]
         self.distribution = self.sim_settings["gen_method"]
@@ -483,18 +472,22 @@ class Sim_result:
 
     def get_result_dict(self, parallel):
         result_dict = {
-            "iteration": self.iteration,
-            "systems":   self.systems,
-            "parties":   self.parties,
-            "testnames": [systems["name"] for systems in self.systems],
-            "methods":   [systems["adjustment_method"]
-                          for systems in self.systems],
-            "vote_data": self.vote_data,
-            "data":      [{
-                "name":          self.systems[sysnr]["name"],
-                "method":        self.systems[sysnr]["adjustment_method"],
-                "measures":      self.data[sysnr],
-                "list_measures": self.list_data[sysnr]
+            "iteration":        self.iteration,
+            "systems":          self.systems,
+            "parties":          self.parties,
+            "sim_settings":     self.sim_settings,
+            "testnames":        [systems["name"]
+                                 for systems in self.systems],
+            "methods":          [systems["adjustment_method"]
+                                for systems in self.systems],
+            "vote_data":        self.vote_data,
+            "vote_table":       self.vote_table,
+            "base_allocations": self.base_allocations,
+            "data":         [{
+                "name":           self.systems[sysnr]["name"],
+                "method":         self.systems[sysnr]["adjustment_method"],
+                "measures":       self.data[sysnr],
+                "list_measures":  self.list_data[sysnr]
             }
                 for sysnr in range(len(self.systems))
             ]

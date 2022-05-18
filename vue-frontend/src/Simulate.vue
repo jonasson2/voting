@@ -150,7 +150,7 @@ export default {
       current_iteration: 0,
       time_left: 0,
       total_time: 0,
-      results: { measures: [], methods: [], data: [], parties: [], systems: [] },
+      results: {data: [], parties: [], systems: []},
       vuedata: {}
     }
   },

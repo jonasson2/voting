@@ -7,7 +7,8 @@ from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES, \
                          RULE_NAMES, \
                          GENERATING_METHOD_NAMES, \
-                         STATISTICS_HEADINGS as STH
+                         STATISTICS_HEADINGS, \
+                         SCALING_NAMES
 
 AMN = {amn["value"]: amn["text"] for amn in ADJUSTMENT_METHOD_NAMES}
 DRN = {rn["value"]: rn["text"] for rn in RULE_NAMES}
@@ -356,6 +357,7 @@ def elections_to_xlsx(elections, filename):
 
 def simulation_to_xlsx(sim_result, filename, parallel):
     print('simulation_to_xlsx')
+    results = sim_result.get_result_dict(parallel)
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -371,33 +373,27 @@ def simulation_to_xlsx(sim_result, filename, parallel):
             matrix = [r[:-1] for r in matrix]
         if heading.endswith("shares"):
             cformat = fmt["share"]
-        if heading.lower().startswith("ideal") or heading.lower().startswith("reference"):
+        ideal_or_reference = (heading.lower().startswith("ideal") or
+                              heading.lower().startswith("reference"))
+        if ideal_or_reference:
             cformat = fmt["cell"]
             totalsformat = fmt["base"]
         if heading == "Votes":
             cformat = fmt["base"]
         write_matrix(worksheet, row, col, matrix, cformat, False, totalsformat)
 
-    row_constraints = (sim_result.sim_settings["scaling"] in {"both","const"} and
-                       sim_result.num_parties > 1)
-    col_constraints = (sim_result.sim_settings["scaling"] in {"both","party"}
-                       and sim_result.num_constituencies > 1)
-    gen_method = GMN[sim_result.sim_settings["gen_method"]]
+    gen_method = GMN[results["sim_settings"]["gen_method"]]
     sim_settings = [
         {"label": "Number of simulations run",
-            "data": sim_result.iteration},
+         "data": results["iteration"]},
         {"label": "Generating method",
-            "data": gen_method},
+         "data": results["sim_settings"]["gen_method"]},
         {"label": "Coefficient of variation",
-            "data": sim_result.var_coeff},
+         "data": results["sim_settings"]["distribution_parameter"]},
         {"label": "Apply randomness to",
-            "data": "All constituencies" if sim_result.apply_random == -1 else None},
+         "data": results["sim_settings"]["selected_rand_constit"]},
         {"label": "Scaling of votes for reference seat shares",
-         "data": ("within both constituencies and parties" 
-                  if row_constraints and col_constraints
-                  else "within constituencies" if row_constraints
-                  else "within parties" if col_constraints
-                  else None)
+         "data": SCALING_NAMES[results["sim_settings"]["scaling"]]
         }
     ]
 
@@ -411,7 +407,6 @@ def simulation_to_xlsx(sim_result, filename, parallel):
     worksheet.write(row, c2, datetime.now(), fmt["time"])
     row += 2
     worksheet.write(row, c1, "Source votes and seats", fmt["basic_h"])
-    worksheet.write(row, c2, sim_result.vote_table["name"], fmt["basic"])
     row += 2
     worksheet.write(row, c1, "Simulation settings", fmt["basic_h"])
     for setting in sim_settings:
@@ -444,19 +439,19 @@ def simulation_to_xlsx(sim_result, filename, parallel):
         {"abbr": "ts", "heading": "Total seats"       },
         {"abbr": "ss", "heading": "Seat shares"       },
     ]
-    base_const_names = [const["name"] for const in sim_result.constituencies]\
-                        + ["Total"]
+    base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
+    base_const_names.append("Total")
 
     #Measures
     STAT_LIST = sim_result.STAT_LIST
     print("STAT_LIST=", STAT_LIST)
-    results = sim_result.get_result_dict(parallel)
     data = results["data"]
     systems = results["systems"]
     groups = MeasureGroups(systems)
     edata = {}
     edata["stats"] = STAT_LIST
-    edata["stat_headings"] = {stat:STH(True)[stat] for stat in STAT_LIST}
+    edata["stat_headings"] = {stat:STATISTICS_HEADINGS(True)[stat]
+                              for stat in STAT_LIST}
 
     for (id, group) in groups.items():
         edata[id] = []
@@ -481,8 +476,8 @@ def simulation_to_xlsx(sim_result, filename, parallel):
 
     for stat in STAT_LIST:
         worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
-        worksheet.set_column(c,c+len(sim_result.systems)-1,15)
-        for system in sim_result.systems:
+        worksheet.set_column(c,c+len(results["systems"])-1,15)
+        for system in results["systems"]:
             worksheet.write(toprow+1,c,system["name"],fmt["h_center"])
             c += 1
         worksheet.set_column(c,c,3)
@@ -507,55 +502,58 @@ def simulation_to_xlsx(sim_result, filename, parallel):
                 write_matrix(worksheet,toprow,c+2,
                              [row[stat] for row in edata[id]],
                              fmt["cell"],True,zeroesformat=fmt["base"])
-            c += len(sim_result.systems) + 1
+            c += len(results["systems"]) + 1
         nrows = len(group["rows"])
         toprow += nrows + 1 if nrows > 0 else 0
         c = 0
 
-    for r in range(len(sim_result.systems)):
-        sheet_name  = sim_result.systems[r]["name"]
+    for r in range(len(results["systems"])):
+        sheet_name  = results["systems"][r]["name"]
         worksheet   = workbook.add_worksheet(sheet_name[:31])
         worksheet.freeze_panes(10,2)
-        parties = sim_result.systems[r]["parties"] + ["Total"]
+        parties = results["systems"][r]["parties"] + ["Total"]
+        xtd_votes = add_totals(results["vote_table"]["votes"])
+        xtd_shares = find_xtd_shares(xtd_votes)
         data_matrix = {
             "base": {
-                "v" : sim_result.xtd_votes,
-                "vs": sim_result.xtd_vote_shares,
-                "cs": sim_result.base_allocations[r]["xtd_const_seats"],
-                "as": sim_result.base_allocations[r]["xtd_adj_seats"],
-                "ts": sim_result.base_allocations[r]["xtd_total_seats"],
-                "ss": sim_result.base_allocations[r]["xtd_seat_shares"],
-                "id": sim_result.base_allocations[r]["xtd_ideal_seats"],
+                "v" : xtd_votes,
+                "vs": xtd_shares,
+                "cs": results["base_allocations"][r]["xtd_const_seats"],
+                "as": results["base_allocations"][r]["xtd_adj_seats"],
+                "ts": results["base_allocations"][r]["xtd_total_seats"],
+                "ss": results["base_allocations"][r]["xtd_seat_shares"],
+                "id": results["base_allocations"][r]["xtd_ideal_seats"],
             }
         }
+        list_measures = results["data"][r]["list_measures"]
         for stat in STAT_LIST:
             data_matrix[stat] = {
                 "v" : sim_result.list_data[-1]["sim_votes"  ][stat],
                 "vs": sim_result.list_data[-1]["sim_shares" ][stat],
-                "cs": sim_result.list_data[ r]["const_seats"][stat],
-                "as": sim_result.list_data[ r]["adj_seats"  ][stat],
-                "ts": sim_result.list_data[ r]["total_seats"][stat],
-                "ss": sim_result.list_data[ r]["seat_shares"][stat],
-                "id": sim_result.list_data[ r]["ideal_seats"][stat],
+                "cs": list_measures["const_seats"][stat],
+                "as": list_measures["adj_seats"  ][stat],
+                "ts": list_measures["total_seats"][stat],
+                "ss": list_measures["seat_shares"][stat],
+                "id": list_measures["ideal_seats"][stat],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 4, "right_span": 1, "info": [
                 {"label": "Allocation of constituency seats",
-                    "rule": DRN[sim_result.systems[r]["primary_divider"]],
-                    "threshold": (sim_result.systems[r]
+                    "rule": DRN[results["systems"][r]["primary_divider"]],
+                    "threshold": (results["systems"][r]
                                   ["constituency_threshold"]/100.0)},
                 {"label": "Apportionment of adjustment seats to parties",
-                    "rule": DRN[sim_result.systems[r]["adj_determine_divider"]],
-                    "threshold": (sim_result.systems[r]
+                    "rule": DRN[results["systems"][r]["adj_determine_divider"]],
+                    "threshold": (results["systems"][r]
                                   ["adjustment_threshold"]/100.0)},
                 {"label": "Allocation of adjustment seats to lists",
-                    "rule": DRN[sim_result.systems[r]["adj_alloc_divider"]],
+                    "rule": DRN[results["systems"][r]["adj_alloc_divider"]],
                     "threshold": None}
             ]
         }, {
             "left_span": 2, "center_span": 3, "right_span": 0, "info": [
                 {"label": "Allocation method for adjustment seats",
-                    "rule": AMN[sim_result.systems[r]["adjustment_method"]]}
+                    "rule": AMN[results["systems"][r]["adjustment_method"]]}
             ]
         }]
 
@@ -566,7 +564,7 @@ def simulation_to_xlsx(sim_result, filename, parallel):
         worksheet.set_column(c1,c1,25)
         worksheet.set_column(c2,c2,20)
         worksheet.write(toprow, c1, "Electoral system", fmt["h_big"])
-        worksheet.write(toprow, c2, sim_result.systems[r]["name"], fmt["h_big"])
+        worksheet.write(toprow, c2, results["systems"][r]["name"], fmt["h_big"])
         toprow += 1
         worksheet.write(toprow, c2+1, "Rule", fmt["basic_h"])
         worksheet.write(toprow, c2+5, "Threshold", fmt["basic_h"])
@@ -589,12 +587,15 @@ def simulation_to_xlsx(sim_result, filename, parallel):
         
         col = 2
         for table in tables:
-            is_percentages_table = (table["heading"].endswith("shares") and
-                                    not table["heading"].startswith("Reference"))
+            is_percentages_table = (
+                table["heading"].endswith("shares") and
+                not table["heading"].startswith("Reference"))
             worksheet.write(toprow, col, table["heading"], fmt["basic_h"])
-            worksheet.write_row(toprow+1, col,
-                                parties[:-1] if is_percentages_table else parties,
-                                fmt["h_center"])
+            worksheet.write_row(
+                toprow+1,
+                col,
+                parties[:-1] if is_percentages_table else parties,
+                fmt["h_center"])
             col += len(parties[:-1] if is_percentages_table else parties)+1
             worksheet.set_column(col-1,col-1,3)
 

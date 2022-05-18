@@ -52,8 +52,7 @@ def add_vuedata(sim_result_dict, parallel):
                         std = data[s]["measures"][measure]["std"]
                         CI = 1.96*std/sqrt(nsim)
                         row[stat][-1] += f" ± {CI:.{ndig}f}"
-            vuedata[id].append(row)
-            
+            vuedata[id].append(row)            
     sim_result_dict["vuedata"] = vuedata
 
 # Statistic ids are an array in                        vuedata["stats"]
