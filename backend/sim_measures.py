@@ -21,12 +21,12 @@ def add_vuedata(sim_result_dict, parallel):
         return
     systems = sim_result_dict["systems"]
     groups = MeasureGroups(systems)
-    stats = list(STATISTICS_HEADINGS(parallel).keys())
+    stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
     nsim = sim_result_dict["iteration"]
     vuedata = {}
     vuedata["stats"] = stats
-    vuedata["stat_headings"] = STATISTICS_HEADINGS(parallel)
+    vuedata["stat_headings"] = STATISTICS_HEADINGS
     vuedata["headingType"] = headingType
     vuedata["system_names"] = [sys["name"] for sys in systems]
     vuedata["group_ids"] = []
@@ -52,7 +52,7 @@ def add_vuedata(sim_result_dict, parallel):
                         std = data[s]["measures"][measure]["std"]
                         CI = 1.96*std/sqrt(nsim)
                         row[stat][-1] += f" ± {CI:.{ndig}f}"
-            vuedata[id].append(row)            
+            vuedata[id].append(row)
     sim_result_dict["vuedata"] = vuedata
 
 # Statistic ids are an array in                        vuedata["stats"]

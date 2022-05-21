@@ -49,7 +49,7 @@ def norwegian_apportionment(m_votes,
         m_allocations[const][party] += 1
         allocation_sequence.append({
             "constituency": const, "party": party,
-            "reason": "Max over all lists:",
+            "reason": "Max over all lists",
             "max": maximum,
         })
 

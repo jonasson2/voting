@@ -57,26 +57,26 @@
       </b-button>
     </template>
   </b-modal>
-
+  
   <b-modal
-    size="xl"
+    size="md"
     id="modalpreset"
     ref="modalpresetref"
     title="Load preset"
-    cancel-only
     >
-    <b-table small hover :items="presets" :fields="presetfields">
-      <template v-slot:cell(actions)="row">
-        <b-button
-          size="sm"
-          @click.stop="loadPreset(row.item.id);
-                       $refs.modalpresetref.hide();"
-          class="mr-1 mt-0 mb-0"
-          >
-          Load
-        </b-button>
-      </template>
-    </b-table>
+    <b-table
+      small
+      hover 
+      :items="presets"
+      :fields="presetfields"
+      @row-clicked="loadPreset"
+      >
+    </b-table> 
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">
+        Cancel
+      </b-button>
+    </template>
   </b-modal>
   
   <b-button-toolbar key-nav aria-label="Vote tools">
@@ -222,7 +222,8 @@
       <td class="numerical">
         <input
           type="text"
-          v-autowidth="{ maxWidth: '200px', minWidth: '60px' }"
+          style="text-align: right"
+          v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
           v-model.number="constituency['num_const_seats']"
           />
       </td>
@@ -236,7 +237,7 @@
       <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
         <input
           type="text"
-          v-autowidth="{ maxWidth: '300px', minWidth: '75px' }"
+          v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
           v-model.number="vote_table.votes[conidx][partyidx]"
           />
       </td>
@@ -293,10 +294,9 @@ export default {
     return {
       presets: [],
       presetfields: [
-        { key: "name", sortable: true },
-        { key: "year", sortable: true },
-        { key: "country", sortable: true },
-        { key: "actions" },
+        { key: "Country", sortable: true },
+        { key: "Name", sortable: true },
+        { key: "Year", sortable: true },
       ],
       uploadfile: null,
       paste: {
@@ -388,7 +388,8 @@ export default {
       });
       this.downloadFile(promise)
     },
-    loadPreset: function (election_id) {
+    loadPreset: function (_, election_id) {
+      this.$refs.modalpresetref.hide();
       this.setWaitingForData()
       console.log('election_id', election_id)
       this.$http.post("/api/presets/load/", {election_id: election_id }).then(

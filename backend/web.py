@@ -213,12 +213,16 @@ def api_votes_save():
 def api_presets_load():
     try:
         presets_dict = get_presets_dict()
+        disp("(1) presets_dict", presets_dict)
         election_id = getparam('election_id')
-        preset_ids = [p['id'] for p in presets_dict]
+        preset_ids = list(range(len(presets_dict)))
+        print('election_id', election_id)
+        print('preset_ids', preset_ids)
         if election_id not in preset_ids:
             raise ValueError("Unexpected missing ID in presets_dict")
+        idx = election_id
         idx = preset_ids.index(election_id)
-        filename = "../data/elections/" + presets_dict[idx]['filename']
+        filename = "../data/" + presets_dict[idx]['filename']
         result = load_votes(filename)
         return jsonify(result)
     except Exception:
@@ -252,7 +256,7 @@ def api_simulate():
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)
-        print(f"{timestamp()}: started simulation {simid}")
+        #print(f"{timestamp()}: started simulation {simid}")
         return jsonify({"started": True, "simid": simid})
     except ValueError as e:
         return errormsg(f"Error: {e}")
@@ -263,11 +267,11 @@ def api_simulate():
 def api_simulate_check():
     try:
         (simid,stop) = getparam("simid", "stop")
-        print(f"{timestamp()}: checking simulation {simid[:5]}")
+        #print(f"{timestamp()}: checking simulation {simid[:5]}")
         (status, results) = check_simulation(simid, stop)
         if status['done'] and not results:
             raise RuntimeError('Results unavailable')
-        print(f"{timestamp()}: checked simulation {simid[:5]}, status: {status}")
+        #print(f"{timestamp()}: checked simulation {simid[:5]}, status: {status}")
         return jsonify({"status": status, "results": results})
     except Exception:
         print('CAUGHT EXCEPTION')

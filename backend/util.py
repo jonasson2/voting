@@ -160,46 +160,6 @@ def parsint(value):
 def determine_table_name(first,filename):
     return first if first else os.path.basename(os.path.splitext(filename)[0])
 
-# def load_votes(votefile, consts):
-#     """Load votes from a file."""
-#     if votefile.endswith("csv"):
-#         reader = read_csv(votefile)
-#     else:
-#         reader = read_xlsx(votefile)
-#     parties = next(reader)[3:]
-#     votes = [[] for i in range(len(consts))]
-#     c_names = [x["name"] for x in consts]
-
-#     for row in reader:
-#         try:
-#             v = votes[c_names.index(row[0])]
-#         except:
-#             print(row)
-#             raise Exception("Constituency '%s' not found in constituency file"
-#                             % row[0])
-#         for x in row[3:]:
-#             try:
-#                 r = float(x)
-#             except:
-#                 r = 0
-#             v.append(r)
-
-#     return parties, votes
-
-def sim_election_rules(rs, test_method):
-    """Get preset election systems for simulation from file."""
-    config = configparser.ConfigParser()
-    config.read("../data/presets/methods.ini")
-
-    if test_method in config:
-        rs.update(config[test_method])
-    else:
-        raise ValueError("%s is not a known apportionment method"
-                            % test_method)
-    rs["adjustment_threshold"] = float(rs["adjustment_threshold"])
-
-    return rs
-
 def hms(sec):
     # Turn seconds into xxx days hh:mm:ss
     sec = round(sec)

@@ -7,6 +7,7 @@ from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES, \
                          RULE_NAMES, \
                          GENERATING_METHOD_NAMES, \
+                         EXCEL_HEADINGS, \
                          STATISTICS_HEADINGS, \
                          SCALING_NAMES
 
@@ -355,9 +356,8 @@ def elections_to_xlsx(elections, filename):
 
     workbook.close()
 
-def simulation_to_xlsx(sim_result, filename, parallel):
-    print('simulation_to_xlsx')
-    results = sim_result.get_result_dict(parallel)
+def simulation_to_xlsx(results, filename, parallel):
+
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -443,21 +443,18 @@ def simulation_to_xlsx(sim_result, filename, parallel):
     base_const_names.append("Total")
 
     #Measures
-    STAT_LIST = sim_result.STAT_LIST
-    print("STAT_LIST=", STAT_LIST)
     data = results["data"]
     systems = results["systems"]
     groups = MeasureGroups(systems)
     edata = {}
-    edata["stats"] = STAT_LIST
-    edata["stat_headings"] = {stat:STATISTICS_HEADINGS(True)[stat]
-                              for stat in STAT_LIST}
+    edata["stats"] = EXCEL_HEADINGS.keys()
+    edata["stat_headings"] = EXCEL_HEADINGS
 
     for (id, group) in groups.items():
         edata[id] = []
         for (measure, _) in group["rows"].items():
             row = {}
-            for stat in STAT_LIST:
+            for stat in edata["stats"]:
                 row[stat] = []
                 for s in range(len(systems)):
                     row[stat].append(data[s]["measures"][measure][stat])
@@ -474,9 +471,9 @@ def simulation_to_xlsx(sim_result, filename, parallel):
     worksheet.write(toprow+1,c,"Tested systems: ",fmt["h_right"])
     c += 1
 
-    for stat in STAT_LIST:
+    for stat in edata["stats"]:
         worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
-        worksheet.set_column(c,c+len(results["systems"])-1,15)
+        worksheet.set_column(c,c+len(results["systems"])-1,11)
         for system in results["systems"]:
             worksheet.write(toprow+1,c,system["name"],fmt["h_center"])
             c += 1
@@ -493,8 +490,7 @@ def simulation_to_xlsx(sim_result, filename, parallel):
                                [val[0] for (_, val) in group["rows"].items()])
         worksheet.write_column(toprow,c+1,
                                [val[1] for (_, val) in group["rows"].items()])
-        
-        for stat in STAT_LIST:
+        for stat in edata["stats"]:
             if stat in ["min","max"] and id in ["seatSpec","expected","cmpSys"]:
                 write_matrix(worksheet,toprow,c+2,
                              [row[stat] for row in edata[id]],fmt["base"],True)
@@ -526,10 +522,10 @@ def simulation_to_xlsx(sim_result, filename, parallel):
             }
         }
         list_measures = results["data"][r]["list_measures"]
-        for stat in STAT_LIST:
+        for stat in STATISTICS_HEADINGS.keys():
             data_matrix[stat] = {
-                "v" : sim_result.list_data[-1]["sim_votes"  ][stat],
-                "vs": sim_result.list_data[-1]["sim_shares" ][stat],
+                "v" : results["vote_data"][r]["sim_votes"][stat],
+                "vs": results["vote_data"][r]["sim_shares"][stat],
                 "cs": list_measures["const_seats"][stat],
                 "as": list_measures["adj_seats"  ][stat],
                 "ts": list_measures["total_seats"][stat],

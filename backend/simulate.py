@@ -5,9 +5,8 @@ import dictionaries as dicts
 import random
 from voting import Election
 from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
-from dictionaries import STATISTICS_HEADINGS, SCALING_NAMES
+from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS, SCALING_NAMES
 from electionHandler import ElectionHandler
-from excel_util import simulation_to_xlsx
 from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
@@ -85,7 +84,8 @@ class Simulation():
         np = len(self.parties)
         self.MEASURES = self.measure_groups.get_all_measures()
         parallel = self.sim_settings["cpu_count"] > 1
-        self.STAT_LIST = list(STATISTICS_HEADINGS(parallel).keys())
+        self.STAT_LIST = list(STATISTICS_HEADINGS.keys())
+        self.MEASURE_LIST = list(EXCEL_HEADINGS.keys())
         self.stat = {}
         for measure in VOTE_MEASURES:
             self.stat[measure] = [None]*ns
@@ -406,20 +406,20 @@ class Sim_result:
     
     def analyze_general(self):
         for m in self.MEASURES:
-            dd = self.find_datadict(self.stat[m])
+            dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
             for i in range(self.nsys):
-                self.data[i][m] = dict((s, dd[s][i]) for s in self.STAT_LIST)
+                self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
 
     def analyze_vote_data(self):
         for m in VOTE_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
-                dd = self.find_datadict(sm)
+                dd = self.find_datadict(sm, self.STAT_LIST)
                 self.vote_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
 
     def analyze_list_data(self):
         for m in LIST_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
-                dd = self.find_datadict(sm)
+                dd = self.find_datadict(sm, self.STAT_LIST)
                 D = {}
                 for s in self.STAT_LIST:
                     D[s] = dd[s]
@@ -444,17 +444,21 @@ class Sim_result:
         # þá getur vote-datað orðið misjafnt milli kerfa; excel_util.py ræður
         # bara við að skrifa eitt vote_data.
 
-    def find_datadict(self, statentry):
+    def find_datadict(self, statentry, stat_list):
+        from math import sqrt
         stat_function = {
             "avg": statentry.mean,
             "std": statentry.std,
+            "lo95": statentry.lo95ci,
+            "hi95": statentry.hi95ci,
             "skw": statentry.skewness,
             "kur": statentry.kurtosis,
             "min": statentry.minimum,
             "max": statentry.maximum
         }
         datadict = {}
-        for stat in self.STAT_LIST:
+        nsim = self.iteration
+        for stat in stat_list:
             datadict[stat] = stat_function[stat]()
         return datadict
 

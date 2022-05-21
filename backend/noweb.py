@@ -192,7 +192,8 @@ def check_simulation(simid, stop=False):
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
-    simulation_to_xlsx(sim_result, file, parallel)
+    sim_result_dict = sim_result.get_result_dict(parallel)
+    simulation_to_xlsx(sim_result_dict, file, parallel)
 
 def delete_tempfiles(simid):
     pardir = parallel_dir()

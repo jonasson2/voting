@@ -1,5 +1,5 @@
 from par_util import *
-from util import disp, timestamp
+from util import disp, timestamp, hms
 from simulate import Simulation, Sim_result
 from copy import copy
 import multiprocessing as mp
@@ -21,8 +21,8 @@ def get_sim_status(monitor, nsim):
     done = iterations >= nsim or monitor.has_stopped()
     sim_status = {
         "iteration": iterations,
-        "time_left": time_left,
-        "total_time": runtime,
+        "time_left": hms(time_left),
+        "total_time": hms(runtime),
         "target": nsim,
         "done": done
     }
@@ -59,7 +59,7 @@ def parallel_simulate(simid):
         if asyncres.ready():
             sim_status["done"] = True
             break
-        print(timestamp(), "(1) sim_status=", sim_status)
+        #print(timestamp(), "(1) sim_status=", sim_status)
         write_sim_status(simid, sim_status)
     sim_dicts = asyncres.get()
     sim0 = Sim_result(sim_dicts[0])
@@ -71,7 +71,7 @@ def parallel_simulate(simid):
     sim_dict = vars(sim0)
     write_sim_dict(simid, sim_dict)
     sleep(0.1)
-    print(timestamp(), "(2) sim_status=", sim_status)
+    #print(timestamp(), "(2) sim_status=", sim_status)
     write_sim_status(simid, sim_status) # write with done after sim_result_dict
 
 if __name__ == "__main__":

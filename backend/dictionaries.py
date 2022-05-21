@@ -41,14 +41,14 @@ DIVIDER_RULE_NAMES = [
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
     {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
     {"value": "danish",          "text": "Danish"},
-    {"value": "huntington-hill", "text": "Huntington-Hill"},
+    {"value": "huntington-hill", "text": "Hill-Huntington"},
 ]
 RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
     {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
     {"value": "danish",          "text": "Danish"},
-    {"value": "huntington-hill", "text": "Huntington-Hill"},
+    {"value": "huntington-hill", "text": "Hill-Huntington"},
     {"value": "hare",            "text": "Hare quota"},
     {"value": "droop",           "text": "Droop quota"},
 ]
@@ -99,17 +99,25 @@ QUOTA_RULES = {
     "droop": droop,
 }
 
-def STATISTICS_HEADINGS(parallel):
-    headings = {
-        "avg": "AVG 95%-CI",
-        "min": "MINIMUM",
-        "max": "MAXIMUM",
-        "std": "STD.DEV."}
-    if False: #not parallel:  #TODO: Fix this
-        headings.update({
-            "skw": "SKEWNESS",
-            "kur": "KURTOSIS"})
-    return headings
+EXCEL_HEADINGS = {
+    "avg":  "AVERAGE",
+    "lo95": "LOWER 95%-CI",
+    "hi95": "UPPER 95%-CI",
+    "min":  "MINIMUM",
+    "max":  "MAXIMUM",
+    "std":  "STD.DEV."
+}    
+
+STATISTICS_HEADINGS = {
+    "avg": "AVG 95%-CI",
+    "min": "MINIMUM",
+    "max": "MAXIMUM",
+    "std": "STD.DEV."
+}
+
+# TODO: Add skewness and kurtosis when not parallel
+# "skw": "SKEWNESS",
+# "kur": "KURTOSIS"})
 
 ADJUSTMENT_METHODS = {
     "icelandic-law": icelandic_apportionment,

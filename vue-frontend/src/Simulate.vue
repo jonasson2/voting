@@ -116,7 +116,7 @@
 import SimResultMatrix from './components/SimResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
-import QualityMeasures from './QualityMeasures.vue'
+import QualityMeasures from './components/QualityMeasures.vue'
 import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {

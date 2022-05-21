@@ -38,7 +38,7 @@ def danish_gen():
         n += 1.0
 
 def huntington_hill_gen():
-    """Generate Huntington-Hill divider sequence; modified for hh(0) -> \inf"""
+    """Generate Hill-Huntington divider sequence; modified for hh(0) -> \inf"""
     n = 0
     yield 0.00000000001
     while True:

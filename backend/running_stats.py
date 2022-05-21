@@ -59,7 +59,18 @@ class Running_stats:
 
     def std(self):
         n = self.n
-        return np.sqrt(self.M2/max(1,n-1)).tolist()
+        var = self.M2/max(1,n-1)
+        return np.sqrt(var).tolist()
+
+    def lo95ci(self):
+        n = self.n
+        var = self.M2/max(1,n-1)
+        return (self.M1 - np.sqrt(var/n)).tolist()
+
+    def hi95ci(self):
+        n = self.n
+        var = self.M2/max(1,n-1)
+        return (self.M1 + np.sqrt(var/n)).tolist()
 
     def skewness(self):
         n = self.n
