@@ -74,7 +74,7 @@ class Election:
             "display_results": self.display_results()
         }
 
-    def run(self):
+    def run(self, threshold=True):
         # Run an election based on current systems and votes.
         # Return None if no solution exists.
 
@@ -94,7 +94,8 @@ class Election:
         self.total_seats = sum(self.v_desired_row_sums)
 
         self.run_primary_apportionment()
-        self.run_threshold_elimination()
+        if threshold:
+            self.run_threshold_elimination()
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
         # if not self.solvable:

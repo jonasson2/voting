@@ -181,7 +181,7 @@ class Simulation():
     def run_and_collect_measures(self, votes):
         # allocate seats according to votes:
         #print("it", self.iteration)
-        self.election_handler.run_elections(votes) # A
+        self.election_handler.run_elections(votes, threshold=False) # A
         if self.sensitivity:
             self.run_sensitivity(votes)
         else:

@@ -49,8 +49,8 @@ class Running_stats:
         self.n = n1 + n2
         delta = running_stats.M1 - self.M1
         if self.n==0: print("******** zero n in running_stats combine *********")
-        self.M1 = (n1*self.M1 + n2*running_stats.M1)/self.n
-        self.M2 += running_stats.M2 + delta**2*n1*n2/self.n
+        self.M1 = (n1*self.M1 + n2*running_stats.M1)/max(1,self.n)
+        self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
         self.big = np.maximum(self.big, running_stats.big)
         self.small = np.minimum(self.small, running_stats.small)
 
@@ -65,12 +65,12 @@ class Running_stats:
     def lo95ci(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return (self.M1 - np.sqrt(var/n)).tolist()
+        return (self.M1 - np.sqrt(var/max(1,n))).tolist()
 
     def hi95ci(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return (self.M1 + np.sqrt(var/n)).tolist()
+        return (self.M1 + np.sqrt(var/max(1,n))).tolist()
 
     def skewness(self):
         n = self.n

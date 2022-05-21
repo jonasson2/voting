@@ -23,7 +23,7 @@ def funabs(q, s):     return abs(q - s)
 def funsq(q, s):      return (q - s)**2
 def funpos(q, s):     return max(0, (s - q)/max(1,q))
 def funneg(q, s):     return max(0, (q - s)/max(1,q))
-def funsqshare(q, s): return (s - q)**2/max(1,q)
+def funsqshare(q, s): return (s - q)**2/q
 def funsqseat(q, s):  return (s - q)**2/max(1,s)
 
 function_dict = {

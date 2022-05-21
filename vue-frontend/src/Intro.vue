@@ -4,7 +4,7 @@
 
 
   <p>
-    Election Simulator, version: 2.13(beta) Time of release: 2022-03-02
+    Election Simulator, version: 2.13(beta) Time of release: 2022-05-21
   </p>
   <p>
     The aim of this software is to help people understand

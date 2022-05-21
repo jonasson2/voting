@@ -7,7 +7,11 @@ def find_bias(seats, seat_shares):
     seats = np.array(seats).flatten()
     excess = seats - seat_shares
     share = seat_shares
-    corr = np.corrcoef(share, excess)[0,1]
+    try:
+        corr = np.corrcoef(share, excess)[0,1]
+    except RuntimeWarning:
+        corr = 0
+        pass
     (slope,_) = np.polyfit(share, excess, 1)
     return slope, corr
 

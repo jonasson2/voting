@@ -42,6 +42,7 @@ const store = new Vuex.Store({
   // MUTATIONS
   mutations : {
     updateVoteTable(state, table) {
+      console.log("table=", table)
       state.vote_table = table
       setVoteSums(state)
     },
@@ -294,7 +295,6 @@ const store = new Vuex.Store({
     },
     // Thanks to Pétur Helgi Einarsson for the next two functions
     downloadFile: function (context, promise) {
-      console.log("In download file")
       promise.then (
         (response) => {
           const status = response.status;

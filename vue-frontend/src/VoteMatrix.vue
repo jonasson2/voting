@@ -379,11 +379,12 @@ export default {
       this.updateVoteSums()
     },
     save: function () {
-      let promise;
-      promise = axios({
+      var filename = this.vote_table.name.replace('þ', 'th')
+      var table = {...this.vote_table, name: filename}
+      let promise = axios({
         method: "post",
         url: "/api/votes/save",
-        data: { vote_table: this.vote_table },
+        data: { vote_table: table },
         responseType: "arraybuffer",
       });
       this.downloadFile(promise)
@@ -397,6 +398,8 @@ export default {
           if (!response.body || response.body.error) {
             this.serverError(response.body) 
           } else {
+            console.log("body=", response.body)
+            console.log("data=", response.data)
             this.updateVoteTable(response.data)
             this.clearWaitingForData()
           }

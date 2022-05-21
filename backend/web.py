@@ -213,17 +213,17 @@ def api_votes_save():
 def api_presets_load():
     try:
         presets_dict = get_presets_dict()
-        disp("(1) presets_dict", presets_dict)
         election_id = getparam('election_id')
         preset_ids = list(range(len(presets_dict)))
-        print('election_id', election_id)
-        print('preset_ids', preset_ids)
         if election_id not in preset_ids:
             raise ValueError("Unexpected missing ID in presets_dict")
         idx = election_id
-        idx = preset_ids.index(election_id)
+        preset = presets_dict[idx]
+        name = f'{preset["Country"]}-{preset["Name"]}-{preset["Year"]}'
+        print('name=', name)
         filename = "../data/" + presets_dict[idx]['filename']
         result = load_votes(filename)
+        result["name"] = name
         return jsonify(result)
     except Exception:
         return errormsg()     

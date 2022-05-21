@@ -23,11 +23,11 @@ class ElectionHandler:
         self.setup_elections(vote_table, systems)
         self.run_elections()
 
-    def run_elections(self, votes = None):
+    def run_elections(self, votes=None, threshold=True):
         for election in self.elections:
             if votes:
                 election.set_votes(votes)
-            election.run()
+            election.run(threshold)
             
     def setup_elections(self, vote_table, systems):
         constituencies_list = update_constituencies(vote_table, systems)
