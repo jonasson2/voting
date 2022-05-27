@@ -179,7 +179,7 @@ export default {
     // to force listening to beforeunload if simulation has been run
     //...mapMutations(["setSimulateCreated"])
     scaling_name: function(scaling) {
-      return this.sim_settings.scaling_names[scaling]
+      return this.sim_capabilities.scaling_names[scaling]
     },
   },
   watch: {

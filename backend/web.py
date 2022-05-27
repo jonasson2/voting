@@ -292,6 +292,7 @@ def api_capabilities():
                 "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,
+                "scaling_names": dictionaries.SCALING_NAMES,
             },
             "constituencies": constituencies
         }

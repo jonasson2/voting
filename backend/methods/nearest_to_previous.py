@@ -2,6 +2,8 @@ import numpy as np
 def maxi(A, openC, openP):
     # Max of A and corresponding indices for non-full constituencies and parties
     amax = 0
+    cmax = 0
+    pmax = 0
     for c in openC:
         for p in openP:
             if A[c,p] > amax:

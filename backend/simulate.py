@@ -5,7 +5,7 @@ import dictionaries as dicts
 import random
 from voting import Election
 from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
-from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS, SCALING_NAMES
+from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS
 from electionHandler import ElectionHandler
 from generate_votes import generate_votes
 from running_stats import Running_stats
@@ -38,7 +38,6 @@ class SimulationSettings(dict):
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False
-        self["scaling_names"] = SCALING_NAMES
         
     def abs(q, s):      return abs(q - s)
     def sq(q, s):       return (q - s)**2
