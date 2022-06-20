@@ -3,9 +3,7 @@ import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from electionHandler import ElectionHandler
-from noweb import load_votes
-from noweb import load_settings
-from noweb import single_election
+from noweb import load_votes, load_settings, single_election, votes_to_excel
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
 import json
@@ -49,6 +47,7 @@ def main():
     results = single_election(votes, systems)
     handler = ElectionHandler(votes, systems)
     handler.to_xlsx("single.xlsx")
+    votes_to_excel(votes, "votes.xlsx")
 
     print('results=', results)
 

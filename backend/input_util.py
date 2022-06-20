@@ -100,11 +100,11 @@ def check_systems(electoral_systems):
                 if not const[info]: const[info]=0
                 if type(const[info]) != int:
                     raise TypeError("Seat specifications must be numbers.")
-            if (const["num_const_seats"] + const["num_adj_seats"] <= 0):
-                raise ValueError("Constituency seats and adjustment seats "
-                     "must add to a nonzero number. "
-                     f"This is not the case for {name} in "
-                     f"electoral system {electoral_system['name']}.")
+            # if (const["num_const_seats"] + const["num_adj_seats"] <= 0):
+            #     raise ValueError("Constituency seats and adjustment seats "
+            #          "must add to a nonzero number. "
+            #          f"This is not the case for {name} in "
+            #          f"electoral system {electoral_system['name']}.")
     return electoral_systems
 
 def check_simul_settings(sim_settings):

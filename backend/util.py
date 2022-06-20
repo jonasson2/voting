@@ -2,7 +2,6 @@
 import random
 import csv
 import sys #??????
-from tabulate import tabulate
 import io
 import os
 import configparser

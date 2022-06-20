@@ -241,7 +241,7 @@ class Simulation():
     def other_measures(self, election, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)
         for (funcname, function) in function_dict.items():
-            measure = "sum_" + funcname
+            measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
             deviations.add(measure, self.sum_func(election, function))
         # deviations.add("sum_abs", self.sum_abs(election))
         # deviations.add("sum_pos", self.sum_pos(election))

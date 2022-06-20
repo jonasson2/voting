@@ -10,7 +10,6 @@ from multiprocessing import Pool
 import dictionaries, simulate
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from excel_util import save_votes_to_xlsx
 from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
 from util import disp, check_votes, load_votes_from_excel, get_cpu_counts
@@ -18,7 +17,7 @@ from util import timestamp, timestampmsg
 from trace_util import short_traceback
 from noweb import load_votes, load_settings, single_election
 from noweb import new_simulation, check_simulation
-from noweb import simulation_to_excel, create_SIMULATIONS
+from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
 
 def errormsg(message = None):
     if not message:
@@ -192,18 +191,8 @@ def api_votes_uploadall():
 def api_votes_save():
     try:
         vote_table = getparam("vote_table")
-        file_matrix = [
-            [vote_table["name"], "cons", "adj"] + vote_table["parties"],
-        ] + [
-            [
-                vote_table["constituencies"][c]["name"],
-                vote_table["constituencies"][c]["num_const_seats"],
-                vote_table["constituencies"][c]["num_adj_seats"],
-            ] + vote_table["votes"][c]
-            for c in range(len(vote_table["constituencies"]))
-        ]    
         tmpfilename = tempfile.mktemp(prefix='vote_table-')
-        save_votes_to_xlsx(file_matrix, tmpfilename)
+        votes_to_excel(vote_table, tmpfilename)
         download_name = secure_filename(vote_table['name']) + ".xlsx"
         return save_file(tmpfilename, download_name);
     except Exception:

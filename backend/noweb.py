@@ -10,7 +10,7 @@ from util import disp, check_votes, load_votes_from_excel
 from input_util import check_input, check_systems, check_simul_settings
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
-from excel_util import simulation_to_xlsx
+from excel_util import simulation_to_xlsx, votes_to_xlsx
 import psutil
 
 # Catch NumPy warnings (e.g. zero divide):
@@ -38,16 +38,33 @@ def correct_deprecated(L):
         "name",                       "primary_divider"]
     old_names = {
         "norwegian-icelandic": "max-const-seat-share",
-        "pure-vote-ratios": "max-const-vote-percentage"
+        "pure-vote-ratios":    "max-const-vote-percentage",
+        "nearest-neighbor":    "nearest-to-previous",
+        "nearest-to-last":     "nearest-to-previous",
+    }
+    translate = {
+        "constituency_allocation_rule": "primary_divider",
+        "adjustment_division_rule":     "adj_determine_divider",
+        "adjustment_allocation_rule":   "adj_alloc_divider",
     }
     for deprec in deprec_list:
         for sys in L["systems"]:
             if deprec in sys:
                 sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
-    for (old,new) in old_names.items():
-        for sys in L["systems"]:
+        
+        if "constituency_allocation_rule" in sys:
+            sys["primary_divider"] = sys["constituency_allocation_rule"]
+        if "adjustment_division_rule" in sys:
+            sys["adj_determine_divider"] = sys["adjustment_division_rule"]
+        if "adjustment_allocation_rule" in sys:
+            sys["adj_alloc_divider"] = sys["adjustment_allocation_rule"]
+    for sys in L["systems"]:
+        for (old,new) in old_names.items():
             if sys["adjustment_method"] == old:
                 sys["adjustment_method"] = new
+        for (oldkey, newkey) in translate.items():
+            if oldkey in sys:
+                sys[oldkey] = sys[newkey]
     return L
 
 def load_settings(f):
@@ -64,15 +81,6 @@ def load_settings(f):
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
     assert type(file_content["systems"]) == list
-    for item in file_content["systems"]:
-        if item["adjustment_method"] == "nearest-neighbor":
-            item["adjustment_method"] = "nearest-to-previous"
-        if "constituency_allocation_rule" in item:
-            item["primary_divider"] = item["constituency_allocation_rule"]
-        if "adjustment_division_rule" in item:
-            item["adj_determine_divider"] = item["adjustment_division_rule"]
-        if "adjustment_allocation_rule" in item:
-            item["adj_alloc_divider"] = item["adjustment_allocation_rule"]
     file_content = correct_deprecated(file_content)
     return file_content
 
@@ -195,6 +203,19 @@ def simulation_to_excel(simid, file):
     sim_result_dict = sim_result.get_result_dict(parallel)
     simulation_to_xlsx(sim_result_dict, file, parallel)
 
+def votes_to_excel(vote_table, file):
+    file_matrix = [
+        [vote_table["name"], "cons", "adj"] + vote_table["parties"],
+    ] + [
+        [
+            vote_table["constituencies"][c]["name"],
+            vote_table["constituencies"][c]["num_const_seats"],
+            vote_table["constituencies"][c]["num_adj_seats"],
+        ] + vote_table["votes"][c]
+            for c in range(len(vote_table["constituencies"]))
+    ]
+    votes_to_xlsx(file_matrix, file)    
+    
 def delete_tempfiles(simid):
     pardir = parallel_dir()
     for p in pardir.glob(f"{simid}*.*"):

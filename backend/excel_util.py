@@ -21,6 +21,11 @@ def prepare_formats(workbook):
     formats["cell"].set_align('right')
     formats["cell"].set_num_format('#,##0.000')
 
+    formats["votes"] = workbook.add_format()
+    formats["votes"].set_align('right')
+    formats["votes"].set_num_format('#,##0')
+
+    
     formats["center"] = workbook.add_format()
     formats["center"].set_align('center')
 
@@ -146,18 +151,12 @@ def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=
                                         cformat)
 
 def cell_width(x, fmt):
-    if isinstance(x,str):
-        n = len(x)
-    elif fmt == '1':
-        n = len(f'{x:,.1f}')
-    elif fmt == '3':
-        n = len(f'{x:,.3f}')
-    elif fmt == '%':
-        n = len(f'{x:,.3%}')
-    elif fmt == 'c':
-        n = len(f'{x:d}')
-    else:
-        n = 10
+    if isinstance(x,str): n = len(x)
+    elif fmt == '1':      n = len(f'{x:,.1f}')
+    elif fmt == '3':      n = len(f'{x:,.3f}')
+    elif fmt == '%':      n = len(f'{x:,.3%}')
+    elif fmt == 'votes':  n = len(f'{x:,.0f}')
+    else:                 n = 10
     return n
 
 def demo_table_to_xlsx(
@@ -619,10 +618,10 @@ def simulation_to_xlsx(results, filename, parallel):
 
     workbook.close()
 
-def save_votes_to_xlsx(matrix, filename):
+def votes_to_xlsx(matrix, filename):
     workbook = xlsxwriter.Workbook(filename)
     worksheet = workbook.add_worksheet()
     fmt = prepare_formats(workbook)
     write_matrix(worksheet=worksheet, startrow=0, startcol=0,
-        matrix=matrix, cformat=fmt["cell"])
+        matrix=matrix, cformat=fmt["votes"])
     workbook.close()

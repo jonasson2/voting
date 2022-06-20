@@ -2,7 +2,6 @@
 """
 This module contains the core voting system logic.
 """
-from tabulate import tabulate
 
 from table_util import entropy, add_totals, scale_matrix
 from apportion import apportion1d_general, \
@@ -146,7 +145,6 @@ class Election:
             # self.order.append(seats)
 
         # Useful:
-        # print tabulate([[parties[x] for x in y] for y in self.order])
 
         v_allocations = [sum(x) for x in zip(*m_allocations)]
 
