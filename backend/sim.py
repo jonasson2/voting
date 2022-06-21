@@ -14,7 +14,7 @@ from pathlib import Path
 
 #sys_file = "default-rule.json"
 #sys_file = "2reglur.json"
-defaultfile = '10kerfi-aldarkosning.json'
+defaultfile = 'SmadæmiAlltInn.json'
 
 def read_data(vote_file, json_file):
     json_file = Path(json_file).expanduser()
@@ -83,7 +83,7 @@ def main():
     sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv)
     (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_reps, vote_path)
 
-    #random.seed(42)
+    random.seed(43)
     systemnames = [s["name"] for s in systems]
     if sim_settings['simulation_count'] == 0: return
     sim_settings["sensitivity"] = False

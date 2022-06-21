@@ -95,6 +95,9 @@ class Election:
         self.run_primary_apportionment()
         if threshold:
             self.run_threshold_elimination()
+        else:
+            self.copy_votes()
+            
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
         # if not self.solvable:
@@ -151,6 +154,10 @@ class Election:
         self.m_const_seats = m_allocations
         self.v_const_seats_alloc = v_allocations
 
+    def copy_votes(self):
+        self.m_votes_eliminated = self.m_votes
+        self.v_votes_eliminated = self.v_votes
+        
     def run_threshold_elimination(self):
         """Eliminate parties that do not reach the adjustment threshold."""
         self.m_votes_eliminated = threshold_elimination_constituencies(

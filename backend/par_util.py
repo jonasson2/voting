@@ -110,7 +110,6 @@ class Monitor:
         while not self.queue.empty():
             (nr,info) = self.queue.get()
             self.info[nr] = info
-
         runtime = time() - self.starttime
         return (self.info, runtime, self.stopped)
 

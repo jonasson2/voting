@@ -16,7 +16,6 @@ from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
-
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
 
@@ -46,6 +45,7 @@ class SimulationSettings(dict):
 class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
+        warnings_to_errors()
         self.min_votes = CONSTANTS["minimum_votes"]
         election_handler = ElectionHandler(vote_table, systems, self.min_votes)
         self.election_handler = election_handler
@@ -125,7 +125,7 @@ class Simulation():
     def simulate(self, tasknr=0, monitor=None):
         # Simulate many elections.
         if self.sim_count == 0:
-            return None
+            return
         gen = self.gen_votes()
         self.iterations_with_no_solution = 0
         begin_time = datetime.now()
@@ -141,12 +141,9 @@ class Simulation():
             if monitor:
                 self.terminate = monitor.monitor(tasknr, self.iteration)
             if self.terminate:
-                    break
-        #self.analysis()
+                break
+        return
         
-        # self.test_generated() --- needs to be rewritten,
-        # (statistical test of simulated data)
-
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
@@ -362,6 +359,7 @@ class Simulation():
 class Sim_result:
     # Results from one simulation, or several combined simulations
     def __init__(self, dictionary):
+        warnings_to_errors()
         for (key,val) in dictionary.items():
             if key=='stat':
                 for statkey, statval in val.items():
@@ -497,3 +495,9 @@ class Sim_result:
         }
         add_vuedata(result_dict, parallel)
         return result_dict
+
+def warnings_to_errors():
+    # Catch NumPy warnings (e.g. zero divide):
+    import warnings
+    warnings.filterwarnings('error', category=RuntimeWarning)
+    warnings.filterwarnings('error', category=UserWarning)

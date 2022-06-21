@@ -5,7 +5,6 @@ from copy import copy
 import multiprocessing as mp
 from time import time, sleep
 from trace_util import traceback, long_traceback
-
 def task_simulate(nr, ntask, sim_settings, systems, votes, monitor):
     sim_settings = copy(sim_settings)
     sim_settings["simulation_count"] = ntask
@@ -13,7 +12,7 @@ def task_simulate(nr, ntask, sim_settings, systems, votes, monitor):
     sim.simulate(nr, monitor)
     return sim.attributes()
 
-def get_sim_status(monitor, nsim):
+def get_status(monitor, nsim):
     # GET CURRENT STATUS FROM THE WORKERS
     (info, runtime, stopped) = monitor.collect_progress()
     iterations = sum(info.values())
@@ -55,7 +54,7 @@ def parallel_simulate(simid):
         sleep(0.2)
         if read_sim_stop(simid):
             monitor.send_stopsignal()
-        sim_status = get_sim_status(monitor, nsim)
+        sim_status = get_status(monitor, nsim)
         if asyncres.ready():
             sim_status["done"] = True
             break

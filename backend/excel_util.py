@@ -148,7 +148,7 @@ def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=
                                         zeroesformat)
                         else:
                             worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        cformat)
+                                        cformat[c])
 
 def cell_width(x, fmt):
     if isinstance(x,str): n = len(x)

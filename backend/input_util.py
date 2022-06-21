@@ -58,10 +58,10 @@ def check_vote_table(vote_table):
             if not const[info]: const[info] = 0
             if type(const[info]) != int:
                 raise TypeError("Seat specifications must be numbers.")
-        if const["num_const_seats"]+const["num_adj_seats"] <= 0:
-            raise ValueError("Constituency seats and adjustment seats "
-                             "must add to a nonzero number. "
-                             f"This is not the case for {name}.")
+        # if const["num_const_seats"]+const["num_adj_seats"] <= 0:
+        #     raise ValueError("Constituency seats and adjustment seats "
+        #                      "must add to a nonzero number. "
+        #                      f"This is not the case for {name}.")
 
     seen = set()
     for const in table["constituencies"]:

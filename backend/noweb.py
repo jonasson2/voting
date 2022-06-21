@@ -1,4 +1,4 @@
-import random, os, csv, warnings, json, time, par_util, sys
+import random, os, csv, json, time, par_util, sys
 from threading import Thread, excepthook
 from pathlib import Path
 from par_util import write_sim_settings, write_sim_stop, read_sim_dict, clean
@@ -12,10 +12,6 @@ from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
 import psutil
-
-# Catch NumPy warnings (e.g. zero divide):
-warnings.filterwarnings('error', category=RuntimeWarning)
-warnings.filterwarnings('error', category=UserWarning)
 
 def create_SIMULATIONS():
     global SIMULATIONS
@@ -115,6 +111,7 @@ def new_simulation(votes, systems, sim_settings):
     simid = par_util.get_id()
     starttime = time.time()
     SIMULATIONS[simid] = {'time':starttime, 'exception':None}
+    # threaded = False
     if threaded:
         sim = Simulation(sim_settings, systems, votes)
         thread = Thread(target=run_thread_simulation, args=(simid,))
@@ -125,7 +122,7 @@ def new_simulation(votes, systems, sim_settings):
         write_sim_settings(simid, data)
         process = par_util.start_python_command('parsim.py', simid)
         SIMULATIONS[simid] |= {'kind':'parallel', 'process':process}
-    else:
+    else: # used for debugging
         sim = Simulation(sim_settings, systems, votes)
         sim.simulate()
         SIMULATIONS[simid] |= {'kind':'sequential', 'sim':sim}
