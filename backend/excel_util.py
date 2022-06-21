@@ -120,35 +120,22 @@ def prepare_formats(workbook):
 
 def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False,
                  totalsformat = None, zeroesformat = None):
+    total = totalsformat is not None
     for c in range(len(matrix)):
-        if totalsformat is not None:
-            for p in range(len(matrix[c])-1):
-                if matrix[c][p] != 0 or display_zeroes:
-                    try:
-                        worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        cformat[c])
-                    except TypeError:
-                        if matrix[c][p] == 0 and zeroesformat is not None:
-                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        zeroesformat)
-                        else:
-                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        cformat)
+        nrows = len(matrix[c]) - 1 if total else 0
+        formatc = cformat[c] if isinstance(format, list) else cformat
+        for p in range(nrows):
+            if matrix[c][p] != 0 or display_zeroes:
+                try:
+                    worksheet.write(startrow+c, startcol+p, matrix[c][p], formatc)
+                except TypeError:
+                    if matrix[c][p] == 0 and zeroesformat is not None:
+                        worksheet.write(startrow+c, startcol+p, matrix[c][p], zeroesformat)
+                    else:
+                        worksheet.write(startrow+c, startcol+p, matrix[c][p], formatc)
+        if total:
             worksheet.write(startrow+c, startcol+len(matrix[c])-1, matrix[c][-1],
-                        totalsformat)
-        else:
-            for p in range(len(matrix[c])):
-                if matrix[c][p] != 0 or display_zeroes:
-                    try:
-                        worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        cformat[c])
-                    except TypeError:
-                        if matrix[c][p] == 0 and zeroesformat is not None:
-                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        zeroesformat)
-                        else:
-                            worksheet.write(startrow+c, startcol+p, matrix[c][p],
-                                        cformat[c])
+                    totalsformat)
 
 def cell_width(x, fmt):
     if isinstance(x,str): n = len(x)
