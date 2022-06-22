@@ -122,8 +122,8 @@ def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=
                  totalsformat = None, zeroesformat = None):
     total = totalsformat is not None
     for c in range(len(matrix)):
-        nrows = len(matrix[c]) - 1 if total else 0
-        formatc = cformat[c] if isinstance(format, list) else cformat
+        nrows = len(matrix[c]) - (1 if total else 0)
+        formatc = cformat[c] if isinstance(cformat, list) else cformat
         for p in range(nrows):
             if matrix[c][p] != 0 or display_zeroes:
                 try:
@@ -336,7 +336,7 @@ def elections_to_xlsx(elections, filename):
             fmt["h"]
         )
         for demo_table in election.demo_tables:
-            col = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
+           col = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
 
         #suph = [] if suph is None else suph
 
