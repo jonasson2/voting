@@ -1,5 +1,6 @@
 from division_rules import dhondt_gen, sainte_lague_gen, \
-    nordic_sainte_lague_gen, imperiali_gen, danish_gen, huntington_hill_gen
+    nordic_sainte_lague_gen, imperiali_gen, danish_gen, huntington_hill_gen, \
+    adams_gen
 from division_rules import droop, hare
 
 from methods.alternating_scaling import alt_scaling
@@ -35,6 +36,7 @@ DIVIDER_RULES = {
     # "imperiali": imperiali_gen,
     "danish": danish_gen,
     "huntington-hill": huntington_hill_gen,
+    "adams": adams_gen
 }
 DIVIDER_RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
@@ -42,6 +44,7 @@ DIVIDER_RULE_NAMES = [
     {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
     {"value": "danish",          "text": "Danish"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
+    {"value": "adams",           "text":"Adams"}
 ]
 RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
@@ -49,6 +52,7 @@ RULE_NAMES = [
     {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
     {"value": "danish",          "text": "Danish"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
+    {"value": "adams",          "text": "Adams"},
     {"value": "hare",            "text": "Hare quota"},
     {"value": "droop",           "text": "Droop quota"},
 ]
@@ -106,7 +110,7 @@ EXCEL_HEADINGS = {
     "min":  "MINIMUM",
     "max":  "MAXIMUM",
     "std":  "STD.DEV."
-}    
+}
 
 STATISTICS_HEADINGS = {
     "avg": "AVG 95%-CI",

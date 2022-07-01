@@ -45,6 +45,15 @@ def huntington_hill_gen():
         n += 1
         yield math.sqrt(n*(n+1))
 
+def adams_gen():
+    """Generate Hill-Huntington divider sequence; modified for hh(0) -> \inf"""
+    n = 0
+    yield 0.00000000001
+    while True:
+        n += 1
+        yield n
+
+
 # Quota rules:
 
 def droop(total_votes, total_seats):
