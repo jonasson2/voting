@@ -93,7 +93,8 @@ class Election:
         self.total_seats = sum(self.v_desired_row_sums)
 
         self.run_primary_apportionment()
-        self.threshold_drop()
+        votes_above_threshold = self.threshold_drop()
+        # self.threshold_drop()
             
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
@@ -156,6 +157,7 @@ class Election:
             votes=self.m_votes,
             threshold=self.system["adjustment_threshold"]
         )
+        return self.m_votes_eliminated
 
     def run_determine_adjustment_seats(self):
         """Calculate the number of adjustment seats each party gets."""
