@@ -11,7 +11,7 @@ More generally this approach could be used to allocate limited resources to fact
 
 ## Installation for use with browser interface
 
-1. Make sure Python ≥ 3.8, pip and npm are available
+1. Make sure Python ≥ 3.9, pip and npm are available
     for example for npm:
       brew install node
 2. [OPTIONAL] Create a new Python3 Virtualenv, e.g. 'voting', and enter it.
