@@ -11,16 +11,23 @@ More generally this approach could be used to allocate limited resources to fact
 
 ## Installation for use with browser interface
 
-1. [OPTIONAL] Create a new Python3 Virtualenv, e.g. 'voting', and enter it.
-2. Make sure Python 3 and npm are available
-3. Clone this repository (e.g.  git@github.com:jonasson2/voting)
-4. cd into vue-frontend and run:
-4a.   npm install
-4b.   npm run build
-5. cd into backend and run:
-5a    pip install -r requirements.txt
-5b    python web.py
-6. Direct a browser to `http://localhost:5000/`
+1. Make sure Python ≥ 3.8, pip and npm are available
+    for example for npm:
+      brew install node
+2. [OPTIONAL] Create a new Python3 Virtualenv, e.g. 'voting', and enter it.
+    for example:  
+      conda create --name voting
+      conda activate voting
+3. Clone this repository
+    for example:
+      git clone https://github.com/jonasson2/voting
+4. Install required packages:
+      (cd vue-frontend && npm install)
+      (cd backend && pip install -r requirements.txt)
+5. To run the simulator locally: (required )
+      (cd vue-frontend && npm run build)
+      (cd backend && python web.py)
+      Direct a browser to `http://localhost:5000`
 
 
 ## Command Line Interface
