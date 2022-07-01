@@ -1,6 +1,6 @@
 #coding:utf-8
 from copy import deepcopy
-from apportion import apportion1d, threshold_elimination_constituencies
+from apportion import apportion1d, threshold_drop_adjustment
 
 def norw_ice_apportionment(m_votes,
                            v_desired_row_sums,
@@ -16,8 +16,8 @@ def norw_ice_apportionment(m_votes,
     total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
     for n in range(total_seats-num_allocated):
-        m_votes = threshold_elimination_constituencies(m_votes, 0.0,
-                    v_desired_col_sums, m_allocations)
+        # m_votes = threshold_drop_adjustment(m_votes, 0.0,
+        #             v_desired_col_sums, m_allocations)
         m_seat_props = []
         maximums = []
         for c in range(len(m_votes)):

@@ -1,6 +1,6 @@
 #coding:utf-8
 from copy import deepcopy, copy
-from apportion import apportion1d, threshold_elimination_constituencies
+from apportion import apportion1d
 
 def relative_inferiority(m_votes, v_desired_row_sums, v_desired_col_sums,
                          m_prior_allocations, divisor_gen, threshold=None,
@@ -15,8 +15,8 @@ def relative_inferiority(m_votes, v_desired_row_sums, v_desired_col_sums,
     num_total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
     for n in range(num_total_seats-num_allocated):
-        m_votes = threshold_elimination_constituencies(m_votes, 0.0,
-                    v_desired_col_sums, m_allocations)
+        # m_votes = threshold_drop_adjustment(m_votes, 0.0,
+        #             v_desired_col_sums, m_allocations)
         inferiority = []
         first_in = []
         next_used = []

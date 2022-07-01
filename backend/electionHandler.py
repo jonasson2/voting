@@ -27,7 +27,7 @@ class ElectionHandler:
         for election in self.elections:
             if votes:
                 election.set_votes(votes)
-            election.run(threshold)
+            election.run()
             
     def setup_elections(self, vote_table, systems):
         constituencies_list = update_constituencies(vote_table, systems)

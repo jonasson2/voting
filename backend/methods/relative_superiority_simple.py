@@ -1,6 +1,6 @@
 #coding:utf-8
 from copy import deepcopy, copy
-from apportion import apportion1d, threshold_elimination_constituencies
+from apportion import apportion1d
 from table_util import v_subtract
 
 def relative_superiority_simple(m_votes,

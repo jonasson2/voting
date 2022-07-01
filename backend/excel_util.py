@@ -219,8 +219,8 @@ def elections_to_xlsx(elections, filename):
         xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
         xtd_seat_shares = find_xtd_shares(xtd_total_seats)
         threshold = 0.01*election.system["adjustment_threshold"]
-        xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
-        xtd_final_shares = find_xtd_shares([xtd_final_votes])[0]
+        # xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
+        # xtd_final_shares = find_xtd_shares([xtd_final_votes])[0]
         now = datetime.now().strftime('%Y-%m-%d %H:%M')
         info = [
             ["Date:",
@@ -286,28 +286,28 @@ def elections_to_xlsx(elections, filename):
             matrix=xtd_votes, cformat=fmt["base"]
         )
 
-        row = draw_block(worksheet, row=row, col=col,
-            heading="Vote percentages", xheaders=parties, yheaders=const_names,
-            matrix=xtd_shares
-        )
+        # row = draw_block(worksheet, row=row, col=col,
+        #     heading="Vote percentages", xheaders=parties, yheaders=const_names,
+        #     matrix=xtd_shares
+        # )
 
         row = draw_block(worksheet, row=row, col=col,
             heading="Constituency seats", xheaders=parties, yheaders=const_names,
             matrix=xtd_const_seats, cformat=fmt["base"]
         )
 
-        row_headers = ['Total votes', 'Vote shares', 'Threshold',
-                       'Votes above threshold',
-                       'Vote shares above threshold', 'Constituency seats']
-        matrix = [xtd_votes[-1],   xtd_shares[-1],   [threshold],
-                  xtd_final_votes, xtd_final_shares, xtd_const_seats[-1]]
-        formats = [fmt["base"], fmt["share"], fmt["share"],
-                   fmt["base"], fmt["share"], fmt["base"]]
-        row = draw_block(worksheet, row=row, col=col,
-            heading="Adjustment seat apportionment", topleft="Party",
-            xheaders=parties, yheaders=row_headers,
-            matrix=matrix, cformat=formats
-        )
+        # row_headers = ['Total votes', 'Vote shares', 'Threshold',
+        #                'Votes above threshold',
+        #                'Vote shares above threshold', 'Constituency seats']
+        # matrix = [xtd_votes[-1],   xtd_shares[-1],   [threshold],
+        #           xtd_final_votes, xtd_final_shares, xtd_const_seats[-1]]
+        # formats = [fmt["base"], fmt["share"], fmt["share"],
+        #            fmt["base"], fmt["share"], fmt["base"]]
+        # row = draw_block(worksheet, row=row, col=col,
+        #     heading="Adjustment seat apportionment", topleft="Party",
+        #     xheaders=parties, yheaders=row_headers,
+        #     matrix=matrix, cformat=formats
+        # )
 
         row = draw_block(worksheet, row=row, col=col,
             heading="Adjustment seats", xheaders=parties, yheaders=const_names,
@@ -319,10 +319,10 @@ def elections_to_xlsx(elections, filename):
             matrix=xtd_total_seats, cformat=fmt["base"]
         )
 
-        row = draw_block(worksheet, row=row, col=col,
-            heading="Seat shares", xheaders=parties, yheaders=const_names,
-            matrix=xtd_seat_shares
-        )
+        # row = draw_block(worksheet, row=row, col=col,
+        #     heading="Seat shares", xheaders=parties, yheaders=const_names,
+        #     matrix=xtd_seat_shares
+        # )
 
         worksheet.write(row, col, 'Entropy:', fmt["h"])
         worksheet.write(row, col+1, election.entropy(), fmt["cell"])

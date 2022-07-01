@@ -5,7 +5,7 @@ This module contains the core voting system logic.
 
 from table_util import entropy, add_totals, scale_matrix
 from apportion import apportion1d_general, \
-    threshold_elimination_totals, threshold_elimination_constituencies
+    threshold_elimination_totals, threshold_drop_adjustment
 from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 from dictionaries import CONSTANTS, DEMO_TABLE_FORMATS
@@ -73,7 +73,7 @@ class Election:
             "display_results": self.display_results()
         }
 
-    def run(self, threshold=True):
+    def run(self):
         # Run an election based on current systems and votes.
         # Return None if no solution exists.
 
@@ -93,10 +93,7 @@ class Election:
         self.total_seats = sum(self.v_desired_row_sums)
 
         self.run_primary_apportionment()
-        if threshold:
-            self.run_threshold_elimination()
-        else:
-            self.copy_votes()
+        self.threshold_drop()
             
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
@@ -145,22 +142,13 @@ class Election:
                 alloc = [0]*self.num_parties()
                 self.last.append({'idx':None, 'active_votes':0})
             m_allocations.append(alloc)
-            # self.order.append(seats)
-
-        # Useful:
 
         v_allocations = [sum(x) for x in zip(*m_allocations)]
-
         self.m_const_seats = m_allocations
         self.v_const_seats_alloc = v_allocations
 
-    def copy_votes(self):
-        self.m_votes_eliminated = self.m_votes
-        self.v_votes_eliminated = self.v_votes
-        
-    def run_threshold_elimination(self):
-        """Eliminate parties that do not reach the adjustment threshold."""
-        self.m_votes_eliminated = threshold_elimination_constituencies(
+    def threshold_drop(self):
+        self.m_votes_eliminated = threshold_drop_adjustment(
             votes=self.m_votes,
             threshold=self.system["adjustment_threshold"]
         )

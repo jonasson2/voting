@@ -21,9 +21,11 @@ from util import disp
 
 def funabs(q, s):     return abs(q - s)
 def funsq(q, s):      return (q - s)**2
-def funpos(q, s):     return max(0, (s - q))/q if s > 0 else 0
+def funpos(q, s):
+    if q == 0:
+        q = q
+    return max(0, (s - q))/q if s > 0 else 0
 def funneg(q, s):     return max(0, (q - s))/q if s > 0 else 0
-#def funneg(q, s):     return max(0, (s - 1 - q)/max(1,q))
 def funsqshare(q, s): return (s - q)**2/q if s > 0 else 0
 def funsqseat(q, s):  return (s - q)**2/max(1,s)
 
@@ -44,7 +46,7 @@ class MeasureGroups(dict):
                 "sum_abs":     ("absolute values (Hare-quota)", ""),
                 "sum_sq":      ("squared values (Hare-quota)", ""),
                 "sum_pos":     ("pos. values scaled by reciprocal shares (D'Hondt)", ""),
-                "sum_neg":     ("neg. values scaled by reciprocal shares (D'Hondt)", ""),
+                "sum_neg":     ("neg. values scaled by reciprocal shares (Adams)", ""),
                 "sum_sqshare": ("sq.val. scaled by reciprocal shares (Sainte-Laguë)", ""),
                 "sum_sqseat":  ("sq.val. scaled by reciproc. seats (Hill-Huntington)", ""),
             },

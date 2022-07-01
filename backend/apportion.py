@@ -28,7 +28,7 @@ def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
         - a tuple containing current divisors, divisor generators, and the
           smallest used divided vote value.
     """
-    v_votes = threshold_elimination_1d(v_votes, threshold)
+    v_votes = threshold_drop_1d(v_votes, threshold)
     N = len(v_votes)
     divisor_gens = [divisor_gen() for x in range(N)]
     divisors = []
@@ -88,7 +88,7 @@ def apportion1d_general(
     allocations = copy(prior_allocations) if prior_allocations else [0]*N
 
     seat_gen = seat_generator(
-        votes=threshold_elimination_1d(v_votes, threshold),
+        votes=threshold_drop_1d(v_votes, threshold),
         num_total_seats=num_total_seats,
         prior_allocations=copy(allocations),
         rule=rule,
@@ -202,47 +202,23 @@ def seat_generator_quota(
     return seat_gen
 
 
-def threshold_elimination_constituencies(votes, threshold, party_seats=None,
-                                            priors=None):
-    """
-    Eliminate parties that don't reach national threshold.
-    Optionally, eliminate parties that have already gotten all their
-    calculated seats.
-
-    Inputs:
-        - votes: Matrix of votes.
-        - threshold: Real value between 0.0 and 100.0 with the cutoff threshold.
-        - [party_seats]: seats that should be allocated to each party
-        - [priors]: a matrix of prior allocations to each party per
-            constituency
-    Outputs:
-        - Matrix of votes with eliminated parties zeroed out.
-    """
+def threshold_drop_adjustment(votes, threshold):
     N = len(votes[0])
     totals = [sum(x) for x in zip(*votes)]
-    shares = find_shares_1d(totals)
+    sum_totals = sum(totals)
+    shares = [v/sum_totals for v in totals]
     m_votes = [[c[p] if shares[p]*100 > threshold else 0 for p in range(N)]
                for c in votes]
-
-    if not (priors and party_seats):
-        return m_votes
-
-    for p in range(N):
-        if party_seats[p] == sum([const[p] for const in priors]):
-            for c in range(len(votes)):
-                m_votes[c][p] = 0
-
     return m_votes
 
 def threshold_elimination_totals(votes, threshold):
-    """
-    Eliminate parties that do not reach the threshold proportion of
-    national votes. Replaces such parties with zeroes.
-    """
     totals = [sum(x) for x in zip(*votes)]
-    return threshold_elimination_1d(totals, threshold)
+    shares = find_shares_1d(totals)
+    cutoff = [totals[p] if shares[p]*100 > threshold else 0
+              for p in range(len(shares))]
+    return cutoff
 
-def threshold_elimination_1d(v_votes, threshold):
+def threshold_drop_1d(v_votes, threshold):
     shares = find_shares_1d(v_votes)
     cutoff = [v_votes[p] if shares[p]*100 > threshold else 0
                 for p in range(len(shares))]
