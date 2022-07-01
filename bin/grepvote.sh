@@ -1,7 +1,6 @@
 #!/bin/bash
-pwd=$(pwd)
-dir=${pwd#$HOME/}
-rootdir=$HOME/${dir%%/*}
+rootdir=${BASH_SOURCE%/*}
+rootdir=${rootdir%/*}
 
 echo
 echo IN JS FILES:
