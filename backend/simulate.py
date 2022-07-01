@@ -233,7 +233,6 @@ class Simulation():
             for c in range(election.num_constituencies())
             if self.vote_table['votes'][c][p] >= 1
         ])
-        return measure
 
     def other_measures(self, election, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)

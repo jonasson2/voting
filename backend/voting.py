@@ -4,8 +4,7 @@ This module contains the core voting system logic.
 """
 
 from table_util import entropy, add_totals, scale_matrix
-from apportion import apportion1d_general, \
-    threshold_elimination_totals, threshold_drop_adjustment
+from apportion import apportion1d_general
 from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 from dictionaries import CONSTANTS, DEMO_TABLE_FORMATS
@@ -89,17 +88,12 @@ class Election:
             for const in self.system["constituencies"]
         ]
 
-        # Determine total seats in play:
+        # Allocate seats
         self.total_seats = sum(self.v_desired_row_sums)
-
-        self.run_primary_apportionment()
-        votes_above_threshold = self.threshold_drop()
-        # self.threshold_drop()
-            
+        self.run_primary_apportionment()            
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
-        # if not self.solvable:
-        #     self.results = None
+
         return self.results
 
     @staticmethod
@@ -148,17 +142,6 @@ class Election:
         self.m_const_seats = m_allocations
         self.v_const_seats_alloc = v_allocations
 
-    def threshold_drop(self):
-        self.m_votes_eliminated = threshold_drop_adjustment(
-            votes=self.m_votes,
-            threshold=self.system["adjustment_threshold"]
-        )
-        self.v_votes_eliminated = threshold_elimination_totals(
-            votes=self.m_votes,
-            threshold=self.system["adjustment_threshold"]
-        )
-        return self.m_votes_eliminated
-
     def run_determine_adjustment_seats(self):
         """Calculate the number of adjustment seats each party gets."""
         self.v_desired_col_sums, self.adj_seat_gen, _, _ \
@@ -191,7 +174,7 @@ class Election:
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
         self.results, self.demo_table_info = method (
-                m_votes             = self.m_votes_eliminated,
+                m_votes             = self.m_votes,
                 v_desired_row_sums  = self.v_desired_row_sums,
                 v_desired_col_sums  = self.v_desired_col_sums,
                 m_prior_allocations = self.m_const_seats,
