@@ -6,12 +6,12 @@
         Allocation of constituency seats
       </legend>
       <b-col cols="7">
-        <b-form-group 
+        <b-form-group
           label="Rule"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Basic rule used for allocating constituency seats to 
+          title="Basic rule used for allocating constituency seats to
                  party lists within each constituency."
           >
           <b-form-select
@@ -26,7 +26,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Threshold as percentage of valid votes in a constituency 
+          title="Threshold as percentage of valid votes in a constituency
                  required by a list to qualify for seats in that constituency."
           >
           <b-input-group append="%">
@@ -41,13 +41,13 @@
       <legend style = "margin-left:0px">
         Apportionment of adjustment seats to parties
       </legend>
-      <b-col cols="7">
+      <b-col cols="5">
         <b-form-group
           label="Rule"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Basic rule used to apportion adjustment seats between parties 
+          title="Basic rule used to apportion adjustment seats between parties
                  based on total votes for all lists of the same party."
           >
           <b-form-select
@@ -55,20 +55,52 @@
             :options="capabilities.systems"/>
         </b-form-group>
       </b-col>
-      <b-col cols="5">
+      <b-col cols="3">
         <b-form-group
           label="Threshold"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Threshold as percentage of total votes required by a party 
-                 to qualify for apportionment of adjustment seats."
+          title="Threshold as percentage of total votes required by a party
+                 to qualify for apportionment of adjustment seats. Choose 0 if
+                 not applicable"
           >
           <b-input-group append="%">
             <b-form-input
               type="number"
               min="0" max="100"
               v-model.number="systems[systemidx].adjustment_threshold"/>
+          </b-input-group>
+        </b-form-group>
+      </b-col>
+      <b-col cols="1">
+        <b-form-group
+          label=""
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Choose if either or both thresholds apply"
+          >
+          <b-form-select
+            v-model="systems[systemidx].adj_threshold_choice"
+            :options="capabilities.adj_threshold_choice"/>
+        </b-form-group>
+      </b-col>
+      <b-col cols="3">
+        <b-form-group
+          label="number of Cons. seats"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Threshold as number of constituency seats required by a party
+                 to qualify for apportionment of adjustment seats. Choose 0 if
+                 not applicable."
+          >
+          <b-input-group>
+            <b-form-input
+              type="number"
+              min="0" max="10"
+              v-model.number="systems[systemidx].adjustment_threshold_seats"/>
           </b-input-group>
         </b-form-group>
       </b-col>
@@ -81,7 +113,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Rule to allocate adjustment seats to individual party lists within 
+          title="Rule to allocate adjustment seats to individual party lists within
                  the constituencies."
           >
           <b-form-select
@@ -95,7 +127,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Method to allocate adjustment seats to party 
+          title="Method to allocate adjustment seats to party
                  lists based on the given basic rule."
           >
           <b-form-select
@@ -111,7 +143,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Numbers of constituency and adjustment seats in each 
+          title="Numbers of constituency and adjustment seats in each
                  constituency in this particular electoral system"
           >
           <b-form-select

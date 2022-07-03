@@ -145,6 +145,12 @@ GENERATING_METHODS = {
     "uniform": uniform_distribution
 }
 
+THRESHOLD_CHOICE = [
+    {"value": 0,          "text": "and"},
+    {"value": 1,          "text": "or"}
+]
+
+
 # MEASURES = {
 #     "dev_all_adj":  "Allocation as if all seats were adjustment seats",
 #     "dev_all_adj_tot":

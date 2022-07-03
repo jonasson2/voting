@@ -90,7 +90,7 @@ class Election:
 
         # Allocate seats
         self.total_seats = sum(self.v_desired_row_sums)
-        self.run_primary_apportionment()            
+        self.run_primary_apportionment()
         self.run_determine_adjustment_seats()
         self.run_adjustment_apportionment()
 
@@ -129,7 +129,7 @@ class Election:
                     prior_allocations=[],
                     rule=self.system.get_generator("primary_divider"),
                     type_of_rule=self.system.get_type("primary_divider"),
-                    threshold=self.system["constituency_threshold"]
+                    threshold_percent=self.system["constituency_threshold"]
                 )
                 assert last_in #last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -151,7 +151,9 @@ class Election:
                 prior_allocations=self.v_const_seats_alloc,
                 rule=self.system.get_generator("adj_determine_divider"),
                 type_of_rule=self.system.get_type("adj_determine_divider"),
-                threshold=self.system["adjustment_threshold"]
+                threshold_percent=self.system["adjustment_threshold"],
+                threshlod_choice=self.system["adj_threshold_choice"],
+                threshold_seats=self.system["adjustment_threshold_seats"]
             )
         return self.v_desired_col_sums
 
@@ -247,4 +249,3 @@ class Election:
                             for c in range(self.num_constituencies()):
                                 ideal_seats[c][p] *= mult
         self.ideal_seats = ideal_seats
-

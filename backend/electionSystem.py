@@ -9,12 +9,14 @@ class ElectionSystem(dict):
 
     def __init__(self):
         self["name"] = "System"
-        
+
         # Election systems
         self["primary_divider"] = "dhondt"
         self["adj_determine_divider"] = "dhondt"
         self["adj_alloc_divider"] = "dhondt"
         self["adjustment_threshold"] = 5
+        self["adjustment_threshold_seats"] = 0
+        self["adj_threshold_choice"] = 0
         self["constituency_threshold"] = 0
         self["adjustment_method"] = "icelandic-law"
         self["seat_spec_option"] = "refer"
