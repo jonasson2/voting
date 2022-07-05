@@ -73,7 +73,7 @@
           </b-input-group>
         </b-form-group>
       </b-col>
-      <b-col cols="1">
+      <b-col cols="2">
         <b-form-group
           label=""
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -86,9 +86,9 @@
             :options="capabilities.adj_threshold_choice"/>
         </b-form-group>
       </b-col>
-      <b-col cols="3">
+      <b-col cols="2">
         <b-form-group
-          label="number of Cons. seats"
+          label=""
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
@@ -96,7 +96,7 @@
                  to qualify for apportionment of adjustment seats. Choose 0 if
                  not applicable."
           >
-          <b-input-group>
+          <b-input-group append="Cons. seats">
             <b-form-input
               type="number"
               min="0" max="10"
