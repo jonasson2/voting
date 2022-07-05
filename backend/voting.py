@@ -216,10 +216,15 @@ class Election:
             table['format'] = "".join(fmtlist)
 
     def calculate_ideal_seats(self, scaling):
+        import numpy as np, numpy.linalg as la
         scalar = float(self.total_seats)/sum(sum(x) for x in self.m_votes)
-        ideal_seats = scale_matrix(self.m_votes, scalar)
+        ideal_seats = np.array(scale_matrix(self.m_votes, scalar))
         # assert self.solvable
-        rein = 0
+        # rein = 0
+        nrows = self.num_constituencies()
+        ncols = self.num_parties()
+        eta = np.ones(nrows)
+        tau = np.ones(ncols)
         error = 1
         niter = 0
         if self.num_parties() > 1 and self.num_constituencies() > 1:
@@ -232,19 +237,16 @@ class Election:
                     for c in range(self.num_constituencies()):
                         s = sum(ideal_seats[c])
                         if s != 0:
-                            mult = float(self.v_desired_row_sums[c])/s
-                            error += abs(1 - mult)
-                            mult += rein*(1 - mult)
-                            for p in range(self.num_parties()):
-                                ideal_seats[c][p] *= mult
+                            delta_eta = s/float(self.v_desired_row_sums[c])
+                            eta[c] *= delta_eta
+                            error += abs(delta_eta)
+                            ideal_seats[c,:] /= eta[c]
                 if col_constraints:
                     for p in range(self.num_parties()):
                         s = sum([c[p] for c in ideal_seats])
                         if s != 0:
-                            mult = float(self.v_desired_col_sums[p])/s
-                            error += abs(1 - mult)
-                            mult += rein*(1 - mult)
-                            for c in range(self.num_constituencies()):
-                                ideal_seats[c][p] *= mult
+                            delta_tau = s/float(self.v_desired_col_sums[p])
+                            tau[p] *= delta_tau
+                            error += abs(delta_tau)
+                            ideal_seats[:,p] /= tau[p]
         self.ideal_seats = ideal_seats
-
