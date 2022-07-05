@@ -37,11 +37,11 @@ class SimulationSettings(dict):
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False
-        
+
     def abs(q, s):      return abs(q - s)
     def sq(q, s):       return (q - s)**2
 
-        
+
 class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
@@ -143,7 +143,7 @@ class Simulation():
             if self.terminate:
                 break
         return
-        
+
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
@@ -233,6 +233,7 @@ class Simulation():
             for c in range(election.num_constituencies())
             if self.vote_table['votes'][c][p] >= 1
         ])
+        return measure
 
     def other_measures(self, election, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)
@@ -269,7 +270,7 @@ class Simulation():
     def bias(self, election):
         (slope,corr) = find_bias(election.results, election.ideal_seats)
         return slope,corr
-    
+
     # Loosemore-Hanby
     def sum_abs(self, election):
         lh = sum([
@@ -330,9 +331,9 @@ class Simulation():
                 for i in range(len(val)):
                     val[i] = vars(val[i]) if val[i] else {}
             else:
-                stat[key] = vars(stat[key])                
+                stat[key] = vars(stat[key])
         return dictionary
-    
+
     # def get_raw_result(self):
     #     # Used to transfer simulation results to Sim_result object
     #     # Must be a dictionary to make it through multiprocessing interface
@@ -354,7 +355,7 @@ class Simulation():
     #     result["xtd_votes"] = self.xtd_votes
     #     #disp('result', result)
     #     return result
-        
+
 class Sim_result:
     # Results from one simulation, or several combined simulations
     def __init__(self, dictionary):
@@ -399,7 +400,7 @@ class Sim_result:
                 measure = "cmp_" + cmp_system["name"]
                 self.stat[measure].combine(sim_result.stat[measure])
                 self.stat[measure + "_tot"].combine(sim_result.stat[measure + "_tot"])
-    
+
     def analyze_general(self):
         for m in self.MEASURES:
             dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)

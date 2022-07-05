@@ -64,7 +64,9 @@ def apportion1d_general(
     prior_allocations,
     rule,
     type_of_rule,
-    threshold=0,
+    threshold_percent=0,
+    threshlod_choice=0,
+    threshold_seats=0
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -76,11 +78,14 @@ def apportion1d_general(
         - prior_allocations: Prior allocations to each party.
         - rule: A rule for selecting the next seat.
         - type_of_rule: A string specifying rule type: "Division" or "Quota".
-        - threshold: A cutoff threshold in range [0,100].
+        - threshold_percent: A cutoff threshold in range [0,100].
+        - threshold_choice: marker for if both or either of threshold_percent
+                            and threshold_seats (0 for both, 1 for either)
+        - threshold_seats: A cutoff threshold in range of 0 to 10
     Outputs:
         - allocations vector
         - a generator that generates a sequence of seat allocations,
-        -  including vote values used.
+        - including vote values used.
         - easy reference to the last seat to be allocated
         - information about the first seat that was not allocated
     """
@@ -88,7 +93,9 @@ def apportion1d_general(
     allocations = copy(prior_allocations) if prior_allocations else [0]*N
 
     seat_gen = seat_generator(
-        votes = threshold_drop(v_votes, threshold),
+        votes = threshold_drop(v_votes, threshold=[threshlod_choice,
+                                        threshold_percent, threshold_seats,
+                                        (copy(prior_allocations) if prior_allocations else None)]),
         num_total_seats = num_total_seats,
         prior_allocations = copy(allocations),
         rule = rule,
@@ -203,6 +210,22 @@ def seat_generator_quota(
 
 def threshold_drop(v_votes, threshold):
     shares = find_shares_1d(v_votes)
-    cutoff = [v_votes[p] if shares[p]*100 > threshold else 0
+    if threshold[3]==None or threshold[2]==0:
+        cutoff = [v_votes[p] if shares[p]*100 > threshold[1] else 0
                 for p in range(len(shares))]
-    return cutoff
+        return cutoff
+    elif threshold[1]==0:
+        cutoff = [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
+        return cutoff
+    elif threshold[0]==0:
+        cutoff_p = [v_votes[p] if shares[p]*100 > threshold[1] else 0
+                for p in range(len(shares))]
+        cutoff_s = [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
+        cutoff= [0 if x==0 or y ==0 else max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
+        return cutoff
+    else:
+        cutoff_p = [v_votes[p] if shares[p]*100 > threshold[1] else 0
+                for p in range(len(shares))]
+        cutoff_s= [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
+        cutoff = [max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
+        return cutoff

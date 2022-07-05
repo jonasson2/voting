@@ -21,13 +21,10 @@ from util import disp
 
 def funabs(q, s):     return abs(q - s)
 def funsq(q, s):      return (q - s)**2
-def funpos(q, s):
-    if q == 0:
-        q = q
-    return max(0, (s - q))/q if s > 0 else 0
+def funpos(q, s):     return max(0, (s - q))/q if s > 0 else 0
 def funneg(q, s):     return max(0, (q - s))/q if s > 0 else 0
 def funsqshare(q, s): return (s - q)**2/q if s > 0 else 0
-def funsqseat(q, s):  return (s - q)**2/max(1,s)
+def funsqseat(q, s):  return (s - q)**2/s if s > 0 else 0
 
 function_dict = {
     'abs': funabs,

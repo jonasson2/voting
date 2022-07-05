@@ -22,7 +22,7 @@ from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
 def errormsg(message = None):
     if not message:
         message = short_traceback(format_exc())
-    return jsonify({'error': message}) 
+    return jsonify({'error': message})
 
 class CustomFlask(Flask):
     jinja_options = Flask.jinja_options.copy()
@@ -37,8 +37,8 @@ class CustomFlask(Flask):
 
 import logging
 log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)    
-    
+log.setLevel(logging.ERROR)
+
 app = CustomFlask('voting',
             template_folder=os.path.abspath('../vue-frontend/'),
             static_folder=os.path.abspath('../vue-frontend/static/'))
@@ -141,7 +141,7 @@ def api_settings_save():
         return save_file(tmpfilename, download_filename)
     except Exception:
         return errormsg()
-    
+
 @app.route('/api/settings/upload/', methods=['POST'])
 def api_settings_upload():
     try:
@@ -170,7 +170,7 @@ def api_votes_save_all():
         download_filename = "simulator-" + date + ".json"
         return save_file(tmpfilename, download_filename)
     except Exception:
-        return errormsg()    
+        return errormsg()
 
 @app.route('/api/uploadall/', methods=['POST'])
 def api_votes_uploadall():
@@ -181,11 +181,11 @@ def api_votes_uploadall():
             return errormsg(f'File {f.filename} contains no votes and must '
                             'be uploaded with "Load from file"')
         elif set(content) == {"systems", "sim_settings", "vote_table"}:
-            return jsonify(content)        
+            return jsonify(content)
         else:
             return errormsg(f'Not a legal json-file for "Load all"')
     except Exception:
-        return errormsg()        
+        return errormsg()
 
 @app.route('/api/votes/save/', methods=['POST'])
 def api_votes_save():
@@ -196,7 +196,7 @@ def api_votes_save():
         download_name = secure_filename(vote_table['name']) + ".xlsx"
         return save_file(tmpfilename, download_name);
     except Exception:
-        return errormsg()    
+        return errormsg()
 
 @app.route('/api/presets/load/', methods=['POST'])
 def api_presets_load():
@@ -215,7 +215,7 @@ def api_presets_load():
         result["name"] = name
         return jsonify(result)
     except Exception:
-        return errormsg()     
+        return errormsg()
 
 @app.route('/api/votes/upload/', methods=['POST'])
 def api_votes_upload():
@@ -235,7 +235,7 @@ def api_votes_upload():
         else:
             return jsonify(result)
     except Exception:
-        return errormsg()        
+        return errormsg()
 
 @app.route('/api/simulate/', methods=['POST'])
 def api_simulate():
@@ -282,12 +282,13 @@ def api_capabilities():
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,
                 "scaling_names": dictionaries.SCALING_NAMES,
+                "adj_threshold_choice": dictionaries.THRESHOLD_CHOICE,
             },
             "constituencies": constituencies
         }
         return jsonify(capabilities_dict)
     except Exception:
-        return errormsg()        
+        return errormsg()
 
 @app.route('/api/presets/', methods=["GET"])
 def api_presets():
@@ -295,7 +296,7 @@ def api_presets():
         presets_dict = get_presets_dict()
         return jsonify(presets_dict)
     except Exception:
-        return errormsg()        
+        return errormsg()
 
 @app.route('/api/simdownload/', methods=['GET','POST'])
 def api_simdownload():
@@ -327,4 +328,3 @@ if __name__ == '__main__':
     else:
         print('Running server using HTTP (not secure)!')
         app.run(host=host, port=port, debug=debug)
-
