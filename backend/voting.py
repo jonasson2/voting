@@ -232,23 +232,31 @@ class Election:
         if self.num_parties() > 1 and self.num_constituencies() > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
-            while round(error, 7) != 0.0: #TODO look at this
-                niter += 1
-                error = 0
-                if row_constraints:
-                    for c in range(self.num_constituencies()):
-                        s = sum(ideal_seats[c])
-                        if s != 0:
-                            delta_eta = s/float(self.v_desired_row_sums[c])
-                            eta[c] *= delta_eta
-                            error += abs(delta_eta)
-                            ideal_seats[c,:] /= eta[c]
-                if col_constraints:
-                    for p in range(self.num_parties()):
-                        s = sum([c[p] for c in ideal_seats])
-                        if s != 0:
-                            delta_tau = s/float(self.v_desired_col_sums[p])
-                            tau[p] *= delta_tau
-                            error += abs(delta_tau)
-                            ideal_seats[:,p] /= tau[p]
-        self.ideal_seats = ideal_seats
+            if row_constraints and col_constraints:
+                while round(error, 7) != 0.0:
+                    error = 0
+                    for c in range(nrows):
+                        row_sum = self.v_desired_row_sums[c]
+                        s = sum(ideal_seats[c,:])
+                        eta = row_sum/s if s > 0 else 1
+                        ideal_seats[c,:] *= eta
+                        error = max(error, abs(1 - eta))
+                    for p in range(ncols):
+                        col_sum = self.v_desired_col_sums[p]
+                        s = sum(ideal_seats[:,p])
+                        tau = col_sum/s if s > 0 else 1
+                        ideal_seats[:,p] *= tau
+                        error = max(error, abs(1 - tau))
+            elif row_constraints:
+                for c in range(self.num_constituencies()):
+                    row_sum = self.v_desired_row_sums[c]
+                    s = sum(ideal_seats[c,:])
+                    eta = row_sum/s if s > 0 else 1
+                    ideal_seats[c,:] *= eta
+            elif col_constraints:
+                for p in range(self.num_parties()):
+                    col_sum = self.v_desired_col_sums[p]
+                    s = sum(ideal_seats[:, p])
+                    tau = col_sum/s if s > 0 else 1
+                    ideal_seats[:, p] *= tau
+        self.ideal_seats = ideal_seats.tolist()

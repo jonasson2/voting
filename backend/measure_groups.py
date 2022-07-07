@@ -19,18 +19,20 @@
 
 from util import disp
 
-def funabs(q, s):     return abs(q - s)
-def funsq(q, s):      return (q - s)**2
-def funpos(q, s):     return max(0, (s - q))/q if s > 0 else 0
-def funneg(q, s):     return max(0, (q - s))/q if s > 0 else 0
-def funsqshare(q, s): return (s - q)**2/q if s > 0 else 0
-def funsqseat(q, s):  return (s - q)**2/s if s > 0 else 0
+def funabs(q, s):      return abs(q - s)
+def funsq(q, s):       return (q - s)**2
+def funpos(q, s):      return max(0, (s - q))/q if s > 0 else 0
+def funneg(q, s):      return max(0, (q - s))/q if s > 0 else 0
+def funabsshare(q, s): return abs(q-s)/q if s > 0 else 0
+def funsqshare(q, s):  return (s - q)**2/q if s > 0 else 0
+def funsqseat(q, s):   return (s - q)**2/s if s > 0 else 0
 
 function_dict = {
     'abs': funabs,
     'sq': funsq,
     'pos': funpos,
     'neg': funneg,
+    'absshare': funabsshare,
     'sqshare': funsqshare,
     'sqseat': funsqseat,
 }
@@ -44,6 +46,7 @@ class MeasureGroups(dict):
                 "sum_sq":      ("squared values (Hare-quota)", ""),
                 "sum_pos":     ("pos. values scaled by reciprocal shares (D'Hondt)", ""),
                 "sum_neg":     ("neg. values scaled by reciprocal shares (Adams)", ""),
+                "sum_absshare": ("abs. values scaled by reciprocal share (Sainte-Laguë)", ""),
                 "sum_sqshare": ("sq.val. scaled by reciprocal shares (Sainte-Laguë)", ""),
                 "sum_sqseat":  ("sq.val. scaled by reciproc. seats (Hill-Huntington)", ""),
             },
