@@ -12,6 +12,7 @@ g*.pyc
 /local
 /share
 /temp
+backend/*.xlsx
 pardir/
 __pycache__/
 /sensitivity/results/
