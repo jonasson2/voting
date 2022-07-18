@@ -65,7 +65,7 @@ def apportion1d_general(
     rule,
     type_of_rule,
     threshold_percent=0,
-    threshlod_choice=0,
+    threshold_choice=0,
     threshold_seats=0
 ):
     """
@@ -93,7 +93,7 @@ def apportion1d_general(
     allocations = copy(prior_allocations) if prior_allocations else [0]*N
 
     seat_gen = seat_generator(
-        votes = threshold_drop(v_votes, threshold=[threshlod_choice,
+        votes = threshold_drop(v_votes, threshold=[threshold_choice,
                                         threshold_percent, threshold_seats,
                                         (copy(prior_allocations) if prior_allocations else None)]),
         num_total_seats = num_total_seats,
