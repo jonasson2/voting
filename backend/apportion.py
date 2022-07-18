@@ -15,7 +15,7 @@ def apportion(v, xp, total_seats, inverse_divisors):
     return x, 2/(vdiv[k] + vdivnext)
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
-                threshold=0, v_max_left=[]):
+                v_max_left=[]):
     """
     Perform a one-dimensional apportionment of seats.
     Inputs:
@@ -28,7 +28,6 @@ def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
         - a tuple containing current divisors, divisor generators, and the
           smallest used divided vote value.
     """
-    v_votes = threshold_drop(v_votes, threshold)
     N = len(v_votes)
     divisor_gens = [divisor_gen() for x in range(N)]
     divisors = []

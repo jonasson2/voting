@@ -1,6 +1,5 @@
 #coding:utf-8
 from copy import deepcopy
-from apportion import apportion1d
 
 def norwegian_apportionment(m_votes,
                             v_desired_row_sums,

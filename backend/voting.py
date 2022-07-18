@@ -152,7 +152,7 @@ class Election:
                 rule=self.system.get_generator("adj_determine_divider"),
                 type_of_rule=self.system.get_type("adj_determine_divider"),
                 threshold_percent=self.system["adjustment_threshold"],
-                threshlod_choice=self.system["adj_threshold_choice"],
+                threshold_choice=self.system["adj_threshold_choice"],
                 threshold_seats=self.system["adjustment_threshold_seats"]
             )
         return self.v_desired_col_sums

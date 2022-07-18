@@ -1,6 +1,5 @@
 #coding:utf-8
 from copy import deepcopy
-from apportion import apportion1d
 import random
 
 def max_const_vote_percentage_apportionment(m_votes,

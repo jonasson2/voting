@@ -1,4 +1,4 @@
-from apportion import apportion1d, apportion
+from apportion import apportion
 from copy import deepcopy
 
 import numpy as np
