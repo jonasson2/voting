@@ -40,13 +40,13 @@ def check_vote_table(vote_table):
             raise ValueError("The vote table does not match the party list.")
         for p in range(len(row)):
             if not row[p]: row[p] = 0
-            notok = row[p] >= 1 and type(row[p]) != int
+            # notok = row[p] >= 1 and type(row[p]) != int
             # if row[p] >= 1 and type(row[p]) != int:
             #     raise TypeError("Votes must be whole numbers.")
             if row[p]<0:
                 raise ValueError("Votes may not be negative.")
-        if sum(row)==0:
-            raise ValueError("Every constituency needs some votes.")
+        #if sum(row)==0:
+        #    raise ValueError("Every constituency needs some votes.")
 
     for const in table["constituencies"]:
         if "name" not in const: # or not const["name"]:
@@ -130,7 +130,7 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("selected_rand_constit", "All constituencies")
-        
+
     if "distribution_parameter" not in sim_settings:
         raise KeyError("Missing data ('sim_settings.distribution_parameter')")
     variance_coefficient = sim_settings["distribution_parameter"]
