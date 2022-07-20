@@ -209,7 +209,7 @@ def api_presets_load():
         idx = election_id
         preset = presets_dict[idx]
         name = f'{preset["Country"]}-{preset["Name"]}-{preset["Year"]}'
-        print('name=', name)
+        #print('name=', name)
         filename = "../data/" + presets_dict[idx]['filename']
         result = load_votes(filename)
         result["name"] = name
@@ -220,16 +220,17 @@ def api_presets_load():
 @app.route('/api/votes/upload/', methods=['POST'])
 def api_votes_upload():
     try:
-        f = getfileparam()
-        filename = f.filename
-        if filename.endswith('.csv'):
-            flines = f.read().decode('utf-8').splitlines()
-            frows = list(csv.reader(flines, skipinitialspace=True))
-        elif filename.endswith('xlsx'):
-            frows = load_votes_from_excel(f, filename)
-        else:
-            return errormsg('Neither .csv nor .xlsx file')
-        result = check_votes(frows, f.filename)
+        stream = getfileparam()
+        filename = stream.filename
+        result = load_votes(filename, stream)
+        # if filename.endswith('.csv'):
+        #     flines = f.read().decode('utf-8').splitlines()
+        #     frows = list(csv.reader(flines, skipinitialspace=True))
+        # elif filename.endswith('xlsx'):
+        #     frows = load_votes_from_excel(f, filename)
+        # else:
+        #     return errormsg('Neither .csv nor .xlsx file')
+        # result = check_votes(frows, f.filename)
         if isinstance(result, str):
             return errormsg(f"Illegal vote file: {result}")
         else:

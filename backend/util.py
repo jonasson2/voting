@@ -85,6 +85,7 @@ def read_xlsx(filename):
 
 def isint(L):
     def ok(x):
+        if x is None: return False
         return isinstance(x,int) and x >= 0 or x.isdigit and x.isascii
     return all(ok(x) for x in L)
 
@@ -147,6 +148,10 @@ def check_votes(rows, filename):
         return 'Some party names are blank'
     if not all(l[0] for l in rows[1:]):
         return 'Some constituency names are blank'
+    for row in votes:
+        for i in range(len(row)):
+            if row[i] is None:
+                row[i] = 0            
     if not all(isint(row) for row in votes):
         return 'All votes must be nonnegative integer numbers'
 

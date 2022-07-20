@@ -17,11 +17,27 @@ def create_SIMULATIONS():
     global SIMULATIONS
     SIMULATIONS = {}
 
-def load_votes(filename):
-    with open(filename,"r") as f:
-        reader = csv.reader(f, skipinitialspace=True)
-        lines = list(reader)
-    result = check_votes(lines, filename)
+def remove_blank_rows(rows):
+    for i in range(len(rows)-1, 0, -1):
+        row = rows[i]
+        if any(x is not None for x in row):
+            break
+        rows.pop()
+    return rows
+
+def load_votes(filename, stream=None):
+    if filename.endswith('.csv'):
+        with open(filename,"r") as f:
+            reader = csv.reader(f, skipinitialspace=True)
+            rows = list(reader)
+        # flines = f.read().decode('utf-8').splitlines()
+        # frows = list(csv.reader(flines, skipinitialspace=True))
+    elif filename.endswith('xlsx'):
+        rows = load_votes_from_excel(stream, filename)
+    else:
+        return 'Neither .csv nor .xlsx file'
+    rows = remove_blank_rows(rows)
+    result = check_votes(rows, filename)
     return result
 
 def correct_deprecated(L):
@@ -43,24 +59,26 @@ def correct_deprecated(L):
         "adjustment_division_rule":     "adj_determine_divider",
         "adjustment_allocation_rule":   "adj_alloc_divider",
     }
-    for deprec in deprec_list:
-        for sys in L["systems"]:
+    for sys in L["systems"]:
+        for deprec in deprec_list:
             if deprec in sys:
                 sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
-        
-        if "constituency_allocation_rule" in sys:
-            sys["primary_divider"] = sys["constituency_allocation_rule"]
-        if "adjustment_division_rule" in sys:
-            sys["adj_determine_divider"] = sys["adjustment_division_rule"]
-        if "adjustment_allocation_rule" in sys:
-            sys["adj_alloc_divider"] = sys["adjustment_allocation_rule"]
-    for sys in L["systems"]:
+        for (oldkey,newkey) in translate.items():
+            if oldkey in sys:
+                sys[newkey] = sys[oldkey]
+                
+        # if "constituency_allocation_rule" in sys:
+        #     sys["primary_divider"] = sys["constituency_allocation_rule"]
+        # if "adjustment_division_rule" in sys:
+        #     sys["adj_determine_divider"] = sys["adjustment_division_rule"]
+        # if "adjustment_allocation_rule" in sys:
+        #     sys["adj_alloc_divider"] = sys["adjustment_allocation_rule"]
         for (old,new) in old_names.items():
             if sys["adjustment_method"] == old:
                 sys["adjustment_method"] = new
-        for (oldkey, newkey) in translate.items():
-            if oldkey in sys:
-                sys[oldkey] = sys[newkey]
+        # for (oldkey, newkey) in translate.items():
+        #     if oldkey in sys :
+        #         sys[oldkey] = newkey
     return L
 
 def load_settings(f):
