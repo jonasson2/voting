@@ -17,6 +17,13 @@ const store = new Vuex.Store({
         { name: "I", num_const_seats: 10, num_adj_seats: 2 },
         { name: "II", num_const_seats: 10, num_adj_seats: 3 },
       ],
+      party_votes: {
+        name: "Party votes",
+        parties: [],
+        votes: [],
+        used: false,
+        total: 0,
+      },
     },
     vote_sums: {
       cseats: 0,
@@ -41,7 +48,7 @@ const store = new Vuex.Store({
 
   // MUTATIONS
   mutations : {
-    updateVoteTable(state, table) {
+    updateVoteTable(state, table) { // TODO: laga þetta
       console.log("table=", table)
       state.vote_table = table
       setVoteSums(state)
@@ -93,8 +100,12 @@ const store = new Vuex.Store({
       state.activeSystemIndex = idx
     },
 
-    setSeatSpecOption(state, payload) {
-      state.systems[payload.idx].seat_spec_option = payload.opt
+    setConstSpecOption(state, payload) {
+      state.systems[payload.idx].seat_spec_options.const = payload.opt
+    },
+
+    setPartySpecOption(state, payload) {
+      state.systems[payload.idx].seat_spec_options.party = payload.opt
     },
 
     newNumbering(state, idx) {
@@ -268,10 +279,10 @@ const store = new Vuex.Store({
     },
     recalc_sys_const(context) {
       // Refresh the constituencies property of each system according to the value
-      // of system.seat_spec_option. If this option is "custom", use values from
+      // of system.seat_spec_options.const. If this option is "custom", use values from
       // system.constituencies for constituency names matching the ones of the
       // vote_table, otherwise use use values from vote_table, possibly modified
-      // according to the seat_spec_option.
+      // according to the seat_spec_options.const.
       context.commit("setWaitingForData")
       Vue.http.post(
         '/api/settings/update_constituencies/',
@@ -387,6 +398,12 @@ function setVoteSums(state) {
     vs.cseats += vc[i].num_const_seats
     vs.aseats += vc[i].num_adj_seats
   }
+  let pv = state.vote_table.party_votes
+  if (pv.used) {
+    pv.total = pv.votes.reduce((a,b) => a + b, 0)
+  }
+  else
+    pv.total = 0
 }
 
 function findNumbering(state, asi) {

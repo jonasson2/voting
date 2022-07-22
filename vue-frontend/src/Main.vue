@@ -99,6 +99,9 @@ export default {
       "showSimulate",
       "initialize"
     ]),
+    showHelp: function() {
+      window.open("https://cs.hi.is/voting/leidbeiningar.pdf", "_blank");
+    },
   },
   mounted: function() {
     console.log("Main created")

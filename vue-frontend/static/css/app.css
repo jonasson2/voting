@@ -32,7 +32,7 @@ th {
   display: block;
   table-layout: auto;
   white-space: nowrap;
-  margin-top: 0.7em;
+  margin-top: 0.0em;
 }
 
 .votematrix tr:nth-child(even) {

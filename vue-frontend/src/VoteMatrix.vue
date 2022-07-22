@@ -147,132 +147,237 @@
   <h6> These source votes and seats are used as basis for allocation in the Single
     election tab and as expected values in the Simulated elections tab
   </h6>
-  <table class="votematrix">
-    <tr>
-      <th class="tablename">
-        <input
-          type="text"
-          v-autowidth="{ maxWidth: '320px', minWidth: '50px' }"
-          v-model="vote_table.name"
-          />
-      </th>
-      <th
-        class="seatnumberheading"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Constituency seats"
-        >
-        # Cons.
-      </th>
-      <th
-        class="seatnumberheading"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Adjustment seats"
-        >
-        # Adj.
-      </th>
-      <th v-for="(party, partyidx) in vote_table.parties" class="partyname">
-        <b-button
-          class="xbutton"
-          style="padding: 0"
-          size="sm"
-          variant="link"
+  <b-input-group>
+    <b-input
+      class="mb-1"
+      v-model="vote_table.name"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Enter vote table name"
+      />
+  </b-input-group>
+  <b-row>
+    <legend style = "margin-left:0px"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="xxxxx"
+            >
+      Constituency votes
+    </legend>    
+    <table class="votematrix">
+      <tr>
+        <th class="topleft">
+        </th>
+        <th
+          class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Remove Party"
-          @click="deleteParty(partyidx)"
+          title="Constituency seats"
           >
-          X
-        </b-button>
-        <input
-          type="text"
-          style="text-align: center"
-          v-autowidth="{ maxWidth: '300px', minWidth: '60px' }"
-          v-model="vote_table.parties[partyidx]"
-          />
-      </th>
-      <th class="displaycenter">Total</th>
-      <th class="growtable">
-        <b-button
-          size="sm"
-          @click="addParty()"
+          # Constit.
+        </th>
+        <th
+          class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Add party"
+          title="Adjustment seats"
           >
-          <b>+</b>
-        </b-button>
-      </th>
-    </tr>
-    <tr v-for="(constituency, conidx) in vote_table.constituencies">
-      <th class="constname">
-        <b-button
-          style="padding: 0"
-          size="sm"
-          variant="link"
+          # Adjustm.
+        </th>
+        <th v-for="(party, partyidx) in vote_table.parties" class="partyname">
+          <b-button
+            class="xbutton"
+            style="padding: 0"
+            size="sm"
+            variant="link"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Remove Party"
+            @click="deleteParty(partyidx)"
+            >
+            X
+          </b-button>
+          <input
+            type="text"
+            style="text-align: center"
+            v-autowidth="{ maxWidth: '300px', minWidth: '60px' }"
+            v-model="vote_table.parties[partyidx]"
+            />
+        </th>
+        <th class="displaycenter">Total</th>
+        <th class="growtable">
+          <b-button
+            size="sm"
+            @click="addParty()"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Add party"
+            >
+            <b>+</b>
+          </b-button>
+        </th>
+      </tr>
+      <tr v-for="(constituency, conidx) in vote_table.constituencies" size="sm">
+        <th class="constname">
+          <b-button
+            style="padding: 0"
+            size="sm"
+            variant="link"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Remove constituency"
+            @click="deleteConstituency(conidx)"
+            >
+            X
+          </b-button>
+          <input
+            type="text"
+            v-autowidth="{ maxWidth: '400px', minWidth: '135px' }"
+            v-model="constituency['name']"
+            />
+        </th>
+        <td class="numerical" size="sm">
+          <input
+            type="text"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
+            v-model.number="constituency['num_const_seats']"
+            />
+        </td>
+        <td class="numerical" size="sm">
+          <input
+            type="text"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
+            v-model.number="constituency['num_adj_seats']"
+            />
+        </td>
+        <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
+          <input
+            type="text"
+            v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
+            v-model.number="vote_table.votes[conidx][partyidx]"
+            />
+        </td>
+        <td class="displayright">
+          {{ vote_sums.row[conidx] }}
+        </td>
+      </tr>
+      <tr>
+        <th class="displayleft">Total</th>
+        <td class="displayright">
+          {{ vote_sums.cseats }}
+        </td>
+        <td class="displayright">
+          {{ vote_sums.aseats }}
+        </td>
+        <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
+          {{ vote_sums.col[partyidx] }}
+        </td>
+        <td class="displayright">
+          {{ vote_sums.tot }}
+        </td>
+      </tr>
+      <tr>
+        <th class="growtable">
+          <b-button
+            size="sm"
+            @click="addConstituency()"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Add constituency"
+            >
+            <b>+</b>
+          </b-button>
+        </th>
+      </tr>
+    </table>
+  </b-row>
+  
+  
+  <b-row>
+    <legend style = "margin-left:0px; margin-top:12px">
+      National party votes
+    </legend>
+    <table class="votematrix">
+      <tr v-if="vote_table.party_votes.used" size="sm">
+        <th class="topleft">
+        </th>
+        <th
+          class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Remove constituency"
-          @click="deleteConstituency(conidx)"
+          title='National fixed seats (allocated according to total constituency
+                 votes or national party votes using constituency allocation rules 
+                 set in "Electoral systems" tab)'
           >
-          X
-        </b-button>
-        <input
-          type="text"
-          v-autowidth="{ maxWidth: '400px', minWidth: '135px' }"
-          v-model="constituency['name']"
-          />
-      </th>
-      <td class="numerical">
-        <input
-          type="text"
-          style="text-align: right"
-          v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
-          v-model.number="constituency['num_const_seats']"
-          />
-      </td>
-      <td class="numerical">
-        <input
-          type="text"
-          v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
-          v-model.number="constituency['num_adj_seats']"
-          />
-      </td>
-      <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
-        <input
-          type="text"
-          v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
-          v-model.number="vote_table.votes[conidx][partyidx]"
-          />
-      </td>
-      <td class="displayright">
-        {{ vote_sums.row[conidx] }}
-      </td>
-    </tr>
-    <tr>
-      <th class="displayleft">Total</th>
-      <td class="displayright">
-        {{ vote_sums.cseats }}
-      </td>
-      <td class="displayright">
-        {{ vote_sums.aseats }}
-      </td>
-      <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
-        {{ vote_sums.col[partyidx] }}
-      </td>
-      <td class="displayright">
-        {{ vote_sums.tot }}
-      </td>
-    </tr>
-    <tr>
-      <th class="growtable">
-        <b-button
-          size="sm"
-          @click="addConstituency()"
+          # Nat.fix.
+        </th>
+        <th
+          class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Add constituency"
+          title='National adjustment seats (allocated last according to total constituency
+                 votes or national party votes using apportionment rules 
+                 set in "Electoral systems" tab)'
           >
-          <b>+</b>
-        </b-button>
-      </th>
-    </tr>
-  </table>
+          # Nat.adj.
+        </th>
+        <th v-for="(party, partyidx) in vote_table.parties" class="displaycenter">
+          {{vote_table.parties[partyidx]}}
+        </th>
+        <th class="displaycenter">Total</th>
+      </tr>
+      <tr v-if="vote_table.party_votes.used" size="sm">
+        <th class="constname">
+          <b-button
+            style="padding: 0"
+            size="sm"
+            variant="link"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Remove party votes"
+            @click="deletePartyVotes()"
+            >
+            X
+          </b-button>
+          <input
+            type="text"
+            v-autowidth="{ maxWidth: '400px', minWidth: '135px' }"
+            v-model="vote_table.party_votes.name"
+            />
+        </th>
+        <td class="numerical" size="sm">
+          <input
+            type="text"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
+            v-model.number="vote_table.party_votes['num_const_seats']"
+            />
+        </td>
+        <td class="numerical" size="sm">
+          <input
+            type="text"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
+            v-model.number="vote_table.party_votes['num_adj_seats']"
+            />
+        </td>
+        <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
+          <input
+            type="text"
+            v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
+            v-model.number="vote_table.party_votes.votes[partyidx]"
+            />
+        </td>
+        <td class="displayright">
+          {{vote_table.party_votes.total}}
+        </td>
+      </tr>
+      <tr v-if="!vote_table.party_votes.used">
+        <th class="growtable">
+          <b-button
+            size="sm"
+            @click="addPartyVotes()"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Add party votes"
+            >
+            <b>+</b>
+          </b-button>
+        </th>
+      </tr>
+    </table>
+  </b-row>
+  
 </b-container>
 </template>
 
@@ -377,6 +482,12 @@ export default {
       this.vote_table.parties = []
       this.vote_table.votes = []
       this.updateVoteSums()
+    },
+    deletePartyVotes: function () {
+      this.vote_table.party_votes.used = false
+    },
+    addPartyVotes: function() {
+      this.vote_table.party_votes.used = true
     },
     save: function () {
       var filename = this.vote_table.name.replace('þ', 'th')

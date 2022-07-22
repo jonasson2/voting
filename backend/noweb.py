@@ -26,7 +26,7 @@ def remove_blank_rows(rows):
     return rows
 
 def load_votes(filename, stream=None):
-    if filename.endswith('.csv'):
+    if str(filename).endswith('.csv'):
         with open(filename,"r") as f:
             reader = csv.reader(f, skipinitialspace=True)
             rows = list(reader)
@@ -66,19 +66,9 @@ def correct_deprecated(L):
         for (oldkey,newkey) in translate.items():
             if oldkey in sys:
                 sys[newkey] = sys[oldkey]
-                
-        # if "constituency_allocation_rule" in sys:
-        #     sys["primary_divider"] = sys["constituency_allocation_rule"]
-        # if "adjustment_division_rule" in sys:
-        #     sys["adj_determine_divider"] = sys["adjustment_division_rule"]
-        # if "adjustment_allocation_rule" in sys:
-        #     sys["adj_alloc_divider"] = sys["adjustment_allocation_rule"]
         for (old,new) in old_names.items():
             if sys["adjustment_method"] == old:
                 sys["adjustment_method"] = new
-        # for (oldkey, newkey) in translate.items():
-        #     if oldkey in sys :
-        #         sys[oldkey] = newkey
     return L
 
 def load_settings(f):
@@ -91,6 +81,13 @@ def load_settings(f):
     if "e_settings" in file_content:
         file_content["systems"] = file_content["e_settings"]
         del file_content["e_settings"]
+    for sys in file_content["systems"]:
+        if "seat_spec_option" in sys:
+            sys["seat_spec_options"] = {
+                "const": sys["seat_spec_option"],
+                "party": "totals"
+            }
+            del sys["seat_spec_option"]
     assert "sim_settings" in file_content
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])

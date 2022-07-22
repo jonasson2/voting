@@ -53,10 +53,10 @@ def prepare_formats(workbook):
     formats["h"].set_bold()
     formats["h"].set_font_size(11)
 
-    formats["h_big"] = workbook.add_format()
-    formats["h_big"].set_align('left')
-    formats["h_big"].set_bold()
-    formats["h_big"].set_font_size(14)
+    # formats["h_big"] = workbook.add_format()
+    # formats["h_big"].set_align('left')
+    # formats["h_big"].set_bold()
+    # formats["h_big"].set_font_size(14)
 
     formats["h_right"] = workbook.add_format()
     formats["h_right"].set_align('right')
@@ -68,12 +68,8 @@ def prepare_formats(workbook):
     formats["time"].set_align('left')
 
     formats["basic"] = workbook.add_format()
+    formats["basic"].set_font_size(11)
     formats["basic"].set_align('left')
-
-    formats["basic_h"] = workbook.add_format()
-    formats["basic_h"].set_align('left')
-    formats["basic_h"].set_bold()
-    formats["basic_h"].set_font_size(11)
 
     formats["step_h"] = workbook.add_format()
     formats["step_h"].set_bold()
@@ -205,7 +201,7 @@ def elections_to_xlsx(elections, filename):
     for r in range(len(elections)):
         election = elections[r]
         system = election.system
-        sheet_name = f'{r+1}-{system["name"]}'
+        sheet_name = system["name"]
         worksheet = workbook.add_worksheet(sheet_name[:31])
         worksheet.set_column(0, 0, 31)
         const_names = [
@@ -247,9 +243,11 @@ def elections_to_xlsx(elections, filename):
              "basic"
              ],
             ["Threshold for adjustment seats:",
-             system["adjustment_threshold"]/100,
-             "left-pct1"
-             ],
+             str(system["adjustment_threshold"]) + "% " +
+                 ("or " if system["adj_threshold_choice"] else "and ") +
+                 str(system["adjustment_threshold_seats"]) + " const. seat(s)",
+             "basic"
+            ],
             ["Rule for allocating adjustment seats:",
              DRN[system["adj_alloc_divider"]],
              "basic"
@@ -259,14 +257,13 @@ def elections_to_xlsx(elections, filename):
              "basic"
              ]
         ]
-
         row = 0
         col = 0
         #Basic info
         for group in info:
-            (title,item,f) = group
-            worksheet.write(row, col, title, fmt["basic_h"])
-            worksheet.write(row, col+1, item, fmt[f])
+            (title,item,format) = group
+            worksheet.write(row, col, title, fmt["h"])
+            worksheet.write(row, col+1, item, fmt[format])
             row += 1
         row += 1
 
@@ -389,12 +386,36 @@ def simulation_to_xlsx(results, filename, parallel):
     row = 0
     worksheet.set_column(c1, c1, 30)
     worksheet.set_column(c2, c2, 35)
-    worksheet.write(row, c1, "Date", fmt["basic_h"])
+    worksheet.write(row, c1, "Date:", fmt["h"])
     worksheet.write(row, c2, datetime.now(), fmt["time"])
+    total_votes = sum(sum(row) for row in results["vote_table"]["votes"])
+    const_seats = sum(
+        c["num_const_seats"] for c in results["vote_table"]["constituencies"])
+    adj_seats = sum(
+        c["num_adj_seats"] for c in results["vote_table"]["constituencies"])
     row += 2
-    worksheet.write(row, c1, "Source votes and seats", fmt["basic_h"])
+    worksheet.write(row, c1, "Source votes and seats", fmt["h"])
+    row += 1
+    worksheet.write(row, c1, "Vote table", fmt["basic"])
+    worksheet.write(row, c2, results["vote_table"]["name"], fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Number of constituencies", fmt["basic"])
+    worksheet.write(row, c2, len(results["vote_table"]["constituencies"]), fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Number of parties", fmt["basic"])
+    worksheet.write(row, c2, len(results["vote_table"]["parties"]), fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Total number of const. seats", fmt["basic"])
+    worksheet.write(row, c2, const_seats, fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Total number of adj. seats", fmt["basic"])
+    worksheet.write(row, c2, adj_seats, fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Total number of votes", fmt["basic"])
+    worksheet.write(row, c2, total_votes, fmt["basic"])
+
     row += 2
-    worksheet.write(row, c1, "Simulation settings", fmt["basic_h"])
+    worksheet.write(row, c1, "Simulation settings", fmt["h"])
     for setting in sim_settings:
         row += 1
         worksheet.write(row, c1, setting["label"], fmt["basic"])
@@ -447,10 +468,14 @@ def simulation_to_xlsx(results, filename, parallel):
             edata[id].append(row)
 
     worksheet = workbook.add_worksheet("Quality measures")
-    worksheet.freeze_panes(2,2)
+    worksheet.freeze_panes(4,2)
     toprow = 0
     c = 0
-    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["h_big"])
+    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["h"])
+    toprow += 1
+    worksheet.write(toprow,c,"Vote table:",fmt["h"])
+    worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
+    toprow += 1
     worksheet.set_column(c,c,16)
     c += 1
     worksheet.set_column(c,c,25)
@@ -458,7 +483,7 @@ def simulation_to_xlsx(results, filename, parallel):
     c += 1
 
     for stat in edata["stats"]:
-        worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["basic_h"])
+        worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["h"])
         worksheet.set_column(c,c+len(results["systems"])-1,11)
         for system in results["systems"]:
             worksheet.write(toprow+1,c,system["name"],fmt["h_center"])
@@ -470,7 +495,7 @@ def simulation_to_xlsx(results, filename, parallel):
     toprow += 2
 
     for (id, group) in groups.items():
-        worksheet.write(toprow,c,group["title"],fmt["basic_h"])
+        worksheet.write(toprow,c,group["title"],fmt["h"])
         toprow += 1
         worksheet.write_column(toprow,c,
                                [val[0] for (_, val) in group["rows"].items()])
@@ -519,22 +544,25 @@ def simulation_to_xlsx(results, filename, parallel):
                 "id": list_measures["ideal_seats"][stat],
             }
         alloc_info = [{
-            "left_span": 2, "center_span": 4, "right_span": 1, "info": [
-                {"label": "Allocation of constituency seats",
+            "left_span": 2, "center_span": 2, "right_span": 1, "info": [
+                {"label": "Allocation of constituency seats:",
                     "rule": DRN[results["systems"][r]["primary_divider"]],
-                    "threshold": (results["systems"][r]
-                                  ["constituency_threshold"]/100.0)},
-                {"label": "Apportionment of adjustment seats to parties",
+                    "threshold": (
+                        str(results["systems"][r]["constituency_threshold"]) + "%")},
+                {"label": "Apportionment of adjustment seats to parties:",
                     "rule": DRN[results["systems"][r]["adj_determine_divider"]],
-                    "threshold": (results["systems"][r]
-                                  ["adjustment_threshold"]/100.0)},
-                {"label": "Allocation of adjustment seats to lists",
+                    "threshold": (
+                        str(results["systems"][r]["adjustment_threshold"]) + "% " +
+                        ("or " if results["systems"][r]["adj_threshold_choice"] else "and ") +
+                        str(results["systems"][r]["adjustment_threshold_seats"]) +
+                        " const. seat(s)")},
+                {"label": "Allocation of adjustment seats to lists:",
                     "rule": DRN[results["systems"][r]["adj_alloc_divider"]],
                     "threshold": None}
             ]
         }, {
-            "left_span": 2, "center_span": 3, "right_span": 0, "info": [
-                {"label": "Allocation method for adjustment seats",
+            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
+                {"label": "Allocation method for adjustment seats:",
                     "rule": AMN[results["systems"][r]["adjustment_method"]]}
             ]
         }]
@@ -545,34 +573,36 @@ def simulation_to_xlsx(results, filename, parallel):
         worksheet.set_row_pixels(0,25)
         worksheet.set_column(c1,c1,25)
         worksheet.set_column(c2,c2,20)
-        worksheet.write(toprow, c1, "Electoral system", fmt["h_big"])
-        worksheet.write(toprow, c2, results["systems"][r]["name"], fmt["h_big"])
+        worksheet.write(toprow, c1, "Electoral system:", fmt["h"])
+        worksheet.write(toprow, c2, results["systems"][r]["name"], fmt["basic"])
         toprow += 1
-        worksheet.write(toprow, c2+1, "Rule", fmt["basic_h"])
-        worksheet.write(toprow, c2+5, "Threshold", fmt["basic_h"])
+        worksheet.write(toprow, c2, results["vote_table"]["name"], fmt["basic"])
+        toprow += 1
+        worksheet.write(toprow, c2+1, "Rule", fmt["h"])
+        worksheet.write(toprow, c2+3, "Threshold", fmt["h"])
 
+        toprow += 1
         for group in alloc_info:
-            toprow += 1
             c2 = c1 + group["left_span"]
             c3 = c2 + group["center_span"]
             for info in group["info"]:
-                worksheet.write(toprow, c1, info["label"], fmt["basic"])
+                worksheet.write(toprow, c1, info["label"], fmt["h"])
                 worksheet.write(toprow, c2, info["rule"], fmt["basic"])
                 if group["right_span"] > 0:
                     worksheet.write(toprow, c3, info["threshold"],
-                                    fmt["threshold"])
+                                    fmt["basic"])
                 toprow += 1
 
         toprow += 1
         worksheet.set_row_pixels(toprow, 25)
-        worksheet.write(toprow, c1, "Simulation results", fmt["h_big"])
+        worksheet.write(toprow, c1, "Simulation results", fmt["h"])
         
         col = 2
         for table in tables:
             is_percentages_table = (
                 table["heading"].endswith("shares") and
                 not table["heading"].startswith("Reference"))
-            worksheet.write(toprow, col, table["heading"], fmt["basic_h"])
+            worksheet.write(toprow, col, table["heading"], fmt["h"])
             worksheet.write_row(
                 toprow+1,
                 col,
@@ -587,7 +617,7 @@ def simulation_to_xlsx(results, filename, parallel):
         
         #Election tables
         for category in categories:
-            worksheet.write(toprow, 0, category["heading"], fmt["basic_h"])
+            worksheet.write(toprow, 0, category["heading"], fmt["h"])
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
             for table in tables:

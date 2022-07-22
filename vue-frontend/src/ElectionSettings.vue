@@ -1,9 +1,11 @@
 <template>
 <div>
   <b-form style="margin-left:16px">
+
+    <!-- CONSTITUENCY SEAT ALLOCATION -->
     <b-row>
-      <legend style = "margin-left:0px">
-        Allocation of constituency seats
+      <legend style="margin-left:0px; margin-top:12px" class="text-center">
+        Allocation of constituency seats and national fixed seats
       </legend>
       <b-col cols="7">
         <b-form-group
@@ -37,8 +39,10 @@
         </b-form-group>
       </b-col>
     </b-row>
+
+    <!-- APPORTIONMENT -->
     <b-row>
-      <legend style = "margin-left:0px">
+      <legend style="margin-left:0px; margin-top:12px" class="text-center">
         Apportionment of adjustment seats to parties
       </legend>
       <b-col cols="5">
@@ -55,58 +59,67 @@
             :options="capabilities.systems"/>
         </b-form-group>
       </b-col>
-      <b-col cols="3">
+      <b-col cols="7">
         <b-form-group
           label="Threshold"
-          v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           label-cols="auto"
-          title="Threshold as percentage of total votes required by a party
-                 to qualify for apportionment of adjustment seats. Choose 0 if
-                 not applicable"
           >
-          <b-input-group append="%">
-            <b-form-input
-              type="number"
-              min="0" max="100"
-              v-model.number="systems[systemidx].adjustment_threshold"/>
-          </b-input-group>
-        </b-form-group>
-      </b-col>
-      <b-col cols="2">
-        <b-form-group
-          label=""
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
-          label-cols="auto"
-          title="Choose if either or both thresholds apply"
-          >
-          <b-form-select
-            v-model="systems[systemidx].adj_threshold_choice"
-            :options="capabilities.adj_threshold_choice"/>
-        </b-form-group>
-      </b-col>
-      <b-col cols="2">
-        <b-form-group
-          label=""
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
-          label-cols="auto"
-          title="Threshold as number of constituency seats required by a party
-                 to qualify for apportionment of adjustment seats. Choose 0 if
-                 not applicable."
-          >
-          <b-input-group append="Cons. seats">
-            <b-form-input
-              type="number"
-              min="0" max="10"
-              v-model.number="systems[systemidx].adjustment_threshold_seats"/>
-          </b-input-group>
+          <b-row>
+            <b-col cols="4">
+              <b-input-group
+                append="%"
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                title="Threshold as percentage of total votes required by a party
+                       to qualify for apportionment of adjustment seats. Choose 0 if
+                       not applicable"
+                >
+                <b-form-input
+                  type="number"
+                  min="0" max="100"
+                  v-model.number="systems[systemidx].adjustment_threshold"/>
+              </b-input-group>
+            </b-col>
+            <b-col cols="3">
+              <b-form-group
+                label=""
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                label-for="input-horizontal"
+                label-cols="auto"
+                title="Choose if one or both thresholds apply"
+                >
+                <b-form-select
+                  v-model="systems[systemidx].adj_threshold_choice"
+                  :options="capabilities.adj_threshold_choice"/>
+              </b-form-group>
+            </b-col>
+            <b-col cols="5">
+              <b-form-group
+                label=""
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                label-for="input-horizontal"
+                label-cols="auto"
+                title="Threshold as number of constituency seats required by a party
+                       to qualify for apportionment of adjustment seats. Choose 0 if
+                       not applicable."
+                >
+                <b-input-group append="Cons. seats">
+                  <b-form-input
+                    type="number"
+                    min="0" max="10"
+                    v-model.number="systems[systemidx].adjustment_threshold_seats"/>
+                </b-input-group>
+              </b-form-group>
+            </b-col>
+          </b-row>
         </b-form-group>
       </b-col>
     </b-row>
+
+    <!-- ADJUSTMENT SEAT ALLOCATION -->
     <b-row>
-      <legend style = "margin-left:0px">Allocation of adjustment seats to lists</legend>
+      <legend style="margin-left:0px; margin-top:12px" class="text-center">
+        Allocation of adjustment seats to lists</legend>
       <b-col cols="5">
         <b-form-group
           label="Rule"
@@ -136,9 +149,13 @@
         </b-form-group>
       </b-col>
     </b-row>
+
+    <!-- CONSTITUENCY AND ADJUSTMENT SEAT NUMBERS -->
     <b-row>
+      <legend style="margin-left:0px; margin-top:12px" class="text-center">
+        Specification of constituency and adjustment seat numbers
+      </legend>
       <b-col cols="6">
-        <legend style="margin-left:-16px">Specification of seat numbers</legend>
         <b-form-group
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
@@ -147,11 +164,11 @@
                  constituency in this particular electoral system"
           >
           <b-form-select
-            v-model="seat_spec_option"
-            :options="capabilities.seat_spec_options"/>
+            v-model="const_spec_option"
+            :options="capabilities.seat_spec_options.const"/>
         </b-form-group>
       </b-col>
-      <b-col cols="6">
+      <b-col cols="6" v-if='const_spec_option!="refer"'>
         <table v-if="!adding_system && !waiting_for_data" class="votematrix">
           <tr>
             <th class="topleft"></th>
@@ -171,11 +188,11 @@
               {{ constituency['name'] }}
             </th>
             <td class="displayright">
-              <span v-if="seat_spec_option != 'custom'">
+              <span v-if="const_spec_option != 'custom'">
                 {{ constituency['num_const_seats'] }}
               </span>
               <span
-                v-if="seat_spec_option == 'custom'"
+                v-if="const_spec_option == 'custom'"
                 class="numerical"
                 >
                 <input
@@ -186,11 +203,11 @@
               </span>
             </td>
             <td class="displayright">
-              <span v-if="seat_spec_option != 'custom'">
+              <span v-if="const_spec_option != 'custom'">
                 {{ constituency['num_adj_seats'] }}
               </span>
               <span
-                v-if="seat_spec_option == 'custom'"
+                v-if="const_spec_option == 'custom'"
                 class="numerical"
                 >
                 <input
@@ -201,6 +218,26 @@
             </td>
           </tr>
         </table>
+      </b-col>
+    </b-row>
+
+    <!-- PARTY SEAT NUMBERS -->
+    <b-row>
+      <legend style="margin-left:px; margin-top:12px" class="text-center">
+        Specification of party seat numbers
+      </legend>
+      <b-col cols="6">
+        <b-form-group
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Total number of seats for each party in this particular
+                 electoral system"
+          >
+          <b-form-select
+            v-model="party_spec_option"
+            :options="capabilities.seat_spec_options.party"/>
+        </b-form-group>
       </b-col>
     </b-row>
   </b-form>
@@ -221,10 +258,17 @@ export default {
       'systems',
       'waiting_for_data',
     ]),
-    seat_spec_option: {
-      get() { return this.systems[this.systemidx].seat_spec_option },
+    const_spec_option: {
+      get() { return this.systems[this.systemidx].seat_spec_options.const },
       set(val) {
-        this.setSeatSpecOption({"opt": val, "idx": this.systemidx})
+        this.setConstSpecOption({"opt": val, "idx": this.systemidx})
+        this.recalc_sys_const()
+      }
+    },
+    party_spec_option: {
+      get() { return this.systems[this.systemidx].seat_spec_options.party },
+      set(val) {
+        this.setPartySpecOption({"opt": val, "idx": this.systemidx})
         this.recalc_sys_const()
       }
     },
@@ -233,7 +277,8 @@ export default {
     ...mapMutations([
       "setWaitingForData",
       "clearWaitingForData",
-      "setSeatSpecOption",
+      "setConstSpecOption",
+      "setPartySpecOption",
     ]),
     ...mapActions([
       'recalc_sys_const',
@@ -247,6 +292,7 @@ export default {
   created: function() {
     console.log("Creating ElectionSettings")
     console.log(this.capabilities.systems)
+    console.log("vote_table", this.vote_table)
   }
 }
 </script>

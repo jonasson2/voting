@@ -100,7 +100,7 @@ def api_election_save():
 @app.route('/api/settings/update_constituencies/', methods=["POST"])
 def api_update_constituencies():
     # Update constituencies in electoral systems according to
-    # the current vote table and systems[:]["seat_spec_option"]
+    # the current vote table and systems[:]["seat_spec_options"]
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
         constituencies = update_constituencies(vote_table, systems)
@@ -113,7 +113,7 @@ def api_settings_save():
     try:
         (systems, sim_settings) = getparam("systems", "sim_settings")
         keys = [
-            "name", "seat_spec_option", "constituencies",
+            "name", "seat_spec_options", "constituencies",
             "compare_with",
             "constituency_threshold", #"constituency_allocation_rule",
             "adjustment_threshold", #"adjustment_division_rule",

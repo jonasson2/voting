@@ -84,13 +84,22 @@ DEMO_TABLE_FORMATS = {
     "alternating-scaling":       ""}
 # s = special, center if all party names are less than 2 chars, else left
 
-SEAT_SPECIFICATION_OPTIONS = [
-    {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
-    {"value": "custom",         "text": "Specify seat numbers by changing individual values"},
-    {"value": "make_all_const", "text": "Make all seats constituency seats"},
-    {"value": "make_all_adj",   "text": "Make all seats adjustment seats"},
-    {"value": "one_const",      "text": "Combine all constituencies into one"},
-]
+SEAT_SPECIFICATION_OPTIONS = {
+    "const":
+    [
+        {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
+        {"value": "custom",         "text": "Specify numbers by changing individual values"},
+        {"value": "make_all_const", "text": "Make all seats constituency seats"},
+        {"value": "make_all_adj",   "text": "Make all seats adjustment seats"},
+        {"value": "one_const",      "text": "Combine all constituencies into one"},
+    ],
+    "party":
+    [
+        {"value": "totals",      "text": 'Use constituency vote totals'},
+        {"value": "party_votes", "text": 'Use national party votes'},
+        {"value": "average",     "text": 'Use avgerage of constituency vote totals and national party votes'},
+    ]
+}
 
 GENERATING_METHOD_NAMES = [
     {"value": "gamma",   "text": "Gamma distribution"},

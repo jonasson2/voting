@@ -51,7 +51,7 @@ class ElectionHandler:
 def update_constituencies(vote_table, systems):
     constituencies = []
     for system in systems:
-        opt = system["seat_spec_option"]
+        opt = system["seat_spec_options"]["const"]
         opt = remove_prefix(opt, "make_")
         voteconst = vote_table["constituencies"]
         if opt=="all_const":   const = set_all_const(voteconst)
