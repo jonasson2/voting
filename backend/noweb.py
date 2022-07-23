@@ -71,7 +71,7 @@ def correct_deprecated(L):
                 sys["adjustment_method"] = new
     return L
 
-def load_settings(f):
+def load_json(f):
     # returns systems and sim_settings from json-file f
     if isinstance(f,Path) or isinstance(f,str):
         with open(f) as file: file_content = json.load(file)
@@ -88,6 +88,15 @@ def load_settings(f):
                 "party": "totals"
             }
             del sys["seat_spec_option"]
+    if "vote_table" in file_content:
+        if "party_votes" not in file_content["vote_table"]:
+            file_content["vote_table"]["party_votes"] = {
+                "name": "Party votes",
+                "parties": [],
+                "votes": [],
+                "specified": False,
+                "total": 0
+            }
     assert "sim_settings" in file_content
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])

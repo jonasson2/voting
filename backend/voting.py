@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 """
 This module contains the core voting system logic.
 """
@@ -23,6 +23,7 @@ def display_seats(totSeats, adjSeats):
 
 class Election:
     """A single election."""
+
     def __init__(self, system, votes, min_votes=0, name=''):
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
@@ -58,7 +59,7 @@ class Election:
         totSeats = add_totals(self.results)
         adjSeats = add_totals(self.m_adj_seats)
         for (totrow, adjrow) in zip(totSeats, adjSeats):
-            dispRow = [display_seats(r,a) for (r,a) in zip(totrow, adjrow)]
+            dispRow = [display_seats(r, a) for (r, a) in zip(totrow, adjrow)]
             dispResult.append(dispRow)
         return dispResult
 
@@ -66,10 +67,10 @@ class Election:
         # if not self.solvable:
         #     return None
         return {
-            "voteless_seats": self.voteless_seats(),
+            "voteless_seats":   self.voteless_seats(),
             "seat_allocations": add_totals(self.results),
-            "demo_tables": self.demo_tables,
-            "display_results": self.display_results()
+            "demo_tables":      self.demo_tables,
+            "display_results":  self.display_results()
         }
 
     def run(self):
@@ -106,7 +107,7 @@ class Election:
         for c in range(self.num_constituencies()):
             for p in range(self.num_parties()):
                 over[c] = [r > 0 and v == CONSTANTS["minimum_votes"]
-                           for (r,v) in zip(self.results[c], self.m_votes[c])]
+                           for (r, v) in zip(self.results[c], self.m_votes[c])]
         return over
 
     def any_voteless(self):
@@ -131,11 +132,11 @@ class Election:
                     type_of_rule=self.system.get_type("primary_divider"),
                     threshold_percent=self.system["constituency_threshold"]
                 )
-                assert last_in #last_in is not None because num_seats > 0
+                assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
             else:
                 alloc = [0]*self.num_parties()
-                self.last.append({'idx':None, 'active_votes':0})
+                self.last.append({'idx': None, 'active_votes': 0})
             m_allocations.append(alloc)
 
         v_allocations = [sum(x) for x in zip(*m_allocations)]
@@ -146,15 +147,15 @@ class Election:
         """Calculate the number of adjustment seats each party gets."""
         self.v_desired_col_sums, self.adj_seat_gen, _, _ \
             = apportion1d_general(
-                v_votes=self.v_votes,
-                num_total_seats=self.total_seats,
-                prior_allocations=self.v_const_seats_alloc,
-                rule=self.system.get_generator("adj_determine_divider"),
-                type_of_rule=self.system.get_type("adj_determine_divider"),
-                threshold_percent=self.system["adjustment_threshold"],
-                threshold_choice=self.system["adj_threshold_choice"],
-                threshold_seats=self.system["adjustment_threshold_seats"]
-            )
+            v_votes=self.v_votes,
+            num_total_seats=self.total_seats,
+            prior_allocations=self.v_const_seats_alloc,
+            rule=self.system.get_generator("adj_determine_divider"),
+            type_of_rule=self.system.get_type("adj_determine_divider"),
+            threshold_percent=self.system["adjustment_threshold"],
+            threshold_choice=self.system["adj_threshold_choice"],
+            threshold_seats=self.system["adjustment_threshold_seats"]
+        )
         return self.v_desired_col_sums
 
     def set_forced_reasons(self, demoTable):
@@ -175,21 +176,21 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        self.results, self.demo_table_info = method (
-                m_votes             = self.m_votes,
-                v_desired_row_sums  = self.v_desired_row_sums,
-                v_desired_col_sums  = self.v_desired_col_sums,
-                m_prior_allocations = self.m_const_seats,
-                divisor_gen         = self.gen,
-                adj_seat_gen        = self.adj_seat_gen,
-                threshold           = self.system["adjustment_threshold"],
-                orig_votes          = self.m_votes,
-                v_const_seats       = [con["num_const_seats"] for con in consts],
-                last                = self.last
-            )
+        self.results, self.demo_table_info = method(
+            m_votes=self.m_votes,
+            v_desired_row_sums=self.v_desired_row_sums,
+            v_desired_col_sums=self.v_desired_col_sums,
+            m_prior_allocations=self.m_const_seats,
+            divisor_gen=self.gen,
+            adj_seat_gen=self.adj_seat_gen,
+            threshold=self.system["adjustment_threshold"],
+            orig_votes=self.m_votes,
+            v_const_seats=[con["num_const_seats"] for con in consts],
+            last=self.last
+        )
         self.m_adj_seats = subtract_m(self.results, self.m_const_seats)
         v_results = [sum(x) for x in zip(*self.results)]
-        devs = [abs(a-b) for a, b in zip(self.v_desired_col_sums, v_results)]
+        devs = [abs(a - b) for a, b in zip(self.v_desired_col_sums, v_results)]
         self.adj_dev = sum(devs)
 
         alloc_sequence = self.demo_table_info[0]
@@ -199,10 +200,10 @@ class Election:
         for i, print_demo_table in enumerate(self.demo_table_info[1:]):
             headers, steps, sup_header = print_demo_table(self.system, alloc_sequence)
             demo_table = {
-                "headers": headers,
-                "steps": steps,
+                "headers":    headers,
+                "steps":      steps,
                 "sup_header": sup_header,
-                "format": format[i],
+                "format":     format[i],
             }
             demo_table = self.set_forced_reasons(demo_table)
             self.demo_tables.append(demo_table)
@@ -211,8 +212,8 @@ class Election:
     def fix_special_formats(self):
         for table in self.demo_tables:
             fmtlist = list(table['format'])
-            for j,f in enumerate(fmtlist):
-                if f=='s' and any(table['steps']):
+            for j, f in enumerate(fmtlist):
+                if f == 's' and any(table['steps']):
                     maxw = max(len(s[j]) for s in table['steps'])
                     fmtlist[j] = "c" if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
@@ -237,22 +238,22 @@ class Election:
                     error = 0
                     for c in range(nrows):
                         row_sum = self.v_desired_row_sums[c]
-                        s = sum(ideal_seats[c,:])
+                        s = sum(ideal_seats[c, :])
                         eta = row_sum/s if s > 0 else 1
-                        ideal_seats[c,:] *= eta
+                        ideal_seats[c, :] *= eta
                         error = max(error, abs(1 - eta))
                     for p in range(ncols):
                         col_sum = self.v_desired_col_sums[p]
-                        s = sum(ideal_seats[:,p])
+                        s = sum(ideal_seats[:, p])
                         tau = col_sum/s if s > 0 else 1
-                        ideal_seats[:,p] *= tau
+                        ideal_seats[:, p] *= tau
                         error = max(error, abs(1 - tau))
             elif row_constraints:
                 for c in range(self.num_constituencies()):
                     row_sum = self.v_desired_row_sums[c]
-                    s = sum(ideal_seats[c,:])
+                    s = sum(ideal_seats[c, :])
                     eta = row_sum/s if s > 0 else 1
-                    ideal_seats[c,:] *= eta
+                    ideal_seats[c, :] *= eta
             elif col_constraints:
                 for p in range(self.num_parties()):
                     col_sum = self.v_desired_col_sums[p]

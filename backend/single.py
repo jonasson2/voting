@@ -3,7 +3,7 @@ import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from electionHandler import ElectionHandler
-from noweb import load_votes, load_settings, single_election, votes_to_excel
+from noweb import load_votes, load_json, single_election, votes_to_excel
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
 import json
@@ -19,7 +19,7 @@ def read_data(vote_file, json_file):
     data = Path('data')
     if json_file.parent.samefile('.'):
         json_file = data/json_file
-    jsondata = load_settings(json_file)
+    jsondata = load_json(json_file)
     systems = jsondata["systems"]
     if not vote_file and "vote_table" in jsondata:
         votes = jsondata["vote_table"]

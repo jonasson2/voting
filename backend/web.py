@@ -15,7 +15,7 @@ from input_util import check_simul_settings
 from util import disp, check_votes, load_votes_from_excel, get_cpu_counts
 from util import timestamp, timestampmsg
 from trace_util import short_traceback
-from noweb import load_votes, load_settings, single_election
+from noweb import load_votes, load_json, single_election
 from noweb import new_simulation, check_simulation
 from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
 
@@ -146,7 +146,7 @@ def api_settings_save():
 def api_settings_upload():
     try:
         f = getfileparam()
-        settings = load_settings(f)
+        settings = load_json(f)
         if "vote_table" in settings:
             return errormsg(f'File {f.filename} contains votes and must '
                             'be uploaded with "Load all"')
@@ -176,7 +176,7 @@ def api_votes_save_all():
 def api_votes_uploadall():
     try:
         f = getfileparam()
-        content = load_settings(f)
+        content = load_json(f)
         if set(content) == {"systems", "sim_settings"}:
             return errormsg(f'File {f.filename} contains no votes and must '
                             'be uploaded with "Load from file"')

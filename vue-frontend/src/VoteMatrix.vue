@@ -292,7 +292,7 @@
       National party votes
     </legend>
     <table class="votematrix">
-      <tr v-if="vote_table.party_votes.used" size="sm">
+      <tr v-if="vote_table.party_votes.specified" size="sm">
         <th class="topleft">
         </th>
         <th
@@ -318,7 +318,7 @@
         </th>
         <th class="displaycenter">Total</th>
       </tr>
-      <tr v-if="vote_table.party_votes.used" size="sm">
+      <tr v-if="vote_table.party_votes.specified" size="sm">
         <th class="constname">
           <b-button
             style="padding: 0"
@@ -363,7 +363,7 @@
           {{vote_table.party_votes.total}}
         </td>
       </tr>
-      <tr v-if="!vote_table.party_votes.used">
+      <tr v-if="!vote_table.party_votes.specified">
         <th class="growtable">
           <b-button
             size="sm"
@@ -484,10 +484,10 @@ export default {
       this.updateVoteSums()
     },
     deletePartyVotes: function () {
-      this.vote_table.party_votes.used = false
+      this.vote_table.party_votes.specified = false
     },
     addPartyVotes: function() {
-      this.vote_table.party_votes.used = true
+      this.vote_table.party_votes.specified = true
     },
     save: function () {
       var filename = this.vote_table.name.replace('þ', 'th')
@@ -539,6 +539,7 @@ export default {
   watch: {
     vote_table: {
       handler: function() {
+        console.log('vote_table changed')
         if (!this.waiting_for_data) {
           console.log("watching vote_table")
           this.addBeforeunload()

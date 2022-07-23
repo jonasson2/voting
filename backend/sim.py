@@ -3,7 +3,7 @@ import sys, math, time, random
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from noweb import load_votes, new_simulation
-from noweb import load_settings
+from noweb import load_json
 from noweb import simulation_to_excel
 from noweb import check_simulation, create_SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
@@ -21,7 +21,7 @@ def read_data(vote_file, json_file):
     data = Path('data')
     if json_file.parent.samefile('.'):
         json_file = data/json_file
-    jsondata = load_settings(json_file)
+    jsondata = load_json(json_file)
     systems = jsondata["systems"]
     sim_settings = jsondata["sim_settings"]
     if not vote_file and "vote_table" in jsondata:
