@@ -1,13 +1,11 @@
 #coding:utf-8
 from copy import deepcopy
-import random
 
 def max_const_vote_percentage_apportionment(m_votes,
                                    v_desired_row_sums,
                                    v_desired_col_sums,
                                    m_prior_allocations,
                                    divisor_gen,
-                                   orig_votes,
                                    **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 
@@ -18,35 +16,35 @@ def max_const_vote_percentage_apportionment(m_votes,
     for n in range(total_seats-num_allocated):
         m_seat_props = []
         maximums = []
-        for const in range(len(m_votes)):
+        for c in range(len(m_votes)):
             m_seat_props.append([])
-            s = sum(orig_votes[const])
-            for party in range(len(m_votes[const])):
-                a = 0
-                col_sum = sum(row[party] for row in m_allocations)
-                if col_sum < v_desired_col_sums[party]:
+            s = sum(m_votes[c])
+            for p in range(len(m_votes[c])):
+                col_sum = sum(row[p] for row in m_allocations)
+                if col_sum < v_desired_col_sums[p]:
                     div = divisor_gen()
-                    for k in range(m_allocations[const][party]+1):
-                        x = next(div)
-                    a = (float(orig_votes[const][party])/s)/x
-                m_seat_props[const].append(a)
-            maximums.append(max(m_seat_props[const]))
+                    for k in range(m_allocations[c][p]+1):
+                        divisor = next(div)
+                    a = (float(m_votes[c][p])/s)/divisor
+                else:
+                    a = 0
+                m_seat_props[c].append(a)
+            maximums.append(max(m_seat_props[c]))
 
-            if sum(m_allocations[const]) == v_desired_row_sums[const]:
-                m_seat_props[const] = [0]*len(m_votes[const])
-                maximums[const] = 0
+            if sum(m_allocations[c]) == v_desired_row_sums[c]:
+                m_seat_props[c] = [0]*len(m_votes[c])
+                maximums[c] = 0
 
         maximum = max(maximums)
-        c = maximums.index(maximum)
-        p = m_seat_props[c].index(maximum)
+        const = maximums.index(maximum)
+        party = m_seat_props[const].index(maximum)
 
-        m_allocations[c][p] += 1
+        m_allocations[const][party] += 1
         allocation_sequence.append({
-            "constituency": c, "party": p,
+            "constituency": const, "party": party,
             "reason": "Max over all lists",
-            "max_list_share": maximum,
+            "maximum": maximum,
         })
-
 
     return m_allocations, (allocation_sequence, print_demo_table)
 
@@ -64,7 +62,7 @@ def print_demo_table(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            allocation["max_list_share"]
+            allocation["maximum"]
         ])
 
     return headers, data, None

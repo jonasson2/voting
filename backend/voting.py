@@ -147,15 +147,15 @@ class Election:
         """Calculate the number of adjustment seats each party gets."""
         self.v_desired_col_sums, self.adj_seat_gen, _, _ \
             = apportion1d_general(
-            v_votes=self.v_votes,
-            num_total_seats=self.total_seats,
-            prior_allocations=self.v_const_seats_alloc,
-            rule=self.system.get_generator("adj_determine_divider"),
-            type_of_rule=self.system.get_type("adj_determine_divider"),
-            threshold_percent=self.system["adjustment_threshold"],
-            threshold_choice=self.system["adj_threshold_choice"],
-            threshold_seats=self.system["adjustment_threshold_seats"]
-        )
+                v_votes=self.v_votes,
+                num_total_seats=self.total_seats,
+                prior_allocations=self.v_const_seats_alloc,
+                rule=self.system.get_generator("adj_determine_divider"),
+                type_of_rule=self.system.get_type("adj_determine_divider"),
+                threshold_percent=self.system["adjustment_threshold"],
+                threshold_choice=self.system["adj_threshold_choice"],
+                threshold_seats=self.system["adjustment_threshold_seats"]
+            )
         return self.v_desired_col_sums
 
     def set_forced_reasons(self, demoTable):

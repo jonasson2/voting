@@ -11,7 +11,7 @@ from methods.nearest_to_previous import nearest_to_previous
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
-from methods.max_const_seat_share import norw_ice_apportionment
+from methods.max_const_seat_share import const_seat_share_apportionment
 from methods.max_const_vote_percentage import max_const_vote_percentage_apportionment
 from methods.opt_entropy import opt_entropy
 from methods.switching import switching
@@ -136,7 +136,7 @@ ADJUSTMENT_METHODS = {
     "icelandic-law": icelandic_apportionment,
     "ice-shares": icelandic_share_apportionment,
     "norwegian-law": norwegian_apportionment,
-    "max-const-seat-share": norw_ice_apportionment,
+    "max-const-seat-share": const_seat_share_apportionment,
     "max-const-vote-percentage": max_const_vote_percentage_apportionment,
     "relative-superiority": relative_superiority,
     "relative-sup-simple": relative_superiority_simple,

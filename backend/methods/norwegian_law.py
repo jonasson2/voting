@@ -6,11 +6,7 @@ def norwegian_apportionment(m_votes,
                             v_desired_col_sums,
                             m_prior_allocations,
                             divisor_gen,
-                            v_const_seats,
-                            orig_votes,
                             **kwargs):
-    """Apportion based on Norwegian law."""
-
     m_allocations = deepcopy(m_prior_allocations)
 
     num_allocated = sum([sum(c) for c in m_allocations])
@@ -22,14 +18,15 @@ def norwegian_apportionment(m_votes,
         maximums = []
         for c in range(len(m_votes)):
             m_seat_props.append([])
-            s = sum(orig_votes[c])
+            s = sum(m_votes[c])
             for p in range(len(m_votes[c])):
-                div = divisor_gen()
-                for k in range(m_allocations[c][p]+1):
-                    x = next(div)
-                if m_votes[c][p] != 0:
+                col_sum = sum(row[p] for row in m_allocations)
+                if col_sum < v_desired_col_sums[p]:
+                    div = divisor_gen()
+                    for k in range(m_allocations[c][p]+1):
+                        divisor = next(div)
                     seat_factor = max(1, v_const_seats[c])
-                    a = float(orig_votes[c][p])*seat_factor/s/x
+                    a = float(m_votes[c][p])*seat_factor/s/divisor
                 else:
                     a = 0
                 m_seat_props[c].append(a)
@@ -47,9 +44,8 @@ def norwegian_apportionment(m_votes,
         allocation_sequence.append({
             "constituency": const, "party": party,
             "reason": "Max over all lists",
-            "max": maximum,
+            "maximum": maximum,
         })
-
 
     return m_allocations, (allocation_sequence, print_demo_table)
 
@@ -67,7 +63,7 @@ def print_demo_table(rules, allocation_sequence):
             rules["constituencies"][allocation["constituency"]]["name"],
             rules["parties"][allocation["party"]],
             allocation["reason"],
-            allocation["max"]
+            allocation["maximum"]
         ])
 
     return headers, data, None

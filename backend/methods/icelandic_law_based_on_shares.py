@@ -7,7 +7,6 @@ def icelandic_share_apportionment(m_votes,
                                   m_prior_allocations,
                                   divisor_gen,
                                   adj_seat_gen,
-                                  orig_votes,
                                   **kwargs):
     """
     Apportion based on Icelandic law nr. 112/2021.
@@ -35,7 +34,7 @@ def icelandic_share_apportionment(m_votes,
 
         v_proportions = []
         for const in range(len(m_votes)):
-            const_votes = orig_votes[const]
+            const_votes = m_votes[const]
             s = sum(const_votes)
             div = divisor_gen()
             for i in range(m_allocations[const][idx]+1):

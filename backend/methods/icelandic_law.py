@@ -10,7 +10,6 @@ def icelandic_apportionment(
     divisor_gen,
     adj_seat_gen,
     threshold=None,
-    orig_votes=None,
     **kwargs
 ):
     """
@@ -59,7 +58,7 @@ def icelandic_apportionment(
 
         v_proportions = []
         for const in range(len(m_votes)):
-            const_votes = orig_votes[const]
+            const_votes = m_votes[const]
             s = sum(const_votes)
             div = divisor_gen()
             for i in range(m_allocations[const][idx]+1):
