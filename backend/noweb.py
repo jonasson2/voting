@@ -91,7 +91,7 @@ def load_json(f):
     if "vote_table" in file_content:
         if "party_votes" not in file_content["vote_table"]:
             file_content["vote_table"]["party_votes"] = {
-                "name": "Party votes",
+                "name": "–",
                 "parties": [],
                 "votes": [],
                 "specified": False,

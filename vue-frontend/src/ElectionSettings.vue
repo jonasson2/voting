@@ -5,7 +5,7 @@
     <!-- CONSTITUENCY SEAT ALLOCATION -->
     <b-row>
       <legend style="margin-left:0px; margin-top:12px" class="text-center">
-        Allocation of constituency seats and national fixed seats
+        Allocation of fixed seats
       </legend>
       <b-col cols="7">
         <b-form-group

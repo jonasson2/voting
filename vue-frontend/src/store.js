@@ -18,7 +18,7 @@ const store = new Vuex.Store({
         { name: "II", num_const_seats: 10, num_adj_seats: 3 },
       ],
       party_votes: {
-        name: "Party votes",
+        name: "–",
         parties: [],
         votes: [],
         specified: false,

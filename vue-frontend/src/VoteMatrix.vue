@@ -169,16 +169,16 @@
         <th
           class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Constituency seats"
+          title="Fixed constituency seats"
           >
-          # Constit.
+          # Fixed
         </th>
         <th
           class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Adjustment seats"
           >
-          # Adjustm.
+          # Adj.
         </th>
         <th v-for="(party, partyidx) in vote_table.parties" class="partyname">
           <b-button
@@ -225,7 +225,7 @@
           </b-button>
           <input
             type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '135px' }"
+            v-autowidth="{ maxWidth: '400px', minWidth: '285px' }"
             v-model="constituency['name']"
             />
         </th>
@@ -299,10 +299,10 @@
           class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title='National fixed seats (allocated according to total constituency
-                 votes or national party votes using constituency allocation rules 
+                 votes or national party votes using fixed seat allocation rules 
                  set in "Electoral systems" tab)'
           >
-          # Nat.fix.
+          # Fixed
         </th>
         <th
           class="seatnumberheading"
@@ -311,7 +311,7 @@
                  votes or national party votes using apportionment rules 
                  set in "Electoral systems" tab)'
           >
-          # Nat.adj.
+          # Adj.
         </th>
         <th v-for="(party, partyidx) in vote_table.parties" class="displaycenter">
           {{vote_table.parties[partyidx]}}
@@ -332,7 +332,7 @@
           </b-button>
           <input
             type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '135px' }"
+            v-autowidth="{ maxWidth: '400px', minWidth: '285px' }"
             v-model="vote_table.party_votes.name"
             />
         </th>
