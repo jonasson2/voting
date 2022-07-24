@@ -6,6 +6,7 @@ def norwegian_apportionment(m_votes,
                             v_desired_col_sums,
                             m_prior_allocations,
                             divisor_gen,
+                            v_const_seats,
                             **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 

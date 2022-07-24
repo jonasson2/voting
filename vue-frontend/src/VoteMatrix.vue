@@ -462,7 +462,7 @@ export default {
     },
     addConstituency: function () {
       this.vote_table.constituencies.push({
-        name: "-",
+        name: "–",
         num_const_seats: 1,
         num_adj_seats: 1,
       });
@@ -487,7 +487,15 @@ export default {
       this.vote_table.party_votes.specified = false
     },
     addPartyVotes: function() {
-      this.vote_table.party_votes.specified = true
+      let n = this.vote_table.parties.length
+      this.vote_table.party_votes = {
+        name: "–",
+        num_const_seats: 1,
+        num_adj_seats: 1,
+        votes: Array(n).fill(1),
+        specified: true,
+        total: n,
+      }
     },
     save: function () {
       var filename = this.vote_table.name.replace('þ', 'th')

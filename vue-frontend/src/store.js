@@ -19,7 +19,8 @@ const store = new Vuex.Store({
       ],
       party_votes: {
         name: "–",
-        parties: [],
+        num_const_seats: 0,
+        num_adj_seats: 0,
         votes: [],
         specified: false,
         total: 0,
@@ -399,7 +400,7 @@ function setVoteSums(state) {
     vs.aseats += vc[i].num_adj_seats
   }
   let pv = state.vote_table.party_votes
-  if (pv.used) {
+  if (pv.specified) {
     pv.total = pv.votes.reduce((a,b) => a + b, 0)
   }
   else

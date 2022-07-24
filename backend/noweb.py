@@ -89,10 +89,12 @@ def load_json(f):
             }
             del sys["seat_spec_option"]
     if "vote_table" in file_content:
-        if "party_votes" not in file_content["vote_table"]:
-            file_content["vote_table"]["party_votes"] = {
+        vote_table = file_content["vote_table"]
+        if "party_votes" not in vote_table:
+            vote_table["party_votes"] = {
                 "name": "–",
-                "parties": [],
+                "num_const_seats": 0,
+                "num_adj_seats": 0,
                 "votes": [],
                 "specified": False,
                 "total": 0
