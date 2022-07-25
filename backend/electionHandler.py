@@ -18,6 +18,7 @@ class ElectionHandler:
         systems = check_systems(systems)
         vote_table = check_vote_table(vote_table)
         self.votes = vote_table["votes"]
+        self.party_votes = vote_table["party_votes"]
         self.set_min_votes(min_votes)
         self.elections = []
         self.setup_elections(vote_table, systems)
@@ -37,7 +38,10 @@ class ElectionHandler:
             electionSystem = ElectionSystem()
             electionSystem.update(system)
             name = vote_table["name"] + ":" + system["name"]
-            election = Election(electionSystem, self.votes, name=name)
+            election = Election(electionSystem,
+                                self.votes,
+                                party_votes=self.party_votes,
+                                name=name)
             self.elections.append(election)
 
     def to_xlsx(self, filename):

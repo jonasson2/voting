@@ -24,7 +24,7 @@ def display_seats(totSeats, adjSeats):
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, min_votes=0, name=''):
+    def __init__(self, system, votes, party_votes=None, min_votes=0, name=''):
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
         self.reference_results = []
