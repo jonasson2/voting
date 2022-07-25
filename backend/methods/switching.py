@@ -20,7 +20,7 @@ def switching(m_votes,
     # The number of adjustment seats each party should receive:
     correct_adj_seats = v_subtract(v_desired_col_sums, v_prior_allocations)
 
-    # Allocate adjustment seats as if they were constituency seats
+    # Allocate adjustment seats as if they were fixed seats
     m_adj_seats = []
     for c in range(len(m_prior_allocations)):
         votes = [m_votes[c][p] for p in range(len(m_votes[c]))]

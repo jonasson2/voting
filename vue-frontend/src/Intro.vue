@@ -59,7 +59,7 @@
       kjördæmaskipan og kosningakerfi. Hermirinn er hugsaður til prófunar á
       kosningakerfum eins og í kosningum til þjóðþinga. Notandinn getur hannað
       sín eigin kerfi, eitt eða fleiri, kannað eiginleika þeirra og borið þau
-      saman með ýmsum gæðamæli¬kvörðum. Þingsætum má skipta að vild milli
+      saman með ýmsum gæðamælikvörðum. Þingsætum má skipta að vild milli
       kjördæma og í kjördæmis- og jöfnunarsæti. Velja má á milli
       úthlutunarreglna, setja þröskulda bæði í kjördæmum og á landsvísu, en ekki
       síst prófa margvíslegar útfærslur á útdeilingu jöfnunarsæta til listanna.

@@ -79,7 +79,7 @@ def read_xlsx(filename):
 #                             "must add to a nonzero number.")
 #         cons.append({
 #             "name": row[0],
-#             "num_const_seats": int(row[1]),
+#             "num_fixed_seats": int(row[1]),
 #             "num_adj_seats": int(row[2])})
 #     return cons
 
@@ -101,11 +101,11 @@ def load_votes_from_excel(stream, filename):
         lines.append([cell.value for cell in row])
     return lines
 
-def parse_input(rows, const_seats_included, adj_seats_included, filename=''):
+def parse_input(rows, fixed_seats_included, adj_seats_included, filename=''):
     name_included = rows[0][0].lower() != u"kjördæmi" if rows[0][0] else False
     res = {}
     start_col = 1
-    if const_seats_included:
+    if fixed_seats_included:
         const_col = start_col
         start_col += 1
     if adj_seats_included:
@@ -120,7 +120,7 @@ def parse_input(rows, const_seats_included, adj_seats_included, filename=''):
 
     res["constituencies"] = [{
         "name": row[0],
-        "num_const_seats": parsint(row[const_col]) if const_seats_included else 0,
+        "num_fixed_seats": parsint(row[const_col]) if fixed_seats_included else 0,
         "num_adj_seats": parsint(row[adj_col]) if adj_seats_included else 0,
     } for row in rows[1:]]
 
@@ -139,10 +139,10 @@ def check_votes(rows, filename):
     elif len(rows) < 2:
         return 'Only one row'
     toprow = rows[0]
-    const_seats_incl = toprow[1].lower() == "cons"
-    expected = 2 if const_seats_incl else 1
+    fixed_seats_incl = toprow[1].lower() == "cons"
+    expected = 2 if fixed_seats_incl else 1
     adj_seats_incl = toprow[expected].lower() == "adj"
-    skip = 1 + const_seats_incl + adj_seats_incl
+    skip = 1 + fixed_seats_incl + adj_seats_incl
     votes = [row[skip:] for row in rows[1:]]
     if not all(toprow[skip:]):
         return 'Some party names are blank'
@@ -155,7 +155,7 @@ def check_votes(rows, filename):
     if not all(isint(row) for row in votes):
         return 'All votes must be nonnegative integer numbers'
 
-    result = parse_input(rows, const_seats_incl, adj_seats_incl, filename)
+    result = parse_input(rows, fixed_seats_incl, adj_seats_incl, filename)
     return result
 
 def parsint(value):

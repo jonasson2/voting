@@ -52,14 +52,14 @@ def check_vote_table(vote_table):
         if "name" not in const: # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
         name = const["name"]
-        for info in ["num_const_seats", "num_adj_seats"]:
+        for info in ["num_fixed_seats", "num_adj_seats"]:
             if info not in const:
                 raise KeyError(f"Missing data ('{info}' for {name})")
             if not const[info]: const[info] = 0
             if type(const[info]) != int:
                 raise TypeError("Seat specifications must be numbers.")
-        # if const["num_const_seats"]+const["num_adj_seats"] <= 0:
-        #     raise ValueError("Constituency seats and adjustment seats "
+        # if const["num_fixed_seats"]+const["num_adj_seats"] <= 0:
+        #     raise ValueError("Fixed seats and adjustment seats "
         #                      "must add to a nonzero number. "
         #                      f"This is not the case for {name}.")
 
@@ -93,15 +93,15 @@ def check_systems(electoral_systems):
                 raise KeyError(f"Missing data ('constituencies[x].name' in "
                     f"electoral system {electoral_system['name']})")
             name = const["name"]
-            for info in ["num_const_seats", "num_adj_seats"]:
+            for info in ["num_fixed_seats", "num_adj_seats"]:
                 if info not in const:
                     raise KeyError(f"Missing data ('{info}' for {name} in "
                         f"electoral system {electoral_system['name']})")
                 if not const[info]: const[info]=0
                 if type(const[info]) != int:
                     raise TypeError("Seat specifications must be numbers.")
-            # if (const["num_const_seats"] + const["num_adj_seats"] <= 0):
-            #     raise ValueError("Constituency seats and adjustment seats "
+            # if (const["num_fixed_seats"] + const["num_adj_seats"] <= 0):
+            #     raise ValueError("Fixed seats and adjustment seats "
             #          "must add to a nonzero number. "
             #          f"This is not the case for {name} in "
             #          f"electoral system {electoral_system['name']}.")

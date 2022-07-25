@@ -22,9 +22,10 @@
         </b-alert>
       </template>
       <template v-else>
-        <b-container align-h="start" v-if="results[activeTabIndex] !== undefined">
+        <b-container fluid align-h="start" v-if="results[activeTabIndex] !== undefined">
           <b-row>
             <h4>Seat allocation</h4>
+          </b-row>
             <ResultMatrix
               :constituencies="systems[activeTabIndex].constituencies"
               :parties="vote_table.parties"
@@ -32,7 +33,6 @@
               :voteless="results[activeTabIndex].voteless_seats"
               >
             </ResultMatrix>
-          </b-row>
           <!-- <b-row> -->
             <!--   <ResultChart -->
             <!--     :parties="vote_table.parties" -->

@@ -78,14 +78,14 @@ class Election:
         # Return None if no solution exists.
 
         # How many constituency seats does each party get in each constituency
-        self.const_seats_alloc = []
+        self.fixed_seats_alloc = []
 
         # Which seats does each party get in each constituency:
         self.order = []
 
         # Determine total seats (const + adjustment) in each constituency:
         self.v_desired_row_sums = [
-            const["num_const_seats"] + const["num_adj_seats"]
+            const["num_fixed_seats"] + const["num_adj_seats"]
             for const in self.system["constituencies"]
         ]
 
@@ -122,7 +122,7 @@ class Election:
         m_allocations = []
         self.last = []
         for i in range(self.num_constituencies()):
-            num_seats = constituencies[i]["num_const_seats"]
+            num_seats = constituencies[i]["num_fixed_seats"]
             if num_seats != 0:
                 alloc, _, last_in, _ = apportion1d_general(
                     v_votes=self.m_votes[i],
@@ -140,8 +140,8 @@ class Election:
             m_allocations.append(alloc)
 
         v_allocations = [sum(x) for x in zip(*m_allocations)]
-        self.m_const_seats = m_allocations
-        self.v_const_seats_alloc = v_allocations
+        self.m_fixed_seats = m_allocations
+        self.v_fixed_seats_alloc = v_allocations
 
     def run_determine_adjustment_seats(self):
         """Calculate the number of adjustment seats each party gets."""
@@ -149,7 +149,7 @@ class Election:
             = apportion1d_general(
                 v_votes=self.v_votes,
                 num_total_seats=self.total_seats,
-                prior_allocations=self.v_const_seats_alloc,
+                prior_allocations=self.v_fixed_seats_alloc,
                 rule=self.system.get_generator("adj_determine_divider"),
                 type_of_rule=self.system.get_type("adj_determine_divider"),
                 threshold_percent=self.system["adjustment_threshold"],
@@ -180,15 +180,15 @@ class Election:
             m_votes=self.m_votes,
             v_desired_row_sums=self.v_desired_row_sums,
             v_desired_col_sums=self.v_desired_col_sums,
-            m_prior_allocations=self.m_const_seats,
+            m_prior_allocations=self.m_fixed_seats,
             divisor_gen=self.gen,
             adj_seat_gen=self.adj_seat_gen,
             threshold=self.system["adjustment_threshold"],
             orig_votes=self.m_votes,
-            v_const_seats=[con["num_const_seats"] for con in consts],
+            v_fixed_seats=[con["num_fixed_seats"] for con in consts],
             last=self.last
         )
-        self.m_adj_seats = subtract_m(self.results, self.m_const_seats)
+        self.m_adj_seats = subtract_m(self.results, self.m_fixed_seats)
         v_results = [sum(x) for x in zip(*self.results)]
         devs = [abs(a - b) for a, b in zip(self.v_desired_col_sums, v_results)]
         self.adj_dev = sum(devs)

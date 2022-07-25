@@ -10,7 +10,7 @@ def kristinn_lund(m_votes, v_desired_row_sums, v_desired_col_sums, m_prior_alloc
     correct_adj_seats = [v_desired_col_sums[p]-v_prior_allocations[p]
                         for p in range(len(v_desired_col_sums))]
 
-    # Allocate adjustment seats as if they were constituency seats
+    # Allocate adjustment seats as if they were fixed seats
     m_adj_seats = []
     for c in range(len(m_prior_allocations)):
         votes = [m_votes[c][p] if correct_adj_seats[p] > 0 else 0

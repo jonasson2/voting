@@ -50,8 +50,8 @@ class ElectionSystem(dict):
     def generate_system(self, option, vote_table = []):
         option = remove_prefix(option, "make_")
         sys = copy(self)
-        if option == "all_const":
-            sys["constituencies"] = set_all_const(self["constituencies"])
+        if option == "all_fixed":
+            sys["constituencies"] = set_all_fixed(self["constituencies"])
         elif option == "all_adj":
             sys["constituencies"] = set_all_adj(self["constituencies"])
         elif option == "one_const":
@@ -67,8 +67,8 @@ def copyconst(const):
 def set_one_const(constituencies):
     one_const = [{
         "name": "All",
-        "num_const_seats": sum(
-            [const["num_const_seats"] for const in constituencies]),
+        "num_fixed_seats": sum(
+            [const["num_fixed_seats"] for const in constituencies]),
         "num_adj_seats": sum(
             [const["num_adj_seats"] for const in constituencies]),
     }]
@@ -77,16 +77,16 @@ def set_one_const(constituencies):
 def set_all_adj(constituencies):
     all_adj = copyconst(constituencies)
     for const in all_adj:
-        const["num_adj_seats"] += const["num_const_seats"]
-        const["num_const_seats"] = 0
+        const["num_adj_seats"] += const["num_fixed_seats"]
+        const["num_fixed_seats"] = 0
     return all_adj
 
-def set_all_const(constituencies):
-    all_const = copyconst(constituencies)
-    for const in all_const:
-        const["num_const_seats"] += const["num_adj_seats"]
+def set_all_fixed(constituencies):
+    all_fixed = copyconst(constituencies)
+    for const in all_fixed:
+        const["num_fixed_seats"] += const["num_adj_seats"]
         const["num_adj_seats"] = 0
-    return all_const
+    return all_fixed
 
 def set_copy(constituencies):
     refer = copyconst(constituencies)

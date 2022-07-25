@@ -93,7 +93,7 @@ def load_json(f):
         if "party_votes" not in vote_table:
             vote_table["party_votes"] = {
                 "name": "–",
-                "num_const_seats": 0,
+                "num_fixed_seats": 0,
                 "num_adj_seats": 0,
                 "votes": [],
                 "specified": False,
@@ -232,7 +232,7 @@ def votes_to_excel(vote_table, file):
     ] + [
         [
             vote_table["constituencies"][c]["name"],
-            vote_table["constituencies"][c]["num_const_seats"],
+            vote_table["constituencies"][c]["num_fixed_seats"],
             vote_table["constituencies"][c]["num_adj_seats"],
         ] + vote_table["votes"][c]
             for c in range(len(vote_table["constituencies"]))

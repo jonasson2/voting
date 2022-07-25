@@ -12,11 +12,10 @@
     </p>
     <b-img rounded fluid src="/static/img/parties_xlsx.png" />
     <p>
-      Optionally, if the second and third columns are named 'cons' or 'adj',
-      they will be understood to be information about the number of
-      constituency seats and adjustment seats, respectively, in each
-      constituency. If you leave them out, you can specify the number of seats
-      manually.
+      Optionally, if the second and  third columns  are named 'fixed'  or 'adj',
+      they will be understood to be  information about the number of fixed seats
+      and adjustment seats, respectively, in each  constituency. If  you leave
+      them out, you can specify the number of seats manually.
     </p>
     <b-form-file
       v-model="uploadfile"
@@ -144,24 +143,38 @@
     </b-button-group>
   </b-button-toolbar>
   <br />
-  <h6> These source votes and seats are used as basis for allocation in the Single
-    election tab and as expected values in the Simulated elections tab
+  <h6> 
   </h6>
-  <b-input-group>
-    <b-input
-      class="mb-1"
+  <b-form-group
+    label-for="input-horizontal"
+    label-cols="auto"
+    label="Votes-and-seats table name"
+    >
+    <b-form-input
+      class="pt-0 pb-0"
+      style="font-weight:bold; margin-top:-4px; font-size:110%"
       v-model="vote_table.name"
+      v-autowidth="{ maxWidth: '400px', minWidth: '1px' }"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Enter vote table name"
+      title="The votes-and-seats table consists of the Constituency 
+             votes and seats, and the National party votes and seats
+             (if specified)"
       />
-  </b-input-group>
+  </b-form-group>
   <b-row>
-    <legend style = "margin-left:0px"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="xxxxx"
-            >
-      Constituency votes
-    </legend>    
+    <b-col cols="auto">
+      <legend
+        style = "margin-left:0px"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Seat numbers and votes in each constituency.
+               These, and the following national party votes and seats (if specified)
+               are used as basis for allocation in the Single election tab 
+               and as expected values in the Simulated elections tab"
+        >
+        Constituency votes and seats
+      </legend>    
+    </b-col>
+  </b-row>
     <table class="votematrix">
       <tr>
         <th class="topleft">
@@ -169,7 +182,7 @@
         <th
           class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Fixed constituency seats"
+          title="Fixed seats"
           >
           # Fixed
         </th>
@@ -234,7 +247,7 @@
             type="text"
             style="text-align: right"
             v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
-            v-model.number="constituency['num_const_seats']"
+            v-model.number="constituency['num_fixed_seats']"
             />
         </td>
         <td class="numerical" size="sm">
@@ -288,28 +301,37 @@
   
   
   <b-row>
-    <legend style = "margin-left:0px; margin-top:12px">
-      National party votes
+    <b-col cols="auto">
+    <legend style = "margin-left:0px; margin-top:12px"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title='Seat numbers and votes for the national list (German
+                   "zveitstimmen", New Zealand "party votes").'
+            >
+      National party votes and seats
     </legend>
+    </b-col>
+  </b-row>
+  
     <table class="votematrix">
       <tr v-if="vote_table.party_votes.specified" size="sm">
         <th class="topleft">
         </th>
         <th
-          class="seatnumberheading"
+          class="seatnumberheading" 
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title='National fixed seats (allocated according to total constituency
-                 votes or national party votes using fixed seat allocation rules 
-                 set in "Electoral systems" tab)'
+          title='National fixed seats, allocated according to the national party votes
+                 using the fixed seat allocation rules set in the "Electoral systems" tab. 
+                 Normally there are no national fixed seats, but if specified then the 
+                 national party votes must not be left blank.'
           >
           # Fixed
         </th>
         <th
           class="seatnumberheading"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title='National adjustment seats (allocated last according to total constituency
-                 votes or national party votes using apportionment rules 
-                 set in "Electoral systems" tab)'
+          title="National adjustment seats. These are allocated last, by filling
+                 each party's remaining seats after the allocation of all other 
+                 seats (no votes are used for this allocation)"
           >
           # Adj.
         </th>
@@ -341,7 +363,7 @@
             type="text"
             style="text-align: right"
             v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
-            v-model.number="vote_table.party_votes['num_const_seats']"
+            v-model.number="vote_table.party_votes['num_fixed_seats']"
             />
         </td>
         <td class="numerical" size="sm">
@@ -426,6 +448,7 @@ export default {
         }
       }
     )
+    console.log(Vue.version)
     console.log("Created VoteMatrix");
   },
   methods: {
@@ -463,7 +486,7 @@ export default {
     addConstituency: function () {
       this.vote_table.constituencies.push({
         name: "–",
-        num_const_seats: 1,
+        num_fixed_seats: 1,
         num_adj_seats: 1,
       });
       this.vote_table.votes.push(
@@ -490,7 +513,7 @@ export default {
       let n = this.vote_table.parties.length
       this.vote_table.party_votes = {
         name: "–",
-        num_const_seats: 1,
+        num_fixed_seats: 1,
         num_adj_seats: 1,
         votes: Array(n).fill(1),
         specified: true,

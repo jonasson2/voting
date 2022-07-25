@@ -69,9 +69,9 @@ class MeasureGroups(dict):
             "title": "– compared with other seat specifications",
             "rows": {
                 "dev_all_adj":        ("Individual lists", "Only adjustment seats"),
-                "dev_all_const":      ("",                 "Only constituency seats"),
+                "dev_all_fixed":      ("",                 "Only fixed seats"),
                 "dev_all_adj_tot":    ("Party totals",     "Only adjustment seats"),
-                "dev_all_const_tot":  ("",                 "Only constituency seats"),
+                "dev_all_fixed_tot":  ("",                 "Only fixed seats"),
                 "one_const_tot":      ("",            "All constituencies combined")
             }
         }

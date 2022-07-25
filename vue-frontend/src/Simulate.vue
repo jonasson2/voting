@@ -80,8 +80,8 @@
       :key="'const-seats-' + idx"
       :constituencies="results.systems[idx].constituencies"
       :parties="results.parties"
-      :values="system.list_measures.const_seats.avg"
-      :stddev="system.list_measures.const_seats.std"
+      :values="system.list_measures.fixed_seats.avg"
+      :stddev="system.list_measures.fixed_seats.std"
       :title="system.name"
       :round="3">
     </SimResultMatrix>

@@ -31,45 +31,43 @@
       </b-button>
     </template>
   </b-modal>
-  <b-container style="margin-left:0px; margin-bottom:20px">
-    <b-button-toolbar key-nav aria-label="Electoral settings tools"
-                      style="margin-left:12px">
-      <b-button-group class="mx-1">
-        <b-button
-          class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title = "Upload electoral system settings from local file"
-          v-b-modal.modaluploadesettings
-          @click = setReplace(true)
-          >
-          Load from file
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button
-          class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title = "Append electoral systems by uploading settings
-                   from local file"
-          v-b-modal.modaluploadesettings
-          @click = setReplace(false)
-          >
-          Append from file
-        </b-button>
-      </b-button-group>
-      <b-button-group class="mx-1">
-        <b-button
-          class="mb-10"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Download settings for all electoral systems to local
-                 json-file. Also saves simulation settings" 
-          @click="saveSettings()"
-          >
-          Save
-        </b-button>
-      </b-button-group>
-    </b-button-toolbar>
-  </b-container>
+  <b-button-toolbar key-nav aria-label="Electoral settings tools"
+                    style="margin-left:12px">
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title = "Upload electoral system settings from local file"
+        v-b-modal.modaluploadesettings
+        @click = setReplace(true)
+        >
+        Load from file
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title = "Append electoral systems by uploading settings
+                 from local file"
+        v-b-modal.modaluploadesettings
+        @click = setReplace(false)
+        >
+        Append from file
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Download settings for all electoral systems to local
+               json-file. Also saves simulation settings" 
+        @click="saveSettings()"
+        >
+        Save
+      </b-button>
+    </b-button-group>
+  </b-button-toolbar>
   <b-tabs v-if="!adding_system" v-model="activeTabIndex" no-key-nav card>
     <b-tab v-for="(sysidx,idx) in system_numbering" :key="idx" @click="reorder(sysidx,idx)">
       <template v-if="sysidx==-2" #title>
@@ -81,14 +79,20 @@
       <template v-else v-slot:title>
         {{systems[sysidx].name}}
       </template>
-      <b-input-group>
-        <b-input
-          class="mb-3"
+      <b-form-group
+        label-for="input-horizontal"
+        label-cols="auto"
+        label="System name"
+        >
+        <b-form-input
+          class="pt-0 pb-0"
+          style="font-weight:bold; margin-top:-4px; font-size:110%"
           v-model="systems[activeSystemIndex].name"
+          v-autowidth="{ maxWidth: '400px', minWidth: '1px' }"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Enter electoral system name"
           />
-      </b-input-group>
+      </b-form-group>
       <ElectionSettings
         :systemidx="activeSystemIndex"
         :capabilities="capabilities"

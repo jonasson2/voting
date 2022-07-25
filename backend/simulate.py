@@ -109,13 +109,13 @@ class Simulation():
     def run_initial_elections(self):
         for election in self.election_handler.elections:
             xtd_total_seats = add_totals(election.results)
-            xtd_const_seats = add_totals(election.m_const_seats)
-            xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
+            xtd_fixed_seats = add_totals(election.m_fixed_seats)
+            xtd_adj_seats = m_subtract(xtd_total_seats, xtd_fixed_seats)
             xtd_seat_shares = find_xtd_shares(xtd_total_seats)
             election.calculate_ideal_seats(self.sim_settings["scaling"])
             xtd_ideal_seats = add_totals(election.ideal_seats)
             self.base_allocations.append({
-                "xtd_const_seats": xtd_const_seats,
+                "xtd_fixed_seats": xtd_fixed_seats,
                 "xtd_adj_seats":   xtd_adj_seats,
                 "xtd_total_seats": xtd_total_seats,
                 "xtd_seat_shares": xtd_seat_shares,
@@ -162,13 +162,13 @@ class Simulation():
     def collect_list_measures(self):
         import numpy as np
         for (i,election) in enumerate(self.election_handler.elections):
-            cs = np.array(add_totals(election.m_const_seats))
+            cs = np.array(add_totals(election.m_fixed_seats))
             ts = np.array(add_totals(election.results))
             election.calculate_ideal_seats(self.sim_settings["scaling"])
             ids = np.array(add_totals(election.ideal_seats))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
-            self.stat["const_seats"][i].update(cs)
+            self.stat["fixed_seats"][i].update(cs)
             self.stat["total_seats"][i].update(ts)
             self.stat["adj_seats"][i].update(adj)
             self.stat["seat_shares"][i].update(sh)
@@ -205,7 +205,7 @@ class Simulation():
                 self.stat[m].update(deviations[m])
 
     def deviation_measures(self, election, system, deviations):
-        for measure in ["dev_all_adj", "dev_all_const", "one_const"]:
+        for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
             comparison_election = Election(comparison_system,

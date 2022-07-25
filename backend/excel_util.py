@@ -210,9 +210,9 @@ def elections_to_xlsx(elections, filename):
         parties = system["parties"] + ["Total"]
         xtd_votes = add_totals(election.m_votes)
         xtd_shares = find_xtd_shares(xtd_votes)
-        xtd_const_seats = add_totals(election.m_const_seats)
+        xtd_fixed_seats = add_totals(election.m_fixed_seats)
         xtd_total_seats = add_totals(election.results)
-        xtd_adj_seats = m_subtract(xtd_total_seats, xtd_const_seats)
+        xtd_adj_seats = m_subtract(xtd_total_seats, xtd_fixed_seats)
         xtd_seat_shares = find_xtd_shares(xtd_total_seats)
         threshold = 0.01*election.system["adjustment_threshold"]
         # xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
@@ -230,11 +230,11 @@ def elections_to_xlsx(elections, filename):
             ["Electoral system:",
              system["name"],
              "basic"],
-            ["Rule for allocating constituency seats:",
+            ["Rule for allocating fixed seats:",
              DRN[system["primary_divider"]],
              "basic"
              ],
-            ["Threshold for constituency seats:",
+            ["Threshold for fixed seats:",
              system["constituency_threshold"]/100,
              "left-pct1"
              ],
@@ -272,7 +272,7 @@ def elections_to_xlsx(elections, filename):
             xheaders=["Const.", "Adj.", "Total"],
             yheaders=const_names,
             matrix=add_totals([
-                [const["num_const_seats"],const["num_adj_seats"]]
+                [const["num_fixed_seats"],const["num_adj_seats"]]
                 for const in system["constituencies"]
             ]),
             cformat=fmt["base"]
@@ -289,15 +289,15 @@ def elections_to_xlsx(elections, filename):
         # )
 
         row = draw_block(worksheet, row=row, col=col,
-            heading="Constituency seats", xheaders=parties, yheaders=const_names,
-            matrix=xtd_const_seats, cformat=fmt["base"]
+            heading="Fixed seats", xheaders=parties, yheaders=const_names,
+            matrix=xtd_fixed_seats, cformat=fmt["base"]
         )
 
         # row_headers = ['Total votes', 'Vote shares', 'Threshold',
         #                'Votes above threshold',
-        #                'Vote shares above threshold', 'Constituency seats']
+        #                'Vote shares above threshold', 'Fixed seats']
         # matrix = [xtd_votes[-1],   xtd_shares[-1],   [threshold],
-        #           xtd_final_votes, xtd_final_shares, xtd_const_seats[-1]]
+        #           xtd_final_votes, xtd_final_shares, xtd_fixed_seats[-1]]
         # formats = [fmt["base"], fmt["share"], fmt["share"],
         #            fmt["base"], fmt["share"], fmt["base"]]
         # row = draw_block(worksheet, row=row, col=col,
@@ -389,8 +389,8 @@ def simulation_to_xlsx(results, filename, parallel):
     worksheet.write(row, c1, "Date:", fmt["h"])
     worksheet.write(row, c2, datetime.now(), fmt["time"])
     total_votes = sum(sum(row) for row in results["vote_table"]["votes"])
-    const_seats = sum(
-        c["num_const_seats"] for c in results["vote_table"]["constituencies"])
+    fixed_seats = sum(
+        c["num_fixed_seats"] for c in results["vote_table"]["constituencies"])
     adj_seats = sum(
         c["num_adj_seats"] for c in results["vote_table"]["constituencies"])
     row += 2
@@ -406,7 +406,7 @@ def simulation_to_xlsx(results, filename, parallel):
     worksheet.write(row, c2, len(results["vote_table"]["parties"]), fmt["basic"])
     row += 1
     worksheet.write(row, c1, "Total number of const. seats", fmt["basic"])
-    worksheet.write(row, c2, const_seats, fmt["basic"])
+    worksheet.write(row, c2, fixed_seats, fmt["basic"])
     row += 1
     worksheet.write(row, c1, "Total number of adj. seats", fmt["basic"])
     worksheet.write(row, c2, adj_seats, fmt["basic"])
@@ -441,7 +441,7 @@ def simulation_to_xlsx(results, filename, parallel):
         {"abbr": "v",  "heading": "Votes"             },
         {"abbr": "vs", "heading": "Vote shares"       },
         {"abbr": "id", "heading": "Reference seat shares" },
-        {"abbr": "cs", "heading": "Constituency seats"},
+        {"abbr": "cs", "heading": "Fixed seats"},
         {"abbr": "as", "heading": "Adjustment seats"  },
         {"abbr": "ts", "heading": "Total seats"       },
         {"abbr": "ss", "heading": "Seat shares"       },
@@ -525,7 +525,7 @@ def simulation_to_xlsx(results, filename, parallel):
             "base": {
                 "v" : xtd_votes,
                 "vs": xtd_shares,
-                "cs": results["base_allocations"][r]["xtd_const_seats"],
+                "cs": results["base_allocations"][r]["xtd_fixed_seats"],
                 "as": results["base_allocations"][r]["xtd_adj_seats"],
                 "ts": results["base_allocations"][r]["xtd_total_seats"],
                 "ss": results["base_allocations"][r]["xtd_seat_shares"],
@@ -537,7 +537,7 @@ def simulation_to_xlsx(results, filename, parallel):
             data_matrix[stat] = {
                 "v" : results["vote_data"][r]["sim_votes"][stat],
                 "vs": results["vote_data"][r]["sim_shares"][stat],
-                "cs": list_measures["const_seats"][stat],
+                "cs": list_measures["fixed_seats"][stat],
                 "as": list_measures["adj_seats"  ][stat],
                 "ts": list_measures["total_seats"][stat],
                 "ss": list_measures["seat_shares"][stat],
@@ -545,7 +545,7 @@ def simulation_to_xlsx(results, filename, parallel):
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
-                {"label": "Allocation of constituency seats:",
+                {"label": "Allocation of fixed seats:",
                     "rule": DRN[results["systems"][r]["primary_divider"]],
                     "threshold": (
                         str(results["systems"][r]["constituency_threshold"]) + "%")},

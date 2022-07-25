@@ -14,12 +14,12 @@ const store = new Vuex.Store({
         [2500, 1700],
       ],
       constituencies: [
-        { name: "I", num_const_seats: 10, num_adj_seats: 2 },
-        { name: "II", num_const_seats: 10, num_adj_seats: 3 },
+        { name: "I", num_fixed_seats: 10, num_adj_seats: 2 },
+        { name: "II", num_fixed_seats: 10, num_adj_seats: 3 },
       ],
       party_votes: {
         name: "–",
-        num_const_seats: 0,
+        num_fixed_seats: 0,
         num_adj_seats: 0,
         votes: [],
         specified: false,
@@ -396,7 +396,7 @@ function setVoteSums(state) {
   vs.cseats = 0
   vs.aseats = 0
   for (var i=0; i<vc.length; i++) {
-    vs.cseats += vc[i].num_const_seats
+    vs.cseats += vc[i].num_fixed_seats
     vs.aseats += vc[i].num_adj_seats
   }
   let pv = state.vote_table.party_votes

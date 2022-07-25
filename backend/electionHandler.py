@@ -1,5 +1,5 @@
 from electionSystem import ElectionSystem
-from electionSystem import set_one_const, set_all_adj, set_all_const
+from electionSystem import set_one_const, set_all_adj, set_all_fixed
 from electionSystem import set_custom, set_copy
 from voting import Election
 from table_util import add_totals
@@ -58,7 +58,7 @@ def update_constituencies(vote_table, systems):
         opt = system["seat_spec_options"]["const"]
         opt = remove_prefix(opt, "make_")
         voteconst = vote_table["constituencies"]
-        if opt=="all_const":   const = set_all_const(voteconst)
+        if opt=="all_fixed":   const = set_all_fixed(voteconst)
         elif opt=="all_adj":   const = set_all_adj(voteconst)
         elif opt=="one_const": const = set_one_const(voteconst)
         elif opt=="refer":     const = set_copy(voteconst)

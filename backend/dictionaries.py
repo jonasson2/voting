@@ -89,15 +89,18 @@ SEAT_SPECIFICATION_OPTIONS = {
     [
         {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
         {"value": "custom",         "text": "Specify numbers by changing individual values"},
-        {"value": "make_all_const", "text": "Make all seats constituency seats"},
+        {"value": "make_all_fixed", "text": "Make all seats fixed seats"},
         {"value": "make_all_adj",   "text": "Make all seats adjustment seats"},
         {"value": "one_const",      "text": "Combine all constituencies into one"},
     ],
     "party":
     [
-        {"value": "totals",      "text": 'Use constituency vote totals'},
-        {"value": "party_votes", "text": 'Use national party votes'},
-        {"value": "average",     "text": 'Use avgerage of constituency vote totals and national party votes'},
+        {"value": "totals",      "text": ('Base on constituency vote totals in '
+                                          '"Source votes and seats" tab')},
+        {"value": "party_votes", "text": ('Base on national party votes in '
+                                          '"Source votes and seats" tab')},
+        {"value": "average",     "text": ('Base on average of constituency vote '
+                                          'totals and national party votes')},
     ]
 }
 
@@ -164,9 +167,9 @@ THRESHOLD_CHOICE = [
 #     "dev_all_adj":  "Allocation as if all seats were adjustment seats",
 #     "dev_all_adj_tot":
 #                     "Allocation as if all seats were adjustment seats",
-#     "dev_all_const":"Allocation as if all seats were constituency seats",
-#     "dev_all_const_tot":
-#                     "Allocation as if all seats were constituency seats",
+#     "dev_all_fixed":"Allocation as if all seats were fixed seats",
+#     "dev_all_fixed_tot":
+#                     "Allocation as if all seats were fixed seats",
 #     "dev_ref":      "Allocation with actual system for the reference votes",
 #     "dev_ref_tot":  "Allocation with actual system for the reference votes",
 #     #"adj_dev":      "Desired apportionment of adjustment seats",
@@ -179,14 +182,14 @@ THRESHOLD_CHOICE = [
 # }
 # LIST_DEVIATION_MEASURES = [
 #     "dev_all_adj",
-#     "dev_all_const",
+#     "dev_all_fixed",
 #     "dev_ref",
 # ]
 # TOTALS_DEVIATION_MEASURES = [
 #     #"dev_opt_totals",
 #     #"dev_law_totals",
 #     "dev_all_adj_tot",
-#     "dev_all_const_tot",
+#     "dev_all_fixed_tot",
 #     "dev_ref_tot",
 # ]
 # STANDARDIZED_MEASURES = [
@@ -199,7 +202,7 @@ THRESHOLD_CHOICE = [
 #     "sum_sq",
 # ]
 LIST_MEASURES = {
-    "const_seats":   "constituency seats",
+    "fixed_seats":   "fixed seats",
     "adj_seats":     "adjustment seats",
     "total_seats":   "constituency and adjustment seats combined",
     "seat_shares":   "total seats normalized within each constituency",
