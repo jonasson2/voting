@@ -635,10 +635,11 @@ def simulation_to_xlsx(results, filename, parallel):
 
     workbook.close()
 
-def votes_to_xlsx(matrix, filename):
+def votes_to_xlsx(votes, party_votes, filename):
     workbook = xlsxwriter.Workbook(filename)
     worksheet = workbook.add_worksheet()
     fmt = prepare_formats(workbook)
-    write_matrix(worksheet=worksheet, startrow=0, startcol=0,
-        matrix=matrix, cformat=fmt["votes"])
+    write_matrix(worksheet, 0, 0, votes, fmt["votes"])
+    if party_votes:
+        write_matrix(worksheet, len(votes) + 1, 0, party_votes, fmt["votes"])
     workbook.close()

@@ -12,7 +12,7 @@ from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
 from input_util import check_input, check_vote_table, check_systems
 from input_util import check_simul_settings
-from util import disp, check_votes, load_votes_from_excel, get_cpu_counts
+from util import disp, check_votes, get_cpu_counts
 from util import timestamp, timestampmsg
 from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election

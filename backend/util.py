@@ -101,68 +101,129 @@ def load_votes_from_excel(stream, filename):
         lines.append([cell.value for cell in row])
     return lines
 
-def parse_input(rows, fixed_seats_included, adj_seats_included, filename=''):
-    name_included = rows[0][0].lower() != u"kjördæmi" if rows[0][0] else False
+def remove_blank_rows(rows):
+    for i in range(len(rows)-1, 0, -1):
+        row = rows[i]
+        if any(x is not None for x in row):
+            break
+        rows.pop()
+    return rows
+
+def correct_deprecated(L):
+    # Remove 1-, 2- etc. from deprecated values in L["systems"]
+    import re
+    deprec_list = [
+        "adj_alloc_divider",          "adj_determine_divider",
+        "adjustment_allocation_rule", "adjustment_division_rule",
+        "adjustment_method",          "constituency_allocation_rule",
+        "name",                       "primary_divider"]
+    old_names = {
+        "norwegian-icelandic": "max-const-seat-share",
+        "pure-vote-ratios":    "max-const-vote-percentage",
+        "nearest-neighbor":    "nearest-to-previous",
+        "nearest-to-last":     "nearest-to-previous",
+    }
+    translate = {
+        "constituency_allocation_rule": "primary_divider",
+        "adjustment_division_rule":     "adj_determine_divider",
+        "adjustment_allocation_rule":   "adj_alloc_divider",
+    }
+    for sys in L["systems"]:
+        for deprec in deprec_list:
+            if deprec in sys:
+                sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
+        for (oldkey,newkey) in translate.items():
+            if oldkey in sys:
+                sys[newkey] = sys[oldkey]
+        for (old,new) in old_names.items():
+            if sys["adjustment_method"] == old:
+                sys["adjustment_method"] = new
+    return L
+
+def add_empty_party_votes(vote_table):
+    vote_table["party_votes"] = {
+        "name": "–",
+        "num_fixed_seats": 0,
+        "num_adj_seats": 0,
+        "votes": [],
+        "specified": False,
+        "total": 0
+    }
+    return vote_table;
+
+def parse_input(rows, second_last_blank, filename=''):
+    
     res = {}
-    start_col = 1
-    if fixed_seats_included:
-        const_col = start_col
-        start_col += 1
-    if adj_seats_included:
-        adj_col = start_col
-        start_col += 1
 
-    res["votes"] = [[parsint(v) for v in row[start_col:]]
-                    for row in rows[1:]]
-
-    res["parties"] = rows[0][start_col:]
-    num_parties = len(res["parties"])
+    num_const = len(rows) - (3 if second_last_blank else 1)    
+    res["votes"] = [[parsint(v) for v in row[3:]] for row in rows[1:num_const+1]]
+    res["parties"] = rows[0][3:]
 
     res["constituencies"] = [{
         "name": row[0],
-        "num_fixed_seats": parsint(row[const_col]) if fixed_seats_included else 0,
-        "num_adj_seats": parsint(row[adj_col]) if adj_seats_included else 0,
-    } for row in rows[1:]]
+        "num_fixed_seats": parsint(row[1]),
+        "num_adj_seats": parsint(row[2])
+    } for row in rows[1:num_const+1]]
 
-    table_name = rows[0][0] if name_included else ''
-    res["name"] = determine_table_name(table_name,filename)
+    res["name"] = determine_table_name(rows[0][0], filename)
+    
+    if second_last_blank:
+        party_votes = rows[-1][3:]
+        res["party_votes"] = {
+            "name": rows[-1][0],
+            "num_fixed_seats": rows[-1][1],
+            "num_adj_seats": rows[-1][2],
+            "votes": party_votes if any(party_votes) else [""]*len(party_votes),
+            "specified": True,
+            "total": sum(party_votes) if any(party_votes) else ""
+        }
+    else:
+        res = add_empty_party_votes(res)
 
     return res
 
 def check_votes(rows, filename):
-    n = [len(row) for row in rows]
-    if min(n) < max(n):
+    row_lengths = [len(row) for row in rows]
+    if min(row_lengths) < max(row_lengths):
         return 'Not all rows have equal length'
-    n = n[0]
-    if n < 2:
+    if row_lengths[0] < 2:
         return 'Fewer than two columns'
     elif len(rows) < 2:
         return 'Only one row'
     toprow = rows[0]
-    fixed_seats_incl = toprow[1].lower() == "cons"
-    expected = 2 if fixed_seats_incl else 1
-    adj_seats_incl = toprow[expected].lower() == "adj"
-    skip = 1 + fixed_seats_incl + adj_seats_incl
-    votes = [row[skip:] for row in rows[1:]]
-    if not all(toprow[skip:]):
+    if  toprow[1].lower() not in ["fixed", "cons"]:
+        return 'Heading of second column must be "fixed" (for fixed seats)'
+    if  toprow[2].lower() != "adj":
+        return 'Heading of third column must be "adj" (for adjustment seats)'
+    if not all(toprow[3:]):
         return 'Some party names are blank'
-    if not all(l[0] for l in rows[1:]):
+
+    second_last_blank = all(x is None for x in rows[-2])
+    num_const = len(rows) - (3 if second_last_blank else 1)
+        
+    if not all(l[0] for l in rows[1:num_const+1]):
         return 'Some constituency names are blank'
-    for row in votes:
-        for i in range(len(row)):
+    if second_last_blank and rows[-1][0] is None:
+        return 'The party vote name is blank'
+    
+    for row in rows[1:]:
+        for i in range(3,len(row)):
             if row[i] is None:
-                row[i] = 0            
-    if not all(isint(row) for row in votes):
+                row[i] = 0
+    if not all(isint(row[3:]) for row in rows[1:]):
         return 'All votes must be nonnegative integer numbers'
 
-    result = parse_input(rows, fixed_seats_incl, adj_seats_incl, filename)
+    result = parse_input(rows, second_last_blank, filename)
+
+    
+    
     return result
 
 def parsint(value):
     return int(value) if value else 0
 
 def determine_table_name(first,filename):
-    return first if first else os.path.basename(os.path.splitext(filename)[0])
+    return first if first is not None else os.path.basename(os.path.splitext(filename)[0])
 
 def hms(sec):
     # Turn seconds into xxx days hh:mm:ss

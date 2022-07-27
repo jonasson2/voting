@@ -145,22 +145,26 @@
   <br />
   <h6> 
   </h6>
-  <b-form-group
-    label-for="input-horizontal"
-    label-cols="auto"
-    label="Votes-and-seats table name"
-    >
-    <b-form-input
-      class="pt-0 pb-0"
-      style="font-weight:bold; margin-top:-4px; font-size:110%"
-      v-model="vote_table.name"
-      v-autowidth="{ maxWidth: '400px', minWidth: '1px' }"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="The votes-and-seats table consists of the Constituency 
-             votes and seats, and the National party votes and seats
-             (if specified)"
+  <b-row>
+    <b-col cols="auto">
+      <b-form-group
+        label-for="input-horizontal"
+        label-cols="auto"
+        label="Votes-and-seats table name"
+        >
+        <b-form-input
+          class="pt-0 pb-0"
+          style="font-weight:bold; margin-top:-4px; font-size:110%"
+          v-model="vote_table.name"
+          v-autowidth="{ maxWidth: '600px', minWidth: '1px' }"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="The votes-and-seats table consists of the Constituency 
+                 votes and seats, and the National party votes and seats
+                 (if specified)"
       />
   </b-form-group>
+    </b-col>
+  </b-row>
   <b-row>
     <b-col cols="auto">
       <legend
@@ -513,11 +517,11 @@ export default {
       let n = this.vote_table.parties.length
       this.vote_table.party_votes = {
         name: "–",
-        num_fixed_seats: 1,
+        num_fixed_seats: 0,
         num_adj_seats: 1,
-        votes: Array(n).fill(1),
+        votes: Array(n).fill(""),
         specified: true,
-        total: n,
+        total: "",
       }
     },
     save: function () {

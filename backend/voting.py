@@ -24,9 +24,10 @@ def display_seats(totSeats, adjSeats):
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, party_votes=None, min_votes=0, name=''):
+    def __init__(self, system, votes, party_votes, min_votes=0, name=''):
         self.system = system
         self.set_votes(votes, min_votes=min_votes)
+        self.party_votes = deepcopy(party_votes)
         self.reference_results = []
         self.name = name
 
@@ -92,7 +93,7 @@ class Election:
         # Allocate seats
         self.total_seats = sum(self.v_desired_row_sums)
         self.run_primary_apportionment()
-        self.run_determine_adjustment_seats()
+        self.run_determine_total_party_seats()
         self.run_adjustment_apportionment()
 
         return self.results
@@ -117,7 +118,6 @@ class Election:
         """Conduct primary apportionment"""
 
         constituencies = self.system["constituencies"]
-        parties = self.system["parties"]
 
         m_allocations = []
         self.last = []
@@ -125,12 +125,12 @@ class Election:
             num_seats = constituencies[i]["num_fixed_seats"]
             if num_seats != 0:
                 alloc, _, last_in, _ = apportion1d_general(
-                    v_votes=self.m_votes[i],
-                    num_total_seats=num_seats,
+                    v_votes = self.m_votes[i],
+                    num_total_seats = num_seats,
                     prior_allocations=[],
-                    rule=self.system.get_generator("primary_divider"),
-                    type_of_rule=self.system.get_type("primary_divider"),
-                    threshold_percent=self.system["constituency_threshold"]
+                    rule = self.system.get_generator("primary_divider"),
+                    type_of_rule = self.system.get_type("primary_divider"),
+                    threshold_percent = self.system["constituency_threshold"]
                 )
                 assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -139,11 +139,26 @@ class Election:
                 self.last.append({'idx': None, 'active_votes': 0})
             m_allocations.append(alloc)
 
+        if self.party_votes["specified"] and self.party_votes["num_fixed_seats"] > 0:
+            self.nat_allocations, _, _, _ = apportion1d_general(
+                v_votes = self.party_votes["votes"],
+                num_total_seats = self.party_votes["num_fixed_seats"],
+                prior_allocations = [],
+                rule = self.system.get_generator("primary_divider"),
+                type_of_rule = self.system.get_type("primary_divider"),
+                threshold_percent = self.system["constituency_threshold"]
+            )
+        else:
+            self.nat_allocations = None
         v_allocations = [sum(x) for x in zip(*m_allocations)]
         self.m_fixed_seats = m_allocations
         self.v_fixed_seats_alloc = v_allocations
 
-    def run_determine_adjustment_seats(self):
+    def run_determine_total_party_seats(self):
+        # fallið ætti að heita determine_total_party_seats
+        # hér ætti að reikna v_votes eftir gildinu á systems.seat_spec_options['party']
+        # og num_total_seats ætti að vera öll sætin
+        # og prior_allocations þarf að innihalda nat_allocations
         """Calculate the number of adjustment seats each party gets."""
         self.v_desired_col_sums, self.adj_seat_gen, _, _ \
             = apportion1d_general(

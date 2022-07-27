@@ -6,7 +6,8 @@ from par_util import read_sim_status, read_sim_error, parallel_dir
 from datetime import datetime, timedelta
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from util import disp, check_votes, load_votes_from_excel
+from util import disp, check_votes, load_votes_from_excel, add_empty_party_votes
+from util import remove_blank_rows, correct_deprecated
 from input_util import check_input, check_systems, check_simul_settings
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
@@ -16,60 +17,6 @@ import psutil
 def create_SIMULATIONS():
     global SIMULATIONS
     SIMULATIONS = {}
-
-def remove_blank_rows(rows):
-    for i in range(len(rows)-1, 0, -1):
-        row = rows[i]
-        if any(x is not None for x in row):
-            break
-        rows.pop()
-    return rows
-
-def load_votes(filename, stream=None):
-    if str(filename).endswith('.csv'):
-        with open(filename,"r") as f:
-            reader = csv.reader(f, skipinitialspace=True)
-            rows = list(reader)
-        # flines = f.read().decode('utf-8').splitlines()
-        # frows = list(csv.reader(flines, skipinitialspace=True))
-    elif filename.endswith('xlsx'):
-        rows = load_votes_from_excel(stream, filename)
-    else:
-        return 'Neither .csv nor .xlsx file'
-    rows = remove_blank_rows(rows)
-    result = check_votes(rows, filename)
-    return result
-
-def correct_deprecated(L):
-    # Remove 1-, 2- etc. from deprecated values in L["systems"]
-    import re
-    deprec_list = [
-        "adj_alloc_divider",          "adj_determine_divider",
-        "adjustment_allocation_rule", "adjustment_division_rule",
-        "adjustment_method",          "constituency_allocation_rule",
-        "name",                       "primary_divider"]
-    old_names = {
-        "norwegian-icelandic": "max-const-seat-share",
-        "pure-vote-ratios":    "max-const-vote-percentage",
-        "nearest-neighbor":    "nearest-to-previous",
-        "nearest-to-last":     "nearest-to-previous",
-    }
-    translate = {
-        "constituency_allocation_rule": "primary_divider",
-        "adjustment_division_rule":     "adj_determine_divider",
-        "adjustment_allocation_rule":   "adj_alloc_divider",
-    }
-    for sys in L["systems"]:
-        for deprec in deprec_list:
-            if deprec in sys:
-                sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
-        for (oldkey,newkey) in translate.items():
-            if oldkey in sys:
-                sys[newkey] = sys[oldkey]
-        for (old,new) in old_names.items():
-            if sys["adjustment_method"] == old:
-                sys["adjustment_method"] = new
-    return L
 
 def load_json(f):
     # returns systems and sim_settings from json-file f
@@ -91,20 +38,28 @@ def load_json(f):
     if "vote_table" in file_content:
         vote_table = file_content["vote_table"]
         if "party_votes" not in vote_table:
-            vote_table["party_votes"] = {
-                "name": "–",
-                "num_fixed_seats": 0,
-                "num_adj_seats": 0,
-                "votes": [],
-                "specified": False,
-                "total": 0
-            }
+            vote_table = add_empty_party_votes(vote_table)
     assert "sim_settings" in file_content
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
     assert type(file_content["systems"]) == list
     file_content = correct_deprecated(file_content)
     return file_content
+
+def load_votes(filename, stream=None):
+    if str(filename).endswith('.csv'):
+        with open(filename,"r") as f:
+            reader = csv.reader(f, skipinitialspace=True)
+            rows = list(reader)
+        # flines = f.read().decode('utf-8').splitlines()
+        # frows = list(csv.reader(flines, skipinitialspace=True))
+    elif filename.endswith('xlsx'):
+        rows = load_votes_from_excel(stream, filename)
+    else:
+        return 'Neither .csv nor .xlsx file'
+    rows = remove_blank_rows(rows)
+    result = check_votes(rows, filename)
+    return result
 
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
@@ -237,7 +192,15 @@ def votes_to_excel(vote_table, file):
         ] + vote_table["votes"][c]
             for c in range(len(vote_table["constituencies"]))
     ]
-    votes_to_xlsx(file_matrix, file)    
+    if vote_table["party_votes"]["specified"]:
+        party_votes_matrix = [ [
+            vote_table["party_votes"]["name"],
+            vote_table["party_votes"]["num_fixed_seats"],
+            vote_table["party_votes"]["num_adj_seats"],
+        ] + vote_table["party_votes"]["votes"] ]
+    else:
+        party_votes_matrix = None
+    votes_to_xlsx(file_matrix, party_votes_matrix, file)    
     
 def delete_tempfiles(simid):
     pardir = parallel_dir()
