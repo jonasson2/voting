@@ -67,7 +67,7 @@ def single_election(votes, systems):
     min_votes = CONSTANTS["minimum_votes"]
     handler = ElectionHandler(votes, systems, min_votes=min_votes)
     elections = handler.elections
-    results = [election.get_result_dict() for election in elections]
+    results = [election.get_result_web() for election in elections]
     return results
 
 def run_thread_simulation(simid):
@@ -169,7 +169,7 @@ def check_simulation(simid, stop=False):
         sim_result.analysis()
     if sim_result:
         parallel = kind=='parallel'
-        sim_result_dict = sim_result.get_result_dict(parallel)
+        sim_result_dict = sim_result.get_result_web(parallel)
         SIMULATIONS[simid]['result'] = sim_result
     else:
         sim_result_dict = {'data': []}
@@ -178,7 +178,7 @@ def check_simulation(simid, stop=False):
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
-    sim_result_dict = sim_result.get_result_dict(parallel)
+    sim_result_dict = sim_result.get_result_web(parallel)
     simulation_to_xlsx(sim_result_dict, file, parallel)
 
 def votes_to_excel(vote_table, file):

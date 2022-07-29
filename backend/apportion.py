@@ -62,7 +62,7 @@ def apportion1d_general(
     num_total_seats,
     prior_allocations,
     rule,
-    type_of_rule,
+    type_of_rule='Division',
     threshold_percent=0,
     threshold_choice=0,
     threshold_seats=0
@@ -89,14 +89,14 @@ def apportion1d_general(
         - information about the first seat that was not allocated
     """
     N = len(v_votes)
-    allocations = copy(prior_allocations) if prior_allocations else [0]*N
+    allocations = deepcopy(prior_allocations) if prior_allocations else [0]*N
 
     seat_gen = seat_generator(
         votes = threshold_drop(v_votes, threshold=[threshold_choice,
                                         threshold_percent, threshold_seats,
-                                        (copy(prior_allocations) if prior_allocations else None)]),
+                                        (prior_allocations if prior_allocations else None)]),
         num_total_seats = num_total_seats,
-        prior_allocations = copy(allocations),
+        prior_allocations = deepcopy(allocations),
         rule = rule,
         type_of_rule = type_of_rule
     )

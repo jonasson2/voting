@@ -1,5 +1,5 @@
 from division_rules import dhondt_gen, sainte_lague_gen, \
-    nordic_sainte_lague_gen, imperiali_gen, danish_gen, huntington_hill_gen, \
+    nordic_sainte_lague_gen, danish_gen, huntington_hill_gen, \
     adams_gen
 from division_rules import droop, hare
 

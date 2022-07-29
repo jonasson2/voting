@@ -44,6 +44,12 @@ def add_totals(m):
     nm.append(totals)
     return nm
 
+def add_total_column(m):
+    nm = deepcopy(m)
+    for i in range(len(m)):
+        nm[i].append(sum(m[i]))
+    return nm
+
 def find_xtd_shares(xtd_table):
     return [[float(v)/c[-1] if c[-1]!=0 else 0 for v in c] for c in xtd_table]
 

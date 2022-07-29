@@ -55,7 +55,7 @@ class Simulation():
                         for election in election_handler.elections]
         self.nsys = len(self.systems)
         for (election, sys) in zip(election_handler.elections, self.systems):
-            sys.reference_results = deepcopy(election.results)
+            sys.reference_results = deepcopy(election.results['all_const_seats'])
         self.parties = vote_table["parties"]
         self.sim_settings = sim_settings
         self.sim_count = self.sim_settings["simulation_count"]
@@ -108,8 +108,8 @@ class Simulation():
 
     def run_initial_elections(self):
         for election in self.election_handler.elections:
-            xtd_total_seats = add_totals(election.results)
-            xtd_fixed_seats = add_totals(election.m_fixed_seats)
+            xtd_total_seats = add_totals(election.results['all_const_seats'])
+            xtd_fixed_seats = add_totals(election.results['fixed_const_seats'])
             xtd_adj_seats = m_subtract(xtd_total_seats, xtd_fixed_seats)
             xtd_seat_shares = find_xtd_shares(xtd_total_seats)
             election.calculate_ideal_seats(self.sim_settings["scaling"])
@@ -162,8 +162,8 @@ class Simulation():
     def collect_list_measures(self):
         import numpy as np
         for (i,election) in enumerate(self.election_handler.elections):
-            cs = np.array(add_totals(election.m_fixed_seats))
-            ts = np.array(add_totals(election.results))
+            cs = np.array(add_totals(election.results['fixed_const_seats']))
+            ts = np.array(add_totals(election.results['all_const_seats']))
             election.calculate_ideal_seats(self.sim_settings["scaling"])
             ids = np.array(add_totals(election.ideal_seats))
             adj = ts - cs  # this computes the adjustment seats
@@ -194,7 +194,7 @@ class Simulation():
             deviations.add("entropy", election.entropy())
             for (cmp_election, cmp_system) in zip(elections, self.systems):
                 if cmp_system["compare_with"]:
-                    cmp_results = cmp_election.results
+                    cmp_results = cmp_election.results['all_const_seats']
                     measure = "cmp_" + cmp_system["name"]
                     self.add_deviation(election, measure, cmp_results,
                                        deviations)
@@ -209,26 +209,28 @@ class Simulation():
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
             comparison_election = Election(comparison_system,
-                                           election.m_votes, self.min_votes)
+                                           election.m_votes,
+                                           election.party_votes,
+                                           self.min_votes)
             comparison_results = comparison_election.run()
             self.add_deviation(election, measure, comparison_results,
                                deviations)
 
     @staticmethod
     def add_deviation(election, measure, comparison_results, deviations):
-        deviation = sum_abs_diff(election.results, comparison_results)
+        deviation = sum_abs_diff(election.results['all_const_seats'], comparison_results)
         if deviation:
             deviations.add(measure, deviation)
         else:
             deviations.add(measure, 0)
-        totals = [sum(x) for x in zip(*election.results)]
+        totals = [sum(x) for x in zip(*election.results['all_const_seats'])]
         comparison_totals = [sum(x) for x in zip(*comparison_results)]
         deviation = sum_abs_diff([totals], [comparison_totals])
         deviations.add(measure + "_tot", deviation)
 
     def sum_func(self, election, function):
         measure = sum([
-            function(election.ideal_seats[c][p], election.results[c][p])
+            function(election.ideal_seats[c][p], election.results['all_const_seats'][c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
             if self.vote_table['votes'][c][p] >= 1
@@ -256,25 +258,25 @@ class Simulation():
         for (i, (election, system)) in enumerate(zip(elections, self.systems)):
             sens_election = Election(system, sens_votes, self.min_votes)
             sens_election.run()
-            party_seats1 = election.v_desired_col_sums
-            party_seats2 = sens_election.v_desired_col_sums
+            party_seats1 = election.desired_col_sums
+            party_seats2 = sens_election.desired_col_sums
             party_seat_diff = sum_abs_diff(party_seats1, party_seats2)
             if party_seat_diff > 0:
                 self.stat["party_sens"][i].update(party_seat_diff)
             else:
-                list_seats1 = election.results
-                list_seats2 = sens_election.results
+                list_seats1 = election.results['all_const_seats']
+                list_seats2 = sens_election.results['all_const_seats']
                 list_seat_diff = sum_abs_diff(list_seats1, list_seats2)
                 self.stat["list_sens"][i].update(list_seat_diff)
 
     def bias(self, election):
-        (slope,corr) = find_bias(election.results, election.ideal_seats)
+        (slope,corr) = find_bias(election.results['all_const_seats'], election.ideal_seats)
         return slope,corr
 
     # Loosemore-Hanby
     def sum_abs(self, election):
         lh = sum([
-            abs(election.ideal_seats[c][p] - election.results[c][p])
+            abs(election.ideal_seats[c][p] - election.results['all_const_seats'][c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
         ])
@@ -284,7 +286,7 @@ class Simulation():
     def sum_sq(self, election):
         ids = election.ideal_seats
         stl = sum([
-            (ids[c][p] - election.results[c][p])**2/ids[c][p]
+            (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
             if ids[c][p] != 0
@@ -295,10 +297,10 @@ class Simulation():
     def min_seat_val(self, election):
         ids = election.ideal_seats
         dh_min = min([
-            ids[c][p]/float(election.results[c][p])
+            ids[c][p]/float(election.results['all_const_seats'][c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
-            if election.results[c][p] != 0
+            if election.results['all_const_seats'][c][p] != 0
         ])
         return dh_min
 
@@ -306,7 +308,7 @@ class Simulation():
     def sum_pos(self, election):
         ids = election.ideal_seats
         dh_sum = sum([
-            max(0, ids[c][p] - election.results[c][p])/ids[c][p]
+            max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
             if ids[c][p] != 0
@@ -471,7 +473,7 @@ class Sim_result:
             counts.append(count)
         return counts
 
-    def get_result_dict(self, parallel):
+    def get_result_web(self, parallel):
         result_dict = {
             "iteration":        self.iteration,
             "systems":          self.systems,

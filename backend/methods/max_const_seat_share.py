@@ -13,7 +13,7 @@ def const_seat_share_apportionment(m_votes,
     total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
     
-    for n in range(total_seats-num_allocated):
+    for n in range(total_seats - num_allocated):
         m_seat_props = []
         maximums = []
         for c in range(len(m_votes)):
@@ -25,10 +25,10 @@ def const_seat_share_apportionment(m_votes,
                     div = divisor_gen()
                     for k in range(m_allocations[c][p]+1):
                         divisor = next(div)
-                    a = (float(m_votes[c][p])/s)*v_desired_row_sums[c]/divisor
+                    seat_share = (float(m_votes[c][p])/s)*v_desired_row_sums[c]/divisor
                 else:
-                    a = 0
-                m_seat_props[c].append(a)
+                    seat_share = 0
+                m_seat_props[c].append(seat_share)
             maximums.append(max(m_seat_props[c]))
 
             if sum(m_allocations[c]) == v_desired_row_sums[c]:

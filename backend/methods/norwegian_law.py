@@ -6,7 +6,7 @@ def norwegian_apportionment(m_votes,
                             v_desired_col_sums,
                             m_prior_allocations,
                             divisor_gen,
-                            v_const_seats,
+                            v_fixed_seats,
                             **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 
@@ -26,7 +26,7 @@ def norwegian_apportionment(m_votes,
                     div = divisor_gen()
                     for k in range(m_allocations[c][p]+1):
                         divisor = next(div)
-                    seat_factor = max(1, v_const_seats[c])
+                    seat_factor = max(1, v_fixed_seats[c])
                     a = float(m_votes[c][p])*seat_factor/s/divisor
                 else:
                     a = 0

@@ -1,7 +1,5 @@
-import heapq
-
-from apportion import apportion1d
-from table_util import v_subtract
+from apportion import apportion1d_general
+import numpy as np
 
 def switching(m_votes,
               v_desired_row_sums,
@@ -9,91 +7,87 @@ def switching(m_votes,
               m_prior_allocations,
               divisor_gen,
               **kwargs):
+
+    # CREATE NUMPY ARRAYS AND COUNTS FROM PARAMETER LISTS
+    votes = np.array(m_votes, float)
+    alloc_prior = np.array(m_prior_allocations)
+    desired_const = np.array(v_desired_row_sums)
+    max_party = np.array(v_desired_col_sums)
     num_constituencies = len(v_desired_row_sums)
     num_parties        = len(v_desired_col_sums)
-    assert num_constituencies == len(m_votes)
-    assert num_constituencies == len(m_prior_allocations)
-    assert all(num_parties == len(row) for row in m_votes)
-    assert all(num_parties == len(row) for row in m_prior_allocations)
+    assert(sum(max_party) >= sum(desired_const))
 
-    v_prior_allocations = [sum(x) for x in zip(*m_prior_allocations)]
-    # The number of adjustment seats each party should receive:
-    correct_adj_seats = v_subtract(v_desired_col_sums, v_prior_allocations)
-
-    # Allocate adjustment seats as if they were fixed seats
-    m_adj_seats = []
-    for c in range(len(m_prior_allocations)):
-        votes = [m_votes[c][p] for p in range(len(m_votes[c]))]
-        alloc, div = apportion1d(
-            v_votes=votes,
-            num_total_seats=v_desired_row_sums[c],
-            prior_allocations=m_prior_allocations[c],
-            divisor_gen=divisor_gen
+    # CALCULATE DIVISORS
+    N = max(max(desired_const), max(max_party)) + 1
+    div_gen = divisor_gen()
+    divisors = np.array([next(div_gen) for i in range(N + 1)])
+    
+    # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
+    alloc= np.zeros((num_constituencies, num_parties), int)
+    for c in range(num_constituencies):
+        alloc_const, _,_,_ = apportion1d_general(
+            v_votes = list(votes[c,:]),
+            num_total_seats = desired_const[c],
+            prior_allocations = list(alloc_prior[c,:]),
+            rule = divisor_gen
         )
-        adj_seats = v_subtract(alloc, m_prior_allocations[c])
-        m_adj_seats.append(adj_seats)
+        alloc[c,:] = np.array(alloc_const)
 
-    v_adj_seats = [sum(x) for x in zip(*m_adj_seats)]
+    # INFORMATION FOR FIRST STEP-BY-STEP DEMO TABLE
     initial_allocation = [{
         "party": p,
-        "goal": v_desired_col_sums[p],
-        "actual": v_prior_allocations[p] + v_adj_seats[p],
+        "goal": int(max_party[p]),
+        "actual": int(sum(alloc[:,p]))
     } for p in range(num_parties)]
 
-    # Transfer adjustment seats within constituencies from parties that have
-    #  too many seats to parties that have too few seats, prioritized by
-    #  "ratio", until all parties have the correct number of seats
-    #  or no more swaps can be made:
-
+    # WHILE SOME PARTIES HAVE TOO MANY SEATS DO SWITCHING
     switches = []
-    done = False
-    while not done:
-        v_adj_seats = [sum(x) for x in zip(*m_adj_seats)]
-        diff_party = v_subtract(v_adj_seats, correct_adj_seats)
+    while True:
+        last_surplus = -np.ones(num_constituencies, int)
+        first_wanting = -np.ones(num_constituencies, int)
+        ratio = np.ones(num_constituencies)*np.inf
+        surplus = set(p for p in range(num_parties) if sum(alloc[:,p]) > max_party[p])
+        if not surplus:
+            break
+        wanting = set(p for p in range(num_parties) if sum(alloc[:,p]) < max_party[p])
 
-        over = [i for i in range(len(diff_party)) if diff_party[i] > 0]
-        under = [i for i in range(len(diff_party)) if diff_party[i] < 0]
-        ratio_heap = []
-        for i in range(len(m_votes)):
-            for j in over:
-                for k in under:
-                    if m_adj_seats[i][j] != 0 and m_votes[i][k] != 0:
-                        gen_j = divisor_gen()
-                        j_seats = m_prior_allocations[i][j]+m_adj_seats[i][j]
-                        for x in range(j_seats):
-                            div_j = next(gen_j)
-                        gen_k = divisor_gen()
-                        k_seats = m_prior_allocations[i][k]+m_adj_seats[i][k]
-                        for x in range(k_seats+1):
-                            div_k = next(gen_k)
-                        r = (m_votes[i][j]/div_j) / (m_votes[i][k]/div_k)
-                        heapq.heappush(ratio_heap, (r,(i,j,k)))
+        # CALCULATE MINIMUM RATIO OF ACTIVE VOTES IN EACH CONSTITUENCY
+        for c in range(num_constituencies):
+            quot_min = np.inf
+            for p in range(num_parties):
+                quot = votes[c,p]/divisors[alloc[c,p] - 1]
+                if p in surplus and alloc[c,p] > alloc_prior[c,p] and quot <= quot_min:
+                    quot_min = quot
+                    last_surplus[c] = p
+            quot_max = 0
+            for p in range(num_parties):
+                quot = votes[c,p]/divisors[alloc[c,p]]
+                if p in wanting and quot >= quot_max:
+                    quot_max = quot
+                    first_wanting[c] = p
+            if last_surplus[c] >= 0 and first_wanting[c] >= 0:
+                ratio[c] = quot_min/quot_max
 
-        done = len(ratio_heap) == 0
-        if not done:
-            # Find the constituency and pair of parties with the lowest
-            # ratio, and transfer a seat:
-            r, (i, j, k) = heapq.heappop(ratio_heap)
-            m_adj_seats[i][j] -= 1
-            m_adj_seats[i][k] += 1
-            switches.append({
-                "constituency": i,
-                "from": j,
-                "to": k,
-                # "reason": "",
-                "ratio": r,
+        # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
+        cmin = np.argmin(ratio)
+        assert(not np.isinf(cmin))
+
+        alloc[cmin, last_surplus[cmin]] -= 1
+        alloc[cmin, first_wanting[cmin]] += 1
+        switches.append({
+            "constituency": cmin,
+            "from": last_surplus[cmin],
+            "to": first_wanting[cmin],
+            "ratio": ratio[cmin]
             })
 
+    # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
     steps = {
         "initial_allocation": initial_allocation,
         "switches": switches,
     }
 
-    m_allocations = [[m_prior_allocations[c][p]+m_adj_seats[c][p]
-                        for p in range(len(m_adj_seats[c]))]
-                        for c in range(len(m_adj_seats))]
-
-    return m_allocations, (steps, print_demo_table1, print_demo_table2)
+    return alloc.tolist(), (steps, print_demo_table1, print_demo_table2) 
 
 def print_demo_table1(rules, steps):
     sup_header = "Nationally apportioned vs. full constituency allocation"

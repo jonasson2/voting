@@ -88,6 +88,9 @@ def check_systems(electoral_systems):
         if "compare_with" not in electoral_system:
             electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:
+            if 'num_const_seats' in const:
+                const['num_fixed_seats'] = const['num_const_seats']
+                del const['num_const_seats']
             if "name" not in const: # or not const["name"]:
                 #can never happen in case of input from frontend
                 raise KeyError(f"Missing data ('constituencies[x].name' in "

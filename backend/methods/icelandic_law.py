@@ -9,7 +9,6 @@ def icelandic_apportionment(
     m_prior_allocations,
     divisor_gen,
     adj_seat_gen,
-    threshold=None,
     **kwargs
 ):
     """

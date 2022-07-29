@@ -10,32 +10,25 @@ def dhondt_gen():
 
 def sainte_lague_gen():
     """Generate a Sainte-Lague divider sequence: 1, 3, 5..."""
-    n = 0.5
-    while True:
-        yield n
-        n += 1.0
-
-def nordic_sainte_lague_gen():
-    """Generate a Nordic Sainte-Lague divide sequence: 1.4, 3, 5..."""
-    yield 0.7
-    n = 1.5
-    while True:
-        yield n
-        n += 1.0
-
-def imperiali_gen():
-    """Generate Imperiali divider sequence: 1, 1.5, 2, 2.5,..."""
     n = 1.0
     while True:
         yield n
-        n += 0.5
+        n += 2.0
 
-def danish_gen():
-    """Generate Danish divider sequence: 0.33, 1.33, 2.33,..."""
-    n = 0.33
+def nordic_sainte_lague_gen():
+    """Generate a Nordic Sainte-Lague divide sequence: 1.4, 3, 5..."""
+    yield 1.4
+    n = 3.0
     while True:
         yield n
-        n += 1.0
+        n += 2.0
+
+def danish_gen():
+    """Generate Danish divider sequence: 1, 4, 7,..."""
+    n = 1.0
+    while True:
+        yield n
+        n += 3.0
 
 def huntington_hill_gen():
     """Generate Hill-Huntington divider sequence; modified for hh(0) -> \inf"""

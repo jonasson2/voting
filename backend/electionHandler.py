@@ -37,11 +37,10 @@ class ElectionHandler:
             system["constituencies"] = constituencies
             electionSystem = ElectionSystem()
             electionSystem.update(system)
-            name = vote_table["name"] + ":" + system["name"]
             election = Election(electionSystem,
                                 self.votes,
                                 party_votes=self.party_votes,
-                                name=name)
+                                vote_table_name=vote_table["name"])
             self.elections.append(election)
 
     def to_xlsx(self, filename):
