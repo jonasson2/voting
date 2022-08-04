@@ -1,8 +1,10 @@
 import xlsxwriter
 from datetime import datetime
 from measure_groups import MeasureGroups
+from table_util import add_total
 from util import disp
 from copy import copy
+import numpy as np
 
 from table_util import m_subtract, add_totals, find_xtd_shares
 from dictionaries import ADJUSTMENT_METHOD_NAMES, \
@@ -164,11 +166,14 @@ def demo_table_to_xlsx(
     row += 1
     for i in range(len(steps)):
         for j,(stp,f) in enumerate(zip(steps[i], demo_table["format"])):
+            print(i,j,stp)
             if f=="s": #special
                 maxw = max(len(s[j]) for s in steps)
                 f = "c" if maxw <= 2 else "l"
             if isinstance(stp, str):
                 stp = stp.replace('\n', ',  ')
+            elif np.isinf(stp):
+                stp = "N/A"
             width[j] = max(width[j], cell_width(stp, f))
             worksheet.write(row, col + j, stp, fmt[f])
         row += 1
@@ -348,8 +353,12 @@ def simulation_to_xlsx(results, filename, parallel):
          "data": results["iteration"]},
         {"label": "Generating method",
          "data": results["sim_settings"]["gen_method"]},
-        {"label": "Coefficient of variation",
-         "data": results["sim_settings"]["distribution_parameter"]},
+        {"label": "Coefficient of variation for constituencies",
+         "data": results["sim_settings"]["const_cov"]},
+        {"label": "Coefficient of variation for party votes",
+         "data": results["sim_settings"]["party_vote_cov"]},
+        {"label": "Thresholds used",
+         "data": "yes" if results["sim_settings"]["use_thresholds"] else "no"},
         {"label": "Apply randomness to",
          "data": results["sim_settings"]["selected_rand_constit"]},
         {"label": "Scaling of votes for reference seat shares",
@@ -361,11 +370,12 @@ def simulation_to_xlsx(results, filename, parallel):
     c1 = 0
     c2 = c1 + 1
     row = 0
-    worksheet.set_column(c1, c1, 30)
+    worksheet.set_column(c1, c1, 35)
     worksheet.set_column(c2, c2, 35)
     worksheet.write(row, c1, "Date:", fmt["h"])
     worksheet.write(row, c2, datetime.now(), fmt["time"])
     total_votes = sum(sum(row) for row in results["vote_table"]["votes"])
+    total_party_votes = results["vote_table"]["party_vote_info"]["total"]
     fixed_seats = sum(
         c["num_fixed_seats"] for c in results["vote_table"]["constituencies"])
     adj_seats = sum(
@@ -388,8 +398,11 @@ def simulation_to_xlsx(results, filename, parallel):
     worksheet.write(row, c1, "Total number of adj. seats", fmt["basic"])
     worksheet.write(row, c2, adj_seats, fmt["basic"])
     row += 1
-    worksheet.write(row, c1, "Total number of votes", fmt["basic"])
+    worksheet.write(row, c1, "Total number of const. votes", fmt["basic"])
     worksheet.write(row, c2, total_votes, fmt["basic"])
+    row += 1
+    worksheet.write(row, c1, "Total number of national party votes", fmt["basic"])
+    worksheet.write(row, c2, total_party_votes, fmt["basic"])
 
     row += 2
     worksheet.write(row, c1, "Simulation settings", fmt["h"])
@@ -417,14 +430,17 @@ def simulation_to_xlsx(results, filename, parallel):
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
         {"abbr": "vs", "heading": "Vote shares"       },
-        {"abbr": "id", "heading": "Reference seat shares" },
+        {"abbr": "id", "heading": "Seat shares" },
         {"abbr": "cs", "heading": "Fixed seats"},
         {"abbr": "as", "heading": "Adjustment seats"  },
         {"abbr": "ts", "heading": "Total seats"       },
-        {"abbr": "ss", "heading": "Seat shares"       },
+        {"abbr": "ss", "heading": "Total seat percentage"       },
     ]
     base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
     base_const_names.append("Total")
+    if results['vote_table']['party_vote_info']['specified']:
+        base_const_names.append(results['vote_table']['party_vote_info']['name'])
+        base_const_names.append('Grand total')
 
     #Measures
     data = results["data"]
@@ -453,7 +469,7 @@ def simulation_to_xlsx(results, filename, parallel):
     worksheet.write(toprow,c,"Vote table:",fmt["h"])
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
-    worksheet.set_column(c,c,16)
+    worksheet.set_column(c,c,20)
     c += 1
     worksheet.set_column(c,c,25)
     worksheet.write(toprow+1,c,"Tested systems: ",fmt["h_right"])
@@ -497,16 +513,21 @@ def simulation_to_xlsx(results, filename, parallel):
         worksheet.freeze_panes(10,2)
         parties = results["systems"][r]["parties"] + ["Total"]
         xtd_votes = add_totals(results["vote_table"]["votes"])
+        party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
+        if party_votes_specified:
+            xtd_votes.append(add_total(results["vote_table"]["party_vote_info"]["votes"]))
+        else:
+            xtd_votes.append(xtd_votes[-1])
         xtd_shares = find_xtd_shares(xtd_votes)
         data_matrix = {
             "base": {
                 "v" : xtd_votes,
                 "vs": xtd_shares,
-                "cs": results["base_allocations"][r]["xtd_fixed_seats"],
-                "as": results["base_allocations"][r]["xtd_adj_seats"],
-                "ts": results["base_allocations"][r]["xtd_total_seats"],
-                "ss": results["base_allocations"][r]["xtd_seat_shares"],
-                "id": results["base_allocations"][r]["xtd_ideal_seats"],
+                "cs": results["base_allocations"][r]["fixed_seats"],
+                "as": results["base_allocations"][r]["adj_seats"],
+                "ts": results["base_allocations"][r]["total_seats"],
+                "ss": results["base_allocations"][r]["seat_shares"],
+                "id": results["base_allocations"][r]["ideal_seats"],
             }
         }
         list_measures = results["data"][r]["list_measures"]
@@ -612,12 +633,12 @@ def simulation_to_xlsx(results, filename, parallel):
 
     workbook.close()
 
-def votes_to_xlsx(votes, party_votes, filename):
+def votes_to_xlsx(votes, party_vote_info, filename):
     workbook = xlsxwriter.Workbook(filename)
     worksheet = workbook.add_worksheet()
     worksheet.set_column(0, 0, 15)
     fmt = prepare_formats(workbook)
     write_matrix(worksheet, 0, 0, votes, fmt["votes"])
-    if party_votes:
-        write_matrix(worksheet, len(votes) + 1, 0, party_votes, fmt["votes"])
+    if party_vote_info:
+        write_matrix(worksheet, len(votes) + 1, 0, party_vote_info, fmt["votes"])
     workbook.close()

@@ -16,10 +16,10 @@ from methods.nearest_to_previous import nearest_to_previous
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, party_votes, min_votes=0, vote_table_name=''):
+    def __init__(self, system, votes, party_vote_info, vote_table_name=''):
         self.system = system
-        self.set_votes(votes, min_votes=min_votes)
-        self.party_votes = deepcopy(party_votes)
+        self.party_vote_info = party_vote_info
+        self.set_votes(votes, party_vote_info["votes"])
         self.reference_results = []
         self.vote_table_name = vote_table_name
 
@@ -35,9 +35,10 @@ class Election:
     def set_reference_results(self):
         self.reference_results = self.results['all_const_seats']
 
-    def set_votes(self, votes, min_votes=0):
+    def set_votes(self, votes, party_votes):
         # m_votes: Matrix of votes (numconst by numpart)
         # v_votes: Vector of votes (numpart, colsums of m_votes)
+        self.party_vote_info["votes"] = deepcopy(party_votes)
         if self.num_constituencies() == 1:
             self.m_votes = [[sum(x) for x in zip(*votes)]]
         else:
@@ -64,20 +65,20 @@ class Election:
         row_names = [
             const["name"] for const in self.system["constituencies"]
         ] + ["Total"]
-        all = results["all_const_seats"]
+        all = deepcopy(results["all_const_seats"])
         all.append(results["all_const_total"])
-        fix = results["fixed_const_seats"]
+        fix = deepcopy(results["fixed_const_seats"])
         fix.append(results["fixed_const_total"])
-        adj = results["adj_const_seats"]
+        adj = deepcopy(results["adj_const_seats"])
         adj.append(results["adj_const_total"])
 
-        if self.party_votes["specified"]:
-            votes.append(self.party_votes["votes"])
+        if self.party_vote_info["specified"]:
+            votes.append(self.party_vote_info["votes"])
             all.append(results["all_nat_seats"])
             all.append(results["all_grand_total"])
             fix.append(results["fixed_nat_seats"])
             fix.append(results["fixed_grand_total"])
-            row_names.append(self.party_votes["name"])
+            row_names.append(self.party_vote_info["name"])
             row_names.append('Grand total')
             adj.append(results["adj_nat_seats"])
             adj.append(results["adj_grand_total"])
@@ -117,19 +118,19 @@ class Election:
             "display_results":  dispResult
         }
 
-    def run(self):
+    def run(self, use_thresholds=True):
         self.fixed_seats_alloc = []
         self.order = []
         self.desired_row_sums = [
             const["num_fixed_seats"] + const["num_adj_seats"]
             for const in self.system["constituencies"]
         ]
-        party_votes = self.party_votes
+        party_vote_info = self.party_vote_info
         self.total_const_seats = sum(self.desired_row_sums)
-        self.run_primary_apportionment()
-        self.run_determine_total_party_seats()
+        self.run_primary_apportionment(use_thresholds)
+        self.run_determine_total_party_seats(use_thresholds)
         self.run_adjustment_apportionment()
-        if party_votes["specified"] and party_votes["num_adj_seats"] > 0:
+        if party_vote_info["specified"] and party_vote_info["num_adj_seats"] > 0:
             self.add_national_adjustment_seats()
 
         self.prepare_results()
@@ -147,11 +148,11 @@ class Election:
     def any_voteless(self):
         return any(v for x in self.voteless_seats() for v in x)
 
-    def run_primary_apportionment(self):
+    def run_primary_apportionment(self, use_thresholds):
         """Conduct primary apportionment"""
 
         constituencies = self.system["constituencies"]
-
+        threshold = self.system["constituency_threshold"] if use_thresholds else 0
         m_allocations = []
         self.last = []
         self.results = {}
@@ -164,7 +165,7 @@ class Election:
                     prior_allocations=[],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = self.system["constituency_threshold"]
+                    threshold_percent = threshold
                 )
                 assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -176,50 +177,65 @@ class Election:
         v_allocations = [sum(x) for x in zip(*m_allocations)]
         self.results["fixed_const_total"] = deepcopy(v_allocations)
 
-        if self.party_votes["specified"]:
-            if self.party_votes["num_fixed_seats"] > 0:
+        if self.party_vote_info["specified"]:
+            if self.party_vote_info["num_fixed_seats"] > 0:
                 nat_fixed_alloc, _, _, _ = apportion1d_general(
-                    v_votes = self.party_votes["votes"],
-                    num_total_seats = self.party_votes["num_fixed_seats"],
+                    v_votes = self.party_vote_info["votes"],
+                    num_total_seats = self.party_vote_info["num_fixed_seats"],
                     prior_allocations = [],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = self.system["constituency_threshold"]
+                    threshold_percent = threshold
                 )
                 for i in range(len(v_allocations)):
                     v_allocations[i] += nat_fixed_alloc[i]
             else:
-                nat_fixed_alloc = [0]*len(self.party_votes["votes"])            
+                nat_fixed_alloc = [0]*len(self.party_vote_info["votes"])            
             self.results["fixed_nat_seats"] = nat_fixed_alloc
             
         self.results["fixed_const_seats"] = m_allocations
         self.results["fixed_grand_total"] = v_allocations
 
-    def run_determine_total_party_seats(self):
+    def run_determine_total_party_seats(self, use_thresholds):
         """Calculate the number of adjustment seats each party gets."""
         opt = self.system["seat_spec_options"]["party"]
         if opt == "totals":
-            v_votes = self.v_votes
-        elif opt == "party_votes":
-            v_votes = self.party_votes['votes']
+            votes = self.v_votes
+        elif opt == "party_vote_info":
+            votes = self.party_vote_info['votes']
         else:
             assert(opt=="average")
-            v_votes = [(x+y)/2 for (x,y) in zip (self.v_votes, self.party_votes['votes'])]
-        party_votes = self.party_votes
-        nat_seats = (party_votes['num_fixed_seats'] + party_votes['num_adj_seats'])
+            votes = [(x+y)/2 for (x,y) in zip (self.v_votes, self.party_vote_info['votes'])]
+        self.nat_votes = votes
+        party_vote_info = self.party_vote_info
+        nat_seats = (party_vote_info['num_fixed_seats'] + party_vote_info['num_adj_seats'])
+
+        threshold = self.system["adjustment_threshold"] if use_thresholds else 0
+        choice = self.system["adj_threshold_choice"] if use_thresholds else 0
+        seats = self.system["adjustment_threshold_seats"] if use_thresholds else 0
 
         self.desired_col_sums, self.adj_seat_gen, _, _ \
             = apportion1d_general(
-                v_votes = v_votes,
+                v_votes = self.nat_votes,
                 num_total_seats = self.total_const_seats + nat_seats,
                 prior_allocations = self.results["fixed_const_total"],
                 rule = self.system.get_generator("adj_determine_divider"),
                 type_of_rule = self.system.get_type("adj_determine_divider"),
-                threshold_percent = self.system["adjustment_threshold"],
-                threshold_choice = self.system["adj_threshold_choice"],
-                threshold_seats = self.system["adjustment_threshold_seats"]
+                threshold_percent = threshold,
+                threshold_choice = choice,
+                threshold_seats = seats
             )
-        return self.desired_col_sums
+        if self.party_vote_info["specified"]:
+            self.desired_const_col_sums, _, _, _ \
+                = apportion1d_general(
+                    v_votes=self.nat_votes,
+                    num_total_seats=self.total_const_seats,
+                    prior_allocations=self.results["fixed_const_total"],
+                    rule=self.system.get_generator("adj_determine_divider"),
+                    type_of_rule=self.system.get_type("adj_determine_divider")
+                )
+        else:
+            self.desired_const_col_sums = self.desired_col_sums
 
     def set_forced_reasons(self, demoTable):
         if "Criteria" in demoTable["headers"]:
@@ -239,23 +255,21 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        all_const_seats, self.demo_table_info = method(
-            m_votes=self.m_votes,
-            v_desired_row_sums=self.desired_row_sums,
-            v_desired_col_sums=self.desired_col_sums,
-            m_prior_allocations=self.results["fixed_const_seats"],
-            divisor_gen=self.gen,
-            adj_seat_gen=self.adj_seat_gen,
-            v_fixed_seats=[con["num_fixed_seats"] for con in consts],
-            last = self.last
-        )
+        self.method = method(m_votes=self.m_votes,
+                             v_desired_row_sums=self.desired_row_sums,
+                             v_desired_col_sums=self.desired_col_sums,
+                             m_prior_allocations=self.results["fixed_const_seats"],
+                             divisor_gen=self.gen, adj_seat_gen=self.adj_seat_gen,
+                             v_fixed_seats=[con["num_fixed_seats"] for con in consts],
+                             last=self.last)
+        all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(
             all_const_seats, self.results["fixed_const_seats"])
         self.results["all_const_seats"] = all_const_seats
         self.results["adj_const_seats"] = adj_const_seats
         self.results["adj_const_total"] = [sum(x) for x in zip(*adj_const_seats)]
         self.results["all_const_total"] = [sum(x) for x in zip(*all_const_seats)]
-        
+
         alloc_sequence = self.demo_table_info[0]
         self.demo_tables = []
         format = DEMO_TABLE_FORMATS[self.system["adjustment_method"]]
@@ -301,7 +315,7 @@ class Election:
             for j, f in enumerate(fmtlist):
                 if f == 's' and any(table['steps']):
                     maxw = max(len(s[j]) for s in table['steps'])
-                    fmtlist[j] = "c" if maxw <= 2 else "l"
+                    fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
     def calculate_ideal_seats(self, scaling):
@@ -316,7 +330,7 @@ class Election:
         tau = np.ones(ncols)
         error = 1
         niter = 0
-        col_sums = self.results['all_const_total']
+        col_sums = self.desired_const_col_sums
         if self.num_parties() > 1 and self.num_constituencies() > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
@@ -348,3 +362,8 @@ class Election:
                     tau = col_sum/s if s > 0 else 1
                     ideal_seats[:, p] *= tau
         self.ideal_seats = ideal_seats.tolist()
+        if self.party_vote_info["specified"]:
+            factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
+            self.ideal_nat_seats = [x*factor for x in self.nat_votes]
+        else:
+            self.ideal_nat_seats = None

@@ -17,7 +17,7 @@ const store = new Vuex.Store({
         { name: "I", num_fixed_seats: 10, num_adj_seats: 2 },
         { name: "II", num_fixed_seats: 10, num_adj_seats: 3 },
       ],
-      party_votes: {
+      party_vote_info: {
         name: "–",
         num_fixed_seats: 0,
         num_adj_seats: 0,
@@ -122,7 +122,8 @@ const store = new Vuex.Store({
     serverError(state, message) {
       console.log(message)
       if (!message)
-        message = "Error: Unknown error with null message"
+        message = "Error: Unknown error with null message (perhaps jasonify with illegal"
+         + " arguments such as numpy data)"
       else if (Number.isInteger(message)) {
         if (message == 500)
           message = "Error: Uncaught exception in backend (possibly logged to console)"
@@ -399,7 +400,7 @@ function setVoteSums(state) {
     vs.cseats += vc[i].num_fixed_seats
     vs.aseats += vc[i].num_adj_seats
   }
-  let pv = state.vote_table.party_votes
+  let pv = state.vote_table.party_vote_info
   if (pv.specified) {
     pv.total = pv.votes.reduce((a,b) => a + b, 0)
   }

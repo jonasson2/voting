@@ -46,7 +46,7 @@
             />
         </b-form-group>
         <b-form-group
-          label="Coefficient of variation"
+          label="Coefficient of variation for constituency votes"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -57,27 +57,54 @@
           <b-input-group>
             <b-form-input
               type="text"
-              v-model.number="sim_settings.distribution_parameter"/>
+              v-model.number="sim_settings.const_cov"/>
           </b-input-group>
         </b-form-group>
         <b-form-group
-          label="Apply randomness to"
+          label="Coefficient of variation for national party votes"
+          label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
-          label-cols="auto"
-          title="Only the specified constituency will have its votes drawn 
-                 at random, the remaining constituencies will use the 
-                 reference votes on all replications. Default is to draw 
-                 all votes at random."
+          title="Standard deviation of simulated votes divided by their mean.
+                 Valid range 0–0.75 (beta), 0–1 (gamma), 0–0.577 (uniform)."
           >
           <b-input-group>
-            <b-form-select
-              v-model="sim_settings.selected_rand_constit"
-              :options="const_names"
-              />
+            <b-form-input
+              type="text"
+              v-model.number="sim_settings.party_vote_cov"/>
           </b-input-group>
         </b-form-group>
+        <b-form-group
+          label="Simulate with thresholds?"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          style="font-size:110%"
+          label-for="input-horizontal"
+          label-cols="auto"
+          title="Choose if thresholds apply"
+          >
+          <b-form-select
+            v-model="sim_settings.use_thresholds"
+            :options="sim_capabilities.use_thresholds"/>
+        </b-form-group>
+        <!-- <b-form-group -->
+        <!--   label="Apply randomness to" -->
+        <!--   style="font-size:110%" -->
+        <!--   v-b-tooltip.hover.bottom.v-primary.ds500 -->
+        <!--   label-for="input-horizontal" -->
+        <!--   label-cols="auto" -->
+        <!--   title="Only the specified constituency will have its votes drawn  -->
+        <!--          at random, the remaining constituencies will use the  -->
+        <!--          reference votes on all replications. Default is to draw  -->
+        <!--          all votes at random." -->
+        <!--   > -->
+        <!--   <b-input-group> -->
+        <!--     <b-form-select -->
+        <!--       v-model="sim_settings.selected_rand_constit" -->
+        <!--       :options="const_names" -->
+        <!--       /> -->
+        <!--   </b-input-group> -->
+        <!-- </b-form-group> -->
       </b-col>
       <b-col cols=4>
         <b-form-group style="font-size:110%"

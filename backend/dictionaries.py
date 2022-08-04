@@ -97,7 +97,7 @@ SEAT_SPECIFICATION_OPTIONS = {
     [
         {"value": "totals",      "text": ('Base on constituency vote totals in '
                                           '"Source votes and seats" tab')},
-        {"value": "party_votes", "text": ('Base on national party votes in '
+        {"value": "party_vote_info", "text": ('Base on national party votes in '
                                           '"Source votes and seats" tab')},
         {"value": "average",     "text": ('Base on average of constituency vote '
                                           'totals and national party votes')},
@@ -157,11 +157,15 @@ GENERATING_METHODS = {
     "uniform": uniform_distribution
 }
 
+USE_THRESHOLDS = [
+    {"value": False, "text": "no"},
+    {"value": True, "text": "yes"}    
+]
+
 THRESHOLD_CHOICE = [
     {"value": 0,          "text": "and"},
     {"value": 1,          "text": "or"}
 ]
-
 
 # MEASURES = {
 #     "dev_all_adj":  "Allocation as if all seats were adjustment seats",

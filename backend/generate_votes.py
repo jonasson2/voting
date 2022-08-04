@@ -3,7 +3,7 @@ from random import randint, uniform
 import dictionaries
 
 def adjustment(vote):
-    return max(0.01, vote + uniform(-0.01, 0.01))
+    return vote + uniform(-0.01, 0.01)
 
 def generate_votes (
     base_votes,      # 2d - votes for each list
@@ -30,13 +30,14 @@ def generate_votes (
             # mean = xtd_shares[c][p]
             mean = base_votes[c][p]
             # assert 0 <= mean and mean <= 1
-            if apply_randomness:
-                vote = rand(mean, var_coeff)
+            if mean <= 1e-6:
+                vote = mean
+            elif apply_randomness:
+                vote = max(1, round(rand(mean, var_coeff)))
             else:
                 vote = mean
             if vote >= 1:
-                vote = round(vote)
-            vote = adjustment(vote)
+                vote = adjustment(vote)
             generated_votes[c].append(vote)
 
     return generated_votes

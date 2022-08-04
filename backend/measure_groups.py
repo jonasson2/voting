@@ -19,22 +19,22 @@
 
 from util import disp
 
-def funabs(q, s):      return abs(q - s)
-def funsq(q, s):       return (q - s)**2
-def funpos(q, s):      return max(0, (s - q))/q if s > 0 else 0
-def funneg(q, s):      return max(0, (q - s))/q if s > 0 else 0
-def funabsshare(q, s): return abs(q-s)/q if s > 0 else 0
-def funsqshare(q, s):  return (s - q)**2/q if s > 0 else 0
-def funsqseat(q, s):   return (s - q)**2/s if s > 0 else 0
+def funabs(h, s):      return abs(h - s)
+def funsq(h, s):       return (h - s)**2
+def funpos(h, s):      return max(0, (s - h))/h
+def funneg(h, s):      return max(0, (h - s))/h
+def funabsshare(h, s): return abs(h - s)/h
+def funsqshare(h, s):  return (s - h)**2/h
+def funsqseat(h, s):   return (s - h)**2/max(1,s) if s > 0 else 0
 
 function_dict = {
-    'abs': funabs,
-    'sq': funsq,
-    'pos': funpos,
-    'neg': funneg,
-    'absshare': funabsshare,
-    'sqshare': funsqshare,
-    'sqseat': funsqseat,
+    'abs': (funabs, False),
+    'sq': (funsq, False),
+    'pos': (funpos, True),
+    'neg': (funneg, True),
+    'absshare': (funabsshare, True),
+    'sqshare': (funsqshare, True),
+    'sqseat': (funsqseat, False)
 }
 
 class MeasureGroups(dict):

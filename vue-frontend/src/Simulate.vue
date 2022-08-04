@@ -83,6 +83,8 @@
       :values="system.list_measures.fixed_seats.avg"
       :stddev="system.list_measures.fixed_seats.std"
       :title="system.name"
+      :party_votes_name="vote_table.party_vote_info.name"
+      :party_votes_specified="vote_table.party_vote_info.specified"
       :round="3">
     </SimResultMatrix>
     <h4>Adjustment seats</h4>
@@ -94,6 +96,8 @@
       :values="system.list_measures.adj_seats.avg"
       :stddev="system.list_measures.adj_seats.std"
       :title="system.name"
+      :party_votes_name="vote_table.party_vote_info.name"
+      :party_votes_specified="vote_table.party_vote_info.specified"
       :round="3">
     </SimResultMatrix>
     <h4>Total seats</h4>
@@ -105,6 +109,8 @@
       :values="system.list_measures.total_seats.avg"
       :stddev="system.list_measures.total_seats.std"
       :title="system.name"
+      :party_votes_name="vote_table.party_vote_info.name"
+      :party_votes_specified="vote_table.party_vote_info.specified"
       :round="3"
       >
     </SimResultMatrix>

@@ -6,7 +6,7 @@ def maxi(A, openC, openP):
     pmax = 0
     for c in openC:
         for p in openP:
-            if A[c,p] > amax:
+            if A[c,p] >= amax:
                 cmax = c
                 pmax = p
                 amax = A[c,p]
@@ -60,6 +60,8 @@ def nearest_to_previous(m_votes,
         alloc_const[maxC] += 1
         alloc_party[maxP] += 1
         num_allocated += 1
+        if num_allocated == num_total_seats:
+            break
 
         # REMOVE CONST AND/OR PARTY WHEN FULL
         if alloc_party[maxP] == desired_party[maxP]:
@@ -72,7 +74,10 @@ def nearest_to_previous(m_votes,
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
                                      divisors[alloc_list[maxC, maxP]])
             for p in openP:
-                ratio[maxC, p] = next_quot[maxC, p]/last_quot[maxC]
+                if last_quot[maxC] > 0:
+                    ratio[maxC, p] = next_quot[maxC, p]/last_quot[maxC]
+                else:
+                    ratio[maxC, p] = 0
 
         # DATA FOR STEP-BY-STEP TABLE
         reason = "VOTE" if alloc_const[maxC] == 1 else "MAX"

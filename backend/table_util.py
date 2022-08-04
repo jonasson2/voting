@@ -44,6 +44,10 @@ def add_totals(m):
     nm.append(totals)
     return nm
 
+def add_total(l):
+    l.append(sum(l))
+    return l
+
 def add_total_column(m):
     nm = deepcopy(m)
     for i in range(len(m)):
@@ -75,6 +79,8 @@ def entropy(votes, allocations, divisor_gen):
     e = 0
     for c in range(len(votes)):
         for p in range(len(votes[c])):
+            if votes[c][p] == 0:
+                continue
             gen = divisor_gen()
             for k in range(allocations[c][p]):
                 dk = next(gen)

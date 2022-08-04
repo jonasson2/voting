@@ -317,7 +317,7 @@
   </b-row>
   
     <table class="votematrix">
-      <tr v-if="vote_table.party_votes.specified" size="sm">
+      <tr v-if="vote_table.party_vote_info.specified" size="sm">
         <th class="topleft">
         </th>
         <th
@@ -344,7 +344,7 @@
         </th>
         <th class="displaycenter">Total</th>
       </tr>
-      <tr v-if="vote_table.party_votes.specified" size="sm">
+      <tr v-if="vote_table.party_vote_info.specified" size="sm">
         <th class="constname">
           <b-button
             style="padding: 0"
@@ -359,7 +359,7 @@
           <input
             type="text"
             v-autowidth="{ maxWidth: '400px', minWidth: '285px' }"
-            v-model="vote_table.party_votes.name"
+            v-model="vote_table.party_vote_info.name"
             />
         </th>
         <td class="numerical" size="sm">
@@ -367,7 +367,7 @@
             type="text"
             style="text-align: right"
             v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
-            v-model.number="vote_table.party_votes['num_fixed_seats']"
+            v-model.number="vote_table.party_vote_info['num_fixed_seats']"
             />
         </td>
         <td class="numerical" size="sm">
@@ -375,21 +375,21 @@
             type="text"
             style="text-align: right"
             v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
-            v-model.number="vote_table.party_votes['num_adj_seats']"
+            v-model.number="vote_table.party_vote_info['num_adj_seats']"
             />
         </td>
         <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
           <input
             type="text"
             v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
-            v-model.number="vote_table.party_votes.votes[partyidx]"
+            v-model.number="vote_table.party_vote_info.votes[partyidx]"
             />
         </td>
         <td class="displayright">
-          {{vote_table.party_votes.total}}
+          {{vote_table.party_vote_info.total}}
         </td>
       </tr>
-      <tr v-if="!vote_table.party_votes.specified">
+      <tr v-if="!vote_table.party_vote_info.specified">
         <th class="growtable">
           <b-button
             size="sm"
@@ -511,11 +511,11 @@ export default {
       this.updateVoteSums()
     },
     deletePartyVotes: function () {
-      this.vote_table.party_votes.specified = false
+      this.vote_table.party_vote_info.specified = false
     },
     addPartyVotes: function() {
       let n = this.vote_table.parties.length
-      this.vote_table.party_votes = {
+      this.vote_table.party_vote_info = {
         name: "–",
         num_fixed_seats: 0,
         num_adj_seats: 1,

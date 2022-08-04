@@ -6,9 +6,9 @@ from par_util import read_sim_status, read_sim_error, parallel_dir
 from datetime import datetime, timedelta
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from util import disp, check_votes, load_votes_from_excel, add_empty_party_votes
+from util import disp, process_vote_table, load_votes_from_excel, add_empty_party_votes
 from util import remove_blank_rows, correct_deprecated
-from input_util import check_input, check_systems, check_simul_settings
+from input_util import check_input, check_systems, check_simul_settings, check_vote_table
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
@@ -29,6 +29,9 @@ def load_json(f):
         file_content["systems"] = file_content["e_settings"]
         del file_content["e_settings"]
     for sys in file_content["systems"]:
+        if "adj_threshold_choice" not in sys:
+            sys["adj_threshold_choice"] = 0
+            sys["adjustment_threshold_seats"] = 0
         if "seat_spec_option" in sys:
             sys["seat_spec_options"] = {
                 "const": sys["seat_spec_option"],
@@ -37,8 +40,10 @@ def load_json(f):
             del sys["seat_spec_option"]
     if "vote_table" in file_content:
         vote_table = file_content["vote_table"]
-        if "party_votes" not in vote_table:
+        vote_table = check_vote_table(vote_table)
+        if "party_vote_info" not in vote_table:
             vote_table = add_empty_party_votes(vote_table)
+        file_content["vote_table"] = vote_table
     assert "sim_settings" in file_content
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
@@ -53,19 +58,19 @@ def load_votes(filename, stream=None):
             rows = list(reader)
         # flines = f.read().decode('utf-8').splitlines()
         # frows = list(csv.reader(flines, skipinitialspace=True))
-    elif filename.endswith('xlsx'):
+    elif str(filename).endswith('xlsx'):
         rows = load_votes_from_excel(stream, filename)
     else:
         return 'Neither .csv nor .xlsx file'
     rows = remove_blank_rows(rows)
-    result = check_votes(rows, filename)
-    return result
+    vote_table = process_vote_table(rows, filename)
+    vote_table = check_vote_table(vote_table)
+    return vote_table
 
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
-    min_votes = CONSTANTS["minimum_votes"]
-    handler = ElectionHandler(votes, systems, min_votes=min_votes)
+    handler = ElectionHandler(votes, systems, use_thresholds=True)
     elections = handler.elections
     results = [election.get_result_web() for election in elections]
     return results
@@ -92,7 +97,7 @@ def new_simulation(votes, systems, sim_settings):
     simid = par_util.get_id()
     starttime = time.time()
     SIMULATIONS[simid] = {'time':starttime, 'exception':None}
-    # threaded = False
+    threaded = False
     if threaded:
         sim = Simulation(sim_settings, systems, votes)
         thread = Thread(target=run_thread_simulation, args=(simid,))
@@ -192,12 +197,12 @@ def votes_to_excel(vote_table, file):
         ] + vote_table["votes"][c]
             for c in range(len(vote_table["constituencies"]))
     ]
-    if vote_table["party_votes"]["specified"]:
+    if vote_table["party_vote_info"]["specified"]:
         party_votes_matrix = [ [
-            vote_table["party_votes"]["name"],
-            vote_table["party_votes"]["num_fixed_seats"],
-            vote_table["party_votes"]["num_adj_seats"],
-        ] + vote_table["party_votes"]["votes"] ]
+            vote_table["party_vote_info"]["name"],
+            vote_table["party_vote_info"]["num_fixed_seats"],
+            vote_table["party_vote_info"]["num_adj_seats"],
+        ] + vote_table["party_vote_info"]["votes"] ]
     else:
         party_votes_matrix = None
     votes_to_xlsx(file_matrix, party_votes_matrix, file)    

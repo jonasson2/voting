@@ -48,7 +48,7 @@ def main():
 
 
     results = single_election(votes, systems)
-    handler = ElectionHandler(votes, systems)
+    handler = ElectionHandler(votes, systems, use_thresholds=True)
     handler.to_xlsx("single.xlsx")
     votes_to_excel(votes, "votes.xlsx")
 

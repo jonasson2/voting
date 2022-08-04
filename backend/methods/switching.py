@@ -1,5 +1,6 @@
 from apportion import apportion1d_general
 import numpy as np
+from copy import deepcopy
 
 def switching(m_votes,
               v_desired_row_sums,
@@ -24,9 +25,12 @@ def switching(m_votes,
     
     # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
     alloc= np.zeros((num_constituencies, num_parties), int)
+    temp_votes = deepcopy(votes)
+    full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
+    temp_votes[:,full] = 0
     for c in range(num_constituencies):
         alloc_const, _,_,_ = apportion1d_general(
-            v_votes = list(votes[c,:]),
+            v_votes = list(temp_votes[c,:]),
             num_total_seats = desired_const[c],
             prior_allocations = list(alloc_prior[c,:]),
             rule = divisor_gen
@@ -66,7 +70,7 @@ def switching(m_votes,
                     quot_max = quot
                     first_wanting[c] = p
             if last_surplus[c] >= 0 and first_wanting[c] >= 0:
-                ratio[c] = quot_min/quot_max
+                ratio[c] = quot_min/quot_max if quot_max > 0 else np.inf
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         cmin = np.argmin(ratio)
@@ -78,7 +82,7 @@ def switching(m_votes,
             "constituency": cmin,
             "from": last_surplus[cmin],
             "to": first_wanting[cmin],
-            "ratio": ratio[cmin]
+            "ratio": 'N/A' if np.isinf(ratio[cmin]) else ratio[cmin]
             })
 
     # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE

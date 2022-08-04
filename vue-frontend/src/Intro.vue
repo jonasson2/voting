@@ -7,7 +7,6 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Short instructions in English"
         @click="leidbeiningar()"
-        v-b-modal.modalpreset
         >
         Instructions
       </b-button>

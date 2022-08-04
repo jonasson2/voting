@@ -1,7 +1,6 @@
 #coding:utf-8
 import random
 import csv
-import sys #??????
 import io
 import os
 import configparser
@@ -95,7 +94,10 @@ def load_votes_from_excel(stream, filename):
         stream.seekable = stream._file.seekable
         # TODO: Remove this monkeypatch once this issue has been resolved.
     import openpyxl
-    book = openpyxl.load_workbook(stream)
+    if stream:
+        book = openpyxl.load_workbook(stream)
+    else:
+        book = openpyxl.load_workbook(filename)
     sheet = book.active
     for row in sheet.rows:
         lines.append([cell.value for cell in row])
@@ -141,7 +143,7 @@ def correct_deprecated(L):
     return L
 
 def add_empty_party_votes(vote_table):
-    vote_table["party_votes"] = {
+    vote_table["party_vote_info"] = {
         "name": "–",
         "num_fixed_seats": 0,
         "num_adj_seats": 0,
@@ -151,38 +153,9 @@ def add_empty_party_votes(vote_table):
     }
     return vote_table;
 
-def parse_input(rows, second_last_blank, filename=''):
-    
-    res = {}
+def process_vote_table(rows, filename):
 
-    num_const = len(rows) - (3 if second_last_blank else 1)    
-    res["votes"] = [[parsint(v) for v in row[3:]] for row in rows[1:num_const+1]]
-    res["parties"] = rows[0][3:]
-
-    res["constituencies"] = [{
-        "name": row[0],
-        "num_fixed_seats": parsint(row[1]),
-        "num_adj_seats": parsint(row[2])
-    } for row in rows[1:num_const+1]]
-
-    res["name"] = determine_table_name(rows[0][0], filename)
-    
-    if second_last_blank:
-        party_votes = rows[-1][3:]
-        res["party_votes"] = {
-            "name": rows[-1][0],
-            "num_fixed_seats": rows[-1][1],
-            "num_adj_seats": rows[-1][2],
-            "votes": party_votes if any(party_votes) else [""]*len(party_votes),
-            "specified": True,
-            "total": sum(party_votes) if any(party_votes) else ""
-        }
-    else:
-        res = add_empty_party_votes(res)
-
-    return res
-
-def check_votes(rows, filename):
+    # ERROR CHECKING
     row_lengths = [len(row) for row in rows]
     if min(row_lengths) < max(row_lengths):
         return 'Not all rows have equal length'
@@ -213,11 +186,37 @@ def check_votes(rows, filename):
     if not all(isint(row[3:]) for row in rows[1:]):
         return 'All votes must be nonnegative integer numbers'
 
-    result = parse_input(rows, second_last_blank, filename)
+    # BUILD A DICTIONARY RES WITH ALL VOTING INFORMATION
+    res = {}
+    num_const = len(rows) - (3 if second_last_blank else 1)    
+    res["votes"] = [[parsint(v) for v in row[3:]] for row in rows[1:num_const+1]]
+    res["parties"] = rows[0][3:]
 
+    res["constituencies"] = [{
+        "name": row[0],
+        "num_fixed_seats": parsint(row[1]),
+        "num_adj_seats": parsint(row[2])
+    } for row in rows[1:num_const+1]]
+
+    res["name"] = determine_table_name(rows[0][0], filename)
     
-    
-    return result
+    if second_last_blank:
+        party_vote_info = rows[-1][3:]
+        res["party_vote_info"] = {
+            "name": rows[-1][0],
+            "num_fixed_seats": rows[-1][1],
+            "num_adj_seats": rows[-1][2],
+            "votes": party_vote_info if any(party_vote_info) else [""]*len(party_vote_info),
+            "specified": True,
+            "total": sum(party_vote_info) if any(party_vote_info) else ""
+        }
+        if res["party_vote_info"]["num_fixed_seats"] is None:
+            res["party_vote_info"]["num_fixed_seats"] = 0
+        if res["party_vote_info"]["num_adj_seats"] is None:
+            res["party_vote_info"]["num_adj_seats"] = 0
+    else:
+        res = add_empty_party_votes(res)
+    return res
 
 def parsint(value):
     return int(value) if value else 0

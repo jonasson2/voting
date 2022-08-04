@@ -33,7 +33,7 @@
           {{ constituency["name"] }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td v-if="voteless && voteless[conidx][partyidx]" class="red displayright">
+          <Td v-if="voteless && voteless[conidx][partyidx]" class="red displayright">
             {{ values[conidx][partyidx].toFixed(round) }}
           </td>
           <td v-else class="displayright">
@@ -61,6 +61,38 @@
           {{ values[constituencies.length][parties.length].toFixed(round) }}
         </td>
       </tr>
+      <tr v-if="party_votes_specified">
+        <th class="displayleft">
+          {{ party_votes_name }}
+        </th>
+        <template v-for="(party, partyidx) in parties">
+          <td class="displaycenter">
+            {{ values[constituencies.length + 1][partyidx].toFixed(round) }}
+          </td>
+          <td v-if="stddev" class="displayright">
+            {{ stddev[constituencies.length + 1][partyidx].toFixed(round) }}
+          </td>
+        </template>
+        <td class="displayright">
+          {{ values[constituencies.length + 1][parties.length].toFixed(round) }}
+        </td>
+      </tr>
+      <tr v-if="party_votes_specified">
+        <th class="displayleft">
+          Grand total
+        </th>
+        <template v-for="(party, partyidx) in parties">
+          <td class="displaycenter">
+            {{ values[constituencies.length + 2][partyidx].toFixed(round) }}
+          </td>
+          <td v-if="stddev" class="displayright">
+            {{ stddev[constituencies.length + 2][partyidx].toFixed(round) }}
+          </td>
+        </template>
+        <td class="displayright">
+          {{ values[constituencies.length + 2][parties.length].toFixed(round) }}
+        </td>
+      </tr>
     </table>
     <br>
     <b-alert :show="some_red" >
@@ -80,6 +112,8 @@ export default {
     "round": { default: 0 },
     "stddev": { default: false },
     "title": { default: "" },
+    "party_votes_specified": false,
+    "party_votes_name": "",
   },
   computed: {
     some_red: {

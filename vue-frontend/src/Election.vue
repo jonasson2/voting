@@ -31,8 +31,8 @@
               :parties="vote_table.parties"
               :values="results[activeTabIndex].display_results"
               :voteless="results[activeTabIndex].voteless_seats"
-              :party_votes_name="vote_table.party_votes.name"
-              :party_votes_specified="vote_table.party_votes.specified"
+              :party_votes_name="vote_table.party_vote_info.name"
+              :party_votes_specified="vote_table.party_vote_info.specified"
               >
             </ResultMatrix>
           <!-- <b-row> -->

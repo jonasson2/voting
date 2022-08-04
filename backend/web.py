@@ -10,9 +10,9 @@ from multiprocessing import Pool
 import dictionaries, simulate
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from input_util import check_input, check_vote_table, check_systems
+from input_util import check_input, check_systems
 from input_util import check_simul_settings
-from util import disp, check_votes, get_cpu_counts
+from util import disp, get_cpu_counts
 from util import timestamp, timestampmsg
 from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election
@@ -80,6 +80,8 @@ def api_election():
         for (c,s) in zip(constituencies, systems):
             s["constituencies"] = c
         results = single_election(vote_table, systems);
+        j = jsonify({"results": results, "systems": systems})
+        print('jasonify',j)
         return jsonify({"results": results, "systems": systems})
     except Exception:
         return errormsg()
@@ -223,14 +225,6 @@ def api_votes_upload():
         stream = getfileparam()
         filename = stream.filename
         result = load_votes(filename, stream)
-        # if filename.endswith('.csv'):
-        #     flines = f.read().decode('utf-8').splitlines()
-        #     frows = list(csv.reader(flines, skipinitialspace=True))
-        # elif filename.endswith('xlsx'):
-        #     frows = load_votes_from_excel(f, filename)
-        # else:
-        #     return errormsg('Neither .csv nor .xlsx file')
-        # result = check_votes(frows, f.filename)
         if isinstance(result, str):
             return errormsg(f"Illegal vote file: {result}")
         else:
@@ -276,6 +270,7 @@ def api_capabilities():
             "election_system": election_system,
             "sim_settings": simulate.SimulationSettings(),
             "capabilities": {
+                "use_thresholds": dictionaries.USE_THRESHOLDS,
                 "systems": dictionaries.RULE_NAMES,
                 "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
                 "cpu_counts": get_cpu_counts(),

@@ -37,11 +37,12 @@ def read_data(vote_file, json_file):
         votes = load_votes(vote_path)
     return votes, vote_path, systems, sim_settings
 
-def set_sim_settings(sim_settings, n_sim, n_cpu, sens_cv, cv):
+def set_sim_settings(sim_settings, n_sim, n_cpu, sens_cv, cv, pcv):
     settings = deepcopy(sim_settings)
     settings["simulation_count"] = n_sim
     settings["cpu_count"] = n_cpu
-    settings["distribution_parameter"] = cv
+    settings["const_cov"] = cv
+    settings["party_vote_cov"] = pcv
     settings["sens_cv"] = sens_cv
     settings["sensitivity"] = True
     return settings
@@ -69,7 +70,7 @@ def filenames(sens_cv, n_cores, n_sim, vote_path):
 
 def main():
     create_SIMULATIONS()
-    (n_reps, n_cores, json_file, vote_file, Stop, sens_cv, cv) = get_arguments(
+    (n_reps, n_cores, json_file, vote_file, Stop, sens_cv, cv, pcv) = get_arguments(
         args=[
             ['n_reps', int, 'total number of simulations', 10],
             ['n_cores', int, 'number of cores', 1],
@@ -77,10 +78,11 @@ def main():
             ['-votes', str, 'vote file', ''],
             ['-Stop', int, 'stop after specified time (in seconds)', -1],
             ['-sens_cv', float, 'coefficient of variation for adjustment', 0.01],
-            ['-cv', float, 'variation coefficient for vote generation', 0.25]],
-        description="Simulate sensitivity of elections")
+            ['-cv', float, 'variation coefficient for vote generation', 0.25],
+            ['-pcv', float, 'variation coefficient for party vote generation', 0.10]],
+    description="Simulate sensitivity of elections")
     (votes, vote_path, systems, sim_settings) = read_data(vote_file, json_file)
-    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv)
+    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv, pcv)
     (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_reps, vote_path)
 
     random.seed(43)
