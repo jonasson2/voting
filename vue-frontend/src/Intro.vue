@@ -53,6 +53,8 @@
       Helgason</a> who is responsible for the project.</p>
     </b-tab>
     <b-tab title="Um Kosningaherminn">
+      <h4>Kosningahermirinn</h4>
+      <p>Útgáfa: 
       <p>
       Kosningahermirinn er hugbúnaður sem gerir kleift að prófa hugmyndir um
       kjördæmaskipan og kosningakerfi. Hermirinn er hugsaður til prófunar á
@@ -120,6 +122,16 @@
         let url = "https://cs.hi.is/voting/leidbeiningar.pdf"
         window.open(url, "_blank")
       }
-    }
-  };
+    },
+    data: function () {
+      return {
+        git_branch: [],
+      }
+    },
+    //mounted: function() {
+    //  console.log("Main created")
+    //  const getCurrentBranchName = require('node-git-current-branch');
+    //  this.get_branch = getCurrentBranchName();
+    //},
+  }
 </script>

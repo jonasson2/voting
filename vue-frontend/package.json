@@ -24,6 +24,7 @@
     "bootstrap-vue": "^2.0.3",
     "chart.js": "^2.7.2",
     "copyfiles": "^2.4.1",
+    "node-git-current-branch": "^2.0.1",
     "vue": "^2.6.10",
     "vue-chartjs": "^3.3.2",
     "vue-input-autowidth": "^1.0.11",
