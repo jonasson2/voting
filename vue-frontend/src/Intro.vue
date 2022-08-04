@@ -54,7 +54,7 @@
     </b-tab>
     <b-tab title="Um Kosningaherminn">
       <h4>Kosningahermirinn</h4>
-      <p>Útgáfa: 
+      <p>Útgáfa: 3.00, 4. ágúst 2022</p>
       <p>
       Kosningahermirinn er hugbúnaður sem gerir kleift að prófa hugmyndir um
       kjördæmaskipan og kosningakerfi. Hermirinn er hugsaður til prófunar á
