@@ -80,8 +80,6 @@ def api_election():
         for (c,s) in zip(constituencies, systems):
             s["constituencies"] = c
         results = single_election(vote_table, systems);
-        j = jsonify({"results": results, "systems": systems})
-        print('jasonify',j)
         return jsonify({"results": results, "systems": systems})
     except Exception:
         return errormsg()

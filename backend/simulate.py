@@ -1,6 +1,6 @@
 # import logging
 from datetime import datetime
-from measure_groups import MeasureGroups, function_dict
+from measure_groups import MeasureGroups, function_dict, function_dict_party
 import dictionaries as dicts
 import random
 from voting import Election
@@ -180,7 +180,7 @@ class Simulation():
             election.calculate_ideal_seats(self.sim_settings["scaling"])
             ids = np.array(add_totals(election.ideal_seats))
             if self.party_votes_specified:
-                ids = np.vstack((ids, election.ideal_nat_seats))
+                ids = np.vstack((ids, add_total(election.ideal_nat_seats)))
                 ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
@@ -246,32 +246,49 @@ class Simulation():
 
     def sum_func(self, election, function, div_h, election_number):
         measure = 0
-        for c in range(election.num_constituencies()):
+        num_c = election.num_constituencies()
+        for c in range(num_c):
             for p in range(len(self.parties)):
                 s = election.results["all_const_seats"][c][p]
                 if self.vote_table['votes'][c][p] == 0:
                     continue
                 h = election.ideal_seats[c][p]
                 if div_h:
-                    if self.base_allocations[election_number]['ideal_seats'][-1][p] == 0:
+                    if self.base_allocations[election_number]['ideal_seats'][num_c][p] \
+                            == 0:
                         continue
                     if h == 0:
                         h = self.base_allocations[election_number]['ideal_seats'][c][p]
                 measure += function(h, s)
         return measure
 
+    def party_func(self, name, election, function):
+        measure = 0
+        for p in range(len(self.parties)):
+            s = election.results['all_grand_total'][p]
+            h = election.ideal_total_seats[p]
+            if name.startswith('sum'):
+                measure += function(h,s)
+            elif name.startswith('max'):
+                measure = max(measure, function(h,s))
+            elif name.startswith('min'):
+                measure = min(measure, function(h,s))
+        return measure
+
+
     def other_measures(self, election, i, deviations):
         #ideal_seats = self.calculate_ideal_seats(election)
         for (funcname, (function, div_h)) in function_dict.items():
             measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
             deviations.add(measure, self.sum_func(election, function, div_h, i))
-        # deviations.add("sum_abs", self.sum_abs(election))
-        # deviations.add("sum_pos", self.sum_pos(election))
-        # deviations.add("sum_sq", self.sum_sq(election))
+        for (measure, function) in function_dict_party.items():
+            deviations.add(measure, self.party_func(measure, election, function))
         (slope, corr) = self.bias(election)
         deviations.add("min_seat_val", self.min_seat_val(election))
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
+        deviations.add("max_neg_margin", XXX)
+        deviations.add()
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections

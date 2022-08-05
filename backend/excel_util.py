@@ -166,7 +166,6 @@ def demo_table_to_xlsx(
     row += 1
     for i in range(len(steps)):
         for j,(stp,f) in enumerate(zip(steps[i], demo_table["format"])):
-            print(i,j,stp)
             if f=="s": #special
                 maxw = max(len(s[j]) for s in steps)
                 f = "c" if maxw <= 2 else "l"

@@ -23,7 +23,6 @@ from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
 
 CONSTANTS = {
-    'minimum_votes': 1e-6,
     'CoeffVar': 0.25,
     'simulation_id_length': 20,
     'default_cpu_count': get_cpu_count()/2
@@ -220,6 +219,10 @@ VOTE_MEASURES = {
 SENS_MEASURES = [
     "party_sens",
     "list_sens"
+]
+
+PARTY_VOTE_MEASURES = [
+    ""
 ]
 
 SCALING_NAMES = {

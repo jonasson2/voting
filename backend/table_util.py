@@ -45,8 +45,7 @@ def add_totals(m):
     return nm
 
 def add_total(l):
-    l.append(sum(l))
-    return l
+    return l + [sum(l)]
 
 def add_total_column(m):
     nm = deepcopy(m)

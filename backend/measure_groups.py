@@ -27,6 +27,8 @@ def funabsshare(h, s): return abs(h - s)/h
 def funsqshare(h, s):  return (s - h)**2/h
 def funsqseat(h, s):   return (s - h)**2/max(1,s) if s > 0 else 0
 
+def funsame(h,s):       return s - h
+
 function_dict = {
     'abs': (funabs, False),
     'sq': (funsq, False),
@@ -37,10 +39,22 @@ function_dict = {
     'sqseat': (funsqseat, False)
 }
 
+function_dict_party = {
+    'sum_abs_party': (funabs),
+    'sum_sq_party': (funsq),
+    'max_val_party': (funsame),
+    'min_val_party': (funsame),
+}
+
 class MeasureGroups(dict):
     def __init__(self, systems, nr=0):
-        self["seatShares"] = {
-            "title": "Seats minus seat shares, sum over all lists of",
+        self["shareTitle"] = {
+            "title": "Seats minus seat shares",
+            "rows":  {}
+        }
+
+        self["sumSeatShares"] = {
+            "title": "– sum over all lists of",
             "rows": {
                 "sum_abs":     ("absolute values (Hare-quota)", ""),
                 "sum_sq":      ("squared values (Hare-quota)", ""),
@@ -52,15 +66,30 @@ class MeasureGroups(dict):
             },
             "footnote": "(single constituency minimizing method in brackets)",            
         }
+        self["totalsSeatShares"] = {
+            "title": "– for allocations to parties",
+            "rows": {
+                "sum_abs_party": ("sum of absolute values",""),
+                "sum_sq_party": ("sum of squared values",""),
+                "max_val_party": ("maximum value", ""),
+                "min_val_party": ("minimum value", ""),
+            }
+        }
+
         self["other"] = {
             "title": "Specific quality indices for seat allocations",
             "rows": {
                 "entropy":      ("Sum of logs of votes per seat", ""),
                 "min_seat_val": ("Minimum reference seat share per seat", ""),
                 "bias_slope":   ("Slope of seat excess regressed on ref. seat shares", ""),
-                "bias_corr":    ("Correlation of seat excess and reference seat shares", "")
+                "bias_corr":    ("Correlation of seat excess and reference seat "
+                                 "shares", ""),
+                #"max_neg_margin": {"Maximum negative margin over constituencies",""},
+                #"avg_neg_margin": {"Average negative margin over constituenies",""}
             }
         }
+
+
         self["compTitle"] = {
             "title": "Sum of absolute seat allocation differences:",
             "rows": {}
@@ -124,7 +153,9 @@ class MeasureGroups(dict):
         return group.get_measures()
 
 headingType = {
-    "seatShares": "systems",
+    "shareTitle": "systems",
+    "sumSeatShares": "empty",
+    "totalSeatShares": "empty",
     "other":      "empty",
     "compTitle":  "stats",
     "seatSpec":   "systems",

@@ -132,6 +132,8 @@ class Election:
         self.run_adjustment_apportionment()
         if party_vote_info["specified"] and party_vote_info["num_adj_seats"] > 0:
             self.add_national_adjustment_seats()
+        else:
+            self.results['all_grand_total'] = self.results['all_const_total']
 
         self.prepare_results()
         return self.results['all_const_seats']
@@ -141,7 +143,7 @@ class Election:
         all_const_seats = self.results["all_const_seats"]
         for c in range(self.num_constituencies()):
             for p in range(self.num_parties()):
-                over[c] = [r > 0 and v == CONSTANTS["minimum_votes"]
+                over[c] = [r > 0 and v == 0
                            for (r, v) in zip(all_const_seats[c], self.m_votes[c])]
         return over
 
@@ -255,9 +257,13 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
+        if method.__name__ == "alt_scaling":
+            desired_col_sums = self.desired_const_col_sums
+        else:
+            desired_col_sums = self.desired_col_sums
         self.method = method(m_votes=self.m_votes,
                              v_desired_row_sums=self.desired_row_sums,
-                             v_desired_col_sums=self.desired_col_sums,
+                             v_desired_col_sums=desired_col_sums,
                              m_prior_allocations=self.results["fixed_const_seats"],
                              divisor_gen=self.gen, adj_seat_gen=self.adj_seat_gen,
                              v_fixed_seats=[con["num_fixed_seats"] for con in consts],
@@ -322,6 +328,7 @@ class Election:
         import numpy as np, numpy.linalg as la
         scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
         ideal_seats = np.array(scale_matrix(self.m_votes, scalar))
+        ideal_seats = np.maximum(1e-8, ideal_seats)
         # assert self.solvable
         # rein = 0
         nrows = self.num_constituencies()
@@ -331,7 +338,7 @@ class Election:
         error = 1
         niter = 0
         col_sums = self.desired_const_col_sums
-        if self.num_parties() > 1 and self.num_constituencies() > 1:
+        if ncols > 1 and nrows > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
             if row_constraints and col_constraints:
@@ -350,20 +357,24 @@ class Election:
                         ideal_seats[:, p] *= tau
                         error = max(error, abs(1 - tau))
             elif row_constraints:
-                for c in range(self.num_constituencies()):
+                for c in range(nrows):
                     row_sum = self.desired_row_sums[c]
                     s = sum(ideal_seats[c, :])
                     eta = row_sum/s if s > 0 else 1
                     ideal_seats[c, :] *= eta
             elif col_constraints:
-                for p in range(self.num_parties()):
+                for p in range(ncols):
                     col_sum = col_sums[p]
                     s = sum(ideal_seats[:, p])
                     tau = col_sum/s if s > 0 else 1
                     ideal_seats[:, p] *= tau
         self.ideal_seats = ideal_seats.tolist()
+        factor = sum(self.results["all_grand_total"])/sum(self.nat_votes)
+        self.ideal_total_seats = [x*factor for x in self.nat_votes]
+
         if self.party_vote_info["specified"]:
             factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
             self.ideal_nat_seats = [x*factor for x in self.nat_votes]
         else:
             self.ideal_nat_seats = None
+
