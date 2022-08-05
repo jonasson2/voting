@@ -287,8 +287,8 @@ class Simulation():
         deviations.add("min_seat_val", self.min_seat_val(election))
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
-        deviations.add("max_neg_margin", XXX)
-        deviations.add()
+        #deviations.add("max_neg_margin", XXX)
+        #deviations.add()
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
