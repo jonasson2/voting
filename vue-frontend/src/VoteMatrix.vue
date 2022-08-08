@@ -472,20 +472,24 @@ export default {
       "uploadAll",
     ]),
     deleteParty: function (index) {
-      this.vote_table.parties.splice(index, 1);
+      this.vote_table.parties.splice(index, 1)
       for (let con in this.vote_table.votes) {
-        this.vote_table.votes[con].splice(index, 1);
+        this.vote_table.votes[con].splice(index, 1)
       }
+      if (this.vote_table.party_vote_info.specified)
+        this.vote_table.party_vote_info.votes.splice(index, 1)
     },
     deleteConstituency: function (index) {
       this.vote_table.constituencies.splice(index, 1);
-      this.vote_table.votes.splice(index, 1);
+      this.vote_table.votes.splice(index, 1)
     },
     addParty: function () {
       this.vote_table.parties.push("");
       for (let con in this.vote_table.votes) {
         this.vote_table.votes[con].push(1);
       }
+      if (this.vote_table.party_vote_info.specified)
+        this.vote_table.party_vote_info.votes.push(1)
     },
     addConstituency: function () {
       this.vote_table.constituencies.push({
@@ -496,18 +500,12 @@ export default {
       this.vote_table.votes.push(
         Array(this.vote_table.parties.length).fill(1));
     },
-    clearVotes: function () {
-      let v = [];
-      for (let con in this.vote_table.votes) {
-        v = Array(this.vote_table.votes[con].length).fill(0);
-        this.$set(this.vote_table.votes, con, v)
-      }
-    },
     clearAll: function () {
       this.vote_table.name = ""
       this.vote_table.constituencies = []
       this.vote_table.parties = []
       this.vote_table.votes = []
+      this.vote_table.party_vote_info.specified = false
       this.updateVoteSums()
     },
     deletePartyVotes: function () {

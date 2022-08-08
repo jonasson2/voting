@@ -130,10 +130,10 @@ class Election:
         self.run_primary_apportionment(use_thresholds)
         self.run_determine_total_party_seats(use_thresholds)
         self.run_adjustment_apportionment()
-        #if party_vote_info["specified"] and party_vote_info["num_adj_seats"] > 0:
-        self.add_national_adjustment_seats()
-        #else:
-        #    self.results['all_grand_total'] = self.results['all_const_total']
+        if party_vote_info["specified"]:
+            self.add_national_adjustment_seats()
+        else:
+            self.results['all_grand_total'] = self.results['all_const_total']
 
         self.prepare_results()
         return self.results['all_const_seats']

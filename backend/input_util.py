@@ -2,6 +2,7 @@ import os
 from distutils.util import strtobool
 from copy import deepcopy
 from util import disp
+
 def check_input(data, sections):
     for section in sections:
         if section not in data or not data[section]:
@@ -30,14 +31,14 @@ def check_vote_table(vote_table):
             raise ValueError("The vote table does not match the party list.")
         for p in range(len(row)):
             if not row[p]: row[p] = 0
-            if row[p]<0:
+            if row[p] < 0:
                 raise ValueError("Votes may not be negative.")
     if "party_votes" in table:
         table["party_vote_info"] = table["party_votes"]
         del table["party_votes"]
-    
+
     for const in table["constituencies"]:
-        if "name" not in const: # or not const["name"]:
+        if "name" not in const:  # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
         if "num_fixed_seats" not in const:
             const["num_fixed_seats"] = const["num_const_seats"]
@@ -52,7 +53,7 @@ def check_vote_table(vote_table):
 
     seen = set()
     for const in table["constituencies"]:
-        if False: #const["name"] in seen:
+        if False:  # const["name"] in seen:
             raise ValueError("Constituency names must be unique. "
                              f"{const['name']} is not.")
         seen.add(const["name"])
@@ -78,16 +79,16 @@ def check_systems(electoral_systems):
             if 'num_const_seats' in const:
                 const['num_fixed_seats'] = const['num_const_seats']
                 del const['num_const_seats']
-            if "name" not in const: # or not const["name"]:
-                #can never happen in case of input from frontend
+            if "name" not in const:  # or not const["name"]:
+                # can never happen in case of input from frontend
                 raise KeyError(f"Missing data ('constituencies[x].name' in "
-                    f"electoral system {electoral_system['name']})")
+                               f"electoral system {electoral_system['name']})")
             name = const["name"]
             for info in ["num_fixed_seats", "num_adj_seats"]:
                 if info not in const:
                     raise KeyError(f"Missing data ('{info}' for {name} in "
-                        f"electoral system {electoral_system['name']})")
-                if not const[info]: const[info]=0
+                                   f"electoral system {electoral_system['name']})")
+                if not const[info]: const[info] = 0
                 if type(const[info]) != int:
                     raise TypeError("Seat specifications must be numbers.")
             # if (const["num_fixed_seats"] + const["num_adj_seats"] <= 0):
@@ -109,14 +110,16 @@ def check_simul_settings(sim_settings):
         for key in ["row_constraints", "col_constraints"]:
             sim_settings[key] = bool(strtobool(str(sim_settings[key])))
         if sim_settings["row_constraints"]:
-            sim_settings["scaling"] = "both" if sim_settings["col_constraints"] else "const"
+            sim_settings["scaling"] = "both" if sim_settings[
+                "col_constraints"] else "const"
         else:
-            sim_settings["scaling"] = "party" if sim_settings["col_constraints"] else "total"
+            sim_settings["scaling"] = "party" if sim_settings[
+                "col_constraints"] else "total"
     for key in ["simulation_count", "gen_method", "scaling"]:
-        if key not in sim_settings: 
+        if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
-    sim_settings.setdefault("cpu_count",   4)
-    sim_settings.setdefault("sens_cv",     0.01)
+    sim_settings.setdefault("cpu_count", 4)
+    sim_settings.setdefault("sens_cv", 0.01)
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("selected_rand_constit", "All constituencies")

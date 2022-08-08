@@ -64,7 +64,8 @@ def load_votes(filename, stream=None):
         return 'Neither .csv nor .xlsx file'
     rows = remove_blank_rows(rows)
     vote_table = process_vote_table(rows, filename)
-    vote_table = check_vote_table(vote_table)
+    if not isinstance(vote_table, str):
+        vote_table = check_vote_table(vote_table)
     return vote_table
 
 def single_election(votes, systems):
