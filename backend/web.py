@@ -88,7 +88,7 @@ def api_election():
 def api_election_save():
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
-        handler = ElectionHandler(vote_table, systems)
+        handler = ElectionHandler(vote_table, systems, use_thresholds=True)
         tmpfilename = tempfile.mktemp(prefix='election-')
         handler.to_xlsx(tmpfilename)
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
