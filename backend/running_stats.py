@@ -2,9 +2,10 @@ import numpy as np
 from math import prod
 
 class Running_stats:
-    def __init__(self, shape=None, parallel=False):
+    def __init__(self, shape=None, parallel=False, name=""):
         if shape:
             self.parallel = parallel
+            self.name = name
             self.n = 0
             self.M1 = np.zeros(shape)
             self.M2 = np.zeros(shape)
@@ -48,7 +49,8 @@ class Running_stats:
         n2 = running_stats.n
         self.n = n1 + n2
         delta = running_stats.M1 - self.M1
-        if self.n==0: print("******** zero n in running_stats combine *********")
+        if self.n==0:
+            print(f"**** zero n for {self.name} in running_stats combine ****")
         self.M1 = (n1*self.M1 + n2*running_stats.M1)/max(1,self.n)
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
         self.big = np.maximum(self.big, running_stats.big)

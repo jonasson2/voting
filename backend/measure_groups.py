@@ -13,9 +13,12 @@
 #   simulation.systems[r].name (r=0,1,...)
 #
 # The measure-names for comparison with other systems are:
-#   cmp_<systemname>
-# and
+#   cmp_<systemname>_const
 #   cmp_<systemname>_tot
+#   cmp_<systemname>_nat
+# and
+#   cmp_<systemname>_grand
+
 
 from util import disp
 
@@ -47,14 +50,14 @@ function_dict_party = {
 }
 
 class MeasureGroups(dict):
-    def __init__(self, systems, nr=0):
+    def __init__(self, systems, party_votes_specified, nr=0):
         self["shareTitle"] = {
-            "title": "Seats minus seat shares",
+            "title": "Seats minus seat shares, sum over allocations to:",
             "rows":  {}
         }
 
-        self["sumSeatShares"] = {
-            "title": "– sum over all lists of",
+        self["toLists"] = {
+            "title": "– constituency lists",
             "rows": {
                 "sum_abs":     ("absolute values (Hare-quota)", ""),
                 "sum_sq":      ("squared values (Hare-quota)", ""),
@@ -62,22 +65,42 @@ class MeasureGroups(dict):
                 "sum_neg":     ("neg. values scaled by reciprocal shares (Adams)", ""),
                 "sum_absshare": ("abs. values scaled by reciprocal share (Sainte-Laguë)", ""),
                 "sum_sqshare": ("sq.val. scaled by reciprocal shares (Sainte-Laguë)", ""),
-                "sum_sqseat":  ("sq.val. scaled by reciproc. seats (Hill-Huntington)", ""),
+                "sum_sqseat":  ("sq.val. scaled by reciprocal seats (Hill-Huntington)", ""),
             },
             "footnote": "(single constituency minimizing method in brackets)",            
         }
-        self["totalsSeatShares"] = {
-            "title": "– for allocations to parties",
+
+        if party_votes_specified:
+            self["toPartiesInConst"] = {
+                "title": "– parties in the constituencies",
+                "rows": {
+                    "sum_abs_party": ("sum of absolute values",""),
+                    "sum_sq_party": ("sum of squared values",""),
+                }
+            }
+
+            self["toNationalLists"] = {
+                "title": "– national lists",
+                "rows": {
+                    "sum_abs_party": ("sum of absolute values",""),
+                    "sum_sq_party": ("sum of squared values",""),
+                }
+            }
+
+        self["toPartiesTotal"] = {
+            "title": "– parties overall" if party_votes_specified else "– party totals",
+            # overall,
+            # altogeter, grand total
             "rows": {
                 "sum_abs_party": ("sum of absolute values",""),
-                "sum_sq_party": ("sum of squared values",""),
+                "sum_sq_party":  ("sum of squared values",""),
                 "max_val_party": ("maximum value", ""),
                 "min_val_party": ("minimum value", ""),
             }
         }
 
         self["other"] = {
-            "title": "Specific quality indices for seat allocations",
+            "title": "Specific quality indices for allocations in the constituencies",
             "rows": {
                 "entropy":      ("Sum of logs of votes per seat", ""),
                 "min_seat_val": ("Minimum reference seat share per seat", ""),
@@ -89,52 +112,79 @@ class MeasureGroups(dict):
             }
         }
 
-
         self["compTitle"] = {
-            "title": "Sum of absolute seat allocation differences:",
+            "title": "Sum of absolute seat allocation differences over:",
             "rows": {}
         }
         self["seatSpec"] = {
             "title": "– compared with other seat specifications",
             "rows": {
-                "dev_all_adj":        ("Individual lists", "Only adjustment seats"),
-                "dev_all_fixed":      ("",                 "Only fixed seats"),
-                "dev_all_adj_tot":    ("Party totals",     "Only adjustment seats"),
-                "dev_all_fixed_tot":  ("",                 "Only fixed seats"),
-                "one_const_tot":      ("",            "All constituencies combined")
+                "dev_all_adj_const":   ("constituency lists", "all seats as adjustment seats"),
+                "dev_all_fixed_const": ("",                 "all seats as fixed seats"),
+                "dev_all_adj_tot":     ("party constituency totals","all seats as adjustment seats"),
+                "dev_all_fixed_tot":   ("",                 "all seats as fixed seats"),
+                "dev_all_adj_nat":     ("national lists",   "all seats as adjustment seats"),
+                "dev_all_fixed_nat":   ("",                 "all seats as fixed seats"),
+                "dev_all_adj_grand":   ("party grand totals", "all seats as adjustment seats"),
+                "dev_all_fixed_grand": ("",                 "all seats as fixed seats"),
+                "one_const_tot":       ("",                 "All constituencies combined")
+            } if party_votes_specified else {
+                "dev_all_adj_const":   ("constituency lists", "all seats as adjustment seats"),
+                "dev_all_fixed_const": ("",                 "all seats as fixed seats"),
+                "dev_all_adj_tot":     ("party totals","all seats as adjustment seats"),
+                "dev_all_fixed_tot":   ("",                 "all seats as fixed seats"),
+                "one_const_tot":       ("",                 "All constituencies combined")
             }
         }
         self["expected"] = {
             "title": "– compared w. tested systems and source votes",
             "rows": {
-                "dev_ref":     ("Individual lists", ""),
-                "dev_ref_tot": ("Party totals", "")
+                "dev_ref_const": ("constituency lists", ""),
+                "dev_ref_tot":   ("party constituency totals", ""),
+                "dev_ref_nat":   ("national lists", ""),
+                "dev_ref_grand": ("party grand totals", ""),
+            } if party_votes_specified else {
+                "dev_ref_const": ("constituency lists", ""),
+                "dev_ref_tot":   ("party totals", ""),
             }
         }
         self["cmpSys"] = {
             "title": "– compared with following electoral systems",
             "rows": {}
         }
-        self._add_systems(systems, nr)
+        self._add_systems(systems, party_votes_specified, nr)
 
-    def _add_systems(self, systems, nr=0):
+    def _add_systems(self, systems, party_votes_specified, nr=0):
         sysGroup = self["cmpSys"]["rows"]
-        firstcol = "Individual lists"
+        firstcol = "Constituency lists"
         for sys in systems:
             p = "compare_with" in sys
             if not p:
                 raise ValueError
             compare = sys["compare_with"]
             if sys["compare_with"]:
-                measure = "cmp_" + sys["name"]
+                measure = "cmp_" + sys["name"] + "_const"
                 sysGroup[measure] = (firstcol, sys["name"])
                 firstcol = ""
-        firstcol = "Party totals"
+        firstcol="party constituency totals" if party_votes_specified else "party totals"
         for sys in systems:
             if sys["compare_with"]:
                 measure = "cmp_" + sys["name"] + "_tot"
                 sysGroup[measure] = (firstcol, sys["name"])
                 firstcol = ""
+        if party_votes_specified:
+            firstcol = "national lists"
+            for sys in systems:
+                if sys["compare_with"]:
+                    measure = "cmp_" + sys["name"] + "_nat"
+                    sysGroup[measure] = (firstcol, sys["name"])
+                    firstcol = ""
+            firstcol = "party grand totals"
+            for sys in systems:
+                if sys["compare_with"]:
+                    measure = "cmp_" + sys["name"] + "_grand"
+                    sysGroup[measure] = (firstcol, sys["name"])
+                    firstcol = ""
         no_comparison_systems = not sysGroup
         if no_comparison_systems:
             del self["cmpSys"]
@@ -143,19 +193,19 @@ class MeasureGroups(dict):
     def get_measures(self, group): # get measures from one group
         return self[group]["rows"].keys()
                 
-    def get_all_measures(self):  # get measures from all groups
+    def get_all_measures(self, party_votes_specified):  # get measures from all groups
         measures = []
         for value in self.values():
-            measures.extend(value["rows"].keys())
+            add = [x for x in value["rows"].keys()
+                   # næsta if þarf hugsanlega ekki
+                if party_votes_specified or not x.endswith(('_nat', '_grand'))]
+            measures.extend(add)
         return measures
-    
-        group = self.group[grp]
-        return group.get_measures()
 
 headingType = {
     "shareTitle": "systems",
-    "sumSeatShares": "empty",
-    "totalSeatShares": "empty",
+    "toLists": "empty",
+    "toPartiesInConst": "empty",
     "other":      "empty",
     "compTitle":  "stats",
     "seatSpec":   "systems",

@@ -324,11 +324,11 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
-    def calculate_ideal_seats(self, scaling):
+    def calculate_ref_seat_shares(self, scaling):
         import numpy as np, numpy.linalg as la
         scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
-        ideal_seats = np.array(scale_matrix(self.m_votes, scalar))
-        ideal_seats = np.maximum(1e-8, ideal_seats)
+        ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
+        ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
         # assert self.solvable
         # rein = 0
         nrows = self.num_constituencies()
@@ -346,35 +346,35 @@ class Election:
                     error = 0
                     for c in range(nrows):
                         row_sum = self.desired_row_sums[c]
-                        s = sum(ideal_seats[c, :])
+                        s = sum(ref_seat_shares[c, :])
                         eta = row_sum/s if s > 0 else 1
-                        ideal_seats[c, :] *= eta
+                        ref_seat_shares[c, :] *= eta
                         error = max(error, abs(1 - eta))
                     for p in range(ncols):
                         col_sum = col_sums[p]
-                        s = sum(ideal_seats[:, p])
+                        s = sum(ref_seat_shares[:, p])
                         tau = col_sum/s if s > 0 else 1
-                        ideal_seats[:, p] *= tau
+                        ref_seat_shares[:, p] *= tau
                         error = max(error, abs(1 - tau))
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = self.desired_row_sums[c]
-                    s = sum(ideal_seats[c, :])
+                    s = sum(ref_seat_shares[c, :])
                     eta = row_sum/s if s > 0 else 1
-                    ideal_seats[c, :] *= eta
+                    ref_seat_shares[c, :] *= eta
             elif col_constraints:
                 for p in range(ncols):
                     col_sum = col_sums[p]
-                    s = sum(ideal_seats[:, p])
+                    s = sum(ref_seat_shares[:, p])
                     tau = col_sum/s if s > 0 else 1
-                    ideal_seats[:, p] *= tau
-        self.ideal_seats = ideal_seats.tolist()
+                    ref_seat_shares[:, p] *= tau
+        self.ref_seat_shares = ref_seat_shares.tolist()
         factor = sum(self.results["all_grand_total"])/sum(self.nat_votes)
-        self.ideal_total_seats = [x*factor for x in self.nat_votes]
+        self.total_ref_seat_shares = [x*factor for x in self.nat_votes]
 
         if self.party_vote_info["specified"]:
             factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
-            self.ideal_nat_seats = [x*factor for x in self.nat_votes]
+            self.ref_nat_seat_shares = [x*factor for x in self.nat_votes]
         else:
-            self.ideal_nat_seats = None
+            self.ref_nat_seat_shares = None
 

@@ -1,4 +1,4 @@
-from table_util import add_totals, find_xtd_shares
+from table_util import add_totals, find_percentages
 from random import randint, uniform
 import dictionaries
 
@@ -18,7 +18,7 @@ def generate_votes (
     rand = dictionaries.GENERATING_METHODS[distribution]
     
     # xtd_votes = add_totals(base_votes)
-    # xtd_shares = find_xtd_shares(xtd_votes)
+    # xtd_shares = find_percentages(xtd_votes)
 
     generated_votes = []
     num_constit = len(base_votes)
@@ -53,7 +53,7 @@ def generate_votes (
 #     All changes are selected randomly as an increase or a decrease.
 #     """
 #     xtd_votes = add_totals(base_votes)
-#     xtd_shares = find_xtd_shares(xtd_votes)
+#     xtd_shares = find_percentages(xtd_votes)
 
 #     generated_votes = []
 #     num_constit = len(base_votes)

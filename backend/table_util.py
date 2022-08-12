@@ -2,11 +2,11 @@ from math import log
 from copy import deepcopy
 import numpy as np
 
-def find_bias(seats, seat_shares):
-    seat_shares = np.array(seat_shares).flatten()
+def find_bias(seats, ref_seat_shares):
+    ref_seat_shares = np.array(ref_seat_shares).flatten()
     seats = np.array(seats).flatten()
-    excess = seats - seat_shares
-    share = seat_shares
+    excess = seats - ref_seat_shares
+    share = ref_seat_shares
     try:
         corr = np.corrcoef(share, excess)[0,1]
     except RuntimeWarning:
@@ -53,7 +53,7 @@ def add_total_column(m):
         nm[i].append(sum(m[i]))
     return nm
 
-def find_xtd_shares(xtd_table):
+def find_percentages(xtd_table):
     return [[float(v)/c[-1] if c[-1]!=0 else 0 for v in c] for c in xtd_table]
 
 def find_shares(table):

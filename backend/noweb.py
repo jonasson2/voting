@@ -71,6 +71,8 @@ def load_votes(filename, stream=None):
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
+    if isinstance(votes, str):
+        raise RuntimeError(votes)
     handler = ElectionHandler(votes, systems, use_thresholds=True)
     elections = handler.elections
     results = [election.get_result_web() for election in elections]

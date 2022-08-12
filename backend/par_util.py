@@ -11,7 +11,11 @@ from util import disp
 NTOK = CONSTANTS["simulation_id_length"]
 
 def get_id():
+    if NTOK==0:
+        return 'test'
     token = token_urlsafe(NTOK)
+    if all(x=='-' for x in token):
+        token = 'x' * NTOK
     while token[0] == '-':
         token = token_urlsafe(NTOK)
     return token

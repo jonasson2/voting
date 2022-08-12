@@ -3,6 +3,7 @@ from util import disp, timestamp, hms
 from simulate import Simulation, Sim_result
 from copy import copy
 import multiprocessing as mp
+import numpy as np
 from time import time, sleep
 from trace_util import traceback, long_traceback
 def task_simulate(nr, ntask, sim_settings, systems, votes, monitor):

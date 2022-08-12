@@ -6,7 +6,7 @@ from util import disp
 from copy import copy
 import numpy as np
 
-from table_util import m_subtract, add_totals, find_xtd_shares
+from table_util import m_subtract, add_totals, find_percentages
 from dictionaries import ADJUSTMENT_METHOD_NAMES, \
                          RULE_NAMES, \
                          GENERATING_METHOD_NAMES, \
@@ -40,8 +40,8 @@ def prepare_formats(workbook):
     formats["right"] = workbook.add_format()
     formats["right"].set_align('right')
 
-    formats["share"] = workbook.add_format()
-    formats["share"].set_num_format('0.0%')
+    formats["percentages"] = workbook.add_format()
+    formats["percentages"].set_num_format('0.0%')
 
     formats["left-pct1"] = workbook.add_format()
     formats["left-pct1"].set_num_format('0.0%')
@@ -194,8 +194,8 @@ def elections_to_xlsx(elections, filename):
         topleft="",
         cformat=fmt["cell"]
     ):
-        if heading.endswith("shares"):
-            cformat = fmt["share"]
+        if heading.endswith("percentages"):
+            cformat = fmt["percentages"]
         worksheet.write(row, col, heading, fmt["h"])
         worksheet.write(row+1, col, topleft, fmt["basic"])
         worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
@@ -215,7 +215,7 @@ def elections_to_xlsx(elections, filename):
         #xtd_total_seats = add_totals(election.results)
         #xtd_adj_seats = m_subtract(xtd_total_seats, xtd_fixed_seats)
         # xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
-        # xtd_final_shares = find_xtd_shares([xtd_final_votes])[0]
+        # xtd_final_shares = find_percentages([xtd_final_votes])[0]
         now = datetime.now().strftime('%Y-%m-%d %H:%M')
         info = [
             ["Date:",
@@ -335,11 +335,9 @@ def simulation_to_xlsx(results, filename, parallel):
         totalsformat = None
         if hideTotals:
             matrix = [r[:-1] for r in matrix]
-        if heading.endswith("shares"):
-            cformat = fmt["share"]
-        ideal_or_reference = (heading.lower().startswith("ideal") or
-                              heading.lower().startswith("reference"))
-        if ideal_or_reference:
+        if heading.endswith("percentages"):
+            cformat = fmt["percentages"]
+        if heading.lower().startswith("Reference seat"):
             cformat = fmt["cell"]
             totalsformat = fmt["base"]
         if heading == "Votes":
@@ -428,12 +426,12 @@ def simulation_to_xlsx(results, filename, parallel):
     ]
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
-        {"abbr": "vs", "heading": "Vote shares"       },
-        {"abbr": "id", "heading": "Seat shares" },
+        {"abbr": "vp", "heading": "Vote percentages"},
+        {"abbr": "rss", "heading": "Reference seat shares"},
         {"abbr": "cs", "heading": "Fixed seats"},
-        {"abbr": "as", "heading": "Adjustment seats"  },
-        {"abbr": "ts", "heading": "Total seats"       },
-        {"abbr": "ss", "heading": "Total seat percentage"       },
+        {"abbr": "as", "heading": "Adjustment seats"},
+        {"abbr": "ts", "heading": "Total seats"},
+        {"abbr": "tsp", "heading": "Total seat percentages"},
     ]
     base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
     base_const_names.append("Total")
@@ -442,9 +440,10 @@ def simulation_to_xlsx(results, filename, parallel):
         base_const_names.append('Grand total')
 
     #Measures
+    party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
     data = results["data"]
     systems = results["systems"]
-    groups = MeasureGroups(systems)
+    groups = MeasureGroups(systems, party_votes_specified)
     edata = {}
     edata["stats"] = EXCEL_HEADINGS.keys()
     edata["stat_headings"] = EXCEL_HEADINGS
@@ -517,28 +516,28 @@ def simulation_to_xlsx(results, filename, parallel):
             xtd_votes.append(add_total(results["vote_table"]["party_vote_info"]["votes"]))
         else:
             xtd_votes.append(xtd_votes[-1])
-        xtd_shares = find_xtd_shares(xtd_votes)
+        xtd_percentages = find_percentages(xtd_votes)
         data_matrix = {
             "base": {
                 "v" : xtd_votes,
-                "vs": xtd_shares,
+                "vp": xtd_percentages,
                 "cs": results["base_allocations"][r]["fixed_seats"],
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],
-                "ss": results["base_allocations"][r]["seat_shares"],
-                "id": results["base_allocations"][r]["ideal_seats"],
+                "tsp": results["base_allocations"][r]["total_seat_percentages"],
+                "rss": results["base_allocations"][r]["ref_seat_shares"],
             }
         }
-        list_measures = results["data"][r]["list_measures"]
+        seat_measures = results["data"][r]["seat_measures"]
         for stat in STATISTICS_HEADINGS.keys():
             data_matrix[stat] = {
                 "v" : results["vote_data"][r]["sim_votes"][stat],
-                "vs": results["vote_data"][r]["sim_shares"][stat],
-                "cs": list_measures["fixed_seats"][stat],
-                "as": list_measures["adj_seats"  ][stat],
-                "ts": list_measures["total_seats"][stat],
-                "ss": list_measures["seat_shares"][stat],
-                "id": list_measures["ideal_seats"][stat],
+                "vp": results["vote_data"][r]["sim_vote_percentages"][stat],
+                "cs": seat_measures["fixed_seats"][stat],
+                "as": seat_measures["adj_seats"  ][stat],
+                "ts": seat_measures["total_seats"][stat],
+                "tsp": seat_measures["total_seat_percentages"][stat],
+                "rss": seat_measures["ref_seat_shares"][stat],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
@@ -597,7 +596,7 @@ def simulation_to_xlsx(results, filename, parallel):
         col = 2
         for table in tables:
             is_percentages_table = (
-                table["heading"].endswith("shares") and
+                table["heading"].endswith("percentages") and
                 not table["heading"].startswith("Reference"))
             worksheet.write(toprow, col, table["heading"], fmt["h"])
             worksheet.write_row(
@@ -619,7 +618,7 @@ def simulation_to_xlsx(results, filename, parallel):
             col = 2
             for table in tables:
                 is_percentages_table = \
-                    table["heading"].endswith("shares") and \
+                    table["heading"].endswith("percentages") and \
                     not table["heading"].startswith("Reference")
                 draw_block(worksheet, row=toprow, col=col,
                     heading=table["heading"],

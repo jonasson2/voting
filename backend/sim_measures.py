@@ -19,8 +19,9 @@ def add_vuedata(sim_result_dict, parallel):
     data = sim_result_dict["data"]
     if not data:
         return
+    party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
     systems = sim_result_dict["systems"]
-    groups = MeasureGroups(systems)
+    groups = MeasureGroups(systems, party_votes_specified)
     stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
     nsim = sim_result_dict["iteration"]

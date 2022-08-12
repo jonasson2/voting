@@ -4,13 +4,13 @@ from measure_groups import MeasureGroups, function_dict, function_dict_party
 import dictionaries as dicts
 import random
 from voting import Election
-from dictionaries import LIST_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
+from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
 from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS
 from electionHandler import ElectionHandler
 from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
-from table_util import add_totals, find_xtd_shares, m_subtract, find_bias, add_total
+from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
 from util import hms, shape
 from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
@@ -23,6 +23,8 @@ import numpy as np
 class Collect(dict):
     # collect values into dictionaries of arrays
     def add(self, key, x):
+        if not x:
+            x = 0
         if key in self:
             self[key].append(x)
         else:
@@ -49,28 +51,24 @@ class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
         warnings_to_errors()
-        election_handler = ElectionHandler(vote_table, systems,
-                                           sim_settings['use_thresholds'])
-        self.election_handler = election_handler
-        self.measure_groups = MeasureGroups(systems, nr)
-        self.base_allocations = []
-        self.systems = [election.system
-                        for election in election_handler.elections]
-        self.nsys = len(self.systems)
-        for (election, sys) in zip(election_handler.elections, self.systems):
-            sys.reference_results = deepcopy(election.results['all_const_seats'])
-        self.parties = vote_table["parties"]
+        use_thresholds = sim_settings['use_thresholds']
         self.sim_settings = sim_settings
-        self.sim_count = self.sim_settings["simulation_count"]
-        self.distribution = self.sim_settings["gen_method"]
-        self.const_cov = self.sim_settings["const_cov"]
-        self.party_vote_cov = self.sim_settings["party_vote_cov"]
-        self.iterations_with_no_solution = 0
+        self.vote_table = vote_table
+        self.reference_handler = ElectionHandler(vote_table, systems, use_thresholds)
+        self.election_handler = ElectionHandler(vote_table, systems, use_thresholds)
+        self.systems = [election.system for election in self.election_handler.elections]
+        self.party_votes_specified = self.vote_table["party_vote_info"]["specified"]
+        self.measure_groups = MeasureGroups(systems, self.party_votes_specified, nr)
+        self.base_allocations = []
+        self.nsys = len(self.reference_handler.elections)
+        self.parties = vote_table["parties"]
+        self.sim_count = sim_settings["simulation_count"]
+        self.distribution = sim_settings["gen_method"]
+        self.const_cov = sim_settings["const_cov"]
+        self.party_vote_cov = sim_settings["party_vote_cov"]
         self.terminate = False
         # ------- Following properties are only used by excel_util.py
-        self.constituencies = self.systems[0]["constituencies"]
-        self.vote_table = vote_table
-        self.party_votes_specified = self.vote_table["party_vote_info"]["specified"]
+        self.constituencies = [c['name'] for c in vote_table["constituencies"]]
         self.num_parties = len(self.parties)
         self.num_constituencies = len(self.constituencies)
         self.sensitivity = sim_settings["sensitivity"]
@@ -86,7 +84,7 @@ class Simulation():
         ns = self.nsys
         nclist = [len(sys["constituencies"]) for sys in self.systems]
         np = len(self.parties)
-        self.MEASURES = self.measure_groups.get_all_measures()
+        self.MEASURES = self.measure_groups.get_all_measures(self.party_votes_specified)
         parallel = self.sim_settings["cpu_count"] > 1
         self.STAT_LIST = list(STATISTICS_HEADINGS.keys())
         self.MEASURE_LIST = list(EXCEL_HEADINGS.keys())
@@ -96,37 +94,40 @@ class Simulation():
         for measure in VOTE_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
-                self.stat[measure][i] = Running_stats((nc + n1, np + 1), parallel)
-        for measure in LIST_MEASURES:
+                self.stat[measure][i] = Running_stats((nc + n1, np+1), parallel, measure)
+        for measure in SEAT_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
-                self.stat[measure][i] = Running_stats((nc + n2, np + 1), parallel)
+                self.stat[measure][i] = Running_stats((nc + n2, np+1), parallel, measure)
         for measure in SENS_MEASURES:
             self.stat[measure] = [None]*ns
             for i in range(ns):
                 self.stat[measure][i] = Histogram()
-        for measure in self.MEASURES:  # Was MEASURES in earlier version
-            self.stat[measure] = Running_stats(ns, parallel)
+        for measure in self.MEASURES:
+            self.stat[measure] = Running_stats(ns, parallel, measure)
+        extensions = ['const', 'tot']
+        if self.party_votes_specified:
+            extensions.extend(['nat', 'grand'])
         for cmp_system in self.systems:
             if cmp_system["compare_with"]:
-                measure = "cmp_" + cmp_system["name"]
-                self.stat[measure] = Running_stats(ns, parallel)
-                self.stat[measure + "_tot"] = Running_stats(ns, parallel)
+                for extension in extensions:
+                    measure = "cmp_" + cmp_system["name"] + extension
+                    self.stat[measure] = Running_stats(ns, parallel, measure)
 
     def run_initial_elections(self):
-        for election in self.election_handler.elections:
-            election.calculate_ideal_seats(self.sim_settings["scaling"])
-            xtd_ideal_seats = add_totals(election.ideal_seats)
-            ids = add_totals(election.ideal_seats)
+        for election in self.reference_handler.elections:
+            election.calculate_ref_seat_shares(self.sim_settings["scaling"])
+            xtd_ref_seat_shares = add_totals(election.ref_seat_shares)
+            ids = add_totals(election.ref_seat_shares)
             if self.party_votes_specified:
-                ids.append(add_total(election.ideal_nat_seats))
+                ids.append(add_total(election.ref_nat_seat_shares))
                 ids.append([x+y for (x,y) in zip(ids[-2], ids[-1])])
             self.base_allocations.append({
                 "fixed_seats": election.results["fix"],
                 "adj_seats":   election.results["adj"],
                 "total_seats": election.results["all"],
-                "seat_shares": find_xtd_shares(election.results["all"]),
-                "ideal_seats": ids,
+                "total_seat_percentages": find_percentages(election.results["all"]),
+                "ref_seat_shares": ids,
             })
 
     def simulate(self, tasknr=0, monitor=None):
@@ -134,7 +135,6 @@ class Simulation():
         if self.sim_count == 0:
             return
         gen = self.gen_votes()
-        self.iterations_with_no_solution = 0
         begin_time = datetime.now()
         for i in range(self.sim_count):
             self.iteration = i + 1
@@ -154,95 +154,109 @@ class Simulation():
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
-            votes = generate_votes(
-                self.election_handler.votes, self.const_cov,
-                self.distribution, self.apply_random)
+            votes = generate_votes(self.election_handler.votes, self.const_cov,
+                                   self.distribution, self.apply_random)
             party_votes = generate_votes(
                 [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
                 self.distribution, self.apply_random)
 
             yield (votes, party_votes[0])
 
-    def collect_votes(self):
+    def run_and_collect_measures(self, votes, party_votes):
+        use_thresholds = self.sim_settings["use_thresholds"]
+        self.election_handler.run_elections(use_thresholds, votes, party_votes)
+        if self.sensitivity:
+            self.run_sensitivity(votes)
+        else:
+            self.collect_vote_measures()
+            self.collect_seat_measures()
+            self.collect_general_measures()
+
+    def collect_vote_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
             votes = np.array(add_totals(election.m_votes))
             if self.party_votes_specified:
                 votes = np.vstack((votes, add_total(election.nat_votes)))
-
-            vote_shares = find_xtd_shares(votes)
+            vote_percentages = find_percentages(votes)
             self.stat["sim_votes"][i].update(votes)
-            self.stat["sim_shares"][i].update(vote_shares)
+            self.stat["sim_vote_percentages"][i].update(vote_percentages)
 
-    def collect_list_measures(self):
+    def collect_seat_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
             cs = np.array(election.results["fix"])
             ts = np.array(election.results["all"])
-            election.calculate_ideal_seats(self.sim_settings["scaling"])
-            ids = np.array(add_totals(election.ideal_seats))
+            election.calculate_ref_seat_shares(self.sim_settings["scaling"])
+            ids = np.array(add_totals(election.ref_seat_shares))
             if self.party_votes_specified:
-                ids = np.vstack((ids, add_total(election.ideal_nat_seats)))
+                ids = np.vstack((ids, add_total(election.ref_nat_seat_shares)))
                 ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
+            self.stat["total_seat_percentages"][i].update(sh)
             self.stat["fixed_seats"][i].update(cs)
-            self.stat["total_seats"][i].update(ts)
             self.stat["adj_seats"][i].update(adj)
-            self.stat["seat_shares"][i].update(sh)
-            self.stat["ideal_seats"][i].update(ids)
-
-    def run_and_collect_measures(self, votes, party_votes):
-        # allocate seats according to votes:
-        #print("it", self.iteration)
-        self.election_handler.run_elections(self.sim_settings["use_thresholds"], votes,
-                                                              party_votes)
-        if self.sensitivity:
-            self.run_sensitivity(votes)
-        else:
-            self.collect_votes()
-            self.collect_list_measures()
-            self.collect_general_measures()
+            self.stat["total_seats"][i].update(ts)
+            self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_general_measures(self):
         deviations = Collect()
+        ref_elections = self.reference_handler.elections
         elections = self.election_handler.elections
-        for i, (system, election) in enumerate(zip(self.systems, elections)):
-            self.add_deviation(election, "dev_ref", system.reference_results,
-                               deviations)
+        for i, (ref_election, election) in enumerate(zip(ref_elections, elections)):
+            system = election.system
+            self.add_deviation(election, ref_election, "dev_ref", deviations)
             deviations.add("entropy", election.entropy())
-            for (cmp_election, cmp_system) in zip(elections, self.systems):
+            for cmp_election in elections:
+                cmp_system = cmp_election.system
                 if cmp_system["compare_with"]:
-                    cmp_results = cmp_election.results['all_const_seats']
-                    measure = "cmp_" + cmp_system["name"]
-                    self.add_deviation(election, measure, cmp_results,
-                                       deviations)
-            self.deviation_measures(election, system, deviations)
-            self.other_measures(election, i, deviations)
+                    prefix = 'cmp_' + cmp_system["name"]
+                    self.add_deviation(election,  cmp_election, prefix, deviations)
+            self.other_seat_spec_measures(election, system, deviations)
+            self.seats_minus_shares_measures(election, i, deviations)
+            self.specific_measures(election, deviations)
         for m in deviations.keys():
             if m in self.stat:
                 self.stat[m].update(deviations[m])
 
-    def deviation_measures(self, election, system, deviations):
+    def seats_minus_shares_measures(self, election, i, deviations):
+        for (funcname, (function, div_h)) in function_dict.items():
+            measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
+            deviations.add(measure, self.sum_func(election, function, div_h, i))
+        for (measure, function) in function_dict_party.items():
+            deviations.add(measure, self.party_func(measure, election, function))
+
+    def specific_measures(self, election, deviations):
+        (slope, corr) = self.bias(election)
+        deviations.add("min_seat_val", self.min_seat_val(election))
+        deviations.add("bias_slope", slope)
+        deviations.add("bias_corr", corr)
+        #deviations.add("max_neg_margin", XXX)
+        #deviations.add()
+
+    def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
             comparison_election = Election(comparison_system,
                                            election.m_votes,
                                            election.party_vote_info)
-            comparison_results = comparison_election.run()
-            self.add_deviation(election, measure, comparison_results,
-                               deviations)
+            comparison_election.run()
+            self.add_deviation(election, comparison_election, measure, deviations)
 
-    @staticmethod
-    def add_deviation(election, measure, comparison_results, deviations):
-        deviation = sum_abs_diff(election.results['all_const_seats'], comparison_results)
-        if deviation:
-            deviations.add(measure, deviation)
-        else:
-            deviations.add(measure, 0)
-        totals = [sum(x) for x in zip(*election.results['all_const_seats'])]
-        comparison_totals = [sum(x) for x in zip(*comparison_results)]
-        deviation = sum_abs_diff([totals], [comparison_totals])
-        deviations.add(measure + "_tot", deviation)
+    def add_deviation(self, election, comparison_election, prefix, deviations):
+        tr = {'const': 'all_const_seats',
+              'tot':   'all_const_total',
+              'nat':   'all_nat_seats',
+              'grand': 'all_grand_total'}
+        extensions = ['const', 'tot']
+        if self.party_votes_specified:
+            extensions.extend(['nat', 'grand'])
+        for extension in extensions:
+            measure = prefix + '_' + extension
+            key = tr[extension]
+            result1 = election.results[key]
+            result2 = comparison_election.results[key]
+            deviations.add(measure, sum_abs_diff(result1, result2))
 
     def sum_func(self, election, function, div_h, election_number):
         measure = 0
@@ -252,13 +266,13 @@ class Simulation():
                 s = election.results["all_const_seats"][c][p]
                 if self.vote_table['votes'][c][p] == 0:
                     continue
-                h = election.ideal_seats[c][p]
+                h = election.ref_seat_shares[c][p]
                 if div_h:
-                    if self.base_allocations[election_number]['ideal_seats'][num_c][p] \
+                    if self.base_allocations[election_number]['ref_seat_shares'][num_c][p] \
                             == 0:
                         continue
                     if h == 0:
-                        h = self.base_allocations[election_number]['ideal_seats'][c][p]
+                        h = self.base_allocations[election_number]['ref_seat_shares'][c][p]
                 measure += function(h, s)
         return measure
 
@@ -266,7 +280,7 @@ class Simulation():
         measure = 0
         for p in range(len(self.parties)):
             s = election.results['all_grand_total'][p]
-            h = election.ideal_total_seats[p]
+            h = election.total_ref_seat_shares[p]
             if name.startswith('sum'):
                 measure += function(h,s)
             elif name.startswith('max'):
@@ -276,27 +290,13 @@ class Simulation():
         return measure
 
 
-    def other_measures(self, election, i, deviations):
-        #ideal_seats = self.calculate_ideal_seats(election)
-        for (funcname, (function, div_h)) in function_dict.items():
-            measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
-            deviations.add(measure, self.sum_func(election, function, div_h, i))
-        for (measure, function) in function_dict_party.items():
-            deviations.add(measure, self.party_func(measure, election, function))
-        (slope, corr) = self.bias(election)
-        deviations.add("min_seat_val", self.min_seat_val(election))
-        deviations.add("bias_slope", slope)
-        deviations.add("bias_corr", corr)
-        #deviations.add("max_neg_margin", XXX)
-        #deviations.add()
-
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
         variation_coefficient = self.sim_settings["sens_cv"]
         sens_method = self.sim_settings["sens_method"]
         sens_votes = generate_votes(votes, variation_coefficient, sens_method)
-        for (i, (election, system)) in enumerate(zip(elections, self.systems)):
-            sens_election = Election(system, sens_votes)
+        for (i, election) in enumerate(elections):
+            sens_election = Election(election.system, sens_votes)
             sens_election.run()
             party_seats1 = election.desired_col_sums
             party_seats2 = sens_election.desired_col_sums
@@ -310,13 +310,13 @@ class Simulation():
                 self.stat["list_sens"][i].update(list_seat_diff)
 
     def bias(self, election):
-        (slope,corr) = find_bias(election.results['all_const_seats'], election.ideal_seats)
+        (slope,corr) = find_bias(election.results['all_const_seats'], election.ref_seat_shares)
         return slope,corr
 
     # Loosemore-Hanby
     def sum_abs(self, election):
         lh = sum([
-            abs(election.ideal_seats[c][p] - election.results['all_const_seats'][c][p])
+            abs(election.ref_seat_shares[c][p] - election.results['all_const_seats'][c][p])
             for p in range(len(self.parties))
             for c in range(election.num_constituencies())
         ])
@@ -324,7 +324,7 @@ class Simulation():
 
     # Minimized by Sainte Lague
     def sum_sq(self, election):
-        ids = election.ideal_seats
+        ids = election.ref_seat_shares
         stl = sum([
             (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
             for p in range(len(self.parties))
@@ -335,7 +335,7 @@ class Simulation():
 
     # Maximized by d'Hondt
     def min_seat_val(self, election):
-        ids = election.ideal_seats
+        ids = election.ref_seat_shares
         dh_min = min([
             ids[c][p]/float(election.results['all_const_seats'][c][p])
             for p in range(len(self.parties))
@@ -346,7 +346,7 @@ class Simulation():
 
     # Minimized by d'Hondt
     def sum_pos(self, election):
-        ids = election.ideal_seats
+        ids = election.ref_seat_shares
         dh_sum = sum([
             max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
             for p in range(len(self.parties))
@@ -357,16 +357,18 @@ class Simulation():
 
     def index_of_const_to_apply_randomness_to(self):
         sel_rand = self.sim_settings["selected_rand_constit"]
-        cons = [c["name"] for c in self.constituencies]
-        if sel_rand not in cons or sel_rand == "All constituencies":
+        if sel_rand not in self.constituencies or sel_rand == "All constituencies":
             index = -1
         else:
-            index = cons.index(sel_rand)
+            index = self.constituencies.index(sel_rand)
         return index
 
     def attributes(self):
+        builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones
         dictionary = copy(vars(self))
-        del dictionary["election_handler"]
+        class_keys = [k for (k,v) in dictionary.items() if type(v) not in builtins].copy()
+        for key in class_keys:
+            del dictionary[key]
         stat = dictionary['stat']
         for (key,val) in stat.items():
             if isinstance(val, list):
@@ -375,28 +377,6 @@ class Simulation():
             else:
                 stat[key] = vars(stat[key])
         return dictionary
-
-    # def get_raw_result(self):
-    #     # Used to transfer simulation results to Sim_result object
-    #     # Must be a dictionary to make it through multiprocessing interface
-    #     result = {}
-    #     result["apply_random"] = self.apply_random
-    #     result["base_allocations"] = self.base_allocations
-    #     result["constituencies"] = self.constituencies
-    #     result["iteration"] = self.iteration
-    #     result["MEASURES"] = self.measure_groups.get_all_measures()
-    #     result["parties"] = self.parties
-    #     result["sim_settings"] = self.sim_settings
-    #     result["stat"] = self.stat
-    #     result["STAT_LIST"] = self.STAT_LIST
-    #     result["systems"] = self.systems
-    #     result["total_time"] = self.total_time
-    #     result["var_coef"] = self.var_coef
-    #     result["vote_table"] = self.vote_table
-    #     result["xtd_vote_shares"] = self.xtd_vote_shares
-    #     result["xtd_votes"] = self.xtd_votes
-    #     #disp('result', result)
-    #     return result
 
 class Sim_result:
     # Results from one simulation, or several combined simulations
@@ -419,7 +399,7 @@ class Sim_result:
             setattr(self, key, val)
 
         # self.data = [{} for _ in range(self.nsys)]
-        # self.list_data = [{} for _ in range(self.nsys + 1)]
+        # self.seat_data = [{} for _ in range(self.nsys + 1)]
         # self.vote_data = [{} for _ in range(self.nsys)]
 
     def combine(self, sim_result):
@@ -429,7 +409,7 @@ class Sim_result:
         for measure in VOTE_MEASURES:
             for (i,nc) in enumerate(nclist):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
-        for measure in LIST_MEASURES:
+        for measure in SEAT_MEASURES:
             for (i,nc) in enumerate(nclist):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in SENS_MEASURES:
@@ -437,17 +417,15 @@ class Sim_result:
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in self.MEASURES:  # Was MEASURES in earlier version
             self.stat[measure].combine(sim_result.stat[measure])
+
+        extensions = ['const', 'tot']
+        if self.party_votes_specified:
+            extensions.extend(['nat', 'grand'])
         for cmp_system in self.systems:
             if cmp_system["compare_with"]:
-                measure = "cmp_" + cmp_system["name"]
-                self.stat[measure].combine(sim_result.stat[measure])
-                self.stat[measure + "_tot"].combine(sim_result.stat[measure + "_tot"])
-
-    def analyze_general(self):
-        for m in self.MEASURES:
-            dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
-            for i in range(self.nsys):
-                self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
+                for extension in extensions:
+                    measure = "cmp_" + cmp_system["name"] + extension
+                    self.stat[measure].combine(sim_result.stat[measure])
 
     def analyze_vote_data(self):
         for m in VOTE_MEASURES:
@@ -455,31 +433,37 @@ class Sim_result:
                 dd = self.find_datadict(sm, self.STAT_LIST)
                 self.vote_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
 
-    def analyze_list_data(self):
-        for m in LIST_MEASURES:
+    def analyze_seat_data(self):
+        for m in SEAT_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm, self.STAT_LIST)
                 D = {}
                 for s in self.STAT_LIST:
                     D[s] = dd[s]
-                self.list_data[i][m] = D
+                self.seat_data[i][m] = D
+
+    def analyze_general(self):
+        for m in self.MEASURES:
+            dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
+            for i in range(self.nsys):
+                self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.
         self.data = [{} for _ in range(self.nsys)]
-        self.list_data = [{} for _ in range(self.nsys + 1)]
+        self.seat_data = [{} for _ in range(self.nsys + 1)]
         self.vote_data = [{} for _ in range(self.nsys)]
         if hasattr(self, 'sensitivity') and self.sensitivity:
             self.list_sensitivity = self.gethistograms("list")
             self.party_sensitivity = self.gethistograms("party")
         else:
-            self.analyze_general()
-            self.analyze_list_data()
             self.analyze_vote_data()
-            self.list_data[-1] = self.vote_data[0]  # used by excel_util
+            self.analyze_seat_data()
+            self.analyze_general()
+            self.seat_data[-1] = self.vote_data[0]  # used by excel_util
         # Það er villa sem á eftir að leiðrétta þegar búið er að "mergja" Excel
         # útskrift (des. 2021). Vote-data er bara skrifað út fyrir fyrsta kerfið
-        # í list_data[-1] en ef sum kerfin eru með sameinuð kjördæmi (í "All")
+        # í seat_data[-1] en ef sum kerfin eru með sameinuð kjördæmi (í "All")
         # þá getur vote-datað orðið misjafnt milli kerfa; excel_util.py ræður
         # bara við að skrifa eitt vote_data.
 
@@ -530,7 +514,7 @@ class Sim_result:
                 "name":           self.systems[sysnr]["name"],
                 "method":         self.systems[sysnr]["adjustment_method"],
                 "measures":       self.data[sysnr],
-                "list_measures":  self.list_data[sysnr]
+                "seat_measures":  self.seat_data[sysnr]
             }
                 for sysnr in range(len(self.systems))
             ]
