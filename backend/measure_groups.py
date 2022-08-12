@@ -29,8 +29,7 @@ def funneg(h, s):      return max(0, (h - s))/h
 def funabsshare(h, s): return abs(h - s)/h
 def funsqshare(h, s):  return (s - h)**2/h
 def funsqseat(h, s):   return (s - h)**2/max(1,s) if s > 0 else 0
-
-def funsame(h,s):       return s - h
+def funsame(h,s):      return s - h
 
 function_dict = {
     'abs': (funabs, False),

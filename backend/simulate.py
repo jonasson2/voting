@@ -270,15 +270,9 @@ class Simulation():
                     continue
                 h = election.ref_seat_shares[c][p]
                 if div_h:
-<<<<<<< HEAD
-                    if self.base_allocations[election_number]['ref_seat_shares'][num_c][p] \
-||||||| 1fc99f8
-                    if self.base_allocations[election_number]['ideal_seats'][num_c][p] \
-=======
-                    if self.base_allocations[election_number]['ideal_seats'][num_c-1][p] \
->>>>>>> origin/dev
-                            == 0:
-                        continue
+                    if (self.base_allocations[election_number]['ref_seat_shares']
+                        [num_c-1][p] == 0):
+                            continue
                     if h == 0:
                         h = self.base_allocations[election_number]['ref_seat_shares'][c][p]
                 measure += function(h, s)
