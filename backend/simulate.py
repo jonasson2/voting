@@ -154,13 +154,15 @@ class Simulation():
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
-            votes = generate_votes(self.election_handler.votes, self.const_cov,
-                                   self.distribution, self.apply_random)
-            party_votes = generate_votes(
-                [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
+            votes = generate_votes(
+                self.election_handler.votes, self.const_cov,
                 self.distribution, self.apply_random)
-
-            yield (votes, party_votes[0])
+            if self.party_votes_specified:
+                party_votes = generate_votes(
+                    [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
+                    self.distribution, self.apply_random)
+                yield (votes, party_votes[0])
+            yield (votes, None)
 
     def run_and_collect_measures(self, votes, party_votes):
         use_thresholds = self.sim_settings["use_thresholds"]
@@ -268,7 +270,13 @@ class Simulation():
                     continue
                 h = election.ref_seat_shares[c][p]
                 if div_h:
+<<<<<<< HEAD
                     if self.base_allocations[election_number]['ref_seat_shares'][num_c][p] \
+||||||| 1fc99f8
+                    if self.base_allocations[election_number]['ideal_seats'][num_c][p] \
+=======
+                    if self.base_allocations[election_number]['ideal_seats'][num_c-1][p] \
+>>>>>>> origin/dev
                             == 0:
                         continue
                     if h == 0:

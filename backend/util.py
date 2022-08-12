@@ -82,11 +82,11 @@ def read_xlsx(filename):
 #             "num_adj_seats": int(row[2])})
 #     return cons
 
-def isint(L):
-    def ok(x):
-        if x is None: return False
-        return isinstance(x,int) and x >= 0 or x.isdigit and x.isascii
-    return all(ok(x) for x in L)
+def isPosInt(x):
+    if isinstance(x, float) and round(x) == x and x >= 0: return True
+    if isinstance(x, str) and x.isdigit() and x.isascii(): return True
+    if isinstance(x,int) and x >= 0: return True
+    return False
 
 def load_votes_from_excel(stream, filename):
     lines = []
@@ -100,7 +100,11 @@ def load_votes_from_excel(stream, filename):
         book = openpyxl.load_workbook(filename)
     sheet = book.active
     for row in sheet.rows:
-        lines.append([cell.value for cell in row])
+        line = []
+        for cell in row:
+            value = round(cell.value, 10) if isinstance(cell.value, float) else cell.value
+            line.append(value)
+        lines.append(line)
     return lines
 
 def remove_blank_rows(rows):
@@ -183,8 +187,10 @@ def process_vote_table(rows, filename):
         for i in range(3,len(row)):
             if row[i] is None:
                 row[i] = 0
-    if not all(isint(row[3:]) for row in rows[1:]):
-        return 'All votes must be nonnegative integer numbers'
+            elif isPosInt(row[i]):
+                row[i] = int(row[i])
+            else:
+                return 'All votes must be nonnegative integer numbers'
 
     # BUILD A DICTIONARY RES WITH ALL VOTING INFORMATION
     res = {}
