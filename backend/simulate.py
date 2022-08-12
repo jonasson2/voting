@@ -157,11 +157,13 @@ class Simulation():
             votes = generate_votes(
                 self.election_handler.votes, self.const_cov,
                 self.distribution, self.apply_random)
-            party_votes = generate_votes(
-                [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
-                self.distribution, self.apply_random)
+            if self.party_votes_specified:
+                party_votes = generate_votes(
+                    [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
+                    self.distribution, self.apply_random)
+                yield (votes, party_votes[0])
 
-            yield (votes, party_votes[0])
+            yield (votes, None)
 
     def collect_votes(self):
         for (i,election) in enumerate(self.election_handler.elections):
@@ -254,7 +256,7 @@ class Simulation():
                     continue
                 h = election.ideal_seats[c][p]
                 if div_h:
-                    if self.base_allocations[election_number]['ideal_seats'][num_c][p] \
+                    if self.base_allocations[election_number]['ideal_seats'][num_c-1][p] \
                             == 0:
                         continue
                     if h == 0:

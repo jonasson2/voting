@@ -209,8 +209,8 @@ class Election:
             assert(opt=="average")
             votes = [(x+y)/2 for (x,y) in zip (self.v_votes, self.party_vote_info['votes'])]
         self.nat_votes = votes
-        party_vote_info = self.party_vote_info
-        nat_seats = (party_vote_info['num_fixed_seats'] + party_vote_info['num_adj_seats'])
+        nat_seats = ((self.party_vote_info['num_fixed_seats'] + self.party_vote_info['num_adj_seats']) \
+                         if self.party_vote_info['specified'] else 0)
 
         threshold = self.system["adjustment_threshold"] if use_thresholds else 0
         choice = self.system["adj_threshold_choice"] if use_thresholds else 0
