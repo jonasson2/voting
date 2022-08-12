@@ -75,7 +75,8 @@ class MeasureGroups(dict):
                 "rows": {
                     "sum_abs_party": ("sum of absolute values",""),
                     "sum_sq_party": ("sum of squared values",""),
-                }
+                },
+                "onlyExcel": True
             }
 
             self["toNationalLists"] = {
@@ -83,7 +84,8 @@ class MeasureGroups(dict):
                 "rows": {
                     "sum_abs_party": ("sum of absolute values",""),
                     "sum_sq_party": ("sum of squared values",""),
-                }
+                },
+                "onlyExcel": True
             }
 
         self["toPartiesTotal"] = {
@@ -133,7 +135,8 @@ class MeasureGroups(dict):
                 "dev_all_adj_tot":     ("party totals","all seats as adjustment seats"),
                 "dev_all_fixed_tot":   ("",                 "all seats as fixed seats"),
                 "one_const_tot":       ("",                 "All constituencies combined")
-            }
+            },
+            "onlyExcel": True
         }
         self["expected"] = {
             "title": "– compared w. tested systems and source votes",
@@ -145,7 +148,8 @@ class MeasureGroups(dict):
             } if party_votes_specified else {
                 "dev_ref_const": ("constituency lists", ""),
                 "dev_ref_tot":   ("party totals", ""),
-            }
+            },
+            "onlyExcel": True
         }
         self["cmpSys"] = {
             "title": "– compared with following electoral systems",

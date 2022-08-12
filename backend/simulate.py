@@ -111,7 +111,7 @@ class Simulation():
         for cmp_system in self.systems:
             if cmp_system["compare_with"]:
                 for extension in extensions:
-                    measure = "cmp_" + cmp_system["name"] + extension
+                    measure = "cmp_" + cmp_system["name"] + "_" + extension
                     self.stat[measure] = Running_stats(ns, parallel, measure)
 
     def run_initial_elections(self):
@@ -162,7 +162,8 @@ class Simulation():
                     [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
                     self.distribution, self.apply_random)
                 yield (votes, party_votes[0])
-            yield (votes, None)
+            else:
+                yield (votes, None)
 
     def run_and_collect_measures(self, votes, party_votes):
         use_thresholds = self.sim_settings["use_thresholds"]
@@ -426,7 +427,7 @@ class Sim_result:
         for cmp_system in self.systems:
             if cmp_system["compare_with"]:
                 for extension in extensions:
-                    measure = "cmp_" + cmp_system["name"] + extension
+                    measure = "cmp_" + cmp_system["name"] + "_" + extension
                     self.stat[measure].combine(sim_result.stat[measure])
 
     def analyze_vote_data(self):
