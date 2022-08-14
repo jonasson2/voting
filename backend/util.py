@@ -19,6 +19,12 @@ def remove_suffix(text, suffix):
         return text[:-len(suffix)]
     return text
 
+def average(L):
+    if len(L) == 0:
+        return 0
+    else:
+        return sum(L)/len(L)
+
 def sum_abs_diff(a, b):  # Compute sum of absolute values of a minus b
     if shape(a) != shape(b):
         return None

@@ -72,6 +72,7 @@ class MeasureGroups(dict):
         if party_votes_specified:
             self["toPartiesInConst"] = {
                 "title": "– parties in the constituencies",
+                
                 "rows": {
                     "sum_abs_party": ("sum of absolute values",""),
                     "sum_sq_party": ("sum of squared values",""),
@@ -103,18 +104,19 @@ class MeasureGroups(dict):
         self["other"] = {
             "title": "Specific quality indices for allocations in the constituencies",
             "rows": {
-                "entropy":      ("Sum of logs of votes per seat", ""),
-                "min_seat_val": ("Minimum reference seat share per seat", ""),
-                "bias_slope":   ("Slope of seat excess regressed on ref. seat shares", ""),
-                "bias_corr":    ("Correlation of seat excess and reference seat "
-                                 "shares", ""),
-                #"max_neg_margin": {"Maximum negative margin over constituencies",""},
-                #"avg_neg_margin": {"Average negative margin over constituenies",""}
+                "entropy":        ('Sum of logs of votes per seat ("entropy")', ""),
+                "min_seat_val":   ("Minimum reference seat share per seat", ""),
+                "max_neg_margin": ("Maximum negative margin over constituencies",""),
+                "avg_neg_margin": ("Average negative margin over constituenies",""),
+                "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
+                "bias_corr":      ("Correlation of seat excess and reference seat "
+                                   "shares", ""),
             }
         }
 
         self["compTitle"] = {
             "title": "Sum of absolute seat allocation differences over:",
+            "onlyExcel": True,
             "rows": {}
         }
         self["seatSpec"] = {

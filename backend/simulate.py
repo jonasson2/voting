@@ -11,7 +11,7 @@ from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
-from util import hms, shape
+from util import hms, shape, average
 from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
@@ -208,6 +208,9 @@ class Simulation():
         for i, (ref_election, election) in enumerate(zip(ref_elections, elections)):
             system = election.system
             self.add_deviation(election, ref_election, "dev_ref", deviations)
+            negative_margins = self.calculate_negative_margins(election)
+            deviations.add("max_neg_margin", max(negative_margins))
+            deviations.add("avg_neg_margin", average(negative_margins))
             deviations.add("entropy", election.entropy())
             for cmp_election in elections:
                 cmp_system = cmp_election.system
@@ -220,6 +223,16 @@ class Simulation():
         for m in deviations.keys():
             if m in self.stat:
                 self.stat[m].update(deviations[m])
+
+    def calculate_negative_margins(self, election):
+        pass
+        seats = election.results["all_const_seats"]
+        shares = election.ref_seat_shares
+        neg_margins = []
+        for (srow,hrow) in zip(seats, shares):
+            diff = [s - h for (s,h) in zip(srow, hrow)]
+            neg_margins.append(max(0, max(diff) - min(diff) - 1))
+        return neg_margins
 
     def seats_minus_shares_measures(self, election, i, deviations):
         for (funcname, (function, div_h)) in function_dict.items():

@@ -33,6 +33,7 @@ def add_vuedata(sim_result_dict, parallel):
     vuedata["group_ids"] = []
     vuedata["group_titles"] = {}
     vuedata["footnotes"] = {}
+    vuedata["show"] = {}
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
@@ -40,6 +41,7 @@ def add_vuedata(sim_result_dict, parallel):
         vuedata[id] = []
         if "footnote" in group:
             vuedata["footnotes"][id] = group["footnote"]
+        vuedata["show"][id] = not ("onlyExcel" in group and group["onlyExcel"])
         for (measure, titles) in group["rows"].items():
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
             row = {"rowtitle": rowtitle}

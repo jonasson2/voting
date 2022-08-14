@@ -13,7 +13,6 @@ from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import const_seat_share_apportionment
 from methods.max_const_vote_percentage import max_const_vote_percentage_apportionment
-from methods.opt_entropy import opt_entropy
 from methods.switching import switching
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
@@ -145,7 +144,6 @@ ADJUSTMENT_METHODS = {
     "nearest-to-previous": nearest_to_previous,
     "farthest-from-next": farthest_from_next,
     # "monge": monge,
-    # "opt-entropy": opt_entropy,
     "switching": switching,
     "alternating-scaling": alt_scaling,
 }

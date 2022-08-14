@@ -13,52 +13,54 @@
     </thead>
     <tbody>
       <template v-for="(id, index) in group_ids">
-        <tr v-if="headingType[id]=='stats'">
-          <td class="firstcol blank"></td>
-        </tr>
-        <tr>
-          <th :class="groupclass(id)">
-            {{group_titles[id]}}                     <!-- GROUP TITLE -->
-          </th>
-          <template v-if="headingType[id]=='systems'">
-            <template v-for="idx in nstat">
-              <template v-for="(sysname, s) in system_names"> <!-- SYS HEADING -->
-                <th :class="sysclass(s)">
-                  {{sysname}}
+        <template v-if="show[id]">
+          <tr v-if="headingType[id]=='stats'">
+            <td class="firstcol blank"></td>
+          </tr>
+          <tr>
+            <th :class="groupclass(id)">
+              {{group_titles[id]}}                     <!-- GROUP TITLE -->
+            </th>
+            <template v-if="headingType[id]=='systems'">
+              <template v-for="idx in nstat">
+                <template v-for="(sysname, s) in system_names"> <!-- SYS HEADING -->
+                  <th :class="sysclass(s)">
+                    {{sysname}}
+                  </th>
+                </template>
+              </template>
+            </template>
+            <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
+              <template v-for="stat in stats">
+                <th :colspan="nsys" :key="stat" class="top">
+                  {{stat_headings[stat]}}
                 </th>
               </template>
             </template>
-          </template>
-          <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
+            <template v-else>                               <!-- NO HEADING -->
+              <th :colspan="nsys*nstat" class="gap"></th>
+            </template>
+          </tr>
+          <tr v-for="(row, rowidx) in vuedata[id]"
+              :key="id + rowidx">
+            <td class="firstcol">
+              {{row["rowtitle"]}}
+            </td>
             <template v-for="stat in stats">
-              <th :colspan="nsys" :key="stat" class="top">
-                {{stat_headings[stat]}}
-              </th>
+              <template v-for="s in nsys">
+                <td :class="sysclass(s-1)">
+                  {{row[stat][s - 1]}}
+                </td>
+              </template>
             </template>
-          </template>
-          <template v-else>                               <!-- NO HEADING -->
-            <th :colspan="nsys*nstat" class="gap"></th>
-          </template>
-        </tr>
-        <tr v-for="(row, rowidx) in vuedata[id]"
-            :key="id + rowidx">
-          <td class="firstcol">
-            {{row["rowtitle"]}}
-          </td>
-          <template v-for="stat in stats">
-            <template v-for="s in nsys">
-              <td :class="sysclass(s-1)">
-                {{row[stat][s - 1]}}
-              </td>
-            </template>
-          </template>
-        </tr>
-        <tr v-if="id in footnotes">
-          {{footnotes[id]}}
-        </tr>
-        <tr v-if="vuedata[id].length>0">
-          <td class="firstcol blank"></td>
-        </tr>
+          </tr>
+          <tr v-if="id in footnotes">
+            {{footnotes[id]}}
+          </tr>
+          <tr v-if="vuedata[id].length>0">
+            <td class="firstcol blank"></td>
+          </tr>
+        </template>
       </template>
       <tr><td class="firstcol blank"></td></tr>
     </tbody>
@@ -76,6 +78,7 @@ export default {
     "group_ids",
     "group_titles",
     "footnotes",
+    "show",
   ],
   computed: {
     nstat: function() {return this.stats.length},

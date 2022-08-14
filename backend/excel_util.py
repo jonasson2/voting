@@ -326,23 +326,19 @@ def simulation_to_xlsx(results, filename, parallel):
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
 
-    def draw_block(worksheet, row, col,
-        heading,
-        matrix,
-        cformat=fmt["cell"],
-        hideTotals=False
-    ):
+    def draw_sim_block(worksheet, row, col, heading, matrix, abbreviation, hideTotals):
         totalsformat = None
         if hideTotals:
             matrix = [r[:-1] for r in matrix]
+        cformat = fmt['sim'] if abbreviation in {'avg', 'std'} else fmt['base']
         if heading.endswith("percentages"):
             cformat = fmt["percentages"]
-        if heading.lower().startswith("Reference seat"):
-            cformat = fmt["cell"]
+        elif heading.startswith("Reference seat"):
+            cformat = fmt["sim"]
             totalsformat = fmt["base"]
-        if heading == "Votes":
+        elif heading == "Votes":
             cformat = fmt["base"]
-        write_matrix(worksheet, row, col, matrix, cformat, False, totalsformat)
+        write_matrix(worksheet, row, col, matrix, cformat, True, totalsformat)
 
     gen_method = GMN[results["sim_settings"]["gen_method"]]
     sim_settings = [
@@ -409,20 +405,11 @@ def simulation_to_xlsx(results, filename, parallel):
         worksheet.write(row, c2, setting["data"], fmt["basic"])
     
     categories = [
-        {"abbr": "base", "cell_format": fmt["base"],
-         "heading": "Values based on source votes"},
-        {"abbr": "avg",  "cell_format": fmt["sim"],
-         "heading": "Avg. simulated values"},
-        {"abbr": "min",  "cell_format": fmt["base"],
-         "heading": "Minimum values"},
-        {"abbr": "max",  "cell_format": fmt["base"],
-         "heading": "Maximum values"},
-        {"abbr": "std",  "cell_format": fmt["sim"],
-         "heading": "Standard deviations"}
-        # {"abbr": "skw",  "cell_format": fmt["sim"],
-        #  "heading": "Skewness"},
-        # {"abbr": "kur",  "cell_format": fmt["sim"],
-        #  "heading": "Kurtosis"}
+        {"abbr": "base", "heading": "Values based on source votes"},
+        {"abbr": "avg",  "heading": "Avg. simulated values"},
+        {"abbr": "min",  "heading": "Minimum values"},
+        {"abbr": "max",  "heading": "Maximum values"},
+        {"abbr": "std",  "heading": "Standard deviations"}
     ]
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
@@ -620,11 +607,11 @@ def simulation_to_xlsx(results, filename, parallel):
                 is_percentages_table = \
                     table["heading"].endswith("percentages") and \
                     not table["heading"].startswith("Reference")
-                draw_block(worksheet, row=toprow, col=col,
-                    heading=table["heading"],
-                    matrix=data_matrix[category["abbr"]][table["abbr"]],
-                    cformat=category["cell_format"],
-                    hideTotals=is_percentages_table
+                draw_sim_block(worksheet, row=toprow, col=col,
+                    heading = table["heading"],
+                    matrix = data_matrix[category["abbr"]][table["abbr"]],
+                    abbreviation = category["abbr"],
+                    hideTotals = is_percentages_table
                 )
                 col += len(parties[:-1] if is_percentages_table else parties)+1
             toprow += len(base_const_names)+1
