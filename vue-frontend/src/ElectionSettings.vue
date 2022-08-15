@@ -205,8 +205,9 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Numbers of constituency and adjustment seats in each
-               constituency in this particular electoral system"
+        title="Numbers of fixed and adjustment seats in each
+               constituency (and on the national list)
+               in this electoral system"
         >
         <b-form-select
           v-model="const_spec_option"
@@ -243,7 +244,7 @@
               <input
                 type="text"
                 v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
-                v-model.number="constituency['num_fixed_seats']"f
+                v-model.number="constituency['num_fixed_seats']"
                 >
             </span>
           </td>
@@ -258,7 +259,43 @@
               <input
                 type="text"
                 v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
-                v-model.number="constituency['num_adj_seats']">
+                v-model.number="constituency['num_adj_seats']"
+                >
+            </span>
+          </td>
+        </tr>
+        <tr v-if="vote_table.party_vote_info.specified">
+          <th class="displayleft">
+            {{ vote_table.party_vote_info['name'] }}
+          </th>
+          <td class="displayright">
+            <span v-if="const_spec_option != 'custom'">
+              {{ systems[systemidx].nat_seats.num_fixed_seats }}
+            </span>
+            <span
+              v-if="const_spec_option == 'custom'"
+              class="numerical"
+              >
+              <input
+                type="text"
+                v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
+                v-model.number="systems[systemidx].nat_seats.num_fixed_seats"
+                >
+            </span>
+          </td>
+          <td class="displayright">
+            <span v-if="const_spec_option != 'custom'">
+              {{ systems[systemidx].nat_seats.num_adj_seats }}
+            </span>
+            <span
+              v-if="const_spec_option == 'custom'"
+              class="numerical"
+              >
+              <input
+                type="text"
+                v-autowidth="{minWidth:'50px', maxWidth:'75px'}"
+                v-model.number="systems[systemidx].nat_seats.num_adj_seats"
+                >
             </span>
           </td>
         </tr>

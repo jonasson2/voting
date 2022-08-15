@@ -76,9 +76,10 @@ def getfileparam():
 def api_election():
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
-        constituencies = update_constituencies(vote_table, systems)
-        for (c,s) in zip(constituencies, systems):
+        [constituencies, nat_seats] = update_constituencies(vote_table, systems)
+        for (c,n,s) in zip(constituencies, nat_seats, systems):
             s["constituencies"] = c
+            s["nat_seats"] = n
         results = single_election(vote_table, systems);
         return jsonify({"results": results, "systems": systems})
     except Exception:
@@ -103,8 +104,8 @@ def api_update_constituencies():
     # the current vote table and systems[:]["seat_spec_options"]
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
-        constituencies = update_constituencies(vote_table, systems)
-        return jsonify({"constituencies": constituencies})
+        [constituencies, nat_seats] = update_constituencies(vote_table, systems)
+        return jsonify({"constituencies": constituencies, "nat_seats":nat_seats})
     except Exception:
         return errormsg()
 

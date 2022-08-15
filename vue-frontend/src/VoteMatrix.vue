@@ -517,9 +517,9 @@ export default {
         name: "–",
         num_fixed_seats: 0,
         num_adj_seats: 1,
-        votes: Array(n).fill(""),
+        votes: Array(n).fill(1),
         specified: true,
-        total: "",
+        total: n,
       }
     },
     save: function () {

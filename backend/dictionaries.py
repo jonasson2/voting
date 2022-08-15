@@ -85,11 +85,13 @@ DEMO_TABLE_FORMATS = {
 SEAT_SPECIFICATION_OPTIONS = {
     "const":
     [
-        {"value": "refer",          "text": 'Use values from "Source votes and seats" tab'},
-        {"value": "custom",         "text": "Specify numbers by changing individual values"},
-        {"value": "make_all_fixed", "text": "Make all seats fixed seats"},
-        {"value": "make_all_adj",   "text": "Make all seats adjustment seats"},
-        {"value": "one_const",      "text": "Combine all constituencies into one"},
+        {"value": "refer",           "text": 'Use values from "Source votes and seats" tab'},
+        {"value": "custom",          "text": "Specify numbers by changing individual values"},
+        {"value": "make_const_fixed","text": "Make all constituency seats fixed"},
+        {"value": "make_const_adj",  "text": "Make all constituency seats adjustment seats"},
+        {"value": "make_all_fixed",  "text": "Make all seats fixed"},
+        {"value": "make_all_adj",    "text": "Make all seats adjustment seats"},
+        {"value": "one_const",       "text": "Combine all constituencies into one"},
     ],
     "party":
     [

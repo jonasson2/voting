@@ -1,5 +1,6 @@
 from electionSystem import ElectionSystem
-from electionSystem import set_one_const, set_all_adj, set_all_fixed
+from electionSystem import set_one_const, set_const_adj, set_const_fixed
+from electionSystem import set_nat_seats, set_nat_seats_adj, set_nat_seats_fixed
 from electionSystem import set_custom, set_copy
 from voting import Election
 from table_util import add_totals
@@ -29,10 +30,11 @@ class ElectionHandler:
             election.run(use_thresholds)
             
     def setup_elections(self, vote_table, systems):
-        constituencies_list = update_constituencies(vote_table, systems)
-        for (system, constituencies) in zip(systems, constituencies_list):
+        [constituencies_list,nat_seats] = update_constituencies(vote_table, systems)
+        for (system, constituencies, nat) in zip(systems, constituencies_list, nat_seats):
             system["parties"] = vote_table["parties"]
             system["constituencies"] = constituencies
+            system["nat_seats"] = nat
             electionSystem = ElectionSystem()
             electionSystem.update(system)
             election = Election(electionSystem,
@@ -46,12 +48,20 @@ class ElectionHandler:
 
 def update_constituencies(vote_table, systems):
     constituencies = []
+    nat_seats= []
     for system in systems:
         opt = system["seat_spec_options"]["const"]
         opt = remove_prefix(opt, "make_")
+        nat = set_nat_seats(vote_table["party_vote_info"])
         voteconst = vote_table["constituencies"]
-        if opt=="all_fixed":   const = set_all_fixed(voteconst)
-        elif opt=="all_adj":   const = set_all_adj(voteconst)
+        if opt in {"const_fixed", "all_fixed"}:
+            const = set_const_fixed(voteconst)
+            if opt=="all_fixed":
+                nat = set_nat_seats_fixed(vote_table["party_vote_info"])
+        elif opt in {"const_adj", "all_adj"}:
+            const = set_const_adj(voteconst) 
+            if opt=="all_adj":
+                nat = set_nat_seats_adj(vote_table["party_vote_info"])
         elif opt=="one_const": const = set_one_const(voteconst)
         elif opt=="refer":     const = set_copy(voteconst)
         elif opt=="custom":
@@ -61,4 +71,5 @@ def update_constituencies(vote_table, systems):
             else:
                 const = set_copy(voteconst)
         constituencies.append(const)
-    return constituencies
+        nat_seats.append(nat)
+    return (constituencies, nat_seats)

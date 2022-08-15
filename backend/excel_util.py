@@ -2,7 +2,7 @@ import xlsxwriter
 from datetime import datetime
 from measure_groups import MeasureGroups
 from table_util import add_total
-from util import disp
+from util import disp, isPosInt
 from copy import copy
 import numpy as np
 
@@ -117,24 +117,22 @@ def prepare_formats(workbook):
     
     return formats
 
-def write_matrix(worksheet, startrow, startcol, matrix, cformat, display_zeroes=False,
-                 totalsformat = None, zeroesformat = None):
+def write_matrix(worksheet, startrow, startcol,
+                 matrix,
+                 format,
+                 display_zeros = False,
+                 totalsformat = None):
     total = totalsformat is not None
     for c in range(len(matrix)):
-        nrows = len(matrix[c]) - (1 if total else 0)
-        formatc = cformat[c] if isinstance(cformat, list) else cformat
-        for p in range(nrows):
-            if matrix[c][p] != 0 or display_zeroes:
-                try:
-                    worksheet.write(startrow+c, startcol+p, matrix[c][p], formatc)
-                except TypeError:
-                    if matrix[c][p] == 0 and zeroesformat is not None:
-                        worksheet.write(startrow+c, startcol+p, matrix[c][p], zeroesformat)
-                    else:
-                        worksheet.write(startrow+c, startcol+p, matrix[c][p], formatc)
+        ncols = len(matrix[c]) - (1 if total else 0)
+        formatc = format[c] if isinstance(format, list) else format
+        for p in range(ncols):
+            if matrix[c][p] != 0 or display_zeros:
+                worksheet.write(startrow+c, startcol+p, matrix[c][p], formatc)
         if total:
-            worksheet.write(startrow+c, startcol+len(matrix[c])-1, matrix[c][-1],
-                    totalsformat)
+            value = round(matrix[c][-1], 8)
+            value = int(value) if isPosInt(value) else value
+            worksheet.write(startrow+c, startcol+len(matrix[c])-1, value, totalsformat)
 
 def cell_width(x, fmt):
     if isinstance(x,str): n = len(x)
@@ -190,7 +188,7 @@ def elections_to_xlsx(elections, filename):
 
     def draw_block(worksheet, row, col,
         heading, xheaders, yheaders,
-        matrix,
+        data,
         topleft="",
         cformat=fmt["cell"]
     ):
@@ -200,8 +198,10 @@ def elections_to_xlsx(elections, filename):
         worksheet.write(row+1, col, topleft, fmt["basic"])
         worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
         worksheet.write_column(row+2, col, yheaders, fmt["basic"])
-        write_matrix(worksheet, row+2, col+1, matrix, cformat)
-        return row + len(matrix) + 3
+        write_matrix(worksheet, row+2, col+1, data,
+                     format = cformat,
+                     display_zeros = False)
+        return row + len(data) + 3
 
     for election in elections:
         result = election.get_result_excel()
@@ -326,10 +326,7 @@ def simulation_to_xlsx(results, filename, parallel):
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
 
-    def draw_sim_block(worksheet, row, col, heading, matrix, abbreviation, hideTotals):
-        totalsformat = None
-        if hideTotals:
-            matrix = [r[:-1] for r in matrix]
+    def draw_sim_block(worksheet, row, col, heading, data, abbreviation, setTotal="hide"):
         cformat = fmt['sim'] if abbreviation in {'avg', 'std'} else fmt['base']
         if heading.endswith("percentages"):
             cformat = fmt["percentages"]
@@ -338,7 +335,15 @@ def simulation_to_xlsx(results, filename, parallel):
             totalsformat = fmt["base"]
         elif heading == "Votes":
             cformat = fmt["base"]
-        write_matrix(worksheet, row, col, matrix, cformat, True, totalsformat)
+        if setTotal=="hide":
+            data = [r[:-1] for r in data]
+            totalsformat = None
+        else:
+            totalsformat = fmt["base"] if setTotal == "integer" else cformat
+        write_matrix(worksheet, row, col, data,
+                     format = cformat,
+                     display_zeros = True,
+                     totalsformat = totalsformat)
 
     gen_method = GMN[results["sim_settings"]["gen_method"]]
     sim_settings = [
@@ -481,12 +486,15 @@ def simulation_to_xlsx(results, filename, parallel):
                                [val[1] for (_, val) in group["rows"].items()])
         for stat in edata["stats"]:
             if stat in ["min","max"] and id in ["seatSpec","expected","cmpSys"]:
-                write_matrix(worksheet,toprow,c+2,
-                             [row[stat] for row in edata[id]],fmt["base"],True)
+                write_matrix(worksheet, toprow, c+2,
+                             [row[stat] for row in edata[id]],
+                             format = fmt["base"],
+                             display_zeros = True)
             else:
                 write_matrix(worksheet,toprow,c+2,
                              [row[stat] for row in edata[id]],
-                             fmt["cell"],True,zeroesformat=fmt["base"])
+                             format = fmt["cell"],
+                             display_zeros = True)
             c += len(results["systems"]) + 1
         nrows = len(group["rows"])
         toprow += nrows + 1 if nrows > 0 else 0
@@ -604,14 +612,18 @@ def simulation_to_xlsx(results, filename, parallel):
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
             for table in tables:
+                is_refseatshare_table = table["heading"].startswith("Reference")
                 is_percentages_table = \
-                    table["heading"].endswith("percentages") and \
-                    not table["heading"].startswith("Reference")
+                    table["heading"].endswith("percentages") and not is_refseatshare_table
+                setTotal = (
+                    "hide" if is_percentages_table else
+                    "integer" if is_refseatshare_table else
+                    "show")
                 draw_sim_block(worksheet, row=toprow, col=col,
                     heading = table["heading"],
-                    matrix = data_matrix[category["abbr"]][table["abbr"]],
+                    data = data_matrix[category["abbr"]][table["abbr"]],
                     abbreviation = category["abbr"],
-                    hideTotals = is_percentages_table
+                    setTotal = setTotal
                 )
                 col += len(parties[:-1] if is_percentages_table else parties)+1
             toprow += len(base_const_names)+1

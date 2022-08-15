@@ -180,10 +180,10 @@ class Election:
         self.results["fixed_const_total"] = deepcopy(v_allocations)
 
         if self.party_vote_info["specified"]:
-            if self.party_vote_info["num_fixed_seats"] > 0:
+            if self.system["nat_seats"]["num_fixed_seats"] > 0:
                 nat_fixed_alloc, _, _, _ = apportion1d_general(
                     v_votes = self.party_vote_info["votes"],
-                    num_total_seats = self.party_vote_info["num_fixed_seats"],
+                    num_total_seats = self.system["nat_seats"]["num_fixed_seats"],
                     prior_allocations = [],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
@@ -209,7 +209,8 @@ class Election:
             assert(opt=="average")
             votes = [(x+y)/2 for (x,y) in zip (self.v_votes, self.party_vote_info['votes'])]
         self.nat_votes = votes
-        nat_seats = ((self.party_vote_info['num_fixed_seats'] + self.party_vote_info['num_adj_seats']) \
+        nat_seats = ((self.system["nat_seats"]['num_fixed_seats'] +
+                      self.system["nat_seats"]['num_adj_seats']) \
                          if self.party_vote_info['specified'] else 0)
 
         threshold = self.system["adjustment_threshold"] if use_thresholds else 0
@@ -220,7 +221,7 @@ class Election:
             = apportion1d_general(
                 v_votes = self.nat_votes,
                 num_total_seats = self.total_const_seats + nat_seats,
-                prior_allocations = self.results["fixed_const_total"],
+                prior_allocations = self.results["fixed_grand_total"],
                 rule = self.system.get_generator("adj_determine_divider"),
                 type_of_rule = self.system.get_type("adj_determine_divider"),
                 threshold_percent = threshold,

@@ -286,6 +286,7 @@ const store = new Vuex.Store({
       // vote_table, otherwise use use values from vote_table, possibly modified
       // according to the seat_spec_options.const.
       context.commit("setWaitingForData")
+      console.log('systems', context.state.systems)
       Vue.http.post(
         '/api/settings/update_constituencies/',
         {
@@ -298,6 +299,9 @@ const store = new Vuex.Store({
             console.log("response.body", response.body)
             response.body.constituencies.forEach(
               (c,i) => context.state.systems[i].constituencies = c
+            )
+            response.body.nat_seats.forEach(
+              (n,i) => context.state.systems[i].nat_seats = n
             )
             console.log("sys_const[0]=", context.state.systems[0].constituencies)
           }
