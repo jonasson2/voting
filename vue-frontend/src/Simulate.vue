@@ -75,7 +75,7 @@
       :show="vuedata.show"
       >
       </QualityMeasures>
-    <h4>Constituency seats</h4>
+    <h4>Fixed seats</h4>
     <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'const-seats-' + idx"
