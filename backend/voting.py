@@ -270,17 +270,14 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        if method.__name__ == "alt_scaling":
-            desired_col_sums = self.desired_const_col_sums
-        else:
-            desired_col_sums = self.desired_col_sums
         self.method = method(m_votes=self.m_votes,
                              v_desired_row_sums=self.desired_row_sums,
-                             v_desired_col_sums=desired_col_sums,
+                             v_desired_col_sums=self.desired_col_sums,
                              m_prior_allocations=self.results["fixed_const_seats"],
                              divisor_gen=self.gen, adj_seat_gen=self.adj_seat_gen,
                              v_fixed_seats=[con["num_fixed_seats"] for con in consts],
-                             last=self.last)
+                             last=self.last,
+                             paty_votes_specified=self.party_vote_info['specified'])
         all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(
             all_const_seats, self.results["fixed_const_seats"])
@@ -341,16 +338,22 @@ class Election:
         import numpy as np, numpy.linalg as la
         scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
         ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
+        if self.party_vote_info['specified']:
+            ref_seat_shares = np.vstack([ref_seat_shares, np.ones((1, len(self.m_votes[1])))*1e-6])
         ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
         # assert self.solvable
         # rein = 0
-        nrows = self.num_constituencies()
+        nrows = self.num_constituencies() + (1 if self.party_vote_info['specified'] else 0)
         ncols = self.num_parties()
         eta = np.ones(nrows)
         tau = np.ones(ncols)
         error = 1
         niter = 0
-        col_sums = self.desired_const_col_sums
+        col_sums = self.desired_col_sums
+        row_sums = self.desired_row_sums
+        if self.party_vote_info['specified']:
+            row_sums = row_sums + [self.system['nat_seats']['num_fixed_seats']+\
+                                                  self.system['nat_seats']['num_adj_seats']]
         if ncols > 1 and nrows > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
@@ -358,7 +361,7 @@ class Election:
                 while round(error, 7) != 0.0:
                     error = 0
                     for c in range(nrows):
-                        row_sum = self.desired_row_sums[c]
+                        row_sum = row_sums[c]
                         s = sum(ref_seat_shares[c, :])
                         eta = row_sum/s if s > 0 else 1
                         ref_seat_shares[c, :] *= eta
@@ -371,7 +374,7 @@ class Election:
                         error = max(error, abs(1 - tau))
             elif row_constraints:
                 for c in range(nrows):
-                    row_sum = self.desired_row_sums[c]
+                    row_sum = row_sums[c]
                     s = sum(ref_seat_shares[c, :])
                     eta = row_sum/s if s > 0 else 1
                     ref_seat_shares[c, :] *= eta
@@ -382,12 +385,10 @@ class Election:
                     tau = col_sum/s if s > 0 else 1
                     ref_seat_shares[:, p] *= tau
         self.ref_seat_shares = ref_seat_shares.tolist()
-        factor = sum(self.results["all_grand_total"])/sum(self.nat_votes)
-        self.total_ref_seat_shares = [x*factor for x in self.nat_votes]
+        self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+        if self.party_vote_info['specified']: self.total_ref_nat = self.ref_seat_shares.pop()
 
-        if self.party_vote_info["specified"]:
-            factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
-            self.ref_nat_seat_shares = [x*factor for x in self.nat_votes]
-        else:
-            self.ref_nat_seat_shares = None
+
+
+
 

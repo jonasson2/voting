@@ -117,10 +117,9 @@ class Simulation():
     def run_initial_elections(self):
         for election in self.reference_handler.elections:
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
-            xtd_ref_seat_shares = add_totals(election.ref_seat_shares)
             ids = add_totals(election.ref_seat_shares)
             if self.party_votes_specified:
-                ids.append(add_total(election.ref_nat_seat_shares))
+                ids.append(add_total(election.total_ref_nat))
                 ids.append([x+y for (x,y) in zip(ids[-2], ids[-1])])
             self.base_allocations.append({
                 "fixed_seats": election.results["fix"],
@@ -191,7 +190,7 @@ class Simulation():
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             ids = np.array(add_totals(election.ref_seat_shares))
             if self.party_votes_specified:
-                ids = np.vstack((ids, add_total(election.ref_nat_seat_shares)))
+                ids = np.vstack((ids, add_total(election.total_ref_nat)))
                 ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
