@@ -213,10 +213,9 @@ class Simulation():
             deviations.add("avg_neg_margin", average(negative_margins))
             deviations.add("entropy", election.entropy())
             excess, shortage, disparity = self.calculate_disparity(election)
-            deviations.add("Excess", excess)
-            deviations.add("Shortage", shortage)
-            deviations.add("Disparity", disparity)
-
+            deviations.add("excess", excess)
+            deviations.add("shortage", shortage)
+            deviations.add("disparity", disparity)
 
             for cmp_election in elections:
                 cmp_system = cmp_election.system

@@ -111,9 +111,9 @@ class MeasureGroups(dict):
                 "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
                 "bias_corr":      ("Correlation of seat excess and reference seat "
                                    "shares", ""),
-                "disparity":      ("Total and reference allocations abs. difference", ""),
-                "excess":         ("Excess", ""),
-                "shortage":       ("Shortage", "")
+                #"disparity":      ("Total and reference allocations abs. difference",""),
+                "excess":         ("Total seat Excess", ""),
+                #"shortage":       ("Shortage", "")
             }
         }
 
