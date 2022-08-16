@@ -212,6 +212,12 @@ class Simulation():
             deviations.add("max_neg_margin", max(negative_margins))
             deviations.add("avg_neg_margin", average(negative_margins))
             deviations.add("entropy", election.entropy())
+            excess, shortage, disparity = self.calculate_disparity(election)
+            deviations.add("Excess", excess)
+            deviations.add("Shortage", shortage)
+            deviations.add("Disparity", disparity)
+
+
             for cmp_election in elections:
                 cmp_system = cmp_election.system
                 if cmp_system["compare_with"]:
@@ -224,8 +230,16 @@ class Simulation():
             if m in self.stat:
                 self.stat[m].update(deviations[m])
 
+    def calculate_disparity(self, election):
+        excess, shortage, disparity = 0, 0, 0
+        for alloc, result in zip(election.ref_seat_alloc, election.results['all_grand_total']):
+            diff = result - alloc
+            disparity += abs(diff)
+            excess += max(0, diff)
+            shortage += max(0, -diff)
+        return excess, shortage, disparity
+
     def calculate_negative_margins(self, election):
-        pass
         seats = election.results["all_const_seats"]
         shares = election.ref_seat_shares
         neg_margins = []

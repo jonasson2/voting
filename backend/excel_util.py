@@ -188,7 +188,7 @@ def elections_to_xlsx(elections, filename):
 
     def draw_block(worksheet, row, col,
         heading, xheaders, yheaders,
-        data,
+        matrix,
         topleft="",
         cformat=fmt["cell"]
     ):
@@ -198,10 +198,10 @@ def elections_to_xlsx(elections, filename):
         worksheet.write(row+1, col, topleft, fmt["basic"])
         worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
         worksheet.write_column(row+2, col, yheaders, fmt["basic"])
-        write_matrix(worksheet, row+2, col+1, data,
+        write_matrix(worksheet, row+2, col+1, matrix,
                      format = cformat,
                      display_zeros = False)
-        return row + len(data) + 3
+        return row + len(matrix) + 3
 
     for election in elections:
         result = election.get_result_excel()

@@ -231,14 +231,26 @@ class Election:
         if self.party_vote_info["specified"]:
             self.desired_const_col_sums, _, _, _ \
                 = apportion1d_general(
-                    v_votes=self.nat_votes,
-                    num_total_seats=self.total_const_seats,
-                    prior_allocations=self.results["fixed_const_total"],
-                    rule=self.system.get_generator("adj_determine_divider"),
-                    type_of_rule=self.system.get_type("adj_determine_divider")
+                    v_votes = self.nat_votes,
+                    num_total_seats = self.total_const_seats,
+                    prior_allocations = self.results["fixed_const_total"],
+                    rule = self.system.get_generator("adj_determine_divider"),
+                    type_of_rule = self.system.get_type("adj_determine_divider"),
+                    threshold_percent=threshold,
+                    threshold_choice=choice,
+                    threshold_seats=seats
                 )
         else:
             self.desired_const_col_sums = self.desired_col_sums
+
+        self.ref_seat_alloc, _, _, _ \
+            = apportion1d_general(
+                v_votes = self.nat_votes,
+                num_total_seats = self.total_const_seats + nat_seats,
+                prior_allocations = [0]*len(self.nat_votes),
+                rule = self.system.get_generator('adj_determine_divider'),
+                type_of_rule = self.system.get_type('adj_determine_divider')
+                )
 
     def set_forced_reasons(self, demoTable):
         if "Criteria" in demoTable["headers"]:
