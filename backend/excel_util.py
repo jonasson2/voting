@@ -320,7 +320,7 @@ def elections_to_xlsx(elections, filename):
 
     workbook.close()
 
-def simulation_to_xlsx(results, filename, parallel):
+def simulation_to_xlsx(results, filename):
 
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)

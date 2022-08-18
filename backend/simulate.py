@@ -112,7 +112,8 @@ class Simulation():
         for measure in PARTY_MEASURES:
             self.stat[measure] = [None] * ns
             for i in range(ns):
-                self.stat[measure][i] = Running_stats(np, parallel, measure)
+                store = measure=='party_disparity'
+                self.stat[measure][i] = Running_stats(np, parallel, measure, store)
         if self.party_votes_specified:
             extensions.extend(['nat', 'grand'])
         for cmp_system in self.systems:
@@ -519,6 +520,8 @@ class Sim_result:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm, self.STAT_LIST)
                 self.party_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
+        self.disparity_data = [self.stat['party_disparity'][sys].keep
+                               for sys in range(self.nsys)]
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.

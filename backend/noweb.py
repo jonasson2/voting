@@ -184,12 +184,16 @@ def check_simulation(simid, stop=False):
         sim_result_dict = {'data': []}
     return sim_status, sim_result_dict
 
+def simulation_plot(simid):
+    disparity = SIMULATIONS[simid]["result"].disparity_data
+    pass
+
+
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
     sim_result_dict = sim_result.get_result_web(parallel)
-    simulation_to_xlsx(sim_result_dict, file, parallel)
-    plot_sim_party_data(sim_result_dict)
+    simulation_to_xlsx(sim_result_dict, file)
 
 def votes_to_excel(vote_table, file):
     file_matrix = [

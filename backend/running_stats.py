@@ -2,7 +2,7 @@ import numpy as np
 from math import prod
 
 class Running_stats:
-    def __init__(self, shape=None, parallel=False, name=""):
+    def __init__(self, shape=None, parallel=False, name="", store=False):
         if shape:
             self.parallel = parallel
             self.name = name
@@ -14,7 +14,9 @@ class Running_stats:
                 self.M4 = np.zeros(shape)
             self.big = np.zeros(shape)
             self.small = np.zeros(shape)
-            self.list = None
+            self.store = store
+            if store:
+                self.keep = []
         
     @classmethod
     def from_dict(cls,dictionary):
@@ -24,6 +26,8 @@ class Running_stats:
         return self
     
     def update(self, A): # A should have shape "shape"
+        if self.store:
+            self.keep.append(A)
         A = np.array(A)
         n1 = self.n
         self.n += 1
@@ -56,6 +60,8 @@ class Running_stats:
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
         self.big = np.maximum(self.big, running_stats.big)
         self.small = np.minimum(self.small, running_stats.small)
+        if store:
+            self.keep.extend(running_stats.keep)
 
     def mean(self):
         return self.M1.tolist()

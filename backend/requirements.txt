@@ -9,4 +9,5 @@ xlsxwriter
 openpyxl
 configparser
 numpy
+matplotlib
 psutil
