@@ -36,6 +36,10 @@ def check_vote_table(vote_table):
     if "party_votes" in table:
         table["party_vote_info"] = table["party_votes"]
         del table["party_votes"]
+    if "party_vote_info" in table:
+        for i, v in enumerate(table['party_vote_info']['votes']):
+            if not isinstance(v, int):
+                table['party_vote_info']['votes'][i] = 0
 
     for const in table["constituencies"]:
         if "name" not in const:  # or not const["name"]:

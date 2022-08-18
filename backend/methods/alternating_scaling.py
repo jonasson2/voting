@@ -12,7 +12,6 @@ def alt_scaling(m_votes,
                 v_desired_col_sums,
                 m_prior_allocations,
                 divisor_gen,
-                party_votes_specified,
                 **kwargs):
     import numpy as np
     v = np.array(m_votes, float)

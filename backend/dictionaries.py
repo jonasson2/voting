@@ -183,9 +183,15 @@ SENS_MEASURES = [
     "list_sens"
 ]
 
-PARTY_VOTE_MEASURES = [
-    ""
-]
+PARTY_MEASURES = {
+    "nat_vote_percentages": "shares of votes used for apportioning adj. seats",
+    "party_ref_seat_shares": "reference seat share based on nat votes",
+    "party_total_seats": "total seats allocated to parties",
+    "ref_seat_alloc": "reference seat allocation",
+    "party_disparity": "disparity of allocation compared to reference",
+    "party_excess": "positive disparity only or 0",
+    "party_shortage": "negative disparity only (as positive number) or 0"
+}
 
 SCALING_NAMES = {
     "both": "within both constituencies and parties",
