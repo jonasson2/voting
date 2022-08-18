@@ -12,6 +12,7 @@ from input_util import check_input, check_systems, check_simul_settings, check_v
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
+from plotting import plot_sim_party_data
 import psutil
 
 def create_SIMULATIONS():
@@ -188,6 +189,7 @@ def simulation_to_excel(simid, file):
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
     sim_result_dict = sim_result.get_result_web(parallel)
     simulation_to_xlsx(sim_result_dict, file, parallel)
+    plot_sim_party_data(sim_result_dict)
 
 def votes_to_excel(vote_table, file):
     file_matrix = [

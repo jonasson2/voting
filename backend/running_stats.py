@@ -14,6 +14,7 @@ class Running_stats:
                 self.M4 = np.zeros(shape)
             self.big = np.zeros(shape)
             self.small = np.zeros(shape)
+            self.list = None
         
     @classmethod
     def from_dict(cls,dictionary):
@@ -42,7 +43,7 @@ class Running_stats:
             self.small = A
         else:
             self.big = np.maximum(self.big, A)
-            self.small = np.minimum(self.small, A)            
+            self.small = np.minimum(self.small, A)
 
     def combine(self, running_stats):
         n1 = self.n

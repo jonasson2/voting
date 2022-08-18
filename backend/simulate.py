@@ -17,6 +17,7 @@ from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
 import numpy as np
+import pandas as pd
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
 
@@ -73,6 +74,8 @@ class Simulation():
         self.num_constituencies = len(self.constituencies)
         self.sensitivity = sim_settings["sensitivity"]
         self.apply_random = self.index_of_const_to_apply_randomness_to()
+        # -------- Following is used for plotting
+        #self.disparity_data = [pd.DataFrame(columns=self.parties) for sys in range(self.nsys)]
         # --------
         self.iteration = 0
         self.total_time = 0
@@ -119,7 +122,7 @@ class Simulation():
                     self.stat[measure] = Running_stats(ns, parallel, measure)
 
     def run_initial_elections(self):
-        for election in self.reference_handler.elections:
+        for i,election in enumerate(self.reference_handler.elections):
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             disparity, excess, shortage = self.calculate_party_disparity(election)
             ids = add_totals(election.ref_seat_shares)
@@ -137,6 +140,7 @@ class Simulation():
                 "excess": excess,
                 "shortage": shortage
             })
+            #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
 
     def simulate(self, tasknr=0, monitor=None):
         # Simulate many elections.
@@ -211,6 +215,7 @@ class Simulation():
             self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_party_measures(self):
+
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
@@ -221,9 +226,7 @@ class Simulation():
             self.stat["party_disparity"][i].update(disparity)
             self.stat["party_excess"][i].update(excess)
             self.stat["party_shortage"][i].update(shortage)
-
-
-
+            #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
 
     def collect_general_measures(self):
         deviations = Collect()
