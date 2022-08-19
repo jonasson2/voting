@@ -188,7 +188,7 @@ def simulation_plot(simid):
     disparity = SIMULATIONS[simid]["result"].disparity_data
     with open('disparity.json', 'w', encoding='utf-8') as fd:
         json.dump(disparity, fd)
-    pass
+    plot_sim_party_data(disparity)
 
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]

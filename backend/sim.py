@@ -118,7 +118,7 @@ def main():
         pass
     elapsed_time = hms(time.time() - beginning_time)
     simulation_to_excel(simid,'sim.xlsx')
-    simulation_plot(simid)
+    #simulation_plot(simid)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:
             print(f'Simulation finished, elapsed time: {elapsed_time}', file=f)

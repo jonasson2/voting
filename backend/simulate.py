@@ -286,7 +286,7 @@ class Simulation():
             measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
             deviations.add(measure, self.sum_func(election, function, div_h, i))
         for (measure, function) in function_dict_party.items():
-            for extension in ['const', 'nat', 'overall']:
+            for extension in ['const', 'nat', 'overall'] if self.party_votes_specified else ['overall']:
                 measure_name = measure + '_' + extension
                 deviations.add(measure_name, self.party_func(measure_name, election, function))
 
@@ -360,7 +360,6 @@ class Simulation():
             elif name.startswith('min'):
                 measure = min(measure, function(h,s))
         return measure
-
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
