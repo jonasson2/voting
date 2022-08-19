@@ -94,10 +94,10 @@ class MeasureGroups(dict):
             # overall,
             # altogeter, grand total
             "rows": {
-                "sum_abs_party": ("sum of absolute values",""),
-                "sum_sq_party":  ("sum of squared values",""),
-                "max_val_party": ("maximum value", ""),
-                "min_val_party": ("minimum value", ""),
+                "sum_abs_party_overall": ("sum of absolute values",""),
+                "sum_sq_party_overall":  ("sum of squared values",""),
+                "max_val_party_overall": ("maximum value", ""),
+                "min_val_party_overall": ("minimum value", ""),
             }
         }
 

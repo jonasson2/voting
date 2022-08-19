@@ -216,7 +216,6 @@ class Simulation():
             self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_party_measures(self):
-
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
@@ -244,7 +243,6 @@ class Simulation():
             deviations.add("excess", excess)
             deviations.add("shortage", shortage)
             deviations.add("disparity", disparity)
-
             for cmp_election in elections:
                 cmp_system = cmp_election.system
                 if cmp_system["compare_with"]:
@@ -288,7 +286,9 @@ class Simulation():
             measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
             deviations.add(measure, self.sum_func(election, function, div_h, i))
         for (measure, function) in function_dict_party.items():
-            deviations.add(measure, self.party_func(measure, election, function))
+            for extension in ['const', 'nat', 'overall']:
+                measure_name = measure + '_' + extension
+                deviations.add(measure_name, self.party_func(measure_name, election, function))
 
     def specific_measures(self, election, deviations):
         (slope, corr) = self.bias(election)
@@ -344,8 +344,15 @@ class Simulation():
     def party_func(self, name, election, function):
         measure = 0
         for p in range(len(self.parties)):
-            s = election.results['all_grand_total'][p]
-            h = election.total_ref_seat_shares[p]
+            if name.endswith('overall'):
+                s = election.results['all_grand_total'][p]
+                h = election.total_ref_seat_shares[p]
+            elif name.endswith('const'):
+                s = election.results['all_const_total'][p]
+                h = election.total_ref_seat_shares[p] - election.total_ref_nat[p]
+            elif name.endswith('nat'):
+                s = election.results['all_nat_seats'][p]
+                h = election.total_ref_nat[p]
             if name.startswith('sum'):
                 measure += function(h,s)
             elif name.startswith('max'):
