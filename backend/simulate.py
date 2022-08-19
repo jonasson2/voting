@@ -17,7 +17,6 @@ from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
 import numpy as np
-import pandas as pd
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
 
