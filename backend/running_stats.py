@@ -60,7 +60,7 @@ class Running_stats:
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
         self.big = np.maximum(self.big, running_stats.big)
         self.small = np.minimum(self.small, running_stats.small)
-        if store:
+        if self.store:
             self.keep.extend(running_stats.keep)
 
     def mean(self):
