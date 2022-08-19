@@ -74,8 +74,8 @@ class MeasureGroups(dict):
                 "title": "– parties in the constituencies",
                 
                 "rows": {
-                    "sum_abs_party": ("sum of absolute values",""),
-                    "sum_sq_party": ("sum of squared values",""),
+                    "sum_abs_party_const": ("sum of absolute values",""),
+                    "sum_sq_party_const": ("sum of squared values",""),
                 },
                 "onlyExcel": True
             }
@@ -83,8 +83,8 @@ class MeasureGroups(dict):
             self["toNationalLists"] = {
                 "title": "– national lists",
                 "rows": {
-                    "sum_abs_party": ("sum of absolute values",""),
-                    "sum_sq_party": ("sum of squared values",""),
+                    "sum_abs_party_nat": ("sum of absolute values",""),
+                    "sum_sq_party_nat": ("sum of squared values",""),
                 },
                 "onlyExcel": True
             }
