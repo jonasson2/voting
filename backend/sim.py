@@ -118,6 +118,7 @@ def main():
         pass
     elapsed_time = hms(time.time() - beginning_time)
     simulation_to_excel(simid,'sim.xlsx')
+    save_disparity_data(simid)
     # simulation_plot(simid)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:
