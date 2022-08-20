@@ -150,6 +150,7 @@ class Simulation():
         begin_time = datetime.now()
         for i in range(self.sim_count):
             self.iteration = i + 1
+            print(f'iteration = {self.iteration}')
             (votes, party_votes) = next(gen)
             self.run_and_collect_measures(votes, party_votes)  # This allocates
             round_end = datetime.now()

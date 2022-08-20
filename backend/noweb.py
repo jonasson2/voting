@@ -184,11 +184,10 @@ def check_simulation(simid, stop=False):
         sim_result_dict = {'data': []}
     return sim_status, sim_result_dict
 
-def simulation_plot(simid):
+def save_disparity_data(simid):
     disparity = SIMULATIONS[simid]["result"].disparity_data
     with open('disparity.json', 'w', encoding='utf-8') as fd:
         json.dump(disparity, fd)
-    plot_sim_party_data(disparity)
 
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]

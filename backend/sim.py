@@ -4,7 +4,7 @@ from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from noweb import load_votes, new_simulation
 from noweb import load_json
-from noweb import simulation_to_excel, simulation_plot
+from noweb import simulation_to_excel, save_disparity_data
 from noweb import check_simulation, create_SIMULATIONS
 from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
@@ -118,7 +118,7 @@ def main():
         pass
     elapsed_time = hms(time.time() - beginning_time)
     simulation_to_excel(simid,'sim.xlsx')
-    #simulation_plot(simid)
+    # simulation_plot(simid)
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:
             print(f'Simulation finished, elapsed time: {elapsed_time}', file=f)
