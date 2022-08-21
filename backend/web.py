@@ -15,7 +15,7 @@ from input_util import check_simul_settings
 from util import disp, get_cpu_counts
 from util import timestamp, timestampmsg
 from trace_util import short_traceback
-from noweb import load_votes, load_json, single_election
+from noweb import load_votes, load_json, single_election, save_disparity_data
 from noweb import new_simulation, check_simulation
 from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
 
@@ -299,6 +299,7 @@ def api_simdownload():
         simid = getparam('simid')
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{simid[:6]}')
         simulation_to_excel(simid, tmpfilename)
+        save_disparity_data(simid)
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name = f"simulation-{date}.xlsx"
         return save_file(tmpfilename, download_name);

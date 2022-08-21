@@ -320,8 +320,7 @@ def elections_to_xlsx(elections, filename):
 
     workbook.close()
 
-def simulation_to_xlsx(results, filename):
-
+def simulation_to_xlsx(results, disparity_data, filename):
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -410,13 +409,6 @@ def simulation_to_xlsx(results, filename):
         worksheet.write(row, c1, setting["label"], fmt["basic"])
         worksheet.write(row, c2, setting["data"], fmt["basic"])
     
-    categories = [
-        {"abbr": "base", "heading": "Values based on source votes"},
-        {"abbr": "avg",  "heading": "Avg. simulated values"},
-        {"abbr": "min",  "heading": "Minimum values"},
-        {"abbr": "max",  "heading": "Maximum values"},
-        {"abbr": "std",  "heading": "Standard deviations"}
-    ]
     tables = [
         {"abbr": "v",  "heading": "Votes"             },
         {"abbr": "vp", "heading": "Vote percentages"},
@@ -555,7 +547,7 @@ def simulation_to_xlsx(results, filename):
 
     system_names = [sys["name"] for sys in results["systems"]]
 
-    # WRITING ALLOCATION SUMMARY
+    # ALLOCATION SUMMARY
     worksheet = workbook.add_worksheet("Allocation summary")
     worksheet.freeze_panes(4,2)
     toprow = 0
@@ -586,7 +578,14 @@ def simulation_to_xlsx(results, filename):
 
     toprow += 2
 
-    #Election tables
+    #ELECTION TABLES
+    categories = [
+        {"abbr": "base", "heading": "Values based on source votes"},
+        {"abbr": "avg",  "heading": "Avg. simulated values"},
+        {"abbr": "min",  "heading": "Minimum values"},
+        {"abbr": "max",  "heading": "Maximum values"},
+        {"abbr": "std",  "heading": "Standard deviations"}
+    ]
     for category in categories:
         skip_total = category["abbr"] in ["std", "min", "max"]
         worksheet.write(toprow, 0, category["heading"], fmt["h"])
@@ -604,6 +603,28 @@ def simulation_to_xlsx(results, filename):
             )
             col += len(parties) + (0 if no_total_column else 1)
         toprow += len(system_names)+1
+
+    # DISPARITY DATA
+    from numpy import c_
+    worksheet = workbook.add_worksheet("Disparity data")
+    data = np.array(disparity_data)
+    nparty = len(parties) - 1
+    worksheet.write(0, 0, "System", fmt["h"])
+    worksheet.write(0, 1, "Value", fmt["h_right"])
+    worksheet.write_row(0, 2, parties[:-1], fmt["h_center"])
+    row = 1
+    for sys in range(nsys):
+        k1 = min(min(x) for x in data[sys])
+        k2 = max(max(x) for x in data[sys])
+        bins = range(k1, k2+1)
+        hist = np.zeros((k2 - k1 + 1, 0))
+        for p in range(nparty):
+            counts, _ = np.histogram(data[sys, :, p], range(k1,k2+2))
+            hist = c_[hist, counts]
+        worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
+        worksheet.write_column(row, 1, bins, fmt["base"])
+        write_matrix(worksheet, row, 2, hist, fmt["base"])
+        row += len(bins) + 1
 
     # SYSTEM SHEETS
     for r in range(len(results["systems"])):
