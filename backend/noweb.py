@@ -172,7 +172,9 @@ def check_simulation(simid, stop=False):
                 'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
         if sim_status["done"]:
             sim_dict = read_sim_dict(simid)
-            sim_dict['disparity_data'] = fix_str_keys(sim_dict['disparity_data'])
+            for key in sim_dict["histogram_data"]:
+                sim_dict['histogram_data'][key] = \
+                    fix_str_keys(sim_dict['histogram_data'][key])
             sim_result = Sim_result(sim_dict)
             process = SIM['process']
             process.wait()
