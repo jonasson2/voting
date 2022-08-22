@@ -176,7 +176,8 @@ SEAT_MEASURES = {
 VOTE_MEASURES = {
     "sim_votes": "votes in simulations",
     "sim_vote_percentages": "shares in simulations",
-    "neg_margin": "negative margin"
+    "neg_margin": "negative margin",
+    "neg_margin_count": "frequency of negative margin"
 }
 
 SENS_MEASURES = [

@@ -420,7 +420,8 @@ def simulation_to_xlsx(results, filename):
         {"abbr": "as",  "total": True,  "heading": "Adjustment seats"},
         {"abbr": "ts",  "total": True,  "heading": "Total seats"},
         {"abbr": "tsp", "total": False, "heading": "Total seat percentages"},
-        {"abbr": "nmp", "total": True,  "heading": "Negative margin percentages"}
+        {"abbr": "nmp", "total": True,  "heading": "Negative margin percentages"},
+        {"abbr": "nmc", "total": True,  "heading": "Negative margin frequency"}
     ]
     base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
     base_const_names.append("Total")
@@ -598,7 +599,7 @@ def simulation_to_xlsx(results, filename):
         col = 2
         for table in summary_tables:
             no_total_column = table["heading"].endswith("percentages") or \
-                              table["heading"].startswith(('Disparity', 'Excess', 'Shortage'))
+             table["heading"].startswith(('Potential', 'Disparity', 'Excess', 'Shortage'))
             setTotal = ("hide" if skip_total and not no_total_column else "show")
             draw_sim_block(worksheet, row=toprow, col=col,
                 heading = table["heading"],
@@ -675,7 +676,8 @@ def simulation_to_xlsx(results, filename):
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],
                 "tsp": results["base_allocations"][r]["total_seat_percentages"],
-                "nmp": results["base_allocations"][r]["neg_margins"]
+                "nmp": results["base_allocations"][r]["neg_margins"],
+                "nmc": results["base_allocations"][r]["neg_margin_count"]
             }
         }
         seat_measures = results["data"][r]["seat_measures"]
@@ -689,6 +691,7 @@ def simulation_to_xlsx(results, filename):
                 "ts": seat_measures["total_seats"][stat],
                 "tsp": seat_measures["total_seat_percentages"][stat],
                 "nmp": results["vote_data"][r]["neg_margin"][stat],
+                "nmc": results["vote_data"][r]["neg_margin_count"][stat],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
