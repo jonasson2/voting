@@ -97,7 +97,8 @@ class Simulation():
         for measure in VOTE_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
-                self.stat[measure][i] = Running_stats((nc + n1, np+1), parallel, measure)
+                nrow = nc + 1 if measure == "neg_margin" else nc + n1
+                self.stat[measure][i] = Running_stats((nrow, np+1), parallel, measure)
         for measure in SEAT_MEASURES:
             self.stat[measure] = [None]*ns
             for (i,nc) in enumerate(nclist):
@@ -133,6 +134,8 @@ class Simulation():
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
             ids = add_totals(election.ref_seat_shares)
+            neg_margins, neg_parties = self.calculate_negative_margins(election)
+            const_party_margins = self.neg_margin_matrix(neg_margins, neg_parties)
             if self.party_votes_specified:
                 ids.append(add_total(election.total_ref_nat))
                 ids.append([x+y for (x,y) in zip(ids[-2], ids[-1])])
@@ -146,7 +149,8 @@ class Simulation():
                 "party_disparity": disparity,
                 "party_excess": excess,
                 "party_shortage": shortage,
-                "party_overhang": party_overhang
+                "party_overhang": party_overhang,
+                "neg_margins": const_party_margins
             })
             #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
 
@@ -203,6 +207,8 @@ class Simulation():
             if self.party_votes_specified:
                 votes = np.vstack((votes, add_total(election.nat_votes)))
             vote_percentages = find_percentages(votes)
+            #const_party_disparity = self.calculate_const_party_disparity(election)
+            #self.stat["neg_margin"][i].update()
             self.stat["sim_votes"][i].update(votes)
             self.stat["sim_vote_percentages"][i].update(vote_percentages)
 
@@ -247,9 +253,11 @@ class Simulation():
         for i, (ref_election, election) in enumerate(zip(ref_elections, elections)):
             system = election.system
             self.add_deviation(election, ref_election, "dev_ref", deviations)
-            negative_margins = self.calculate_negative_margins(election)
-            deviations.add("max_neg_margin", max(negative_margins))
-            deviations.add("avg_neg_margin", average(negative_margins))
+            neg_margins, neg_parties = self.calculate_negative_margins(election)
+            const_party_margins = self.neg_margin_matrix(neg_margins, neg_parties)
+            self.stat["neg_margin"][i].update(const_party_margins)
+            deviations.add("max_neg_margin", max(neg_margins))
+            deviations.add("avg_neg_margin", average(neg_margins))
             deviations.add("entropy", election.entropy())
             excess, shortage, disparity = self.calculate_disparity(election)
             deviations.add("excess", excess)
@@ -295,10 +303,23 @@ class Simulation():
         seats = election.results["all_const_seats"]
         shares = election.ref_seat_shares
         neg_margins = []
+        neg_parties = []
         for (srow,hrow) in zip(seats, shares):
             diff = [s - h for (s,h) in zip(srow, hrow)]
-            neg_margins.append(max(0, max(diff) - min(diff) - 1))
-        return neg_margins
+            maxdiff = max(diff)
+            maxparty = diff.index(maxdiff)
+            neg_margins.append(max(0, maxdiff - min(diff) - 1))
+            neg_parties.append(maxparty)
+        return neg_margins, neg_parties
+
+    def neg_margin_matrix(self, neg_margins, neg_parties):
+        const_party_margins = []
+        for neg_margin, neg_party in zip(neg_margins, neg_parties):
+            pm = [0]*self.nparty
+            if neg_margin > 0:
+                pm[neg_party] = neg_margin
+            const_party_margins.append(pm)
+        return add_totals(const_party_margins)
 
     def seats_minus_shares_measures(self, election, i, deviations):
         for (funcname, (function, div_h)) in function_dict.items():
@@ -314,8 +335,6 @@ class Simulation():
         deviations.add("min_seat_val", self.min_seat_val(election))
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
-        #deviations.add("max_neg_margin", XXX)
-        #deviations.add()
 
     def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:

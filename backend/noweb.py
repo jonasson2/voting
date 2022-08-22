@@ -171,6 +171,8 @@ def check_simulation(simid, stop=False):
             sim_status = {
                 'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
         if sim_status["done"]:
+            from time import sleep
+            sleep(0.25)
             sim_dict = read_sim_dict(simid)
             for key in sim_dict["histogram_data"]:
                 sim_dict['histogram_data'][key] = \

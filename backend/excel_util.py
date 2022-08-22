@@ -43,6 +43,9 @@ def prepare_formats(workbook):
     formats["percentages"] = workbook.add_format()
     formats["percentages"].set_num_format('0.0%')
 
+    formats["neg-margins"] = workbook.add_format()
+    formats["neg-margins"].set_num_format('0.00%')
+
     formats["left-pct1"] = workbook.add_format()
     formats["left-pct1"].set_num_format('0.0%')
     formats["left-pct1"].set_align('left')
@@ -410,13 +413,14 @@ def simulation_to_xlsx(results, filename):
         worksheet.write(row, c2, setting["data"], fmt["basic"])
     
     tables = [
-        {"abbr": "v",  "heading": "Votes"             },
-        {"abbr": "vp", "heading": "Vote percentages"},
-        {"abbr": "rss", "heading": "Reference seat shares"},
-        {"abbr": "cs", "heading": "Fixed seats"},
-        {"abbr": "as", "heading": "Adjustment seats"},
-        {"abbr": "ts", "heading": "Total seats"},
-        {"abbr": "tsp", "heading": "Total seat percentages"},
+        {"abbr": "v",   "total": True,  "heading": "Votes"             },
+        {"abbr": "vp",  "total": False, "heading": "Vote percentages"},
+        {"abbr": "rss", "total": True,  "heading": "Reference seat shares"},
+        {"abbr": "cs",  "total": True,  "heading": "Fixed seats"},
+        {"abbr": "as",  "total": True,  "heading": "Adjustment seats"},
+        {"abbr": "ts",  "total": True,  "heading": "Total seats"},
+        {"abbr": "tsp", "total": False, "heading": "Total seat percentages"},
+        {"abbr": "nmp", "total": True,  "heading": "Negative margin percentages"}
     ]
     base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
     base_const_names.append("Total")
@@ -666,11 +670,12 @@ def simulation_to_xlsx(results, filename):
             "base": {
                 "v": xtd_votes,
                 "vp": xtd_percentages,
+                "rss": results["base_allocations"][r]["ref_seat_shares"],
                 "cs": results["base_allocations"][r]["fixed_seats"],
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],
                 "tsp": results["base_allocations"][r]["total_seat_percentages"],
-                "rss": results["base_allocations"][r]["ref_seat_shares"],
+                "nmp": results["base_allocations"][r]["neg_margins"]
             }
         }
         seat_measures = results["data"][r]["seat_measures"]
@@ -678,11 +683,12 @@ def simulation_to_xlsx(results, filename):
             data_matrix[stat] = {
                 "v": results["vote_data"][r]["sim_votes"][stat],
                 "vp": results["vote_data"][r]["sim_vote_percentages"][stat],
+                "rss": seat_measures["ref_seat_shares"][stat],
                 "cs": seat_measures["fixed_seats"][stat],
                 "as": seat_measures["adj_seats"][stat],
                 "ts": seat_measures["total_seats"][stat],
                 "tsp": seat_measures["total_seat_percentages"][stat],
-                "rss": seat_measures["ref_seat_shares"][stat],
+                "nmp": results["vote_data"][r]["neg_margin"][stat],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
@@ -740,16 +746,14 @@ def simulation_to_xlsx(results, filename):
 
         col = 2
         for table in tables:
-            is_percentages_table = (
-                    table["heading"].endswith("percentages") and
-                    not table["heading"].startswith("Reference"))
             worksheet.write(toprow, col, table["heading"], fmt["h"])
             worksheet.write_row(
                 toprow + 1,
                 col,
-                parties[:-1] if is_percentages_table else parties,
+                parties if table["total"] else parties[:-1],
                 fmt["h_center"])
-            col += len(parties[:-1] if is_percentages_table else parties) + 1
+            col += len(parties)
+            if table["total"]: col += 1
             worksheet.set_column(col - 1, col - 1, 3)
 
         toprow += 2
@@ -763,10 +767,8 @@ def simulation_to_xlsx(results, filename):
             col = 2
             for table in tables:
                 is_refseatshare_table = table["heading"].startswith("Reference")
-                is_percentages_table = \
-                    table["heading"].endswith("percentages") and not is_refseatshare_table
                 setTotal = (
-                    "hide" if is_percentages_table else
+                    "hide" if not table["total"] else
                     "integer" if is_refseatshare_table else
                     "show")
                 draw_sim_block(worksheet, row=toprow, col=col,
@@ -775,7 +777,9 @@ def simulation_to_xlsx(results, filename):
                                abbreviation=category["abbr"],
                                setTotal=setTotal
                                )
-                col += len(parties[:-1] if is_percentages_table else parties) + 1
+                col += len(parties)
+                if table["total"]:
+                    col += 1
             toprow += len(base_const_names) + 1
     workbook.close()
 
