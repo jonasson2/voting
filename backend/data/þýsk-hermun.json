@@ -1,0 +1,1685 @@
+{
+  "vote_table": {
+    "constituencies": [
+      {
+        "name": "Altötting",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Erding – Ebersberg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Freising",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Fürstenfeldbruck",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Ingolstadt",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "München-Nord",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "München-Ost",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "München-Süd",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "München-West/Mitte",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "München-Land",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Rosenheim",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Bad Tölz-Wolfratshausen – Miesbach",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Starnberg – Landsberg am Lech",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Traunstein",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Weilheim",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Deggendorf",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Landshut",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Passau",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Rottal-Inn",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Straubing",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Amberg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Regensburg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Schwandorf",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Weiden",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Bamberg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Bayreuth",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Coburg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Hof",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Kulmbach",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Ansbach",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Erlangen",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Fürth",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Nürnberg-Nord",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Nürnberg-Süd",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Roth",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Aschaffenburg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Bad Kissingen",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Main-Spessart",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Schweinfurt",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Würzburg",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Augsburg-Stadt",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Augsburg-Land",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Donau-Ries",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Neu-Ulm",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Oberallgäu",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      },
+      {
+        "name": "Ostallgäu",
+        "num_adj_seats": 1,
+        "num_fixed_seats": 0
+      }
+    ],
+    "name": "GrabenSkandiAmpel",
+    "parties": [
+      "SPD",
+      "AfD",
+      "FDP",
+      "Linke",
+      "Grüne",
+      "CSU"
+    ],
+    "party_vote_info": {
+      "name": "ZweitStimmen",
+      "num_adj_seats": 47,
+      "num_fixed_seats": 0,
+      "specified": true,
+      "total": 6521243,
+      "votes": [
+        1361242,
+        679915,
+        798591,
+        210838,
+        1067830,
+        2402827
+      ]
+    },
+    "votes": [
+      [
+        14620,
+        14220,
+        9245,
+        3155,
+        11145,
+        55693
+      ],
+      [
+        24205,
+        11448,
+        13226,
+        3355,
+        24840,
+        70656
+      ],
+      [
+        25950,
+        18042,
+        14687,
+        3898,
+        24058,
+        69689
+      ],
+      [
+        36831,
+        13056,
+        16029,
+        3216,
+        25363,
+        72721
+      ],
+      [
+        25954,
+        17806,
+        10877,
+        4648,
+        18182,
+        83663
+      ],
+      [
+        38172,
+        7591,
+        19477,
+        6216,
+        42319,
+        44854
+      ],
+      [
+        38243,
+        8066,
+        18104,
+        4907,
+        42367,
+        61159
+      ],
+      [
+        33924,
+        7641,
+        16437,
+        6236,
+        47256,
+        46059
+      ],
+      [
+        39182,
+        7594,
+        19153,
+        6975,
+        53174,
+        53311
+      ],
+      [
+        30237,
+        9816,
+        18180,
+        3685,
+        40475,
+        77523
+      ],
+      [
+        22869,
+        15764,
+        17682,
+        4091,
+        26183,
+        68670
+      ],
+      [
+        15428,
+        0,
+        11636,
+        2643,
+        20829,
+        55501
+      ],
+      [
+        23985,
+        10715,
+        16585,
+        3701,
+        35809,
+        68617
+      ],
+      [
+        27644,
+        12671,
+        12268,
+        3537,
+        17219,
+        59555
+      ],
+      [
+        19682,
+        9686,
+        8553,
+        2718,
+        16300,
+        57179
+      ],
+      [
+        19527,
+        17432,
+        6325,
+        1895,
+        6890,
+        47267
+      ],
+      [
+        22468,
+        19184,
+        22774,
+        3955,
+        21811,
+        70685
+      ],
+      [
+        28341,
+        16215,
+        10513,
+        2681,
+        12098,
+        41530
+      ],
+      [
+        15794,
+        16808,
+        10210,
+        1912,
+        10188,
+        46493
+      ],
+      [
+        16312,
+        16794,
+        6895,
+        1936,
+        8613,
+        58487
+      ],
+      [
+        27476,
+        17822,
+        10213,
+        4158,
+        13908,
+        69278
+      ],
+      [
+        32850,
+        16557,
+        13754,
+        6023,
+        30333,
+        69842
+      ],
+      [
+        39615,
+        23142,
+        7341,
+        3043,
+        7934,
+        60924
+      ],
+      [
+        29573,
+        13523,
+        6303,
+        2315,
+        6633,
+        50575
+      ],
+      [
+        28123,
+        13279,
+        9821,
+        3625,
+        22728,
+        54726
+      ],
+      [
+        24840,
+        10777,
+        9182,
+        2577,
+        14064,
+        54465
+      ],
+      [
+        32056,
+        11878,
+        6369,
+        2337,
+        10581,
+        44890
+      ],
+      [
+        29763,
+        14705,
+        6493,
+        2651,
+        7941,
+        51312
+      ],
+      [
+        22103,
+        14416,
+        6480,
+        2448,
+        10165,
+        65163
+      ],
+      [
+        33819,
+        18418,
+        13016,
+        3798,
+        21343,
+        73312
+      ],
+      [
+        32036,
+        10669,
+        10382,
+        0,
+        29923,
+        54223
+      ],
+      [
+        47153,
+        16858,
+        12883,
+        6221,
+        27111,
+        65876
+      ],
+      [
+        31616,
+        8485,
+        10882,
+        7726,
+        32541,
+        41027
+      ],
+      [
+        31098,
+        13123,
+        8777,
+        5184,
+        15566,
+        44192
+      ],
+      [
+        31806,
+        14944,
+        12596,
+        5076,
+        25140,
+        71478
+      ],
+      [
+        24893,
+        13954,
+        11683,
+        3536,
+        19588,
+        59269
+      ],
+      [
+        32844,
+        17130,
+        12206,
+        4475,
+        16467,
+        67458
+      ],
+      [
+        33700,
+        12576,
+        9514,
+        4070,
+        15813,
+        60489
+      ],
+      [
+        29037,
+        15468,
+        12408,
+        6552,
+        14747,
+        63697
+      ],
+      [
+        33125,
+        0,
+        19414,
+        7522,
+        36295,
+        67651
+      ],
+      [
+        27453,
+        13431,
+        12880,
+        7168,
+        31347,
+        42780
+      ],
+      [
+        29435,
+        19660,
+        16032,
+        3573,
+        24806,
+        82423
+      ],
+      [
+        29872,
+        15723,
+        9915,
+        3048,
+        11076,
+        64045
+      ],
+      [
+        29960,
+        22517,
+        14542,
+        3466,
+        20621,
+        69676
+      ],
+      [
+        28401,
+        14473,
+        23604,
+        4911,
+        27817,
+        53566
+      ],
+      [
+        24288,
+        20021,
+        14258,
+        6667,
+        24128,
+        76399
+      ]
+    ]
+  },
+  "systems": [
+    {
+      "adj_alloc_divider": "sainte-lague",
+      "adj_determine_divider": "sainte-lague",
+      "adj_threshold_choice": 0,
+      "adjustment_method": "max-const-vote-percentage",
+      "adjustment_threshold": 0,
+      "adjustment_threshold_seats": 0,
+      "compare_with": true,
+      "constituencies": [
+        {
+          "name": "Altötting",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Erding – Ebersberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Freising",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Fürstenfeldbruck",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ingolstadt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Nord",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Ost",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Süd",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-West/Mitte",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Land",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Rosenheim",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bad Tölz-Wolfratshausen – Miesbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Starnberg – Landsberg am Lech",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Traunstein",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Weilheim",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Deggendorf",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Landshut",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Passau",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Rottal-Inn",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Straubing",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Amberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Regensburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Schwandorf",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Weiden",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bamberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bayreuth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Coburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Hof",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Kulmbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ansbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Erlangen",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Fürth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Nürnberg-Nord",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Nürnberg-Süd",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Roth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Aschaffenburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bad Kissingen",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Main-Spessart",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Schweinfurt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Würzburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Augsburg-Stadt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Augsburg-Land",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Donau-Ries",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Neu-Ulm",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Oberallgäu",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ostallgäu",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        }
+      ],
+      "constituency_threshold": 0,
+      "name": "Graben",
+      "nat_seats": {
+        "num_adj_seats": 0,
+        "num_fixed_seats": 47
+      },
+      "parties": [
+        "SPD",
+        "AfD",
+        "FDP",
+        "Linke",
+        "Grüne",
+        "CSU"
+      ],
+      "primary_divider": "sainte-lague",
+      "seat_spec_options": {
+        "const": "make_all_fixed",
+        "party": "party_vote_info"
+      }
+    },
+    {
+      "adj_alloc_divider": "sainte-lague",
+      "adj_determine_divider": "sainte-lague",
+      "adj_threshold_choice": 0,
+      "adjustment_method": "max-const-vote-percentage",
+      "adjustment_threshold": 0,
+      "adjustment_threshold_seats": 0,
+      "compare_with": true,
+      "constituencies": [
+        {
+          "name": "Altötting",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Erding – Ebersberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Freising",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Fürstenfeldbruck",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ingolstadt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Nord",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Ost",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Süd",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-West/Mitte",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "München-Land",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Rosenheim",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bad Tölz-Wolfratshausen – Miesbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Starnberg – Landsberg am Lech",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Traunstein",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Weilheim",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Deggendorf",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Landshut",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Passau",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Rottal-Inn",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Straubing",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Amberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Regensburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Schwandorf",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Weiden",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bamberg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bayreuth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Coburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Hof",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Kulmbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ansbach",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Erlangen",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Fürth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Nürnberg-Nord",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Nürnberg-Süd",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Roth",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Aschaffenburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Bad Kissingen",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Main-Spessart",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Schweinfurt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Würzburg",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Augsburg-Stadt",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Augsburg-Land",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Donau-Ries",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Neu-Ulm",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Oberallgäu",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        },
+        {
+          "name": "Ostallgäu",
+          "num_adj_seats": 0,
+          "num_fixed_seats": 1
+        }
+      ],
+      "constituency_threshold": 0,
+      "name": "Skandinavisch",
+      "nat_seats": {
+        "num_adj_seats": 47,
+        "num_fixed_seats": 0
+      },
+      "parties": [],
+      "primary_divider": "sainte-lague",
+      "seat_spec_options": {
+        "const": "make_const_fixed",
+        "party": "party_vote_info"
+      }
+    },
+    {
+      "adj_alloc_divider": "sainte-lague",
+      "adj_determine_divider": "sainte-lague",
+      "adj_threshold_choice": 0,
+      "adjustment_allocation_rule": "sainte-lague",
+      "adjustment_division_rule": "sainte-lague",
+      "adjustment_method": "max-const-vote-percentage",
+      "adjustment_threshold": 0,
+      "adjustment_threshold_seats": 0,
+      "compare_with": true,
+      "constituencies": [
+        {
+          "name": "Altötting",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Erding – Ebersberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Freising",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Fürstenfeldbruck",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ingolstadt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Nord",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Ost",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Süd",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-West/Mitte",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Land",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Rosenheim",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bad Tölz-Wolfratshausen – Miesbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Starnberg – Landsberg am Lech",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Traunstein",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Weilheim",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Deggendorf",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Landshut",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Passau",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Rottal-Inn",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Straubing",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Amberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Regensburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Schwandorf",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Weiden",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bamberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bayreuth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Coburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Hof",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Kulmbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ansbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Erlangen",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Fürth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Nürnberg-Nord",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Nürnberg-Süd",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Roth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Aschaffenburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bad Kissingen",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Main-Spessart",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Schweinfurt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Würzburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Augsburg-Stadt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Augsburg-Land",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Donau-Ries",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Neu-Ulm",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Oberallgäu",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ostallgäu",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        }
+      ],
+      "constituency_allocation_rule": "sainte-lague",
+      "constituency_threshold": 0,
+      "name": "Eckvariante",
+      "nat_seats": {
+        "num_adj_seats": 47,
+        "num_fixed_seats": 0
+      },
+      "parties": [
+        "SPD",
+        "AfD",
+        "FDP",
+        "Linke",
+        "Grüne",
+        "CSU"
+      ],
+      "primary_divider": "sainte-lague",
+      "seat_spec_options": {
+        "const": "refer",
+        "party": "party_vote_info"
+      }
+    },
+    {
+      "adj_alloc_divider": "sainte-lague",
+      "adj_determine_divider": "sainte-lague",
+      "adj_threshold_choice": 0,
+      "adjustment_allocation_rule": "sainte-lague",
+      "adjustment_division_rule": "sainte-lague",
+      "adjustment_method": "switching",
+      "adjustment_threshold": 0,
+      "adjustment_threshold_seats": 0,
+      "compare_with": true,
+      "constituencies": [
+        {
+          "name": "Altötting",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Erding – Ebersberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Freising",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Fürstenfeldbruck",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ingolstadt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Nord",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Ost",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Süd",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-West/Mitte",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "München-Land",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Rosenheim",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bad Tölz-Wolfratshausen – Miesbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Starnberg – Landsberg am Lech",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Traunstein",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Weilheim",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Deggendorf",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Landshut",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Passau",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Rottal-Inn",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Straubing",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Amberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Regensburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Schwandorf",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Weiden",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bamberg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bayreuth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Coburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Hof",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Kulmbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ansbach",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Erlangen",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Fürth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Nürnberg-Nord",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Nürnberg-Süd",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Roth",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Aschaffenburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Bad Kissingen",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Main-Spessart",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Schweinfurt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Würzburg",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Augsburg-Stadt",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Augsburg-Land",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Donau-Ries",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Neu-Ulm",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Oberallgäu",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        },
+        {
+          "name": "Ostallgäu",
+          "num_adj_seats": 1,
+          "num_fixed_seats": 0
+        }
+      ],
+      "constituency_allocation_rule": "sainte-lague",
+      "constituency_threshold": 0,
+      "name": "Wechsel",
+      "nat_seats": {
+        "num_adj_seats": 47,
+        "num_fixed_seats": 0
+      },
+      "parties": [
+        "SPD",
+        "AfD",
+        "FDP",
+        "Linke",
+        "Grüne",
+        "CSU"
+      ],
+      "primary_divider": "sainte-lague",
+      "seat_spec_options": {
+        "const": "refer",
+        "party": "party_vote_info"
+      }
+    }
+  ],
+  "sim_settings": {
+    "const_cov": 0.3,
+    "cpu_count": 8,
+    "gen_method": "gamma",
+    "party_vote_cov": 0.1,
+    "scaling": "const",
+    "selected_rand_constit": "All constituencies",
+    "sens_cv": 0.01,
+    "sens_method": "uniform",
+    "sensitivity": false,
+    "simulate": false,
+    "simulation_count": 5000,
+    "use_thresholds": false
+  }
+}
