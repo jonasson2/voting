@@ -4,7 +4,6 @@ from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from electionHandler import ElectionHandler
 from noweb import load_votes, load_json, single_election, votes_to_excel
-from histogram import combine_histograms, combine_histogram_lists, histograms2array
 from copy import deepcopy, copy
 import json
 from util import disp, dispv, remove_suffix, hms, writecsv

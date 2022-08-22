@@ -4,7 +4,8 @@ from measure_groups import MeasureGroups, function_dict, function_dict_party
 import dictionaries as dicts
 import random
 from voting import Election
-from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES, PARTY_MEASURES
+from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
+from dictionaries import HISTOGRAM_MEASURES, PARTY_MEASURES
 from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS
 from electionHandler import ElectionHandler
 from generate_votes import generate_votes
@@ -60,7 +61,6 @@ class Simulation():
         self.party_votes_specified = self.vote_table["party_vote_info"]["specified"]
         self.measure_groups = MeasureGroups(systems, self.party_votes_specified, nr)
         self.base_allocations = []
-        self.nsys = len(self.reference_handler.elections)
         self.parties = vote_table["parties"]
         self.sim_count = sim_settings["simulation_count"]
         self.distribution = sim_settings["gen_method"]
@@ -69,8 +69,9 @@ class Simulation():
         self.terminate = False
         # ------- Following properties are only used by excel_util.py
         self.constituencies = [c['name'] for c in vote_table["constituencies"]]
-        self.num_parties = len(self.parties)
-        self.num_constituencies = len(self.constituencies)
+        self.nsys = len(self.reference_handler.elections)
+        self.nparty = len(self.parties)
+        self.nconst = len(self.constituencies)
         self.sensitivity = sim_settings["sensitivity"]
         self.apply_random = self.index_of_const_to_apply_randomness_to()
         # -------- Following is used for plotting
@@ -84,8 +85,8 @@ class Simulation():
 
     def initialize_stat_counters(self):
         ns = self.nsys
+        np = self.nparty
         nclist = [len(sys["constituencies"]) for sys in self.systems]
-        np = len(self.parties)
         self.MEASURES = self.measure_groups.get_all_measures(self.party_votes_specified)
         parallel = self.sim_settings["cpu_count"] > 1
         self.STAT_LIST = list(STATISTICS_HEADINGS.keys())
@@ -108,11 +109,15 @@ class Simulation():
         for measure in self.MEASURES:
             self.stat[measure] = Running_stats(ns, parallel, measure)
         extensions = ['const', 'tot']
+        for measure in HISTOGRAM_MEASURES:
+            self.stat[measure] = [None]*ns*np
+            for i in range(ns*np):
+                self.stat[measure][i] = Histogram()
         for measure in PARTY_MEASURES:
             self.stat[measure] = [None] * ns
-            for i in range(ns):
-                store = measure=='party_disparity'
-                self.stat[measure][i] = Running_stats(np, parallel, measure, store)
+            for s in range(ns):
+                #store = measure=='party_disparity'
+                self.stat[measure][s] = Running_stats(np, parallel, measure)
         if self.party_votes_specified:
             extensions.extend(['nat', 'grand'])
         for cmp_system in self.systems:
@@ -122,9 +127,11 @@ class Simulation():
                     self.stat[measure] = Running_stats(ns, parallel, measure)
 
     def run_initial_elections(self):
+        #total_overhang = sum(sum(x) for x in overhang)
         for i,election in enumerate(self.reference_handler.elections):
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             disparity, excess, shortage = self.calculate_party_disparity(election)
+            party_overhang = self.calculate_potential_overhang(election)
             ids = add_totals(election.ref_seat_shares)
             if self.party_votes_specified:
                 ids.append(add_total(election.total_ref_nat))
@@ -136,9 +143,10 @@ class Simulation():
                 "total_seat_percentages": find_percentages(election.results["all"]),
                 "ref_seat_shares": ids,
                 "ref_seat_alloc": election.ref_seat_alloc,
-                "disparity": disparity,
-                "excess": excess,
-                "shortage": shortage
+                "party_disparity": disparity,
+                "party_excess": excess,
+                "party_shortage": shortage,
+                "party_overhang": party_overhang
             })
             #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
 
@@ -218,15 +226,19 @@ class Simulation():
     def collect_party_measures(self):
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
+            disparity, excess, shortage = self.calculate_party_disparity(election)
+            party_overhang = self.calculate_potential_overhang(election)
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
             self.stat["party_ref_seat_shares"][i].update(election.total_ref_seat_shares)
             self.stat["party_total_seats"][i].update(election.results["all_grand_total"])
             self.stat["ref_seat_alloc"][i].update(election.ref_seat_alloc)
-            disparity, excess, shortage = self.calculate_party_disparity(election)
             self.stat["party_disparity"][i].update(disparity)
             self.stat["party_excess"][i].update(excess)
             self.stat["party_shortage"][i].update(shortage)
-            #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
+            self.stat["party_overhang"][i].update(party_overhang)
+            for p in range(self.nparty):
+                self.stat["disparity_count"][i*self.nparty + p].update(disparity[p])
+                self.stat["overhang_count"][i*self.nparty + p].update(party_overhang[p])
 
     def collect_general_measures(self):
         deviations = Collect()
@@ -243,6 +255,8 @@ class Simulation():
             deviations.add("excess", excess)
             deviations.add("shortage", shortage)
             deviations.add("disparity", disparity)
+            total_overhang = sum(self.calculate_potential_overhang(election))
+            deviations.add("total_overhang", total_overhang)
             for cmp_election in elections:
                 cmp_system = cmp_election.system
                 if cmp_system["compare_with"]:
@@ -271,6 +285,11 @@ class Simulation():
             excess.append(max(0, result-alloc))
             shortage.append(max(0, -(result-alloc)))
         return disparity, excess, shortage
+
+    def calculate_potential_overhang(self, election):
+        overhang = [max(0, cs - rss) for (cs, rss) in
+                    zip(election.results['fixed_const_total'], election.ref_seat_alloc)]
+        return overhang
 
     def calculate_negative_margins(self, election):
         seats = election.results["all_const_seats"]
@@ -327,7 +346,7 @@ class Simulation():
         measure = 0
         num_c = election.num_constituencies()
         for c in range(num_c):
-            for p in range(len(self.parties)):
+            for p in range(self.nparty):
                 s = election.results["all_const_seats"][c][p]
                 if self.vote_table['votes'][c][p] == 0:
                     continue
@@ -343,7 +362,7 @@ class Simulation():
 
     def party_func(self, name, election, function):
         measure = 0
-        for p in range(len(self.parties)):
+        for p in range(self.nparty):
             if name.endswith('overall'):
                 s = election.results['all_grand_total'][p]
                 h = election.total_ref_seat_shares[p]
@@ -388,7 +407,7 @@ class Simulation():
     def sum_abs(self, election):
         lh = sum([
             abs(election.ref_seat_shares[c][p] - election.results['all_const_seats'][c][p])
-            for p in range(len(self.parties))
+            for p in range(self.nparty)
             for c in range(election.num_constituencies())
         ])
         return lh
@@ -398,7 +417,7 @@ class Simulation():
         ids = election.ref_seat_shares
         stl = sum([
             (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
-            for p in range(len(self.parties))
+            for p in range(self.nparty)
             for c in range(election.num_constituencies())
             if ids[c][p] != 0
         ])
@@ -409,7 +428,7 @@ class Simulation():
         ids = election.ref_seat_shares
         dh_min = min([
             ids[c][p]/float(election.results['all_const_seats'][c][p])
-            for p in range(len(self.parties))
+            for p in range(self.nparty)
             for c in range(election.num_constituencies())
             if election.results['all_const_seats'][c][p] != 0
         ])
@@ -420,7 +439,7 @@ class Simulation():
         ids = election.ref_seat_shares
         dh_sum = sum([
             max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
-            for p in range(len(self.parties))
+            for p in range(self.nparty)
             for c in range(election.num_constituencies())
             if ids[c][p] != 0
         ])
@@ -452,19 +471,21 @@ class Simulation():
 class Sim_result:
     # Results from one simulation, or several combined simulations
     def __init__(self, dictionary):
+        def ishistogram(x):
+            return isinstance(x, dict) and 'histcounts' in x
         warnings_to_errors()
         for (key,val) in dictionary.items():
             if key=='stat':
                 for statkey, statval in val.items():
                     if isinstance(statval,list):
                         for i in range(len(statval)):
-                            if statkey.endswith('sens'):
+                            if ishistogram(statval[i]):
                                 statval[i] = Histogram(statval[i])
                             else:
                                 statval[i] = Running_stats.from_dict(statval[i])
                     else:
-                        if statkey.endswith('sens'):
-                            val[statkey] = Histogram(statval[i])
+                        if ishistogram(statval):
+                            val[statkey] = Histogram(statval)
                         else:
                             val[statkey] = Running_stats.from_dict(statval)
             setattr(self, key, val)
@@ -484,12 +505,18 @@ class Sim_result:
             for (i,nc) in enumerate(nclist):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in SENS_MEASURES:
-            for i in range(len(self.systems)):
+            for i in range(self.nsys):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
+        np = self.nparty
+        for measure in HISTOGRAM_MEASURES:
+            for s in range(self.nsys):
+                for p in range(np):
+                    i = s*np + p
+                    self.stat[measure][i].combine(sim_result.stat[measure][i])
         for measure in self.MEASURES:  # Was MEASURES in earlier version
             self.stat[measure].combine(sim_result.stat[measure])
         for measure in PARTY_MEASURES:
-            for i in range(len(self.systems)):
+            for i in range(self.nsys):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
 
         extensions = ['const', 'tot']
@@ -526,8 +553,10 @@ class Sim_result:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm, self.STAT_LIST)
                 self.party_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
-        self.disparity_data = [self.stat['party_disparity'][sys].keep
-                               for sys in range(self.nsys)]
+        #self.disparity_data = [self.stat['party_disparity'][sys].keep
+        #                       for sys in range(self.nsys)]'
+        for m in HISTOGRAM_MEASURES:
+            self.histogram_data[m] = [s.get() for s in self.stat[m]]
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.
@@ -535,6 +564,7 @@ class Sim_result:
         self.seat_data = [{} for _ in range(self.nsys + 1)]
         self.vote_data = [{} for _ in range(self.nsys)]
         self.party_data = [{} for _ in range(self.nsys)]
+        self.histogram_data = {}
         if hasattr(self, 'sensitivity') and self.sensitivity:
             self.list_sensitivity = self.gethistograms("list")
             self.party_sensitivity = self.gethistograms("party")
@@ -591,6 +621,7 @@ class Sim_result:
                                 for systems in self.systems],
             "vote_data":        self.vote_data,
             "party_data":       self.party_data,
+            "histogram_data":   self.histogram_data,
             "vote_table":       self.vote_table,
             "base_allocations": self.base_allocations,
             "data":         [{

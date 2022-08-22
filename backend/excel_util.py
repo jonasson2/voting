@@ -320,7 +320,7 @@ def elections_to_xlsx(elections, filename):
 
     workbook.close()
 
-def simulation_to_xlsx(results, disparity_data, filename):
+def simulation_to_xlsx(results, filename):
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook)
@@ -509,24 +509,16 @@ def simulation_to_xlsx(results, disparity_data, filename):
             nat_votes = [(x + y) / 2 for (x, y) in zip(total, nat)]
         nat_base_vote_percentages.append([x/sum(nat_votes) for x in nat_votes])
 
-    summary_tables = [
-        {"abbr": "vp", "heading": "Vote percentages"},
-        {"abbr": "rss", "heading": "Reference seat shares"},
-        {"abbr": "ts", "heading": "Total seats"},
-        {"abbr": "ra", "heading": "Reference allocations"},
-        {"abbr": "dis", "heading": "Disparity (excess if positive/deficiency if negative)"},
-        {"abbr": "exs", "heading": "Excess (Positive disparity only)"},
-        {"abbr": "sht", "heading": "Shortage (Negative disparity only)"}
-    ]
     data_matrix = {
         "base": {
             "vp":  nat_base_vote_percentages,
             "rss": [results["base_allocations"][r]["ref_seat_shares"][-1] for r in range(nsys)],
             "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
             "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
-            "dis": [results["base_allocations"][r]["disparity"] for r in range(nsys)],
-            "exs": [results["base_allocations"][r]["excess"] for r in range(nsys)],
-            "sht": [results["base_allocations"][r]["shortage"] for r in range(nsys)],
+            "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
+            "ovh": [results["base_allocations"][r]["party_overhang"] for r in range(nsys)],
+            "exs": [results["base_allocations"][r]["party_excess"] for r in range(nsys)],
+            "sht": [results["base_allocations"][r]["party_shortage"] for r in range(nsys)],
 
         }
     }
@@ -538,18 +530,17 @@ def simulation_to_xlsx(results, disparity_data, filename):
             "ts":  [add_total(party_measures[r]['party_total_seats'][stat]) for r in range(nsys)],
             "ra":  [add_total(party_measures[r]['ref_seat_alloc'][stat]) for r in range(nsys)],
             "dis": [party_measures[r]['party_disparity'][stat] for r in range(nsys)],
+            "ovh": [party_measures[r]['party_overhang'][stat] for r in range(nsys)],
             "exs": [party_measures[r]['party_excess'][stat] for r in range(nsys)],
             "sht": [party_measures[r]['party_shortage'][stat] for r in range(nsys)]
         }
 
     parties = results["systems"][0]["parties"] + ["Total"]
-    party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
-
     system_names = [sys["name"] for sys in results["systems"]]
 
     # ALLOCATION SUMMARY
     worksheet = workbook.add_worksheet("Allocation summary")
-    worksheet.freeze_panes(4,2)
+    worksheet.freeze_panes(5,2)
     toprow = 0
     c = 0
     worksheet.write(toprow,c,"ALLOCATION SUMMARY",fmt["h"])
@@ -563,10 +554,20 @@ def simulation_to_xlsx(results, disparity_data, filename):
     worksheet.write(toprow+1,c,"Electoral system",fmt["h"])
     toprow += 1
 
+    summary_tables = [
+        {"abbr": "vp", "heading": "Vote percentages"},
+        {"abbr": "rss", "heading": "Reference seat shares"},
+        {"abbr": "ts", "heading": "Total seats"},
+        {"abbr": "ra", "heading": "Reference allocations"},
+        {"abbr": "dis", "heading": "Disparity (excess if positive/deficiency if negative)"},
+        {"abbr": "ovh", "heading": "Potential overhang"},
+        {"abbr": "exs", "heading": "Excess (Positive disparity only)"},
+        {"abbr": "sht", "heading": "Shortage (Negative disparity only)"}
+    ]
     col = 2
     for table in summary_tables:
-        no_total_column = table["heading"].endswith("percentages") or \
-                            table["heading"].startswith(('Disparity', 'Excess', 'Shortage'))
+        no_total_column = table["heading"].endswith(("percentages", "overhang")) or \
+            table["heading"].startswith(('Disparity', 'Excess', 'Shortage'))
         worksheet.write(toprow, col, table["heading"], fmt["h"])
         worksheet.write_row(
             toprow + 1,
@@ -607,19 +608,41 @@ def simulation_to_xlsx(results, disparity_data, filename):
     # DISPARITY DATA
     from numpy import c_
     worksheet = workbook.add_worksheet("Disparity data")
-    data = np.array(disparity_data)
     nparty = len(parties) - 1
+    data = np.reshape(results["histogram_data"]["disparity_count"], (nsys, nparty))
     worksheet.write(0, 0, "System", fmt["h"])
     worksheet.write(0, 1, "Value", fmt["h_right"])
     worksheet.write_row(0, 2, parties[:-1], fmt["h_center"])
     row = 1
     for sys in range(nsys):
-        k1 = min(min(x) for x in data[sys])
-        k2 = max(max(x) for x in data[sys])
+        k1 = min(min(x.keys()) for x in data[sys])
+        k2 = max(max(x.keys()) for x in data[sys])
         bins = range(k1, k2+1)
         hist = np.zeros((k2 - k1 + 1, 0))
         for p in range(nparty):
-            counts, _ = np.histogram(data[sys, :, p], range(k1,k2+2))
+            counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
+            hist = c_[hist, counts]
+        worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
+        worksheet.write_column(row, 1, bins, fmt["base"])
+        write_matrix(worksheet, row, 2, hist, fmt["base"])
+        row += len(bins) + 1
+
+    # OVERHANG DATA
+    from numpy import c_
+    worksheet = workbook.add_worksheet("Overhang data")
+    nparty = len(parties) - 1
+    data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
+    worksheet.write(0, 0, "System", fmt["h"])
+    worksheet.write(0, 1, "Value", fmt["h_right"])
+    worksheet.write_row(0, 2, parties[:-1], fmt["h_center"])
+    row = 1
+    for sys in range(nsys):
+        k1 = min(min(x.keys()) for x in data[sys])
+        k2 = max(max(x.keys()) for x in data[sys])
+        bins = range(k1, k2+1)
+        hist = np.zeros((k2 - k1 + 1, 0))
+        for p in range(nparty):
+            counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
             hist = c_[hist, counts]
         worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
         worksheet.write_column(row, 1, bins, fmt["base"])

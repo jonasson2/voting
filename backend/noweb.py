@@ -127,6 +127,15 @@ def get_sim_status(done, sim):
     }
     return sim_status
 
+def fix_str_keys(dictionary_list):
+    new_dictionary_list = []
+    for d in dictionary_list:
+        new_d = {}
+        for k in d.keys():
+            new_d[int(k)] = d[k]
+        new_dictionary_list.append(new_d)
+    return new_dictionary_list
+
 def check_simulation(simid, stop=False):
     global SIMULATIONS
     import os, time
@@ -163,6 +172,7 @@ def check_simulation(simid, stop=False):
                 'done':False, 'iteration':0, 'time_left':0, 'total_time':0}
         if sim_status["done"]:
             sim_dict = read_sim_dict(simid)
+            sim_dict['disparity_data'] = fix_str_keys(sim_dict['disparity_data'])
             sim_result = Sim_result(sim_dict)
             process = SIM['process']
             process.wait()
@@ -184,16 +194,11 @@ def check_simulation(simid, stop=False):
         sim_result_dict = {'data': []}
     return sim_status, sim_result_dict
 
-def save_disparity_data(simid):
-    disparity = SIMULATIONS[simid]["result"].disparity_data
-    with open('disparity.json', 'w', encoding='utf-8') as fd:
-        json.dump(disparity, fd)
-
 def simulation_to_excel(simid, file):
     sim_result = SIMULATIONS[simid]["result"]
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
     sim_result_dict = sim_result.get_result_web(parallel)
-    simulation_to_xlsx(sim_result_dict, sim_result.disparity_data, file)
+    simulation_to_xlsx(sim_result_dict, file)
 
 def votes_to_excel(vote_table, file):
     file_matrix = [
