@@ -12,7 +12,6 @@ from input_util import check_input, check_systems, check_simul_settings, check_v
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
-from plotting import plot_sim_party_data
 import psutil
 
 def create_SIMULATIONS():

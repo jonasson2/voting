@@ -107,7 +107,7 @@ class MeasureGroups(dict):
                 "entropy":        ('Sum of logs of votes per seat ("entropy")', ""),
                 "min_seat_val":   ("Minimum reference seat share per seat", ""),
                 "max_neg_margin": ("Maximum negative margin over constituencies",""),
-                "avg_neg_margin": ("Average negative margin over constituencies",""),
+                "freq_neg_margin": ("Frequency of negative margin over constituencies",""),
                 "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
                 "bias_corr":      ("Correlation of seat excess and reference seat "
                                    "shares", ""),

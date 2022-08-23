@@ -25,6 +25,10 @@ def average(L):
     else:
         return sum(L)/len(L)
 
+def count(L):
+    l = [i for i in L if i != 0]
+    return (len(l))
+
 def sum_abs_diff(a, b):  # Compute sum of absolute values of a minus b
     if shape(a) != shape(b):
         return None

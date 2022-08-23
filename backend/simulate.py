@@ -12,7 +12,7 @@ from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
-from util import hms, shape, average
+from util import hms, shape, average, count
 from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
@@ -259,7 +259,7 @@ class Simulation():
             self.stat["neg_margin"][i].update(const_party_margins)
             self.stat["neg_margin_count"][i].update(cpm_counts)
             deviations.add("max_neg_margin", max(neg_margins))
-            deviations.add("avg_neg_margin", average(neg_margins))
+            deviations.add("freq_neg_margin", count(neg_margins))
             deviations.add("entropy", election.entropy())
             excess, shortage, disparity = self.calculate_disparity(election)
             deviations.add("excess", excess)

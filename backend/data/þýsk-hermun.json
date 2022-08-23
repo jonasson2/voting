@@ -1410,7 +1410,7 @@
       "adj_threshold_choice": 0,
       "adjustment_allocation_rule": "sainte-lague",
       "adjustment_division_rule": "sainte-lague",
-      "adjustment_method": "switching",
+      "adjustment_method": "nearest-to-previous",
       "adjustment_threshold": 0,
       "adjustment_threshold_seats": 0,
       "compare_with": true,
@@ -1648,7 +1648,7 @@
       ],
       "constituency_allocation_rule": "sainte-lague",
       "constituency_threshold": 0,
-      "name": "Wechsel",
+      "name": "Vorsprung",
       "nat_seats": {
         "num_adj_seats": 47,
         "num_fixed_seats": 0
