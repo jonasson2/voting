@@ -299,7 +299,6 @@ def api_simdownload():
         simid = getparam('simid')
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{simid[:6]}')
         simulation_to_excel(simid, tmpfilename)
-        save_disparity_data(simid)
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name = f"simulation-{date}.xlsx"
         return save_file(tmpfilename, download_name);
