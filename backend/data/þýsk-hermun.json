@@ -1410,7 +1410,7 @@
       "adj_threshold_choice": 0,
       "adjustment_allocation_rule": "sainte-lague",
       "adjustment_division_rule": "sainte-lague",
-      "adjustment_method": "nearest-to-previous",
+      "adjustment_method": "farthest-from-next",
       "adjustment_threshold": 0,
       "adjustment_threshold_seats": 0,
       "compare_with": true,
