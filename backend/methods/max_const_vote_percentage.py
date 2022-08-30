@@ -1,19 +1,20 @@
 #coding:utf-8
 from copy import deepcopy
 
-def max_const_vote_percentage_apportionment(m_votes,
-                                   v_desired_row_sums,
-                                   v_desired_col_sums,
-                                   m_prior_allocations,
-                                   divisor_gen,
-                                   **kwargs):
+def max_const_vote_percentage(
+       m_votes,
+       v_desired_row_sums,
+       v_desired_col_sums,
+       m_prior_allocations,
+       divisor_gen,
+       **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 
     num_allocated = sum([sum(c) for c in m_allocations])
     total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
 
-    for n in range(total_seats-num_allocated):
+    for n in range(total_seats - num_allocated):
         m_seat_props = []
         maximums = []
         for c in range(len(m_votes)):

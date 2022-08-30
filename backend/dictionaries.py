@@ -11,8 +11,8 @@ from methods.nearest_to_previous import nearest_to_previous
 from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
-from methods.max_const_seat_share import const_seat_share_apportionment
-from methods.max_const_vote_percentage import max_const_vote_percentage_apportionment
+from methods.max_const_seat_share import max_const_seat_share
+from methods.max_const_vote_percentage import max_const_vote_percentage
 from methods.switching import switching
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
@@ -20,6 +20,8 @@ from methods.farthest_from_next import farthest_from_next
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
+
+
 
 CONSTANTS = {
     'CoeffVar': 0.25,
@@ -139,15 +141,15 @@ ADJUSTMENT_METHODS = {
     "icelandic-law": icelandic_apportionment,
     "ice-shares": icelandic_share_apportionment,
     "norwegian-law": norwegian_apportionment,
-    "max-const-seat-share": const_seat_share_apportionment,
-    "max-const-vote-percentage": max_const_vote_percentage_apportionment,
+    "max-const-seat-share": max_const_seat_share,
+    "max-const-vote-percentage": max_const_vote_percentage,
     "relative-superiority": relative_superiority,
     "relative-sup-simple": relative_superiority_simple,
     "nearest-to-previous": nearest_to_previous,
     "farthest-from-next": farthest_from_next,
-    # "monge": monge,
     "switching": switching,
     "alternating-scaling": alt_scaling,
+    # "monge": monge,
 }
 
 GENERATING_METHODS = {

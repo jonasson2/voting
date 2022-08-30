@@ -3,15 +3,12 @@
 This module contains the core voting system logic.
 """
 
-from table_util import entropy, add_totals, scale_matrix, add_total_column
+from table_util import entropy, scale_matrix, add_total_column
 from apportion import apportion1d_general
-from electionSystem import ElectionSystem
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
-from dictionaries import CONSTANTS, DEMO_TABLE_FORMATS
-import traceback as tb
+from dictionaries import DEMO_TABLE_FORMATS
 from util import disp, subtract_m
 from copy import deepcopy
-from methods.nearest_to_previous import nearest_to_previous
 
 class Election:
     """A single election."""
@@ -151,8 +148,6 @@ class Election:
         return any(v for x in self.voteless_seats() for v in x)
 
     def run_primary_apportionment(self, use_thresholds):
-        """Conduct primary apportionment"""
-
         constituencies = self.system["constituencies"]
         threshold = self.system["constituency_threshold"] if use_thresholds else 0
         m_allocations = []

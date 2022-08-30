@@ -558,10 +558,10 @@ class Sim_result:
             for (i, sm) in enumerate(self.stat[m]):
                 dd = self.find_datadict(sm, self.STAT_LIST)
                 self.vote_data[i][m] = dict((s, dd[s]) for s in self.STAT_LIST)
-                if m == "neg_margin_count":
-                    for (key,val) in self.vote_data[i][m].items():
-                        self.vote_data[i][m][key][-1] = \
-                            [x/self.nconst for x in val[-1]]
+                # if m == "neg_margin_count":
+                #     for (key,val) in self.vote_data[i][m].items():
+                #         self.vote_data[i][m][key][-1] = \
+                #             [x/self.nconst for x in val[-1]]
 
     def analyze_seat_data(self):
         for m in SEAT_MEASURES:

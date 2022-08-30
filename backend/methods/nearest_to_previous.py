@@ -17,7 +17,7 @@ def nearest_to_previous(m_votes,
                     v_desired_col_sums,
                     m_prior_allocations,
                     divisor_gen,
-                    last,
+                    last = None,
                     **kwargs):
 
     # CREATE NUMPY ARRAYS FROM PARAMETER LISTS
@@ -29,8 +29,13 @@ def nearest_to_previous(m_votes,
     desired_party = np.array(v_desired_col_sums)
 
     # LAST=VOTES/DIVISOR FOR LAST IN, LAST_QUOT=1 IN CONSTITUENCIES WITHOUT ALLOCATIONS
-    last_quot = np.array([l["active_votes"] for l in last], float)
-    last_index = np.array([l["idx"] for l in last])
+    if last is None:
+        num_const = len(v_desired_row_sums)
+        last_quot = np.zeros(num_const)
+        last_index = np.full(num_const, None)
+    else:
+        last_quot = np.array([l["active_votes"] for l in last], float)
+        last_index = np.array([l["idx"] for l in last])
     last_quot[alloc_const==0] = 1
 
     # CALCULATE DIVISORS

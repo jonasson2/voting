@@ -1,12 +1,13 @@
 #coding:utf-8
 from copy import deepcopy
 
-def const_seat_share_apportionment(m_votes,
-                           v_desired_row_sums,
-                           v_desired_col_sums,
-                           m_prior_allocations,
-                           divisor_gen,
-                           **kwargs):
+def max_const_seat_share(
+        m_votes,
+        v_desired_row_sums,
+        v_desired_col_sums,
+        m_prior_allocations,
+        divisor_gen,
+        **kwargs):
     m_allocations = deepcopy(m_prior_allocations)
 
     num_allocated = sum([sum(c) for c in m_allocations])
