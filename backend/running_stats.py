@@ -2,21 +2,20 @@ import numpy as np
 from math import prod
 
 class Running_stats:
-    def __init__(self, shape=None, parallel=False, name="", store=False):
-        if shape:
-            self.parallel = parallel
-            self.name = name
-            self.n = 0
-            self.M1 = np.zeros(shape)
-            self.M2 = np.zeros(shape)
-            if not self.parallel:
-                self.M3 = np.zeros(shape)
-                self.M4 = np.zeros(shape)
-            self.big = np.zeros(shape)
-            self.small = np.zeros(shape)
-            self.store = store
-            if store:
-                self.keep = []
+    def __init__(self, shape=1, parallel=False, name="", store=False):
+        self.parallel = parallel
+        self.name = name
+        self.n = 0
+        self.M1 = np.zeros(shape)
+        self.M2 = np.zeros(shape)
+        if not self.parallel:
+            self.M3 = np.zeros(shape)
+            self.M4 = np.zeros(shape)
+        self.big = np.zeros(shape)
+        self.small = np.zeros(shape)
+        self.store = store
+        if store:
+            self.keep = []
         
     @classmethod
     def from_dict(cls,dictionary):
@@ -95,6 +94,18 @@ class Running_stats:
     def minimum(self):
         return self.small.tolist()
 
+def combine_stats(stat1, stat2):
+    # stat1 and stat2 are Running_stats or dictionaries of Running_stats with same keys
+    # or (recursively) dictionaries of dictionaries of running_stats etc.
+    # Each dictionary entry of stat1 is c
+    if isinstance(stat1, Running_stats):
+        assert(isinstance(stat2, Running_stats))
+        stat1.combine(stat2)
+    else:
+        for (key1,key2) in zip(stat1,stat2):
+            assert(key1==key2)
+            combine_stat(stat1[key1], stat2[key2])
+    
 # References:
 #
 # https://www.johndcook.com/blog/skewness_kurtosis/
