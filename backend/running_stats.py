@@ -1,10 +1,20 @@
 import numpy as np
-from math import prod
+from numpy import r_
+from copy import deepcopy
+from util import disp
 
 class Running_stats:
-    def __init__(self, shape=1, parallel=False, name="", store=False):
+    def __init__(self, shape=1, parallel=False, names="", store=False, options=[]):
+        # Names may be a list of length shape. When shape is not two-dimensional,
+        # options may be a list of strings from "mean", "min" and max".
+        assert(type(shape) in {int,float} or len(options)==0)
         self.parallel = parallel
-        self.name = name
+        self.names = deepcopy(names)
+        self.store = store
+        self.options = options
+        if options and isinstance(names, list):
+            self.names.extend(options)
+        shape += len(options)
         self.n = 0
         self.M1 = np.zeros(shape)
         self.M2 = np.zeros(shape)
@@ -13,10 +23,18 @@ class Running_stats:
             self.M4 = np.zeros(shape)
         self.big = np.zeros(shape)
         self.small = np.zeros(shape)
-        self.store = store
         if store:
             self.keep = []
-        
+
+    def __repr__(self):
+        s = [f"Running_stats:",
+             f"   n: {self.n}",
+             f"   {wrap('names:', self.names, 3)}",
+             f"   {wrap('mean:', self.mean(), 3)}",
+             f"   {wrap('std: ', self.std(), 3)}"]
+        r = '\n'.join(s)
+        return r
+
     @classmethod
     def from_dict(cls,dictionary):
         self = cls()
@@ -24,13 +42,21 @@ class Running_stats:
             setattr(self, key, val)
         return self
     
-    def update(self, A): # A should have shape "shape"
+    def update(self, values): # A should have shape "shape"
         if self.store:
-            self.keep.append(A)
-        A = np.array(A)
+            self.keep.append(values)
+        if type(values) in {int,float}:
+            values = [values]
+        A = r_[np.array(values), np.zeros(len(self.options))]
+        for (i,opt) in enumerate(self.options, len(values)):
+            if opt=="mean":  A[i] = np.mean(values)
+            elif opt=="max": A[i] = max(values)
+            elif opt=="min": A[i] = min(values)
         n1 = self.n
         self.n += 1
         n = self.n
+        if len(A) != len(self.M1):
+            pass
         delta = A - self.M1
         delta_n = delta/n
         term1 = delta*delta_n*n1
@@ -73,12 +99,12 @@ class Running_stats:
     def lo95ci(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return (self.M1 - np.sqrt(var/max(1,n))).tolist()
+        return (self.M1 - 2*np.sqrt(var/max(1,n))).tolist()
 
     def hi95ci(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return (self.M1 + np.sqrt(var/max(1,n))).tolist()
+        return (self.M1 + 2*np.sqrt(var/max(1,n))).tolist()
 
     def skewness(self):
         n = self.n
@@ -94,10 +120,10 @@ class Running_stats:
     def minimum(self):
         return self.small.tolist()
 
-def combine_stats(stat1, stat2):
+def combine_stat(stat1, stat2):
     # stat1 and stat2 are Running_stats or dictionaries of Running_stats with same keys
     # or (recursively) dictionaries of dictionaries of running_stats etc.
-    # Each dictionary entry of stat1 is c
+    # Each dictionary entry of stat1 is combined with the corresponding entry of stat2.
     if isinstance(stat1, Running_stats):
         assert(isinstance(stat2, Running_stats))
         stat1.combine(stat2)
@@ -105,6 +131,29 @@ def combine_stats(stat1, stat2):
         for (key1,key2) in zip(stat1,stat2):
             assert(key1==key2)
             combine_stat(stat1[key1], stat2[key2])
+
+def to_dataframe(stat):
+    # Create Pandas dataframes from stat which may be a Running stats object with
+    # shape (n,m), a dictionary of Running_stats objects with shape (n) or a dictionary
+    # of dictionaries of objects with shape (1). Row and column entries are taken from
+    # the keys of the dictionaries and/or the names of the objects. Four dataframes
+    # are returned, with the mean, standard deviation, min and max.
+    #for key
+    if isinstance(stat, Running_stats):
+        (m,n) = stat.M1.shape
+
+def wrap(name, L, skip=0):
+    from textwrap import TextWrapper as wrapper
+    if isinstance(L[0], (float,int)):
+        s = "[" + ', '.join(f"{l:.2f}" for l in L) + "]"
+    else:
+        s = "[" + ", ".join(L) + "]"
+    tw = wrapper()
+    tw.initial_indent = name + ' '
+    tw.subsequent_indent = ' ' * (len(name) + 2 + skip)
+    tw.width = 100
+    return tw.fill(s)
+
     
 # References:
 #
