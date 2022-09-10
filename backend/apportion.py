@@ -3,15 +3,18 @@ from table_util import find_shares_1d
 import numpy as np
 from util import dispv
 
-def apportion(v, xp, total_seats, inverse_divisors):
+def apportion(v, xp, total_seats, inverse_divisors, col_with_party_votes=False):
     x = xp.copy()
+    c = -1 if col_with_party_votes else len(v)
     if total_seats == 0:
         return x, 0
     for i in range(total_seats):
-        vdiv = v*inverse_divisors[x]
+        vdiv = v[:c]*inverse_divisors[x[:c]]
+        if col_with_party_votes: vdiv = np.append(vdiv, 1)
         k = vdiv.argmax()
         x[k] += 1
-    vdivnext = max(v*inverse_divisors[x])
+    vdivnext = max(v[:c]*inverse_divisors[x[:c]])
+    if col_with_party_votes: vdivnext = max(vdivnext, 1)
     return x, 2/(vdiv[k] + vdivnext)
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,

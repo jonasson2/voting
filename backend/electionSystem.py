@@ -50,10 +50,16 @@ class ElectionSystem(dict):
     def generate_system(self, option, vote_table = []):
         option = remove_prefix(option, "make_")
         sys = copy(self)
+        party_seats = sys['nat_seats']['num_fixed_seats'] + sys['nat_seats']['num_adj_seats'] if \
+                sys['nat_seats']['specified'] else None
         if option in {"all_fixed","const_fixed"}:
             sys["constituencies"] = set_const_fixed(self["constituencies"])
+            if party_seats and "all_fixed":
+                sys['nat_seats'] = set_nat_seats_fixed(self['nat_seats'])
         elif option in {"all_adj", "const_adj"}:
             sys["constituencies"] = set_const_adj(self["constituencies"])
+            if party_seats and "all_adj":
+                sys['nat_seats'] = set_nat_seats_adj(self['nat_seats'])
         elif option == "one_const":
             sys["constituencies"] = set_one_const(self["constituencies"])
         else:
@@ -75,18 +81,21 @@ def set_one_const(constituencies):
     return one_const
 
 def set_nat_seats(pvi):
-    nat_seats = {"num_fixed_seats": pvi['num_fixed_seats'],
+    nat_seats = {"specified": pvi['specified'],
+                 "num_fixed_seats": pvi['num_fixed_seats'],
                  "num_adj_seats": pvi['num_adj_seats']}
     return nat_seats
 
 def set_nat_seats_fixed(pvi):
     nat_seats = {}
+    nat_seats['specified'] = True
     nat_seats["num_fixed_seats"] = pvi['num_fixed_seats'] + pvi['num_adj_seats']
     nat_seats["num_adj_seats"] = 0
     return nat_seats
 
 def set_nat_seats_adj(pvi):
     nat_seats = {}
+    nat_seats['specified'] = True
     nat_seats["num_adj_seats"] = pvi['num_fixed_seats'] + pvi['num_adj_seats']
     nat_seats["num_fixed_seats"] = 0
     return nat_seats

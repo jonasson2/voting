@@ -266,17 +266,20 @@ class Election:
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
         consts = self.system["constituencies"]
-        if self.system['adjustment_method'] == 'alternating-scaling':
-            desired_col_sums = self.desired_const_col_sums
-        else:
-            desired_col_sums = self.desired_col_sums
+        #if self.system['adjustment_method'] == 'alternating-scaling':
+            #desired_col_sums = self.desired_const_col_sums
+        #else:
+            #desired_col_sums = self.desired_col_sums
         self.method = method(m_votes=self.m_votes,
                              v_desired_row_sums=self.desired_row_sums,
-                             v_desired_col_sums=desired_col_sums,
+                             v_desired_col_sums=self.desired_col_sums,
                              m_prior_allocations=self.results["fixed_const_seats"],
                              divisor_gen=self.gen, adj_seat_gen=self.adj_seat_gen,
                              v_fixed_seats=[con["num_fixed_seats"] for con in consts],
                              last=self.last,
+                             party_votes_specified = self.party_vote_info['specified'],
+                             nat_prior_allocations=self.results['fixed_nat_seats'] if self.party_vote_info['specified'] else 0,
+                             nat_seats=self.party_vote_info['num_fixed_seats']+self.party_vote_info['num_adj_seats'] if self.party_vote_info['specified'] else 0,
                              )
         all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(
