@@ -46,7 +46,10 @@ def switching(m_votes,
 
     # WHILE SOME PARTIES HAVE TOO MANY SEATS DO SWITCHING
     switches = []
+    i = 0
     while True:
+        i += 1
+        print('i=', i)
         last_surplus = -np.ones(num_constituencies, int)
         first_wanting = -np.ones(num_constituencies, int)
         ratio = np.ones(num_constituencies)*np.inf
@@ -56,6 +59,8 @@ def switching(m_votes,
         wanting = set(p for p in range(num_parties) if sum(alloc[:,p]) < max_party[p])
 
         # CALCULATE MINIMUM RATIO OF ACTIVE VOTES IN EACH CONSTITUENCY
+        print('surplus=', surplus)
+        print('wanting=', wanting)
         for c in range(num_constituencies):
             quot_min = np.inf
             for p in range(num_parties):
@@ -74,6 +79,7 @@ def switching(m_votes,
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         cmin = np.argmin(ratio)
+        print('min ratio =', ratio[cmin])
         assert(not np.isinf(cmin))
 
         alloc[cmin, last_surplus[cmin]] -= 1

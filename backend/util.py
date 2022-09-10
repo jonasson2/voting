@@ -258,16 +258,22 @@ def hms(sec):
         s = f"{d} days + " + s
     return s
 
-absent = []
-def disp(title, value=absent):
-    if value is absent:
-        value = title
-        title=''
+dispcompact=False
+
+def disp(value=None, width=None, title=None):
+    if width is None:
+        width=disp.width
+    else:
+        disp.width=width
+    if isinstance(value, (type({}.keys()),type({}.values()))):
+        value = list(value)
     from pprint import PrettyPrinter
-    pp = PrettyPrinter(compact=False, width=120).pprint
+    pp = PrettyPrinter(compact=dispcompact, width=width).pprint
     if title:
         print("\n" + title.upper() + ":")
+    if not value: return
     pp(value)
+disp.width=100
 
 def dispv(title, value=None, ndec=3):
     import numpy as np
