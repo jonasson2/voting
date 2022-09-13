@@ -93,6 +93,9 @@
           title="Enter electoral system name"
           />
       </b-form-group>
+      <b-alert :show="showAlert()">
+      All system names should be unique
+      </b-alert>
       <ElectionSettings
         :systemidx="activeSystemIndex"
         :capabilities="capabilities"
@@ -173,7 +176,7 @@ export default {
       replace: false,
       uploadfile: null,
       adding_system: false,
-      created: false
+      created: false,
     }
   },
   
@@ -267,7 +270,11 @@ export default {
           console.log("in addsys, new activeTabIndex", this.activeTabIndex)
         })
       })
-    }
+    },
+    showAlert: function() {
+      let names = this.systems.map(({ name }) => name)
+      return new Set(names).size !== names.length
+    },
   },
   created: function () {
     console.log("CreatedElectoralSystems")

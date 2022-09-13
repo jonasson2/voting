@@ -51,7 +51,21 @@
   <b-alert :show="results.data.length == 0">
     Run simulation to get results.
   </b-alert>
-  <div v-if="results.data.length > 0" style="margin-left:25px">
+  <div v-if="results.data.length == 0">
+    <div v-if="showAlert()==false && showAlert1()">
+    <b-alert :show="true">
+      <h4 class="alert-heading">Simulations cannot be conducted.</h4>
+      The total number of seats for each party cannot be computed using national party votes when they are not specified
+    </b-alert>
+    </div>
+    <div v-else-if="showAlert() && showAlert1() && showAlert2()==false">
+      <b-alert :show="true">
+        <h4 class="alert-heading">Simulations cannot be conducted.</h4>
+        All votes in National party votes and seats must be numbers if they are to be used to compute the total number of seats for each party
+      </b-alert>
+    </div>
+  </div>
+  <div v-else-if="results.data.length > 0" style="margin-left:25px">
     <b-container style="margin-left:0px; margin-bottom:20px">
       <b-button
         class="mb-10"
@@ -247,7 +261,18 @@ export default {
         responseType: "arraybuffer",
       });
       this.downloadFile(promise)
-    }
+    },
+    showAlert: function() {
+      return this.vote_table.party_vote_info.specified
+    },
+    showAlert1: function() {
+      let seat_spec_options = this.systems.map(({seat_spec_options}) => seat_spec_options)
+      let party = seat_spec_options.map(({party}) => party)
+      return ['party_vote_info', 'average'].some(element => party.includes(element))
+    },
+    showAlert2: function() {
+      return this.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
+    },
   },
   watch: {
     sim_settings: {

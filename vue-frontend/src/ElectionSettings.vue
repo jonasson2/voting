@@ -75,6 +75,12 @@
       </b-form-group>
     </b-col>
   </b-row>
+  <b-alert :show="party_spec_option == 'party_vote_info' && vote_table.party_vote_info.specified == false ">
+    The total number of seats for each party cannot be computed using national party votes when none are given
+  </b-alert>
+  <b-alert :show="party_spec_option == 'average' && vote_table.party_vote_info.specified == false ">
+    The total number of seats for each party cannot be computed using national party votes when none are given
+  </b-alert>
   <b-row style="margin-top:-5px">
     <b-col cols="auto">
       <b-form-group         
