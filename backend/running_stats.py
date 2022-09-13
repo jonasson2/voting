@@ -14,7 +14,8 @@ class Running_stats:
         self.options = options
         if options and isinstance(names, list):
             self.names.extend(options)
-        shape += len(options)
+        if len(options)!= 0:
+            shape += len(options)
         self.n = 0
         self.M1 = np.zeros(shape)
         self.M2 = np.zeros(shape)
@@ -47,7 +48,7 @@ class Running_stats:
             self.keep.append(values)
         if type(values) in {int,float}:
             values = [values]
-        A = r_[np.array(values), np.zeros(len(self.options))]
+        A = r_[np.array(values), np.zeros(len(self.options))] if len(self.options) else np.array(values)
         for (i,opt) in enumerate(self.options, len(values)):
             if opt=="mean":  A[i] = np.mean(values)
             elif opt=="max": A[i] = max(values)
