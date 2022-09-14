@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/jonasson/voting/backend")
+sys.path.append("../backend")
 import numpy as np
 from util import disp
 

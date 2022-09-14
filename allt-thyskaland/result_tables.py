@@ -35,9 +35,9 @@ def measure_table(running, measure_formats, method, select):
     A = np.zeros((len(index), 0))
     for m in measures:
         avg = running[method][m].mean()
-        std = running[method][m].std()
+        error = running[method][m].error()
         fmt = measure_formats[m]
-        column = [f"{a:{fmt}} ± {s:{fmt}}" for (a, s) in zip(avg, std)]
+        column = [f"{a:{fmt}} ± {e:{fmt}}" for (a, e) in zip(avg, error)]
         A = c_[A, column]
     title = f"{select.upper()} MEASURES FOR METHOD {method.upper()}"
     df = pd.DataFrame(A, index=index, columns=measures)

@@ -1,6 +1,6 @@
 import sys
-sys.path.append('~/voting/backend')
-sys.path.append('/Users/jonasson/voting/backend/methods')
+sys.path.append('../backend')
+sys.path.append('../backend/methods')
 from nearest_to_previous import nearest_to_previous
 from relative_superiority import relative_superiority
 from max_const_seat_share import max_const_seat_share
