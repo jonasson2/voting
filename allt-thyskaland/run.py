@@ -159,8 +159,8 @@ if __name__ == "__main__":
     mm_mean = method_measure_table(running, measure_formats, 'mean')
     mm_max = method_measure_table(running, measure_formats, 'max')
     method = 'land1st-votepct'
-    lm = measure_table(running, measure_formats, 'votepct-party1st', 'party')
-    pm = measure_table(running, measure_formats, 'votepct-land1st', 'land')
+    lm = measure_table(running, measure_formats, 'votepct-party1st', 'land')
+    pm = measure_table(running, measure_formats, 'votepct-land1st', 'party')
     for df in (mm_mean, mm_max, lm, pm):
         print_df(df, wrap_headers=True)
     pass
