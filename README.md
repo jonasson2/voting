@@ -236,4 +236,3 @@ Released under the terms of the Affero GNU General Public License version 3.
 
 
 [1]: https://hal.archives-ouvertes.fr/hal-00686748/document
-testing
