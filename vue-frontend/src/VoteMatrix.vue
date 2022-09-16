@@ -302,6 +302,12 @@
       </tr>
     </table>
   </b-row>
+  <b-alert :show="checkVoteSeats()==false">
+    Some seats are not in numerical format
+  </b-alert>
+  <b-alert :show="checkVoteInput()==false">
+    Some votes are not in numerical format
+  </b-alert>
   
   
   <b-row>
@@ -403,6 +409,9 @@
       </tr>
     </table>
   </b-row>
+  <b-alert :show="checkPartyInput()==false">
+    National: Some seats or votes are not in numerical format
+  </b-alert>
   
 </b-container>
 </template>
@@ -567,6 +576,24 @@ export default {
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.uploadAll(formData)
+    },
+    checkVoteSeats: function() {
+      return this.vote_table.constituencies.map(({ num_fixed_seats }) => num_fixed_seats).every(function(element) {return typeof element == 'number';})
+          && this.vote_table.constituencies.map(({ num_adj_seats }) => num_adj_seats).every(function(element) {return typeof element == 'number';})
+    },
+    checkVoteInput: function() {
+      for (let element of this.vote_table.votes){
+        let numbers = element.every(function(el) {return typeof el == 'number';})
+        if (numbers == false){
+          return numbers
+        }
+      }
+      return true
+    },
+    checkPartyInput: function() {
+      return this.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
+          && typeof this.vote_table.party_vote_info.num_adj_seats == 'number'
+          && typeof this.vote_table.party_vote_info.num_fixed_seats == 'number'
     }
   },
   watch: {

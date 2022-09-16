@@ -17,10 +17,14 @@ def alt_scaling(m_votes,
                 nat_seats,
                 **kwargs):
     import numpy as np
+
+    nat_list_with_seats = party_votes_specified and nat_seats>sum(nat_prior_allocations)
+    if not nat_seats>sum(nat_prior_allocations):
+        v_desired_col_sums = [x-y for x,y in zip(v_desired_col_sums,nat_prior_allocations)]
     v = np.array(m_votes, float)
     xp = np.array(m_prior_allocations)
     row_sums = np.array(v_desired_row_sums)
-    if party_votes_specified:
+    if nat_list_with_seats :
         v = np.vstack([v, np.ones(len(m_votes[0]))])
         xp = np.vstack([xp, nat_prior_allocations])
         row_sums = np.append(row_sums, nat_seats)
@@ -29,38 +33,47 @@ def alt_scaling(m_votes,
     r = row_sums - np.sum(xp, 1)
     c = np.array(v_desired_col_sums) - np.sum(xp, 0)
 
-    if not r.any() and not c.any():
-        print('No iterations as no seats adj seats to allocate')
-        return xp[:-1].tolist() if party_votes_specified else xp.tolist(), ([], print_demo_table)
+    if not r.any() and not c.any(): #No iterations as no adj seats to allocate
+        return xp[:-1].tolist() if nat_list_with_seats else xp.tolist(), ([], print_demo_table)
     N = max(max(v_desired_row_sums), max(v_desired_col_sums)) + 1
     (nrows, ncols) = np.shape(v)
     div_gen = divisor_gen()
     inverse_divisors = 1/np.array([next(div_gen) for i in range(N + 1)])
-    k = -1 if party_votes_specified else nrows
-
-    for iter in range(1,100):
+    k = -1 if nat_list_with_seats else nrows
+    #iter = 0
+    #while True:
+    #    iter += 1
+    for iter in range(1,1000):
         for i in range(nrows):
-            if party_votes_specified and i == nrows-1:
+            if nat_list_with_seats and i == nrows-1:
                 pass
             else:
                 (x[i,:], rho) = apportion(v[i,:], xp[i,:], r[i], inverse_divisors)
                 v[i,:] = v[i,:]*rho
-        if party_votes_specified:
-            p_alloc = x.sum(axis=0)
-            x[-1,:] = [max(0, x) for x in c - p_alloc]
+        if nat_list_with_seats :
+            p_alloc = x[:-1].sum(axis=0)
+            x[-1,:] = [max(0, x)+y for x,y in zip(c - p_alloc, nat_prior_allocations)]
         if iter > 1 and np.array_equal(x, y):
             break
         for j in range(ncols):
-            (y[:,j], sigma) = apportion(v[:,j], xp[:,j], c[j], inverse_divisors, party_votes_specified)
+            (y[:,j], sigma) = apportion(v[:,j], xp[:,j], c[j], inverse_divisors, nat_list_with_seats)
             v[:k,j] = v[:k,j]*sigma
         if np.array_equal(x, y):
             break
     #Debug
+    #if iter == 999:
+    #    print('iter: 999 -> Ran through all iterations before breaking')
+    #    print('desired party alloc: ', c)
+    #    print('const. alloc to parties: ', x[:-1].sum(axis=0))
+    #else:
+    #    if iter > 999:
+    #        print('iter:', iter)
+    #if iter > 999: #atkvæðatöflur vandræða skrifaðar út
+    #    np.savetxt(f"{iter}_seats.csv", x, delimiter=";")
     if iter == 99:
-        print('Ran through all iterations before breaking')
+       print('iter: 99 -> Ran through all iterations before breaking')
     else:
         print('iter:', iter)
-    return x[:-1].tolist() if party_votes_specified else x.tolist(), ([], print_demo_table)
-
+    return x[:-1].tolist() if nat_list_with_seats else x.tolist(), ([], print_demo_table)
 def print_demo_table(rules, allocation_sequence):
     return [], [], None
