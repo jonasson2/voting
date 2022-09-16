@@ -57,3 +57,5 @@ AFLÚSUN
   keyrt. Sjá m.a. ...2str föll í util.py.
   
 https://forum.vuejs.org/t/solved-delay-vue-action-until-a-state-variable-is-set/9063/6
+
+Test git

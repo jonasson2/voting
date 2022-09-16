@@ -11,3 +11,5 @@ configparser
 numpy
 matplotlib
 psutil
+pathos
+pandas
