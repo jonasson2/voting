@@ -2,7 +2,7 @@ import pandas as pd, numpy as np
 from numpy import c_
 from copy import copy, deepcopy
 from util import disp
-from dictionaries import short_party_measures, short_land_measures
+from dictionaries import party_measures, land_measures
 pd.options.display.width = 0
 pd.options.display.float_format = " {:,.2f}".format
 
@@ -10,15 +10,15 @@ def method_measure_table(running, measure_formats, select):
     # select can be party, 'mean' 'max' or 'sum'
     methods = list(running.keys())
     measures = list(running[methods[0]].keys())
-    sel_index = running[methods[0]][measures[0]].names.index(select)
+    sel_index = running[methods[0]][measures[0]].entries.index(select)
     A = []
     for mth in methods:
         row = []
         for m in measures:
             avg = running[mth][m].mean()[sel_index]
-            std = running[mth][m].std()[sel_index]
+            error = running[mth][m].error()[sel_index]
             fmt = measure_formats[m]
-            entry = f"{avg:{fmt}} ± {std:{fmt}}"
+            entry = f"{avg:{fmt}} ± {error:{fmt}}"
             row.append(entry)
         A.append(row)
     df = pd.DataFrame(A, index=methods, columns=measures)
@@ -29,9 +29,11 @@ def method_measure_table(running, measure_formats, select):
 
 def measure_table(running, measure_formats, method, select):
     # select is a list of measure short names
-    measure_list = short_party_measures if select == 'party' else short_land_measures
+    if method not in running:
+        return None
+    measure_list = party_measures if select == 'party' else land_measures
     measures = [r for r in running[method].keys() if r in measure_list]
-    index = running[method][measures[0]].names
+    index = running[method][measures[0]].entries
     A = np.zeros((len(index), 0))
     for m in measures:
         avg = running[method][m].mean()
@@ -47,6 +49,7 @@ def measure_table(running, measure_formats, method, select):
 
 def print_df(dfs, formats=None, wrap_headers=False):
     # e.g. print_df(df, {'': '.2f', 'col2: '.1%'})
+    if dfs is None: return
 
     def extend_block(block, number):
         w = len(block[0])

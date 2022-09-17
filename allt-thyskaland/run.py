@@ -9,9 +9,10 @@ sys.path.append('~/voting/backend/methods')
 np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200)
 from readkerg import readkerg
 from run_util import get_arguments
-from dictionaries import land_methods, const_methods, short_land_methods, \
-    short_const_methods, party_measures, land_measures, short_party_measures, \
-    short_land_measures, measures, land_abbrev, measure_formats
+from dictionaries import land_method_dicts, const_method_dicts, all_land_methods, \
+    all_const_methods, party_measures, \
+    land_measures, land_abbrev, measure_formats, const_method_funs, \
+    land_method_funs
 from methods import apportion_sainte_lague
 from division_rules import sainte_lague_gen
 from running_stats import Running_stats, combine_stat
@@ -47,24 +48,26 @@ def initialize_running(const_meth, land_meth, nland, nparty, parties, länder):
         for lm in land_meth:
             method = f'{cm}-{lm}'
             running[method] = {}
-            for measure in short_party_measures:
+            for measure in party_measures:
                 running[method][measure] = Running_stats (
                     shape = nparty + 1,
-                    names = parties,
+                    name = f"{method}-{measure}",
+                    entries = parties,
                     options = ['mean', 'max', 'min', 'sum'])
-            for measure in short_land_measures:
+            for measure in land_measures:
                 running[method][measure] = Running_stats(
                     shape = nland,
-                    names = länder,
+                    name = f"{method}-{measure}",
+                    entries = länder,
                     options = ['mean', 'max', 'sum'])
     return running
 
-def run_simulate(info, data, methods, nsim):
+def run_simulate(info, data, const_methods, land_methods, nsim):
     landseats = data["landseats"]
     partyvotes = data["partyvotes"]
     constvotes = data["constvotes"]
-    const_meth = [cm for cm in const_methods if cm['short'] in methods['cm']]
-    land_meth = [lm for lm in land_methods if lm['short'] in methods['lm']]
+    const_meth = [cm for cm in const_method_dicts if cm['short'] in const_methods]
+    land_meth = [lm for lm in land_method_dicts if lm['short'] in land_methods]
     (nland, nparty) = partyvotes.shape
     nparty -= 1
     nconst = [len(v) for v in constvotes]
@@ -77,55 +80,56 @@ def run_simulate(info, data, methods, nsim):
     parties = list(info["party"].values())
     #länder = list(info["land"].values())
     länder = list(land_abbrev.values())
-    running = initialize_running(short_const_methods, short_land_methods, nland, nparty,
-                                 parties, länder)
+    running = initialize_running(const_methods, land_methods, nland,nparty,parties,länder)
     for k in range(nsim):
-        print('k=', k)
-        for cm in const_meth:
-            const_method = cm['fun']
+        for const_method in const_methods:
+            const_method_fun = const_method_funs[const_method]
             nat_vote_share = gpv[k].sum(axis=0)/gpv[k].sum()
             prop_party_seats = apportion_sainte_lague(nat_vote_share[:-1], 598)
             prop_party_seats = r_[prop_party_seats, 0]
-            for lm in land_meth:
-                land_method = lm['fun']
-                if lm['short'] in {'party1st', 'land1st'}:
-                    alloc = land_method(gpv[k], prop_party_seats, landseats)
+            for land_method in land_methods:
+                land_method_fun = land_method_funs[land_method]
+                if land_method in {'party1st', 'land1st'}:
+                    alloc = land_method_fun(gpv[k], prop_party_seats, landseats)
                 else:
                     prior_alloc = np.zeros(gpv[k].shape, int)
-                    party_seats, _ = land_method(gpv[k],
-                                                 landseats,
-                                                 prop_party_seats,
-                                                 prior_alloc,
-                                                 sainte_lague_gen)
+                    party_seats, _ = land_method_fun (
+                        gpv[k],
+                        landseats,
+                        prop_party_seats,
+                        prior_alloc,
+                        sainte_lague_gen)
                     alloc = np.array(party_seats)
                 party_disparity = alloc.sum(axis=0) - prop_party_seats
                 land_disparity = alloc.sum(axis=1) - landseats
-                method = f"{cm['short']}-{lm['short']}"
+                method = f"{const_method}-{land_method}"
                 for l in range(nland):
                     voteshare = share[l][k]
-                    selected = const_method(voteshare, alloc[l, :])
+                    selected = const_method_fun(voteshare, alloc[l, :])
                     I = range(nconst[l])
                     neg_margin = voteshare.max(axis=1) - voteshare[I, selected]
                     max_neg_margin[l] = neg_margin.max()
                     neg_marg_freq[l] = np.mean(neg_margin > 0)
                     min_seat_share[l] = min(voteshare[I, selected]).min()
 
-                for measure in land_measures + party_measures:
-                    runnmeth = running[method]
-                    runnmeth['max_neg_margin'].update(max_neg_margin)
-                    runnmeth['min_seat_share'].update(min_seat_share)
-                    runnmeth['land_disparity'].update(land_disparity)
-                    runnmeth['neg_marg_freq'].update(neg_marg_freq)
-                    runnmeth['party_disparity'].update(party_disparity)
-    return running
+                runmeth = running[method]
+                runmeth['max_neg_margin'].update(max_neg_margin)
+                runmeth['min_seat_share'].update(min_seat_share)
+                runmeth['land_disparity'].update(land_disparity)
+                runmeth['neg_marg_freq'].update(neg_marg_freq)
+                runmeth['party_disparity'].update(party_disparity)
+                if method == 'scand-votepct':
+                    print('First running:', runmeth['scand-votepct']['party_disparity'])
+        return running
 
 def display_results(running):
     pass
 
-def parallel_simulate(info, data, methods, nsim, nproc):
+def parallel_simulate(info, data, const_methods, land_methods, nsim, nproc):
     ntask = [nsim//nproc + (1 if i < nsim % nproc else 0) for i in range(nproc)]
     pool = Pool(nproc)
-    stats = pool.map(run_simulate, [info]*nproc, [data]*nproc, [methods]*nproc, ntask)
+    stats = pool.map(run_simulate, [info]*nproc, [data]*nproc, [const_methods]*nproc,
+                     [land_methods]*nproc, ntask)
     stat0 = stats.pop(0)
     for running in stats:
         combine_stat(stat0, running)
@@ -134,8 +138,8 @@ def parallel_simulate(info, data, methods, nsim, nproc):
 if __name__ == "__main__":
 
     # NÁ Í SKIPANALÍNUVIÐFÖNG
-    pm_list = '/'.join(short_land_methods) + '/all'
-    cm_list = '/'.join(short_const_methods) + '/all'
+    pm_list = '/'.join(all_land_methods) + '/all'
+    cm_list = '/'.join(all_const_methods) + '/all'
     args = [
        ['nsim', int, 'total number of simulations', 5],
        ['-ncores', int, 'number of cores', 8],
@@ -145,17 +149,17 @@ if __name__ == "__main__":
        ['-pcv', float, 'variation coefficient for party vote generation', 0.1]]
     desc = "Simulate for the whole of Germany"
     (nsim, ncores, erst, zweit, cv, pcv) = get_arguments(args=args, description=desc)
-    methods = {}
-    methods["cm"] = short_const_methods if erst == 'all' else erst.split(',')
-    methods["lm"] = short_land_methods if zweit == 'all' else zweit.split(',')
+    ncores = min(ncores, nsim)
+    const_methods = all_const_methods if erst == 'all' else erst.split(',')
+    land_methods = all_land_methods if zweit == 'all' else zweit.split(',')
 
     info, data = readkerg()
 
     # RUN THE SIMULATION
     if ncores == 1:
-        running = run_simulate(info, data, methods, nsim)
+        running = run_simulate(info, data, const_methods, land_methods, nsim)
     else:
-        running = parallel_simulate(info, data, methods, nsim, ncores)
+        running = parallel_simulate(info, data, const_methods, land_methods, nsim, ncores)
     mm_mean = method_measure_table(running, measure_formats, 'mean')
     mm_max = method_measure_table(running, measure_formats, 'max')
     method = 'land1st-votepct'
