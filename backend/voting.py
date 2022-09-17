@@ -341,40 +341,50 @@ class Election:
         import numpy as np, numpy.linalg as la
         scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
         ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
-        if self.party_vote_info['specified']:
-            ref_seat_shares = np.vstack([ref_seat_shares, np.ones((1, len(self.m_votes[1])))*1e-6])
-        ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
-        # assert self.solvable
-        # rein = 0
-        nrows = self.num_constituencies() + (1 if self.party_vote_info['specified'] else 0)
+        nrows = self.num_constituencies()
         ncols = self.num_parties()
-        eta = np.ones(nrows)
-        tau = np.ones(ncols)
         error = 1
-        niter = 0
-        col_sums = self.desired_col_sums
-        row_sums = self.desired_row_sums
-        if self.party_vote_info['specified']:
-            row_sums = row_sums + [self.system['nat_seats']['num_fixed_seats']+\
-                                                  self.system['nat_seats']['num_adj_seats']]
+        col_sums = np.array(self.desired_col_sums)
+        row_sums = np.array(self.desired_row_sums)
         if ncols > 1 and nrows > 1:
             row_constraints = scaling in {"both", "const"}
             col_constraints = scaling in {"both", "party"}
             if row_constraints and col_constraints:
                 while round(error, 7) != 0.0:
                     error = 0
+                    #constituency step
                     for c in range(nrows):
                         row_sum = row_sums[c]
-                        s = sum(ref_seat_shares[c, :])
+                        s = sum(ref_seat_shares[c,:])
                         eta = row_sum/s if s > 0 else 1
                         ref_seat_shares[c, :] *= eta
                         error = max(error, abs(1 - eta))
-                    for p in range(ncols):
-                        col_sum = col_sums[p]
-                        s = sum(ref_seat_shares[:, p])
-                        tau = col_sum/s if s > 0 else 1
-                        ref_seat_shares[:, p] *= tau
-                        error = max(error, abs(1 - tau))
+                    if all(i >= 1 for i in col_sums/ref_seat_shares.sum(axis=0)):
+                        break
+                    #party step
+                    gammas = col_sums/ref_seat_shares.sum(axis=0)
+                    gamma = np.amin(gammas)
+                    p_gamma = np.argmin(gammas)
+                    ref_seat_shares *= gamma
+                    p_at_lim = [p_gamma]
+                    p_under_lim = np.setdiff1d(np.arange(ncols), p_at_lim).tolist()
+                    for i in range(ncols-1):
+                        gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
+                        gamma = np.amin(gammas)
+                        p_gamma = p_under_lim[np.argmin(gammas)]
+                        sum_shares = sum([ref_seat_shares.sum(axis=0)[p]*gamma for p in p_under_lim]) +\
+                                     sum([ref_seat_shares.sum(axis=0)[p] for p in p_at_lim])
+                        if sum_shares > self.total_const_seats:
+                            break
+                        for p in p_under_lim:
+                            ref_seat_shares[:,p] *= gamma
+                        p_at_lim.append(p_gamma)
+                        p_under_lim.remove(p_gamma)
+                    if len(p_under_lim):
+                        gamma = (self.total_const_seats - sum([ref_seat_shares.sum(axis=0)[p] for p in p_at_lim]))\
+                                /sum([ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
+                        for p in p_under_lim:
+                            ref_seat_shares[:, p] *= gamma
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = row_sums[c]
@@ -389,7 +399,7 @@ class Election:
                     ref_seat_shares[:, p] *= tau
         self.ref_seat_shares = ref_seat_shares.tolist()
         self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
-        if self.party_vote_info['specified']: self.total_ref_nat = self.ref_seat_shares.pop()
+        if self.party_vote_info['specified']: self.total_ref_nat = [x-y for x,y in zip(self.desired_col_sums,self.total_ref_seat_shares)]
 
 
 
