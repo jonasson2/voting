@@ -34,7 +34,7 @@ land_measure_dicts = [
     {'short': 'max_neg_margin', 'title': 'Maximum negative margin', 'fmt':'.2%'},
     {'short': 'min_seat_share', 'title': 'Minimum seat share', 'fmt':'.2%'},
     {'short': 'land_disparity', 'title': 'Land disparity', 'fmt':'.3f'},
-    {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.3f'}
+    {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.2%'}
 ]
 
 const_method_funs = {cm['short']: cm['fun'] for cm in const_method_dicts}

@@ -9,12 +9,12 @@ pd.options.display.float_format = " {:,.2f}".format
 def method_measure_table(running, measure_formats, select):
     # select can be party, 'mean' 'max' or 'sum'
     methods = list(running.keys())
-    measures = list(running[methods[0]].keys())
-    sel_index = running[methods[0]][measures[0]].entries.index(select)
     A = []
     for mth in methods:
+        measures = list(running[mth].keys())
         row = []
         for m in measures:
+            sel_index = running[mth][m].entries.index(select)
             avg = running[mth][m].mean()[sel_index]
             error = running[mth][m].error()[sel_index]
             fmt = measure_formats[m]
