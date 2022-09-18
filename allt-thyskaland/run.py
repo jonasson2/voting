@@ -115,9 +115,9 @@ def run_simulate(info, data, const_methods, land_methods, nsim):
 
                 runmeth = running[method]
                 runmeth['max_neg_margin'].update(max_neg_margin)
-                #runmeth['min_seat_share'].update(min_seat_share)
+                runmeth['min_seat_share'].update(min_seat_share)
                 runmeth['land_disparity'].update(land_disparity)
-                #runmeth['neg_marg_freq'].update(neg_marg_freq)
+                runmeth['neg_marg_freq'].update(neg_marg_freq)
                 runmeth['party_disparity'].update(party_disparity)
 
     return running
