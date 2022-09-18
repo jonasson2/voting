@@ -31,7 +31,8 @@ class Running_stats:
              f"   name: {self.name}",
              f"   {wrap('entries:', self.entries, 3)}",
              f"   {wrap('mean:', self.mean(), 3)}",
-             f"   {wrap('std: ', self.std(), 3)}"]
+             f"   {wrap('std: ', self.std(), 3)}",
+             f"   {wrap('error: ', self.std(), 3)}"]
         r = '\n'.join(s)
         return r
 
@@ -78,7 +79,6 @@ class Running_stats:
         self.n = n1 + n2
         delta = running_stats.M1 - self.M1
         if self.n==0:
-            pass
             print(f"**** zero n for {self.name} in running_stats combine ****")
         self.M1 = (n1*self.M1 + n2*running_stats.M1)/max(1,self.n)
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)

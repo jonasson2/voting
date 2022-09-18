@@ -13,28 +13,28 @@ land_method_dicts = [
     #'swi':  (switching,                 "Switching"),
     #'rsup': (relative_superiority,      "Relative superiority"),
     #'seatsh':   (max_const_seat_share,      "Max seat share"),
-    {'short': 'votepct', 'fun': max_const_vote_percentage, 'title': "Max vote share"},
-    {'short': 'reladv', 'fun': farthest_from_next, 'title': "Relative advantage"},
-    {'short': 'nearprev', 'fun': nearest_to_previous, 'title': "Nearest to previous"},
+    #{'short': 'votepct', 'fun': max_const_vote_percentage, 'title': "Max vote share"},
+    #{'short': 'reladv', 'fun': farthest_from_next, 'title': "Relative advantage"},
+    #{'short': 'nearprev', 'fun': nearest_to_previous, 'title': "Nearest to previous"},
     {'short': 'party1st', 'fun': parties_first, 'title': "Parties first"},
-    {'short': 'land1st', 'fun': länder_first, 'title': "Länder first"},
+    #{'short': 'land1st', 'fun': länder_first, 'title': "Länder first"},
 ]
 
 const_method_dicts = [
-    {'short': 'scand', 'fun': scandinavian, 'title': "Scandinavian"},
+    #{'short': 'scand', 'fun': scandinavian, 'title': "Scandinavian"},
     {'short': 'votepct', 'fun': max_share, 'title': "Max vote percentage"},
-    {'short': 'reladv', 'fun': max_advantage, 'title': "Relative advantage"},
+    #{'short': 'reladv', 'fun': max_advantage, 'title': "Relative advantage"},
 ]
 
 party_measure_dicts = [
-    {'short': 'party_disparity', 'title':'Party disparity', 'fmt':'.2f'}
+    {'short': 'party_disparity', 'title':'Party disparity', 'fmt':'.3f'}
 ]
 
 land_measure_dicts = [
-    {'short': 'max_neg_margin', 'title': 'Maximum negative margin', 'fmt':'.1%'},
-    {'short': 'min_seat_share', 'title': 'Minimum seat share', 'fmt':'.1%'},
-    {'short': 'land_disparity', 'title': 'Land disparity', 'fmt':'.2f'},
-    {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.2f'}
+    {'short': 'max_neg_margin', 'title': 'Maximum negative margin', 'fmt':'.2%'},
+    #{'short': 'min_seat_share', 'title': 'Minimum seat share', 'fmt':'.2%'},
+    {'short': 'land_disparity', 'title': 'Land disparity', 'fmt':'.3f'},
+    #{'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.3f'}
 ]
 
 const_method_funs = {cm['short']: cm['fun'] for cm in const_method_dicts}
