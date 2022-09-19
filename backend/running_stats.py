@@ -4,16 +4,16 @@ from copy import deepcopy
 from util import disp
 
 class Running_stats:
-    def __init__(self, shape=1, parallel=False, names="", store=False, options=[]):
+    def __init__(self, shape=1, parallel=False, name="", entries=[], options=[]):
         # Names may be a list of length shape. When shape is not two-dimensional,
         # options may be a list of strings from "mean", "min" and max".
         assert(type(shape) in {int,float} or len(options)==0)
         self.parallel = parallel
-        self.names = deepcopy(names)
-        self.store = store
+        self.name = name
+        self.entries = deepcopy(entries)
         self.options = options
-        if options and isinstance(names, list):
-            self.names.extend(options)
+        if options:
+            self.entries.extend(options)
         if len(options)!= 0:
             shape += len(options)
         self.n = 0
@@ -24,15 +24,15 @@ class Running_stats:
             self.M4 = np.zeros(shape)
         self.big = np.zeros(shape)
         self.small = np.zeros(shape)
-        if store:
-            self.keep = []
 
     def __repr__(self):
         s = [f"Running_stats:",
              f"   n: {self.n}",
-             f"   {wrap('names:', self.names, 3)}",
+             f"   name: {self.name}",
+             f"   {wrap('entries:', self.entries, 3)}",
              f"   {wrap('mean:', self.mean(), 3)}",
-             f"   {wrap('std: ', self.std(), 3)}"]
+             f"   {wrap('std: ', self.std(), 3)}",
+             f"   {wrap('error: ', self.std(), 3)}"]
         r = '\n'.join(s)
         return r
 
@@ -44,8 +44,6 @@ class Running_stats:
         return self
     
     def update(self, values): # A should have shape "shape"
-        if self.store:
-            self.keep.append(values)
         if type(values) in {int,float}:
             values = [values]
         A = r_[np.array(values), np.zeros(len(self.options))] if len(self.options) else np.array(values)
@@ -86,8 +84,6 @@ class Running_stats:
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
         self.big = np.maximum(self.big, running_stats.big)
         self.small = np.minimum(self.small, running_stats.small)
-        if self.store:
-            self.keep.extend(running_stats.keep)
 
     def mean(self):
         return self.M1.tolist()
@@ -142,7 +138,7 @@ def to_dataframe(stat):
     # Create Pandas dataframes from stat which may be a Running stats object with
     # shape (n,m), a dictionary of Running_stats objects with shape (n) or a dictionary
     # of dictionaries of objects with shape (1). Row and column entries are taken from
-    # the keys of the dictionaries and/or the names of the objects. Four dataframes
+    # the keys of the dictionaries and/or the entries of the objects. Four dataframes
     # are returned, with the mean, standard deviation, min and max.
     #for key
     if isinstance(stat, Running_stats):

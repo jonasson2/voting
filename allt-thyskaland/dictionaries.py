@@ -9,7 +9,7 @@ from switching import switching
 from farthest_from_next import farthest_from_next
 from methods import parties_first, länder_first, max_share, max_advantage, scandinavian
 
-land_methods = [
+land_method_dicts = [
     #'swi':  (switching,                 "Switching"),
     #'rsup': (relative_superiority,      "Relative superiority"),
     #'seatsh':   (max_const_seat_share,      "Max seat share"),
@@ -20,31 +20,33 @@ land_methods = [
     {'short': 'land1st', 'fun': länder_first, 'title': "Länder first"},
 ]
 
-const_methods = [
+const_method_dicts = [
     {'short': 'scand', 'fun': scandinavian, 'title': "Scandinavian"},
     {'short': 'votepct', 'fun': max_share, 'title': "Max vote percentage"},
     {'short': 'reladv', 'fun': max_advantage, 'title': "Relative advantage"},
 ]
 
-party_measures = [
-    {'short': 'party_disparity', 'title':'Party disparity', 'fmt':'.2f'}
+party_measure_dicts = [
+    {'short': 'party_disparity', 'title':'Party disparity', 'fmt':'.3f'}
 ]
 
-land_measures = [
-    {'short': 'max_neg_margin', 'title': 'Maximum negative margin', 'fmt':'.1%'},
-    {'short': 'min_seat_share', 'title': 'Minimum seat share', 'fmt':'.1%'},
-    {'short': 'land_disparity', 'title': 'Land disparity', 'fmt':'.2f'},
-    {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.2f'}
+land_measure_dicts = [
+    {'short': 'max_neg_margin', 'title': 'Maximum negative margin', 'fmt':'.2%'},
+    {'short': 'min_seat_share', 'title': 'Minimum seat share', 'fmt':'.2%'},
+    {'short': 'land_disparity', 'title': 'Land disparity', 'fmt':'.3f'},
+    {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.2%'}
 ]
 
-measures = land_measures + party_measures
+const_method_funs = {cm['short']: cm['fun'] for cm in const_method_dicts}
+land_method_funs = {lm['short']: lm['fun'] for lm in land_method_dicts}
 
+all_const_methods = [cm['short'] for cm in const_method_dicts]
+all_land_methods = [lm['short'] for lm in land_method_dicts]
+party_measures = [pm['short'] for pm in party_measure_dicts]
+land_measures = [lm['short'] for lm in land_measure_dicts]
+measures = land_measure_dicts + party_measure_dicts
 measure_formats = {m['short']: m['fmt'] for m in measures}
 measure_formats[''] = '.2f'
-short_const_methods = [cm['short'] for cm in const_methods]
-short_land_methods = [lm['short'] for lm in land_methods]
-short_party_measures = [pm['short'] for pm in party_measures]
-short_land_measures = [lm['short'] for lm in land_measures]
 
 land_abbrev = {
  0: 'Sch-Hol',
