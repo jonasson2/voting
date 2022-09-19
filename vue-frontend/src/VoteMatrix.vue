@@ -83,7 +83,7 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Use preset votes and seat numbers from real or fictional elections"
+        title="Use preset votes and seat table from real or fictional elections"
         v-b-modal.modalpreset
         >
         Use preset
@@ -93,17 +93,17 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Upload votes and seat numbers from local Excel or CSV file"
+        title="Upload votes and seat table from local Excel or CSV file"
         v-b-modal.modalupload
         >
-        Load from file
+        Upload from file
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1 mb-10">
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Delete all votes and seat numbers"
+        title="Delete votes and seat table"
         @click="clearAll()"
         >
         Delete
@@ -113,10 +113,10 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download votes and seat numbers to local Excel xlsx-file."
+        title="Download votes and seat table to local Excel xlsx-file."
         @click="save()"
         >
-        Save
+        Download
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1">
@@ -127,7 +127,7 @@
                settings from local JSON file."
         v-b-modal.modaluploadall
         >
-        Load all
+        Upload all
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1">
@@ -138,7 +138,7 @@
                settings to local JSON file."
         @click="saveAll()"
         >
-        Save all
+        Download all
       </b-button>
     </b-button-group>
   </b-button-toolbar>

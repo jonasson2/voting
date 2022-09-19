@@ -41,7 +41,7 @@
         v-b-modal.modaluploadesettings
         @click = setReplace(true)
         >
-        Load from file
+        Upload
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1">
@@ -64,7 +64,29 @@
                json-file. Also saves simulation settings" 
         @click="saveSettings()"
         >
-        Save
+        Download
+      </b-button>
+    </b-button-group>
+        <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Upload vote table, all electoral systems, and simulation
+               settings from local JSON file."
+        v-b-modal.modaluploadall
+        >
+        Upload all
+      </b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Download vote table, all electoral systems and simulation
+               settings to local JSON file."
+        @click="saveAll()"
+        >
+        Download all
       </b-button>
     </b-button-group>
   </b-button-toolbar>
@@ -194,6 +216,8 @@ export default {
       "setActiveSystemIndex",
     ]),
     ...mapActions([
+      "saveAll",
+      "uploadAll",
       "downloadFile",
       "uploadElectoralSystems"
     ]),
@@ -270,6 +294,11 @@ export default {
           console.log("in addsys, new activeTabIndex", this.activeTabIndex)
         })
       })
+    },
+    loadAll: function() {
+      var formData = new FormData();
+      formData.append("file", this.uploadfile, this.uploadfile.name);
+      this.uploadAll(formData)
     },
     showAlert: function() {
       let names = this.systems.map(({ name }) => name)
