@@ -108,9 +108,10 @@
         >
         <b-form-input
           class="pt-0 pb-0"
-          style="font-weight:bold; margin-top:-4px; font-size:110%"
+          style="font-weight:bold; margin-top:-4px; font-size:110%; width:100%;"
           v-model="systems[activeSystemIndex].name"
-          v-autowidth="{ maxWidth: '400px', minWidth: '1px' }"
+          v-autowidth="{ maxWidth: '500px', minWidth: '1px' }"
+          placeholder = systems[activeSystemIndex].name
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Enter electoral system name"
           />

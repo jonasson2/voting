@@ -154,9 +154,10 @@
         >
         <b-form-input
           class="pt-0 pb-0"
-          style="font-weight:bold; margin-top:-4px; font-size:110%"
+          style="font-weight:bold; margin-top:-4px; font-size:110%; width:100%;"
           v-model="vote_table.name"
           v-autowidth="{ maxWidth: '600px', minWidth: '1px' }"
+          placeholder = vote_table.name
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="The votes-and-seats table consists of the Constituency 
                  votes and seats, and the National party votes and seats
