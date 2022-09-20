@@ -386,20 +386,35 @@ class Election:
                         for p in p_under_lim:
                             ref_seat_shares[:, p] *= gamma
             elif row_constraints:
+                if self.party_vote_info['specified']:
+                    scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes)+sum(self.party_vote_info['votes']))
+                    ref_seat_shares = np.array(scale_matrix(np.vstack((self.m_votes, self.party_vote_info['votes'])), scalar))
+                    nrows += 1
+                    row_sums = np.append(row_sums, sum(col_sums)-self.total_const_seats)
                 for c in range(nrows):
                     row_sum = row_sums[c]
                     s = sum(ref_seat_shares[c, :])
                     eta = row_sum/s if s > 0 else 1
                     ref_seat_shares[c, :] *= eta
             elif col_constraints:
+                if self.party_vote_info['specified']:
+                    scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes)+sum(self.party_vote_info['votes']))
+                    ref_seat_shares = np.array(scale_matrix(np.vstack((self.m_votes, self.party_vote_info['votes'])), scalar))
                 for p in range(ncols):
                     col_sum = col_sums[p]
                     s = sum(ref_seat_shares[:, p])
                     tau = col_sum/s if s > 0 else 1
                     ref_seat_shares[:, p] *= tau
+
         self.ref_seat_shares = ref_seat_shares.tolist()
-        self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
-        if self.party_vote_info['specified']: self.total_ref_nat = [x-y for x,y in zip(self.desired_col_sums,self.total_ref_seat_shares)]
+        if self.party_vote_info['specified']:
+            if row_constraints and col_constraints:
+                self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+                self.total_ref_nat = [x - y for x, y in zip(self.desired_col_sums, self.total_ref_seat_shares)]
+            else:
+                self.total_ref_nat = self.ref_seat_shares.pop()
+                self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+
 
 
 
