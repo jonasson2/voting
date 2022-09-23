@@ -11,7 +11,7 @@ np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200
 from readkerg import readkerg
 from run_util import get_arguments
 from dictionaries import land_method_dicts, const_method_dicts, all_land_methods, \
-    all_const_methods, party_measures, \
+    all_const_methods, party_measures, all_measures, \
     land_measures, land_abbrev, measure_formats, const_method_funs, \
     land_method_funs
 from methods import apportion_sainte_lague
@@ -49,6 +49,8 @@ def initialize_running(const_meth, land_meth, nland, nparty, parties, länder):
         for lm in land_meth:
             method = f'{cm}-{lm}'
             running[method] = {}
+            for measure in all_measures:
+                running[method][measure] = Running_stats(1, name=measure)
             for measure in party_measures:
                 running[method][measure] = Running_stats (
                     shape = nparty + 1,
@@ -60,7 +62,7 @@ def initialize_running(const_meth, land_meth, nland, nparty, parties, länder):
                     shape = nland,
                     name = f"{method}-{measure}",
                     entries = länder,
-                    options = ['mean', 'max', 'sum'])
+                    options = ['mean', 'sum', 'min', 'max'])
     return running
 
 def run_simulate(info, data, const_methods, land_methods, nsim):
@@ -83,6 +85,7 @@ def run_simulate(info, data, const_methods, land_methods, nsim):
     länder = list(land_abbrev.values())
     running = initialize_running(const_methods, land_methods, nland,nparty,parties,länder)
     for k in range(nsim):
+        print(k)
         for const_method in const_methods:
             const_method_fun = const_method_funs[const_method]
             nat_vote_share = gpv[k].sum(axis=0)/gpv[k].sum()
@@ -111,18 +114,29 @@ def run_simulate(info, data, const_methods, land_methods, nsim):
                     neg_margin = voteshare.max(axis=1) - voteshare[I, selected]
                     max_neg_margin[l] = neg_margin.max()
                     neg_marg_freq[l] = np.mean(neg_margin > 0)
-                    min_seat_share[l] = min(voteshare[I, selected]).min()
-
+                    seat_share = voteshare[I, selected]
+                    min_seat_share[l] = seat_share.min() # Þetta er rangt...
+                min_seat_share_all = min_seat_share.min()
+                neg_marg_freq_all = (neg_marg_freq @ nconst)/sum(nconst)
                 runmeth = running[method]
                 runmeth['max_neg_margin'].update(max_neg_margin)
                 runmeth['min_seat_share'].update(min_seat_share)
                 runmeth['land_disparity'].update(land_disparity)
                 runmeth['neg_marg_freq'].update(neg_marg_freq)
                 runmeth['party_disparity'].update(party_disparity)
+                runmeth['min_seat_share_all'].update(min_seat_share_all)
+                runmeth['neg_marg_freq_all'].update(neg_marg_freq_all)
 
     return running
 
 def display_results(running):
+    mm_mean = method_measure_table(running, measure_formats, 'mean')
+    mm_max = method_measure_table(running, measure_formats, 'max')
+    mm_min = method_measure_table(running, measure_formats, 'min')
+    lm = measure_table(running, measure_formats, 'votepct-party1st', 'land')
+    pm = measure_table(running, measure_formats, 'votepct-land1st', 'party')
+    for df in (mm_mean, mm_max, mm_min, lm, pm):
+        print_df(df, wrap_headers=True)
     pass
 
 def parallel_simulate(info, data, const_methods, land_methods, nsim, nproc):
@@ -160,11 +174,4 @@ if __name__ == "__main__":
         running = run_simulate(info, data, const_methods, land_methods, nsim)
     else:
         running = parallel_simulate(info, data, const_methods, land_methods, nsim, ncores)
-    mm_mean = method_measure_table(running, measure_formats, 'mean')
-    mm_max = method_measure_table(running, measure_formats, 'max')
-    method = 'land1st-votepct'
-    lm = measure_table(running, measure_formats, 'votepct-party1st', 'land')
-    pm = measure_table(running, measure_formats, 'votepct-land1st', 'party')
-    for df in (mm_mean, mm_max, lm, pm):
-        print_df(df, wrap_headers=True)
-    pass
+    display_results(running)

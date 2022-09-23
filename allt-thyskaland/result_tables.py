@@ -14,9 +14,13 @@ def method_measure_table(running, measure_formats, select):
         measures = list(running[mth].keys())
         row = []
         for m in measures:
-            sel_index = running[mth][m].entries.index(select)
-            avg = running[mth][m].mean()[sel_index]
-            error = running[mth][m].error()[sel_index]
+            running_entry = running[mth][m]
+            if running_entry.shape == 1:
+                sel_index = 0
+            else:
+                sel_index = running_entry.entries.index(select)
+            avg = running_entry.mean()[sel_index]
+            error = running_entry.error()[sel_index]
             fmt = measure_formats[m]
             entry = f"{avg:{fmt}} ± {error:{fmt}}"
             row.append(entry)

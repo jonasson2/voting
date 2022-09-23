@@ -37,6 +37,13 @@ land_measure_dicts = [
     {'short': 'neg_marg_freq', 'title': 'Negative margin frequency', 'fmt':'.2%'}
 ]
 
+all_measure_dicts = [
+    {'short': 'neg_marg_freq_all',
+     'title': 'Overall maximum negative margin', 'fmt': '.2%'},
+    {'short': 'min_seat_share_all',
+     'title': 'Overall minimum seat share', 'fmt': '.2%'}
+]
+
 const_method_funs = {cm['short']: cm['fun'] for cm in const_method_dicts}
 land_method_funs = {lm['short']: lm['fun'] for lm in land_method_dicts}
 
@@ -44,7 +51,8 @@ all_const_methods = [cm['short'] for cm in const_method_dicts]
 all_land_methods = [lm['short'] for lm in land_method_dicts]
 party_measures = [pm['short'] for pm in party_measure_dicts]
 land_measures = [lm['short'] for lm in land_measure_dicts]
-measures = land_measure_dicts + party_measure_dicts
+all_measures = [am['short'] for am in all_measure_dicts]
+measures = land_measure_dicts + party_measure_dicts + all_measure_dicts
 measure_formats = {m['short']: m['fmt'] for m in measures}
 measure_formats[''] = '.2f'
 
@@ -58,7 +66,7 @@ land_abbrev = {
  6: 'Rhl-Pfz',
  7: 'Bad-Wür',
  8: 'Bayern',
- 9: 'Saarl',
+ 9: 'Saarl',x
  10: 'Berlin',
  11: 'Brand',
  12: 'Mec-Vor',
