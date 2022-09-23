@@ -48,6 +48,10 @@ th {
   border: 0;
 }
 
+.text-input {
+  width:100%;
+}
+
 .votematrix th input, .votematrix td input {
   padding: 1px 2px;
   background: none;

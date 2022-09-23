@@ -334,7 +334,7 @@ def simulation_to_xlsx(results, filename):
             cformat = fmt["percentages"]
         elif heading.startswith("Reference seat"):
             cformat = fmt["sim"]
-            totalsformat = fmt["base"]
+            #totalsformat = fmt["base"]
         elif heading == "Votes":
             cformat = fmt["base"]
         if setTotal=="hide":
@@ -769,10 +769,9 @@ def simulation_to_xlsx(results, filename):
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
             for table in tables:
-                is_refseatshare_table = table["heading"].startswith("Reference")
+                #is_refseatshare_table = table["heading"].startswith("Reference")
                 setTotal = (
                     "hide" if not table["total"] else
-                    "integer" if is_refseatshare_table else
                     "show")
                 draw_sim_block(worksheet, row=toprow, col=col,
                                heading=table["heading"],

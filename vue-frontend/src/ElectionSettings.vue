@@ -6,7 +6,7 @@
       <legend
         style="margin-left:0px; margin-top:12px; margin-bottom:0px"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Information on how to allocate fixed seats to lists in each constituency"
+        title="Information on how to allocate fixed seats to lists in each constituency, and national fixed seats if present"
         >
         Allocation of fixed seats
       </legend>
@@ -20,7 +20,7 @@
         label-for="input-horizontal"
         label-cols="auto"
         title="Formula used for allocating fixed seats to
-               party lists within each constituency."
+               party lists within each constituency, and national fixed seats to parties if present."
         >
         <b-form-select
           v-model="systems[systemidx].primary_divider"
@@ -35,7 +35,7 @@
         label-for="input-horizontal"
         label-cols="auto"
         title="Threshold as percentage of valid votes in a constituency
-               required by a list to qualify for fixed seats in that constituency."
+               required by a list to qualify for fixed seats in that constituency, also applies to national fixed seats."
         >
         <b-input-group append="%">
           <b-form-input
@@ -55,19 +55,19 @@
         title="Information on how to calculate the total number of seats which 
                each party receives"
         >
-        Apportionment of adjustment seats to parties
+        Apportionment of total seats to parties
       </legend>
     </b-col>
   </b-row>
   <b-row>
     <b-col cols="auto">
       <b-form-group
-        label="Party seat numbers"
+        label="Votes used as basis"
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
         title="The total number of seats for each party is computed using the
-               votes specified here and the Allocation-of-fixed-seats rule"
+               votes specified here and the rule specified below"
         >
         <b-form-select
           v-model="party_spec_option"
@@ -89,7 +89,7 @@
         label-for="input-horizontal"
         label-cols="auto"
         title="Formula used to apportion adjustment seats between parties
-               based on total votes for all lists of the same party."
+               based on chosen votes."
         >
         <b-form-select
           v-model="systems[systemidx].adj_determine_divider"
@@ -168,22 +168,6 @@
       </legend>
     </b-col>
   </b-row>
-  <b-row>
-    <b-col cols="auto">
-      <b-form-group
-        label="Rule"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        label-for="input-horizontal"
-        label-cols="auto"
-        title="Formula used to allocate adjustment seats to individual party lists within
-               the constituencies."
-        >
-        <b-form-select
-          v-model="systems[systemidx].adj_alloc_divider"
-          :options="capabilities.divider_rules"/>
-      </b-form-group>
-    </b-col>
-  </b-row>
   <b-row style="margin-top:-5px">
     <b-col cols="auto">
       <b-form-group
@@ -192,7 +176,7 @@
         label-for="input-horizontal"
         label-cols="auto"
         title="Method to allocate adjustment seats to party
-               lists based on the given rule."
+               lists based on the rule chosen below."
         >
         <b-form-select
           v-model="systems[systemidx].adjustment_method"
@@ -200,7 +184,21 @@
       </b-form-group>
     </b-col>
   </b-row>
-  
+  <b-row>
+    <b-col cols="auto">
+      <b-form-group
+        label="Rule"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        label-for="input-horizontal"
+        label-cols="auto"
+        title="Formula used to allocate adjustment seats to individual party lists."
+        >
+        <b-form-select
+          v-model="systems[systemidx].adj_alloc_divider"
+          :options="capabilities.divider_rules"/>
+      </b-form-group>
+    </b-col>
+  </b-row>
   <!-- FIXED AND ADJUSTMENT SEAT NUMBERS -->
   <b-row>
     <legend style="margin-left:16px; margin-top:12px; margin-bottom:0px">
@@ -211,9 +209,8 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         label-for="input-horizontal"
         label-cols="auto"
-        title="Numbers of fixed and adjustment seats in each
-               constituency (and on the national list)
-               in this electoral system"
+        title="Numbers of fixed and adjustment seats in
+               this electoral system"
         >
         <b-form-select
           v-model="const_spec_option"

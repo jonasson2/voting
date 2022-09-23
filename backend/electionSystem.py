@@ -16,9 +16,9 @@ class ElectionSystem(dict):
         self["adj_alloc_divider"] = "dhondt"
         self["adjustment_threshold"] = 0
         self["adjustment_threshold_seats"] = 0
-        self["adj_threshold_choice"] = 0
+        self["adj_threshold_choice"] = 1
         self["constituency_threshold"] = 0
-        self["adjustment_method"] = "icelandic-law"
+        self["adjustment_method"] = "max-const-seat-share"
         self["seat_spec_options"] = {"const": "refer", "party": "totals"}
         self["compare_with"] = False
         self["parties"] = []

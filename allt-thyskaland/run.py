@@ -37,7 +37,7 @@ def randomize_votes(votes, partyvotes, cv, cvp, nsim):
         #randvotes = np.rint(randvotes).astype(int)
         gv.append(randvotes)
     shapep = 1/cvp**2
-    scalep = 1/shape
+    scalep = 1/shapep
     sizep = (nsim,) + np.shape(partyvotes)
     gpv = rng.gamma(shapep, scalep, size = sizep)*partyvotes
     #gpv = np.rint(gpv).astype(int) # don't use this for percentages

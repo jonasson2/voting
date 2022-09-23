@@ -118,7 +118,8 @@ def api_settings_save():
             "compare_with",
             "constituency_threshold", #"constituency_allocation_rule",
             "adjustment_threshold", #"adjustment_division_rule",
-            "adjustment_method", #"adjustment_allocation_rule"
+            "adjustment_method", #"adjustment_allocation_rule",
+            "nat_seats"
         ]
         names = []
         electoral_system_list = []
@@ -128,6 +129,7 @@ def api_settings_save():
             item["constituency_allocation_rule"] = system["primary_divider"]
             item["adjustment_division_rule"] = system["adj_determine_divider"]
             item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
+            item["nat_seats"] = system["nat_seats"]
             electoral_system_list.append(item)
         file_content = {
             "e_settings": electoral_system_list,

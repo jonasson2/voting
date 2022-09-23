@@ -243,10 +243,10 @@ const store = new Vuex.Store({
         })
     },
     saveAll(context) {
-      let promise;F
+      let promise;
       promise = axios({
         method: "post",
-        url: "/api/saveall",
+        url: "/api/saveall/",
         data: {
           vote_table: context.state.vote_table,
           systems: context.state.systems,

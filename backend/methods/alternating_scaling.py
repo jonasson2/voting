@@ -40,10 +40,7 @@ def alt_scaling(m_votes,
     div_gen = divisor_gen()
     inverse_divisors = 1/np.array([next(div_gen) for i in range(N + 1)])
     k = -1 if nat_list_with_seats else nrows
-    #iter = 0
-    #while True:
-    #    iter += 1
-    for iter in range(1,1000):
+    for iter in range(1,100):
         for i in range(nrows):
             if nat_list_with_seats and i == nrows-1:
                 pass
@@ -61,19 +58,10 @@ def alt_scaling(m_votes,
         if np.array_equal(x, y):
             break
     #Debug
-    #if iter == 999:
-    #    print('iter: 999 -> Ran through all iterations before breaking')
-    #    print('desired party alloc: ', c)
-    #    print('const. alloc to parties: ', x[:-1].sum(axis=0))
-    #else:
-    #    if iter > 999:
-    #        print('iter:', iter)
-    #if iter > 999: #atkvæðatöflur vandræða skrifaðar út
-    #    np.savetxt(f"{iter}_seats.csv", x, delimiter=";")
     if iter == 99:
        print('iter: 99 -> Ran through all iterations before breaking')
-    else:
-        print('iter:', iter)
+    #else:
+    #    print('iter:', iter)
     return x[:-1].tolist() if nat_list_with_seats else x.tolist(), ([], print_demo_table)
 def print_demo_table(rules, allocation_sequence):
     return [], [], None
