@@ -1,19 +1,23 @@
 import pandas as pd, numpy as np
-from numpy import c_
+from numpy import c_, r_
 from copy import copy, deepcopy
 from util import disp
-from dictionaries import party_measures, land_measures
+from dictionaries import party_measures, land_measures, alloc_measures, measure_dicts, \
+    measure_formats
 pd.options.display.width = 0
 pd.options.display.float_format = " {:,.2f}".format
 
-def method_measure_table(running, measure_formats, select):
+def method_measure_table(running):
     # select can be party, 'mean' 'max' or 'sum'
     methods = list(running.keys())
     A = []
     for mth in methods:
         measures = list(running[mth].keys())
+        for m in alloc_measures:
+            measures.remove(m)
         row = []
         for m in measures:
+            select = measure_dicts[m][1]
             running_entry = running[mth][m]
             if running_entry.shape == 1:
                 sel_index = 0
@@ -26,12 +30,25 @@ def method_measure_table(running, measure_formats, select):
             row.append(entry)
         A.append(row)
     df = pd.DataFrame(A, index=methods, columns=measures)
-    title = f"{select.upper()} MEASURES OVER PARTIES/CONSTITUENCES"
+    title = f'AVERAGE SIMULATED MEASURES'
     df.attrs['title'] = title
     df.index.name = 'statemethod-constmethod'
     return df
 
-def measure_table(running, measure_formats, method, select):
+def add_summary_stats(index, seats):
+    seats1 = copy(seats)
+    for i in index:
+        if i=='mean':
+            seats1 = r_[seats1, seats.mean()]
+        elif i=='min':
+            seats1 = r_[seats1, seats.min()]
+        elif i=='max':
+            seats1 = r_[seats1, seats.max()]
+        elif i=='sum':
+            seats1 = r_[seats1, seats.sum()]
+    return seats1
+
+def measure_table(running, ref_alloc, method, select):
     # select is a list of measure short names
     if method not in running:
         return None
@@ -46,7 +63,9 @@ def measure_table(running, measure_formats, method, select):
         column = [f"{a:{fmt}} ± {e:{fmt}}" for (a, e) in zip(avg, error)]
         A = c_[A, column]
     title = f"{select.upper()} MEASURES FOR METHOD {method.upper()}"
+    seats = ref_alloc.sum(axis = (0 if select=='party' else 1))
     df = pd.DataFrame(A, index=index, columns=measures)
+    df['seats'] = [f"{s:.0f}" for s in add_summary_stats(df.index, seats)]
     df.attrs['title'] = title
     df.index.name = select
     return df
@@ -106,8 +125,8 @@ def print_df(dfs, formats=None, wrap_headers=False):
 
 def wrap_hdr(df):
     import re
-    tr = {'max':'maximum', 'min':'minimum', 'marg':'margin', 'freq':'frequency',
-          'neg':'negative'}
+    tr = {'max':'maximum', 'min':'minimum', 'marg':'margin', 'freq':'frequency', 'alloc':
+          'allocations', 'neg':'negative', 'dispar':'disparity', 'bundes':'bundeswide'}
     #tr = {}
     if all('_' not in l for l in df.columns):
         return df

@@ -54,6 +54,7 @@ class Running_stats:
             if opt=="mean":  A[i] = np.mean(values)
             elif opt=="max": A[i] = max(values)
             elif opt=="min": A[i] = min(values)
+            elif opt=="sum": A[i] = sum(values)
         n1 = self.n
         self.n += 1
         n = self.n
