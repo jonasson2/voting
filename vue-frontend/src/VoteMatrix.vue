@@ -39,7 +39,7 @@
     title="Upload json file with vote table and settings"
     >
     <p>
-      The file provided should be a JSON file formatted lika a file
+      The file provided should be a JSON file formatted like a file
       downloaded from here using the SAVE ALL button.
     </p>
     <b-form-file
@@ -146,7 +146,7 @@
   <h6> 
   </h6>
   <b-row>
-    <b-col cols="auto">
+    <b-col cols=auto>
       <b-form-group
         label-for="input-horizontal"
         label-cols="auto"
@@ -154,10 +154,9 @@
         >
         <b-form-input
           class="pt-0 pb-0"
-          style="font-weight:bold; margin-top:-4px; font-size:110%; width:100%;"
-          v-model="vote_table.name"
+          style="font-weight:bold; margin-top:-4px; font-size:110%;"
           v-autowidth="{ maxWidth: '600px', minWidth: '1px' }"
-          placeholder = vote_table.name
+          v-model="vote_table.name"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="The votes-and-seats table consists of the Constituency 
                  votes and seats, and the National party votes and seats
@@ -596,19 +595,21 @@ export default {
           && typeof this.vote_table.party_vote_info.num_adj_seats == 'number'
           && typeof this.vote_table.party_vote_info.num_fixed_seats == 'number'
     }
-  },
+},
   watch: {
     vote_table: {
-      handler: function() {
+      handler: function () {
         console.log('vote_table changed')
+        console.log(this.vote_table.name)
         if (!this.waiting_for_data) {
           console.log("watching vote_table")
           this.addBeforeunload()
           this.updateVoteSums()
+          this.vote_table.name.$forceUpdate()
         }
       },
       deep: true
-    }
-  },
+    },
+  }
 };
 </script>

@@ -46,6 +46,9 @@ th {
 
 .tablename {
   border: 0;
+  font-weight:bold;
+  margin-top:-4px;
+  font-size:110%;
 }
 
 .text-input {

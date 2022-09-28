@@ -353,9 +353,9 @@ class Election:
             scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
             ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
         error = 1
+        row_constraints = scaling in {"both", "const"}
+        col_constraints = scaling in {"both", "party"}
         if ncols > 1 and nrows > 1:
-            row_constraints = scaling in {"both", "const"}
-            col_constraints = scaling in {"both", "party"}
             if row_constraints and col_constraints:
                 while round(error, 7) != 0.0:
                     error = 0
@@ -413,6 +413,9 @@ class Election:
             else:
                 self.total_ref_nat = self.ref_seat_shares.pop()
                 self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+        else:
+            self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+
 
 
 
