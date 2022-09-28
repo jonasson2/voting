@@ -19,7 +19,7 @@ def alt_scaling(m_votes,
     import numpy as np
 
     nat_list_with_seats = party_votes_specified and nat_seats>sum(nat_prior_allocations)
-    if not nat_seats>sum(nat_prior_allocations):
+    if not nat_seats>sum(nat_prior_allocations) and party_votes_specified:
         v_desired_col_sums = [x-y for x,y in zip(v_desired_col_sums,nat_prior_allocations)]
     v = np.array(m_votes, float)
     xp = np.array(m_prior_allocations)
