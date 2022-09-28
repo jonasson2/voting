@@ -280,7 +280,7 @@ class Election:
                              party_votes_specified = self.party_vote_info['specified'],
                              nat_prior_allocations = (self.results['fixed_nat_seats']
                                                       if self.party_vote_info['specified'] 
-                                                      else 0),
+                                                      else [0]),
                              nat_seats = (self.party_vote_info['num_fixed_seats']
                                           + self.party_vote_info['num_adj_seats']
                                           if self.party_vote_info['specified']

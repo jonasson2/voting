@@ -1,4 +1,5 @@
 g*.pyc
+slurm*.out
 *~
 *.swp
 \#*
