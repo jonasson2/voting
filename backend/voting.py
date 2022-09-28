@@ -278,8 +278,13 @@ class Election:
                              v_fixed_seats=[con["num_fixed_seats"] for con in consts],
                              last=self.last,
                              party_votes_specified = self.party_vote_info['specified'],
-                             nat_prior_allocations=self.results['fixed_nat_seats'] if self.party_vote_info['specified'] else 0,
-                             nat_seats=self.party_vote_info['num_fixed_seats']+self.party_vote_info['num_adj_seats'] if self.party_vote_info['specified'] else 0,
+                             nat_prior_allocations = (self.results['fixed_nat_seats']
+                                                      if self.party_vote_info['specified'] 
+                                                      else 0),
+                             nat_seats = (self.party_vote_info['num_fixed_seats']
+                                          + self.party_vote_info['num_adj_seats']
+                                          if self.party_vote_info['specified']
+                                          else 0),
                              )
         all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(

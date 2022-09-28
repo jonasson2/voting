@@ -38,14 +38,10 @@ def method_measure_table(running):
 def add_summary_stats(index, seats):
     seats1 = copy(seats)
     for i in index:
-        if i=='mean':
-            seats1 = r_[seats1, seats.mean()]
-        elif i=='min':
-            seats1 = r_[seats1, seats.min()]
-        elif i=='max':
-            seats1 = r_[seats1, seats.max()]
-        elif i=='sum':
-            seats1 = r_[seats1, seats.sum()]
+        if i=='mean':  seats1 = r_[seats1, seats.mean()]
+        elif i=='min': seats1 = r_[seats1, seats.min()]
+        elif i=='max': seats1 = r_[seats1, seats.max()]
+        elif i=='sum': seats1 = r_[seats1, seats.sum()]
     return seats1
 
 def measure_table(running, ref_alloc, method, select):
