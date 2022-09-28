@@ -12,11 +12,12 @@ def alt_scaling(m_votes,
                 v_desired_col_sums,
                 m_prior_allocations,
                 divisor_gen,
-                party_votes_specified,
-                nat_prior_allocations,
-                nat_seats,
                 **kwargs):
     import numpy as np
+
+    party_votes_specified = kwargs["party_votes_specified"]
+    nat_prior_allocations = kwargs["nat_prior_allocations"]
+    nat_seats = kwargs["nat_seats"]
 
     nat_list_with_seats = party_votes_specified and nat_seats>sum(nat_prior_allocations)
     if not nat_seats>sum(nat_prior_allocations) and party_votes_specified:

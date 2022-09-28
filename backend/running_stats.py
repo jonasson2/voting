@@ -7,7 +7,7 @@ class Running_stats:
     def __init__(self, shape=1, parallel=False, name="", entries=None, options=[]):
         # Names may be a list of length shape. When shape is not two-dimensional,
         # options may be a list of strings from "mean", "min" and max".
-        if entries is None:
+        if entries is None and shape==1:
             entries = [name]*shape
         assert(type(shape) in {int,float} or len(options)==0)
         self.parallel = parallel
