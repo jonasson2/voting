@@ -45,7 +45,7 @@ def farthest_from_next(m_votes,
     num_allocated = sum([sum(x) for x in m_prior_allocations])
     num_total_seats = sum(v_desired_row_sums)
     
-    # INITIALIZE SETS OF NON-FULL CONSTITUENCIES AND PARTIES, AND WORK MATRICES
+    # INITIALIZE SETS OF NON-FULL CONSTITUENCIES AND PARTIES, AND QUOTIENT MATRIX
     openC = set(k for (k,open) in enumerate(alloc_const < desired_const) if open)
     openP = set(k for (k,open) in enumerate(alloc_party < desired_party) if open)
     next_quot = np.zeros(alloc_list.shape)
@@ -62,13 +62,12 @@ def farthest_from_next(m_votes,
         alloc_party[maxP] += 1
         num_allocated += 1
 
-        # REMOVE CONST AND/OR PARTY WHEN FULL
+        # REMOVE CONST AND/OR PARTY WHEN FULL; UPDATE QUOTIENTS
         if alloc_party[maxP] == desired_party[maxP]:
             openP.remove(maxP)
         if alloc_const[maxC] == desired_const[maxC]:
             openC.remove(maxC)
-        else: # There is no "last_quot" for parties, that explaines this funny if-else
-            # UPDATE WORK MATRICES IN CONSTITUENCY WITH MAX RATIO
+        else:
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
                                      divisors[alloc_list[maxC, maxP]])
 

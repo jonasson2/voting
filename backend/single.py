@@ -42,10 +42,6 @@ def main():
     (votes, vote_path, systems) = read_data(vote_file, json_file)
 
     #random.seed(42)
-    systemnames = [s["name"] for s in systems]        # self.test_generated() --- needs to be rewritten,
-        # (statistical test of simulated data)
-
-
     results = single_election(votes, systems)
     handler = ElectionHandler(votes, systems, use_thresholds=True)
     handler.to_xlsx("single.xlsx")

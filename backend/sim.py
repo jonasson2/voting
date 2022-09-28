@@ -85,7 +85,7 @@ def main():
     sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv, pcv)
     (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_reps, vote_path)
 
-    random.seed(43)
+    #random.seed(43)
     systemnames = [s["name"] for s in systems]
     if sim_settings['simulation_count'] == 0: return
     sim_settings["sensitivity"] = False

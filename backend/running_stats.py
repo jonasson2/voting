@@ -4,9 +4,11 @@ from copy import deepcopy
 from util import disp
 
 class Running_stats:
-    def __init__(self, shape=1, parallel=False, name="", entries=[], options=[]):
+    def __init__(self, shape=1, parallel=False, name="", entries=None, options=[]):
         # Names may be a list of length shape. When shape is not two-dimensional,
         # options may be a list of strings from "mean", "min" and max".
+        if entries is None:
+            entries = [name]*shape
         assert(type(shape) in {int,float} or len(options)==0)
         self.parallel = parallel
         self.name = name
@@ -16,6 +18,7 @@ class Running_stats:
             self.entries.extend(options)
         if len(options)!= 0:
             shape += len(options)
+        self.shape = shape
         self.n = 0
         self.M1 = np.zeros(shape)
         self.M2 = np.zeros(shape)
@@ -44,13 +47,14 @@ class Running_stats:
         return self
     
     def update(self, values): # A should have shape "shape"
-        if type(values) in {int,float}:
+        if type(values) in {int,float,np.float64}:
             values = [values]
         A = r_[np.array(values), np.zeros(len(self.options))] if len(self.options) else np.array(values)
         for (i,opt) in enumerate(self.options, len(values)):
             if opt=="mean":  A[i] = np.mean(values)
             elif opt=="max": A[i] = max(values)
             elif opt=="min": A[i] = min(values)
+            elif opt=="sum": A[i] = sum(values)
         n1 = self.n
         self.n += 1
         n = self.n
