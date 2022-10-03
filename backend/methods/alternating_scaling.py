@@ -12,15 +12,12 @@ def alt_scaling(m_votes,
                 v_desired_col_sums,
                 m_prior_allocations,
                 divisor_gen,
+                party_votes_specified,
+                nat_prior_allocations,
+                nat_seats,
                 **kwargs):
-    import numpy as np
-
-    party_votes_specified = kwargs["party_votes_specified"]
-    nat_prior_allocations = kwargs["nat_prior_allocations"]
-    nat_seats = kwargs["nat_seats"]
-
-    nat_list_with_seats = party_votes_specified and nat_seats>sum(nat_prior_allocations)
-    if not nat_seats>sum(nat_prior_allocations) and party_votes_specified:
+    nat_list_with_seats = party_votes_specified and nat_seats > sum(nat_prior_allocations)
+    if not nat_seats > sum(nat_prior_allocations) and party_votes_specified:
         v_desired_col_sums = [x-y for x,y in zip(v_desired_col_sums,nat_prior_allocations)]
     v = np.array(m_votes, float)
     xp = np.array(m_prior_allocations)
@@ -59,10 +56,13 @@ def alt_scaling(m_votes,
         if np.array_equal(x, y):
             break
     #Debug
+    #print('iter =', iter)
     if iter == 99:
        print('iter: 99 -> Ran through all iterations before breaking')
     #else:
     #    print('iter:', iter)
-    return x[:-1].tolist() if nat_list_with_seats else x.tolist(), ([], print_demo_table)
+    return x[:-1].astype(int).tolist() \
+               if nat_list_with_seats \
+               else x.astype(int).tolist(), ([], print_demo_table)
 def print_demo_table(rules, allocation_sequence):
     return [], [], None

@@ -8,7 +8,8 @@ from max_vote_percentage import max_vote_percentage
 from switching import switching
 from alternating_scaling import alt_scaling
 from farthest_from_next import farthest_from_next
-from methods import parties_first, länder_first, max_share, max_advantage, scandinavian
+from methods import parties_first, länder_first, max_share, max_advantage, \
+    scandinavian, optimal_const
 
 land_method_dicts = [
     #'swi':  (switching,                 "Switching"),
@@ -26,7 +27,7 @@ const_method_dicts = [
     {'short': 'scand', 'fun': scandinavian, 'title': "Scandinavian"},
     {'short': 'votepct', 'fun': max_share, 'title': "Max vote percentage"},
     {'short': 'reladv', 'fun': max_advantage, 'title': "Relative advantage"},
-    {'short': 'optimal', 'fun': alt_scaling, 'title': "Optimal"},
+    {'short': 'optconst', 'fun': optimal_const, 'title': "Optimal"},
 ]
 
 party_measure_dicts = {
@@ -40,7 +41,7 @@ land_measure_dicts = {
     'min_seat_share':  ('Minimum seat share',       'min', '.2%'),
     'min_land_dispar': ('Maximum land disparity',   'min', '.3f'),
     'max_land_dispar': ('Maximum land disparity',   'max', '.3f'),
-    'neg_marg_count':  ('Negative margin count',    'sum', '.1f'),
+    'neg_marg_count':  ('Negative margin count',    'sum', '.3f'),
     'land_alloc':      ('Land allocations',         'sum', '.2f'),
 }
 alloc_measures = ['party_alloc', 'land_alloc']

@@ -32,7 +32,7 @@ def method_measure_table(running):
     df = pd.DataFrame(A, index=methods, columns=measures)
     title = f'AVERAGE SIMULATED MEASURES'
     df.attrs['title'] = title
-    df.index.name = 'statemethod-constmethod'
+    df.index.name = 'methods: const-state'
     return df
 
 def add_summary_stats(index, seats):

@@ -20,11 +20,11 @@ disp(width=60)
 from time import sleep
 
 def calc_share(votes):
-    share = np.array([v[:,:-1]/np.sum(v,1)[:,None] for v in votes])
+    share = [v/np.sum(v,1)[:,None] for v in votes]
     return share
 
 def randomize_votes(votes, partyvotes, cv, cvp, nsim):
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=43)
     shape = 1/cv**2
     scale = 1/shape
     gv = []
@@ -66,14 +66,12 @@ def land_allocate(method, votes, partyseats, landseats):
         alloc = fun(votes, partyseats, landseats)
     elif method == 'optimal':
         prior_alloc = np.zeros(votes.shape, int)
-        alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen)
+        alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen,
+                              False, [0], 0)
+        alloc = np.array(alloc_seats)
     else:
         prior_alloc = np.zeros(votes.shape, int)
         alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen)
-        # alloc_seats, _ = max_const_vote_percentage(votes.tolist(), landseats,
-        #                                            list(partyseats),
-        #                                            prior_alloc.tolist(),
-        #                                            sainte_lague_gen)
         alloc = np.array(alloc_seats)
     return alloc
 
@@ -115,7 +113,7 @@ def run_simulate(info, data, const_methods, land_methods, nsim, icore):
                     voteshare = share[l][k]
                     selected = const_method_fun(voteshare, alloc[l, :])
                     I = range(nconst[l])
-                    neg_margin = voteshare.max(axis=1) - voteshare[I, selected]
+                    neg_margin = voteshare[:,:-1].max(axis=1) - voteshare[I, selected]
                     max_neg_marg[l] = neg_margin.max()
                     neg_marg_count[l] = np.sum(neg_margin > 0)
                     seat_share = voteshare[I, selected]

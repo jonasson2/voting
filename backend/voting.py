@@ -270,23 +270,25 @@ class Election:
             #desired_col_sums = self.desired_const_col_sums
         #else:
             #desired_col_sums = self.desired_col_sums
+        fixed_seats = [con["num_fixed_seats"] for con in consts]
         self.method = method(m_votes=self.m_votes,
-                             v_desired_row_sums=self.desired_row_sums,
-                             v_desired_col_sums=self.desired_col_sums,
-                             m_prior_allocations=self.results["fixed_const_seats"],
-                             divisor_gen=self.gen,
-                             adj_seat_gen=self.adj_seat_gen,
-                             v_fixed_seats=[con["num_fixed_seats"] for con in consts],
-                             last=self.last,
+                             v_desired_row_sums = self.desired_row_sums,
+                             v_desired_col_sums = self.desired_col_sums,
+                             m_prior_allocations = self.results["fixed_const_seats"],
+                             divisor_gen = self.gen,
+                             # kwargs-arguments:
+                             adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx                             # optimal
+                             v_fixed_seats = fixed_seats, # used by norwegian_law
+                             last = self.last, # used by nearest_to_previous
                              party_votes_specified = self.party_vote_info['specified'],
                              nat_prior_allocations = (self.results['fixed_nat_seats']
-                                                      if self.party_vote_info['specified'] 
+                                                      if self.party_vote_info['specified']
                                                       else [0]),
                              nat_seats = (self.party_vote_info['num_fixed_seats']
                                           + self.party_vote_info['num_adj_seats']
                                           if self.party_vote_info['specified']
                                           else 0),
-                             )
+                             ) # last three used by optimal
         all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(
             all_const_seats, self.results["fixed_const_seats"])
