@@ -27,7 +27,13 @@ def max_share(votes, max_col_sums):
             openP[p] = False
     return party
 
-def max_advantage(votes_all, max_col_sums):
+def max_relative_margin(votes_all, max_col_sums):
+    return max_margin(votes_all, max_col_sums, 'relative')
+
+def max_absolute_margin(votes_all, max_col_sums):
+    return max_margin(votes_all, max_col_sums, 'absolute')
+
+def max_margin(votes_all, max_col_sums, type):
     votes = votes_all[:,:-1]
     (nconst, nparty) = votes.shape
     col_sum = np.zeros(nparty)
@@ -50,8 +56,10 @@ def max_advantage(votes_all, max_col_sums):
                 q = np.argmax(share_rest[c,:])
                 pmax[c] = q
                 share_rest[c, q] = -1
-                div = max(share_rest[c,:])
-                advantage[c] = votes[c, q]/div if div > 0 else 0
+                max_rest = max(share_rest[c,:])
+                advantage[c] = (0 if max_rest == 0
+                                else votes[c, q]/max_rest if type=='relative'
+                                else votes[c, q] - max_rest > 0)
     return party
 
 def scandinavian(votes, _):

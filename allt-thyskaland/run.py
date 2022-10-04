@@ -24,7 +24,7 @@ def calc_share(votes):
     return share
 
 def randomize_votes(votes, partyvotes, cv, cvp, nsim):
-    rng = np.random.default_rng(seed=43)
+    rng = np.random.default_rng(seed=45)
     shape = 1/cv**2
     scale = 1/shape
     gv = []
@@ -135,7 +135,7 @@ def display_results(running, data, ref_alloc):
     nconst = [len(v) for v in data["constvotes"]]
     mm_table = method_measure_table(running)
     lvv = measure_table(running, ref_alloc, 'votepct-votepct', 'land')
-    lrr = measure_table(running, ref_alloc, 'reladv-reladv', 'land')
+    lrr = measure_table(running, ref_alloc, 'relmarg-relmarg', 'land')
     loo = measure_table(running, ref_alloc, 'optimal-optimal', 'land')
     pvp = measure_table(running, ref_alloc, 'votepct-party1st', 'party')
     pvl = measure_table(running, ref_alloc, 'votepct-land1st', 'party')

@@ -39,6 +39,7 @@ def alt_scaling(m_votes,
     inverse_divisors = 1/np.array([next(div_gen) for i in range(N + 1)])
     k = -1 if nat_list_with_seats else nrows
     for iter in range(1,100):
+        #print('iter=',iter)
         for i in range(nrows):
             if nat_list_with_seats and i == nrows-1:
                 pass
@@ -51,6 +52,7 @@ def alt_scaling(m_votes,
         if iter > 1 and np.array_equal(x, y):
             break
         for j in range(ncols):
+            #print('j=',j)
             (y[:,j], sigma) = apportion(v[:,j], xp[:,j], c[j], inverse_divisors, nat_list_with_seats)
             v[:k,j] = v[:k,j]*sigma
         if np.array_equal(x, y):
