@@ -346,17 +346,78 @@ class Election:
             table['format'] = "".join(fmtlist)
 
     def calculate_ref_seat_shares(self, scaling):
+        if scaling == 'new':
+            self.calculate_ref_seat_shares_new(scaling)
+            return
+        import numpy as np, numpy.linalg as la
+        scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
+        ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
+        ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
+        # assert self.solvable
+        # rein = 0
+        nrows = self.num_constituencies()
+        ncols = self.num_parties()
+        eta = np.ones(nrows)
+        tau = np.ones(ncols)
+        error = 1
+        niter = 0
+        col_sums = self.desired_const_col_sums
+        if ncols > 1 and nrows > 1:
+            row_constraints = scaling in {"both", "const"}
+            col_constraints = scaling in {"both", "party"}
+            if row_constraints and col_constraints:
+                while round(error, 7) != 0.0:
+                    error = 0
+                    for c in range(nrows):
+                        row_sum = self.desired_row_sums[c]
+                        s = sum(ref_seat_shares[c, :])
+                        eta = row_sum/s if s > 0 else 1
+                        ref_seat_shares[c, :] *= eta
+                        error = max(error, abs(1 - eta))
+                    for p in range(ncols):
+                        col_sum = col_sums[p]
+                        s = sum(ref_seat_shares[:, p])
+                        tau = col_sum/s if s > 0 else 1
+                        ref_seat_shares[:, p] *= tau
+                        error = max(error, abs(1 - tau))
+            elif row_constraints:
+                for c in range(nrows):
+                    row_sum = self.desired_row_sums[c]
+                    s = sum(ref_seat_shares[c, :])
+                    eta = row_sum/s if s > 0 else 1
+                    ref_seat_shares[c, :] *= eta
+            elif col_constraints:
+                for p in range(ncols):
+                    col_sum = col_sums[p]
+                    s = sum(ref_seat_shares[:, p])
+                    tau = col_sum/s if s > 0 else 1
+                    ref_seat_shares[:, p] *= tau
+        self.ref_seat_shares = ref_seat_shares.tolist()
+        factor = sum(self.results["all_grand_total"])/sum(self.nat_votes)
+        self.total_ref_seat_shares = [x*factor for x in self.nat_votes]
+
+        if self.party_vote_info["specified"]:
+            factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
+            self.ref_nat_seat_shares = [x*factor for x in self.nat_votes]
+        else:
+            self.ref_nat_seat_shares = None
+
+    def calculate_ref_seat_shares_new(self, scaling):
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()
         col_sums = np.array(self.desired_col_sums)
         row_sums = np.array(self.desired_row_sums)
         if self.party_vote_info['specified'] and scaling in {"const", "party","total"}:
-            scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes) + sum(self.party_vote_info['votes']))
-            ref_seat_shares = np.array(scale_matrix(np.vstack((self.m_votes, self.party_vote_info['votes'])), scalar))
+            scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes) +
+                                      sum(self.party_vote_info['votes']))
+            ref_seat_shares = \
+                np.array(scale_matrix(np.vstack((self.m_votes,
+                         self.party_vote_info['votes'])), scalar))
             if scaling == 'const':
                 nrows += 1
-                row_sums = np.append(row_sums, sum(col_sums) - self.total_const_seats)
+                row_sums = np.append(row_sums, sum(col_sums) -
+                                     self.total_const_seats)
         else:
             scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
             ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
