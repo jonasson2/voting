@@ -1,7 +1,10 @@
 # NumPy version, single constituency hardwired
-import numpy as np
+import sys, numpy as np
 from numpy import flatnonzero as find, ix_
 from copy import deepcopy
+sys.path.append('~/voting/backend/methods')
+from alternating_scaling import alt_scaling
+from division_rules import sainte_lague_gen
 
 def max_share(votes, max_col_sums):
     voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
@@ -24,7 +27,13 @@ def max_share(votes, max_col_sums):
             openP[p] = False
     return party
 
-def max_advantage(votes_all, max_col_sums):
+def max_relative_margin(votes_all, max_col_sums):
+    return max_margin(votes_all, max_col_sums, 'relative')
+
+def max_absolute_margin(votes_all, max_col_sums):
+    return max_margin(votes_all, max_col_sums, 'absolute')
+
+def max_margin(votes_all, max_col_sums, type):
     votes = votes_all[:,:-1]
     (nconst, nparty) = votes.shape
     col_sum = np.zeros(nparty)
@@ -47,12 +56,26 @@ def max_advantage(votes_all, max_col_sums):
                 q = np.argmax(share_rest[c,:])
                 pmax[c] = q
                 share_rest[c, q] = -1
-                div = max(share_rest[c,:])
-                advantage[c] = votes[c, q]/div if div > 0 else 0
+                max_rest = max(share_rest[c,:])
+                advantage[c] = (0 if max_rest == 0
+                                else votes[c, q]/max_rest if type=='relative'
+                                else votes[c, q] - max_rest > 0)
     return party
 
 def scandinavian(votes, _):
     party = np.argmax(votes[:,:-1], 1)
+    return party
+
+def optimal_const(votes, max_col_sums):
+    (nconst, nparty) = votes.shape
+    row_sums = np.ones(nconst, int)
+    prior_alloc = np.zeros(votes.shape, int)
+    party_votes_specified = True
+    nat_prior_allocations = np.zeros(nparty, int)
+    nat_seats = int(sum(max_col_sums) - nconst)
+    alloc, _ = alt_scaling(votes, row_sums, max_col_sums, prior_alloc, sainte_lague_gen,
+                           party_votes_specified, nat_prior_allocations, nat_seats)
+    party = [alloc[c].index(1) for c in range(nconst)]
     return party
 
 def apportion_sainte_lague(votes, num_seats, prior_alloc = None):

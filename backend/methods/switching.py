@@ -1,6 +1,21 @@
 from apportion import apportion1d_general
 import numpy as np
+from numpy import argmin, flatnonzero as find
 from copy import deepcopy
+
+def min_with_index(x, I=None):
+    if I is None:
+        i = np.argmin(x)
+    else:
+        i = np.argmin(np.where(I, x, np.inf))
+    return (x[i], i)
+
+def max_with_index(x, I=None):
+    if I is None:
+        i = np.argmax(x)
+    else:
+        i = np.argmax(np.where(I, x, -np.inf))
+    return (x[i], i)
 
 def switching(m_votes,
               v_desired_row_sums,
@@ -49,47 +64,51 @@ def switching(m_votes,
     i = 0
     while True:
         i += 1
-        print('i=', i)
-        last_surplus = -np.ones(num_constituencies, int)
-        first_wanting = -np.ones(num_constituencies, int)
-        ratio = np.ones(num_constituencies)*np.inf
-        surplus = set(p for p in range(num_parties) if sum(alloc[:,p]) > max_party[p])
-        if not surplus:
+        # print('i=', i)
+        surplus = sum(alloc,0) > max_party
+        if not any(surplus):
+            # print('...finished switching')
             break
-        wanting = set(p for p in range(num_parties) if sum(alloc[:,p]) < max_party[p])
+        wanting = sum(alloc,0) < max_party
 
         # CALCULATE MINIMUM RATIO OF ACTIVE VOTES IN EACH CONSTITUENCY
-        print('surplus=', surplus)
-        print('wanting=', wanting)
+        P = []
+        Q = []
+        C = []
+        ratio = []
         for c in range(num_constituencies):
-            quot_min = np.inf
-            for p in range(num_parties):
-                quot = votes[c,p]/divisors[alloc[c,p] - 1]
-                if p in surplus and alloc[c,p] > alloc_prior[c,p] and quot <= quot_min:
-                    quot_min = quot
-                    last_surplus[c] = p
-            quot_max = 0
-            for p in range(num_parties):
-                quot = votes[c,p]/divisors[alloc[c,p]]
-                if p in wanting and quot >= quot_max:
-                    quot_max = quot
-                    first_wanting[c] = p
-            if last_surplus[c] >= 0 and first_wanting[c] >= 0:
-                ratio[c] = quot_min/quot_max if quot_max > 0 else np.inf
+            with_seats = alloc[c,:] > alloc_prior[c,:]
+            with_votes = votes[c,:] > 0
+            score = np.zeros(num_parties)
+            S = surplus & with_seats
+            W = wanting & with_votes
+            score[S] = votes[c, S]/divisors[alloc[c, S] - 1]
+            score[W] = votes[c, W]/divisors[alloc[c, W]]
+            if any(S) and any(W):
+                (min_score, p) = min_with_index(score, S)
+                (max_score, q) = max_with_index(score, W)
+                C.append(c)
+                P.append(p)
+                Q.append(q)
+                ratio.append(min_score/max_score)
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
-        cmin = np.argmin(ratio)
-        print('min ratio =', ratio[cmin])
-        assert(not np.isinf(cmin))
-
-        alloc[cmin, last_surplus[cmin]] -= 1
-        alloc[cmin, first_wanting[cmin]] += 1
-        switches.append({
-            "constituency": cmin,
-            "from": last_surplus[cmin],
-            "to": first_wanting[cmin],
-            "ratio": 'N/A' if np.isinf(ratio[cmin]) else ratio[cmin]
-            })
+        if not C:
+            #print('No surplus/wanting pair found')
+            #print('  surplus:', find(surplus))
+            #print('  wanting:', find(wanting))
+            break
+        else:
+            cmin = np.argmin(ratio)
+            alloc[C[cmin], P[cmin]] -= 1
+            alloc[C[cmin], Q[cmin]] += 1
+            # print(f'- switching parties {P[cmin]} and {Q[cmin]} in const. {C[cmin]})')
+            switches.append({
+                "constituency": C[cmin],
+                "from": P[cmin],
+                "to": Q[cmin],
+                "ratio": ratio[cmin]
+                })
 
     # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
     steps = {
@@ -110,7 +129,6 @@ def print_demo_table1(rules, steps):
             party["actual"],
             party["actual"] - party["goal"],
         ])
-
     return headers, data, sup_header 
 
 def print_demo_table2(rules, steps):

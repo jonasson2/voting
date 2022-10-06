@@ -15,6 +15,12 @@ def apportion(v, xp, total_seats, inverse_divisors, col_with_party_votes=False):
         x[k] += 1
     vdivnext = max(v[:c]*inverse_divisors[x[:c]])
     if col_with_party_votes: vdivnext = max(vdivnext, 1)
+    try:
+        vdiv
+    except NameError:
+        print('About to crash')
+        pass
+
     return x, 2/(vdiv[k] + vdivnext)
 
 def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
