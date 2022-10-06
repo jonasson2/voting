@@ -345,7 +345,7 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
-    def calculate_ref_seat_shares(self, scaling):
+    def calculate_ref_seat_shares_old(self, scaling):
         if scaling == 'new':
             self.calculate_ref_seat_shares_new(scaling)
             return
@@ -402,7 +402,7 @@ class Election:
         else:
             self.ref_nat_seat_shares = None
 
-    def calculate_ref_seat_shares_new(self, scaling):
+    def calculate_ref_seat_shares(self, scaling):
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()
@@ -448,6 +448,7 @@ class Election:
 
                     gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
                     gamma = np.amin(gammas)
+                    error = max(error, abs(1 - gamma))
                     p_gamma = p_under_lim[np.argmin(gammas)]
                     ref_seat_shares *= gamma
                     p_at_lim.append(p_gamma)
@@ -456,6 +457,7 @@ class Election:
                     for i in range(ncols-nparty_at_lim):
                         gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
                         gamma = np.amin(gammas)
+                        error = max(error, abs(1 - gamma))
                         p_gamma = p_under_lim[np.argmin(gammas)]
                         sum_shares = sum([ref_seat_shares.sum(axis=0)[p]*gamma for p in p_under_lim]) +\
                                      sum([ref_seat_shares.sum(axis=0)[p] for p in p_at_lim])
