@@ -363,6 +363,11 @@ class Election:
         col_constraints = scaling in {"both", "party"}
         if ncols > 1 and nrows > 1:
             if row_constraints and col_constraints:
+                p_null_seats = []
+                for p in range(ncols):
+                    if col_sums[p] == 0:
+                        p_null_seats.append(p)
+                        ref_seat_shares[:, p] *= 0
                 while round(error, 7) != 0.0:
                     error = 0
                     #constituency step
@@ -372,16 +377,20 @@ class Election:
                         eta = row_sum/s if s > 0 else 1
                         ref_seat_shares[c, :] *= eta
                         error = max(error, abs(1 - eta))
-                    if all(i >= 1 for i in col_sums/ref_seat_shares.sum(axis=0)):
+                    if all(i >= 1 for i in [col_sums[p]/ref_seat_shares.sum(0)[p] if ref_seat_shares.sum(0)[p] > 0 else 1 for p in range(ncols)]):
                         break
                     #party step
-                    gammas = col_sums/ref_seat_shares.sum(axis=0)
-                    gamma = np.amin(gammas)
-                    p_gamma = np.argmin(gammas)
-                    ref_seat_shares *= gamma
-                    p_at_lim = [p_gamma]
+                    p_at_lim = p_null_seats.copy()
                     p_under_lim = np.setdiff1d(np.arange(ncols), p_at_lim).tolist()
-                    for i in range(ncols-1):
+
+                    gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
+                    gamma = np.amin(gammas)
+                    p_gamma = p_under_lim[np.argmin(gammas)]
+                    ref_seat_shares *= gamma
+                    p_at_lim.append(p_gamma)
+                    p_under_lim.remove(p_gamma)
+                    nparty_at_lim = len(p_at_lim)
+                    for i in range(ncols-nparty_at_lim):
                         gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
                         gamma = np.amin(gammas)
                         p_gamma = p_under_lim[np.argmin(gammas)]
