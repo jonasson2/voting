@@ -218,22 +218,19 @@ def seat_generator_quota(
 
 def threshold_drop(v_votes, threshold):
     shares = find_shares_1d(v_votes)
-    if threshold[3]==None or threshold[2]==0:
+    if threshold[3] is None or threshold[2] == 0:
         cutoff = [v_votes[p] if shares[p]*100 > threshold[1] else 0
                 for p in range(len(shares))]
-        return cutoff
     elif threshold[1]==0:
-        cutoff = [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
-        return cutoff
-    elif threshold[0]==0:
-        cutoff_p = [v_votes[p] if shares[p]*100 > threshold[1] else 0
-                for p in range(len(shares))]
-        cutoff_s = [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
-        cutoff= [0 if x==0 or y ==0 else max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
-        return cutoff
+        cutoff = [v_votes[p] if threshold[3][p] >= threshold[2] else 0
+                  for p in range(len(threshold[3]))]
     else:
         cutoff_p = [v_votes[p] if shares[p]*100 > threshold[1] else 0
-                for p in range(len(shares))]
-        cutoff_s= [v_votes[p] if threshold[3][p]>=threshold[2] else 0 for p in range(len(threshold[3]))]
-        cutoff = [max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
-        return cutoff
+                    for p in range(len(shares))]
+        cutoff_s = [v_votes[p] if threshold[3][p] >= threshold[2] else 0
+                    for p in range(len(threshold[3]))]
+        if threshold[0]==0:
+            cutoff= [0 if x==0 or y ==0 else max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
+        else:
+            cutoff = [max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
+    return cutoff

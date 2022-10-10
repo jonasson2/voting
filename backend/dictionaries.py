@@ -3,7 +3,7 @@ from division_rules import dhondt_gen, sainte_lague_gen, \
     adams_gen
 from division_rules import droop, hare
 
-from methods.alternating_scaling import alt_scaling
+from methods.alternating_scaling import alt_scaling, alt_scaling_old
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 # from methods.monge import monge

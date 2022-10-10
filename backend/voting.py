@@ -277,17 +277,17 @@ class Election:
                              m_prior_allocations = self.results["fixed_const_seats"],
                              divisor_gen = self.gen,
                              # kwargs-arguments:
-                             adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx                             # optimal
+                             adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx
                              v_fixed_seats = fixed_seats, # used by norwegian_law
                              last = self.last, # used by nearest_to_previous
-                             party_votes_specified = self.party_vote_info['specified'],
+                             #party_votes_specified = self.party_vote_info['specified'],
                              nat_prior_allocations = (self.results['fixed_nat_seats']
                                                       if self.party_vote_info['specified']
-                                                      else [0]),
-                             nat_seats = (self.party_vote_info['num_fixed_seats']
-                                          + self.party_vote_info['num_adj_seats']
-                                          if self.party_vote_info['specified']
-                                          else 0),
+                                                      else None),
+                             # nat_seats = (self.party_vote_info['num_fixed_seats']
+                             #              + self.party_vote_info['num_adj_seats']
+                             #              if self.party_vote_info['specified']
+                             #              else 0),
                              ) # last three used by optimal
         all_const_seats, self.demo_table_info = self.method
         adj_const_seats = subtract_m(
@@ -345,7 +345,8 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
-    def calculate_ref_seat_shares(self, scaling):
+    def calculate_ref_seat_shares_old(self, scaling):
+        scaling = 'new'
         if scaling == 'new':
             self.calculate_ref_seat_shares_new(scaling)
             return
@@ -402,7 +403,7 @@ class Election:
         else:
             self.ref_nat_seat_shares = None
 
-    def calculate_ref_seat_shares_new(self, scaling):
+    def calculate_ref_seat_shares(self, scaling):
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()

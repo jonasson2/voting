@@ -27,7 +27,7 @@ def get_arguments(args, description=None, epilog=None):
             if len(arg) == 3:
                 p.add_argument(name, type=type, help=help)
             else:
-                p.add_argument(name, type=type, help=help, default=arg[3])
+                p.add_argument(name, type=type, help=help, nargs='?', default=arg[3])
     n = p.parse_args()
     return vars(n).values()
 

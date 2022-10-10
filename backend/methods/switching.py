@@ -64,10 +64,8 @@ def switching(m_votes,
     i = 0
     while True:
         i += 1
-        # print('i=', i)
         surplus = sum(alloc,0) > max_party
         if not any(surplus):
-            # print('...finished switching')
             break
         wanting = sum(alloc,0) < max_party
 
@@ -94,9 +92,9 @@ def switching(m_votes,
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         if not C:
-            #print('No surplus/wanting pair found')
-            #print('  surplus:', find(surplus))
-            #print('  wanting:', find(wanting))
+            print('No surplus/wanting pair found')
+            print('  surplus:', find(surplus))
+            print('  wanting:', find(wanting))
             break
         else:
             cmin = np.argmin(ratio)

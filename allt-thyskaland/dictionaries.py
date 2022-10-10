@@ -9,8 +9,9 @@ from max_vote_percentage import max_vote_percentage
 from switching import switching
 from alternating_scaling import alt_scaling
 from farthest_from_next import farthest_from_next
-from methods import parties_first, länder_first, max_share, max_relative_margin, \
-    max_absolute_margin, scandinavian, optimal_const
+from gurobi_optimal import gurobi_optimal
+from germany_methods import parties_first, länder_first, max_share, max_relative_margin, \
+    max_absolute_margin, scandinavian, optimal_const, gurobi_const
 
 land_method_dicts = [
     #'swi':  (switching,                 "Switching"),
@@ -23,6 +24,7 @@ land_method_dicts = [
     {'short': 'switch', 'fun': switching, 'title': 'Seat switching'},
     {'short': 'party1st', 'fun': parties_first, 'title': "Parties first"},
     {'short': 'land1st', 'fun': länder_first, 'title': "Länder first"},
+    {'short': 'gurobi', 'fun': gurobi_optimal, 'title': "Optimal w/Gurobi"},
 ]
 
 const_method_dicts = [
@@ -31,6 +33,7 @@ const_method_dicts = [
     {'short': 'relmarg', 'fun': max_relative_margin, 'title': "Max relative margin"},
     {'short': 'absmarg', 'fun': max_absolute_margin, 'title': "Max absolute margin"},
     {'short': 'optconst', 'fun': optimal_const, 'title': "Optimal"},
+    {'short': 'gurobi', 'fun': gurobi_const, 'title': "Optimal w/Gurobi"}
 ]
 
 party_measure_dicts = {

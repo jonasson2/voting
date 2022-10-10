@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # - change-test
 import numpy as np
-from numpy import c_, r_
+from numpy import r_
 import sys
 from pathos.multiprocessing import ProcessingPool as Pool
 sys.path.append('~/voting/backend')
@@ -11,19 +11,19 @@ from readkerg import readkerg
 from run_util import get_arguments
 from dictionaries import all_land_methods, all_const_methods, party_measures, \
     land_measures, land_abbrev, const_method_funs, land_method_funs
-from methods import apportion_sainte_lague
+from germany_methods import apportion_sainte_lague
 from division_rules import sainte_lague_gen
 from running_stats import Running_stats, combine_stat
 from util import disp
 from result_tables import method_measure_table, measure_table, print_df
 disp(width=60)
-from time import sleep
+# from time import sleep
 
 def calc_share(votes):
     share = [v/np.sum(v,1)[:,None] for v in votes]
     return share
 
-def randomize_votes(votes, partyvotes, cv, cvp, nsim):
+def randomize_votes(votes, partyvotes, cv, pcv, nsim):
     rng = np.random.default_rng(seed=45)
     shape = 1/cv**2
     scale = 1/shape
@@ -33,7 +33,7 @@ def randomize_votes(votes, partyvotes, cv, cvp, nsim):
         randvotes = rng.gamma(shape, scale, size=size)*votes[i]
         #randvotes = np.rint(randvotes).astype(int)
         gv.append(randvotes)
-    shapep = 1/cvp**2
+    shapep = 1/pcv**2
     scalep = 1/shapep
     sizep = (nsim,) + np.shape(partyvotes)
     gpv = rng.gamma(shapep, scalep, size = sizep)*partyvotes
@@ -66,8 +66,7 @@ def land_allocate(method, votes, partyseats, landseats):
         alloc = fun(votes, partyseats, landseats)
     elif method == 'optimal':
         prior_alloc = np.zeros(votes.shape, int)
-        alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen,
-                              False, [0], 0)
+        alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen)
         alloc = np.array(alloc_seats)
     else:
         prior_alloc = np.zeros(votes.shape, int)
@@ -75,14 +74,16 @@ def land_allocate(method, votes, partyseats, landseats):
         alloc = np.array(alloc_seats)
     return alloc
 
-def run_simulate(info, data, const_methods, land_methods, nsim, icore):
+def run_simulate(info, data, methods, param, icore):
+    const_methods = methods['const']
+    land_methods = methods['land']
     landseats = data["landseats"]
     partyvotes = data["partyvotes"]
     constvotes = data["constvotes"]
     (nland, nparty) = partyvotes.shape
     nparty -= 1
     nconst = [len(v) for v in constvotes]
-    gv, gpv = randomize_votes(constvotes, partyvotes, cv, pcv, nsim)
+    gv, gpv = randomize_votes(constvotes, partyvotes, *param.values())
     share = [calc_share(v) for v in gv]
     max_neg_marg = np.zeros(nland)
     neg_marg_count = np.zeros(nland)
@@ -92,7 +93,7 @@ def run_simulate(info, data, const_methods, land_methods, nsim, icore):
     länder = list(land_abbrev.values())
     running = initialize_running(const_methods, land_methods, nland,nparty,parties,länder)
     ref_alloc = None
-    for k in range(nsim):
+    for k in range(param['nsim']):
         if icore==0 and k % 10 == 0:
             print(f'Simulation #{k} on core #{icore}')
         for const_method in const_methods:
@@ -144,12 +145,13 @@ def display_results(running, data, ref_alloc):
         print_df(df, wrap_headers=True)
     pass
 
-def parallel_simulate(info, data, const_methods, land_methods, nsim, ncores):
+def parallel_simulate(info, data, methods, param, ncores):
+    nsim = param['nsim']
     ntask = [nsim//ncores + (1 if i < nsim % ncores else 0) for i in range(ncores)]
     pool = Pool(ncores)
     icores = list(range(ncores))
-    results = pool.map(run_simulate, [info]*ncores, [data]*ncores, [const_methods]*ncores,
-                       [land_methods]*ncores, ntask, icores)
+    results = pool.map(run_simulate, [info]*ncores, [data]*ncores, [methods]*ncores,
+                       [param]*ncores, ntask, icores)
     running = [r[0] for r in results]
     ref_alloc = results[0][1]
     running0 = running.pop(0)
@@ -157,8 +159,7 @@ def parallel_simulate(info, data, const_methods, land_methods, nsim, ncores):
         combine_stat(running0, r)
     return running0, ref_alloc
 
-if __name__ == "__main__":
-
+def main():
     # NÁ Í SKIPANALÍNUVIÐFÖNG
     pm_list = '/'.join(all_land_methods) + '/all'
     cm_list = '/'.join(all_const_methods) + '/all'
@@ -172,17 +173,21 @@ if __name__ == "__main__":
     desc = "Simulate for the whole of Germany"
     (nsim, ncores, erst, zweit, cv, pcv) = get_arguments(args=args, description=desc)
     ncores = min(ncores, nsim)
-    const_methods = all_const_methods if erst == 'all' else erst.split(',')
-    land_methods = all_land_methods if zweit == 'all' else zweit.split(',')
-
+    methods = {
+        'const': all_const_methods if erst == 'all' else erst.split(','),
+        'land': all_land_methods if zweit == 'all' else zweit.split(',')
+    }
     info, data = readkerg()
 
     # RUN THE SIMULATION
     percore = round(nsim/ncores, 1)
     print(f'Carrying out {nsim} simulations on {ncores} cores ({percore} per core)')
+    param = {'cv':cv, 'pcv':pcv, 'nsim':nsim}
     if ncores == 1:
-        running, ref_alloc = run_simulate(info, data, const_methods,land_methods,nsim,0)
+        running, ref_alloc = run_simulate(info, data, methods, param, 0)
     else:
-        running, ref_alloc = parallel_simulate(info, data, const_methods, land_methods,
-                                               nsim, ncores)
+        running, ref_alloc = parallel_simulate(info, data, methods, param, ncores)
     display_results(running, data, ref_alloc)
+
+if __name__ == "__main__":
+    main()

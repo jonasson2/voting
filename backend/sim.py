@@ -80,7 +80,7 @@ def main():
             ['-sens_cv', float, 'coefficient of variation for adjustment', 0.01],
             ['-cv', float, 'variation coefficient for vote generation', 0.3],
             ['-pcv', float, 'variation coefficient for party vote generation', 0.1]],
-    description="Simulate sensitivity of elections")
+        description="Simulate sensitivity of elections")
     (votes, vote_path, systems, sim_settings) = read_data(vote_file, json_file)
     sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv, pcv)
     (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_reps, vote_path)

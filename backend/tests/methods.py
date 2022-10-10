@@ -5,10 +5,10 @@ import util
 import division_rules
 from electionRules import ElectionRules
 from voting import Election
-from methods.alternating_scaling import *
-from methods.norwegian_law import norwegian_apportionment
-from methods.norwegian_icelandic import norw_ice_apportionment
-from methods.pure_vote_ratios import pure_vote_ratios_apportionment
+from germany_methods.alternating_scaling import *
+from germany_methods.norwegian_law import norwegian_apportionment
+from germany_methods.norwegian_icelandic import norw_ice_apportionment
+from germany_methods.pure_vote_ratios import pure_vote_ratios_apportionment
 
 
 class AdjustmentMethodsTestMeta(type):

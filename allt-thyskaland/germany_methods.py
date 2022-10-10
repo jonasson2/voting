@@ -5,6 +5,7 @@ from copy import deepcopy
 sys.path.append('~/voting/backend/methods')
 from alternating_scaling import alt_scaling
 from division_rules import sainte_lague_gen
+from gurobi_optimal import gurobi_optimal
 
 def max_share(votes, max_col_sums):
     voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
@@ -70,11 +71,15 @@ def optimal_const(votes, max_col_sums):
     (nconst, nparty) = votes.shape
     row_sums = np.ones(nconst, int)
     prior_alloc = np.zeros(votes.shape, int)
-    party_votes_specified = True
-    nat_prior_allocations = np.zeros(nparty, int)
-    nat_seats = int(sum(max_col_sums) - nconst)
-    alloc, _ = alt_scaling(votes, row_sums, max_col_sums, prior_alloc, sainte_lague_gen,
-                           party_votes_specified, nat_prior_allocations, nat_seats)
+    alloc, _ = alt_scaling(votes, row_sums, max_col_sums, prior_alloc, sainte_lague_gen)
+    party = [alloc[c].index(1) for c in range(nconst)]
+    return party
+
+def gurobi_const(votes, max_col_sums):
+    (nconst, nparty) = votes.shape
+    row_sums = np.ones(nconst, int)
+    prior_alloc = np.zeros(votes.shape, int)
+    alloc, _ = gurobi_optimal(votes, row_sums, max_col_sums, prior_alloc,sainte_lague_gen)
     party = [alloc[c].index(1) for c in range(nconst)]
     return party
 

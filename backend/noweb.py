@@ -21,7 +21,7 @@ def create_SIMULATIONS():
 def load_json(f):
     # returns systems and sim_settings from json-file f
     if isinstance(f,Path) or isinstance(f,str):
-        with open(f) as file: file_content = json.load(file)
+        with open(os.path.expanduser(f)) as file: file_content = json.load(file)
     else:
         file_content = json.load(f.stream)
     assert type(file_content) == dict
