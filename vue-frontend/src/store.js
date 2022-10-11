@@ -70,7 +70,8 @@ const store = new Vuex.Store({
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
         system.adjustment_method = state.systems[idx-1].adjustment_method
-        system.seat_spec_options = state.systems[idx-1].seat_spec_options
+        system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
+        system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
         system.compare_with = state.systems[idx-1].compare_with
         system.parties = state.systems[idx-1].parties
       }
