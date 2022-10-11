@@ -12,11 +12,14 @@ from dictionaries import ADJUSTMENT_METHOD_NAMES, \
                          GENERATING_METHOD_NAMES, \
                          EXCEL_HEADINGS, \
                          STATISTICS_HEADINGS, \
-                         SCALING_NAMES
+                         SCALING_NAMES, \
+                         SEAT_SPECIFICATION_OPTIONS
 
 AMN = {amn["value"]: amn["text"] for amn in ADJUSTMENT_METHOD_NAMES}
 DRN = {rn["value"]: rn["text"] for rn in RULE_NAMES}
 GMN = {gmn["value"]: gmn["text"] for gmn in GENERATING_METHOD_NAMES}
+SCONST = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["const"]}
+SPARTY = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["party"]}
 
 def prepare_formats(workbook):
     formats = {}
@@ -730,6 +733,16 @@ def simulation_to_xlsx(results, filename):
             "left_span": 2, "center_span": 2, "right_span": 0, "info": [
                 {"label": "Allocation method for adjustment seats:",
                  "rule": AMN[results["systems"][r]["adjustment_method"]]}
+            ]
+        },{
+            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
+                {"label": "Specification of seat numbers:",
+                 "rule": SCONST[results["systems"][r]["seat_spec_options"]["const"]]}
+            ]
+        },{
+            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
+                {"label": "Votes used as basis:",
+                 "rule": SPARTY[results["systems"][r]["seat_spec_options"]["party"]]}
             ]
         }]
 
