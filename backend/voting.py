@@ -406,7 +406,7 @@ class Election:
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()
-        col_sums = np.array(self.desired_col_sums)
+        col_sums = np.array(self.ref_seat_alloc)
         row_sums = np.array(self.desired_row_sums)
         if self.party_vote_info['specified'] and scaling in {"const", "party","total"}:
             scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes) +
@@ -489,7 +489,7 @@ class Election:
         if self.party_vote_info['specified']:
             if row_constraints and col_constraints:
                 self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
-                self.total_ref_nat = [x - y for x, y in zip(self.desired_col_sums, self.total_ref_seat_shares)]
+                self.total_ref_nat = [x - y for x, y in zip(self.ref_seat_alloc, self.total_ref_seat_shares)]
             else:
                 self.total_ref_nat = self.ref_seat_shares.pop()
                 self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
