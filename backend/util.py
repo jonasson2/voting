@@ -200,7 +200,7 @@ def process_vote_table(rows, filename):
             elif isPosInt(row[i]):
                 row[i] = int(row[i])
             else:
-                return 'All votes must be nonnegative integer numbers'
+                return 'All votes must be non-negative integer numbers, e.g. no values obtained by formulas'
 
     # BUILD A DICTIONARY RES WITH ALL VOTING INFORMATION
     res = {}

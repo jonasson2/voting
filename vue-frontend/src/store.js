@@ -61,6 +61,19 @@ const store = new Vuex.Store({
     addSystem(state, system) {
       let idx = state.systems.length
       if (system.name == "System") system.name += "-" + (idx+1).toString();
+      if (idx > 0) {
+        system.primary_divider = state.systems[idx-1].primary_divider
+        system.adj_determine_divider = state.systems[idx-1].adj_determine_divider
+        system.adj_alloc_divider = state.systems[idx-1].adj_alloc_divider
+        system.adjustment_threshold = state.systems[idx-1].adjustment_threshold
+        system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
+        system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
+        system.constituency_threshold = state.systems[idx-1].constituency_threshold
+        system.adjustment_method = state.systems[idx-1].adjustment_method
+        system.seat_spec_options = state.systems[idx-1].seat_spec_options
+        system.compare_with = state.systems[idx-1].compare_with
+        system.parties = state.systems[idx-1].parties
+      }
       state.systems.push(system)
       findNumbering(state, idx)
     },
