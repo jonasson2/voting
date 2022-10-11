@@ -615,10 +615,18 @@ def simulation_to_xlsx(results, filename):
     worksheet = workbook.add_worksheet("Disparity data")
     nparty = len(parties) - 1
     data = np.reshape(results["histogram_data"]["disparity_count"], (nsys, nparty))
-    worksheet.write(0, 0, "System", fmt["h"])
-    worksheet.write(0, 1, "Value", fmt["h_right"])
-    worksheet.write_row(0, 2, parties[:-1], fmt["h_center"])
-    row = 1
+    toprow = 0
+    worksheet.write(toprow, 0, "Disparity", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 0, "Difference of Total seats of party minus its Reference allocation", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 2, "Frequencies", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 0, "System", fmt["h"])
+    worksheet.set_column(1,1,15)
+    worksheet.write(toprow, 1, "Disparity value", fmt["h_right"])
+    worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
+    row = toprow+1
     for sys in range(nsys):
         k1 = min(min(x.keys()) for x in data[sys])
         k2 = max(max(x.keys()) for x in data[sys])
@@ -637,10 +645,18 @@ def simulation_to_xlsx(results, filename):
     worksheet = workbook.add_worksheet("Overhang data")
     nparty = len(parties) - 1
     data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
-    worksheet.write(0, 0, "System", fmt["h"])
-    worksheet.write(0, 1, "Value", fmt["h_right"])
-    worksheet.write_row(0, 2, parties[:-1], fmt["h_center"])
-    row = 1
+    toprow = 0
+    worksheet.write(toprow, 0, "Overhang", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 0, "Positive values of the difference of Total seats of party minus its Reference allocations", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 2, "Frequencies", fmt["h"])
+    toprow += 1
+    worksheet.write(toprow, 0, "System", fmt["h"])
+    worksheet.set_column(1,1,15)
+    worksheet.write(toprow, 1, "Overhang value", fmt["h_right"])
+    worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
+    row = toprow + 1
     for sys in range(nsys):
         k1 = min(min(x.keys()) for x in data[sys])
         k2 = max(max(x.keys()) for x in data[sys])
@@ -657,6 +673,7 @@ def simulation_to_xlsx(results, filename):
     # SYSTEM SHEETS
     for r in range(len(results["systems"])):
         sheet_name = results["systems"][r]["name"]
+        combined = results["systems"][r]["seat_spec_options"]["const"] == 'one_const'
         worksheet = workbook.add_worksheet(sheet_name[:31])
         worksheet.freeze_panes(10, 2)
         parties = results["systems"][r]["parties"] + ["Total"]
@@ -664,8 +681,6 @@ def simulation_to_xlsx(results, filename):
         party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
         if party_votes_specified:
             xtd_votes.append(add_total(results["vote_table"]["party_vote_info"]["votes"]))
-        else:
-            xtd_votes.append(xtd_votes[-1])
         xtd_percentages = find_percentages(xtd_votes)
         data_matrix = {
             "base": {
@@ -681,17 +696,18 @@ def simulation_to_xlsx(results, filename):
             }
         }
         seat_measures = results["data"][r]["seat_measures"]
+        k = -1 if combined else len(results["vote_data"][r]["sim_votes"][stat])
         for stat in STATISTICS_HEADINGS.keys():
             data_matrix[stat] = {
-                "v": results["vote_data"][r]["sim_votes"][stat],
-                "vp": results["vote_data"][r]["sim_vote_percentages"][stat],
-                "rss": seat_measures["ref_seat_shares"][stat],
-                "cs": seat_measures["fixed_seats"][stat],
-                "as": seat_measures["adj_seats"][stat],
-                "ts": seat_measures["total_seats"][stat],
-                "tsp": seat_measures["total_seat_percentages"][stat],
-                "nmp": results["vote_data"][r]["neg_margin"][stat],
-                "nmc": results["vote_data"][r]["neg_margin_count"][stat],
+                "v": results["vote_data"][r]["sim_votes"][stat][:k],
+                "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k],
+                "rss": seat_measures["ref_seat_shares"][stat][:k],
+                "cs": seat_measures["fixed_seats"][stat][:k],
+                "as": seat_measures["adj_seats"][stat][:k],
+                "ts": seat_measures["total_seats"][stat][:k],
+                "tsp": seat_measures["total_seat_percentages"][stat][:k],
+                "nmp": results["vote_data"][r]["neg_margin"][stat][:k],
+                "nmc": results["vote_data"][r]["neg_margin_count"][stat][:k],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
@@ -768,12 +784,15 @@ def simulation_to_xlsx(results, filename):
             worksheet.write(toprow, 0, category["heading"], fmt["h"])
             worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
             col = 2
+            row = toprow
+            if category['abbr'] != "base" and combined: row += len(base_const_names)-1
             for table in tables:
                 #is_refseatshare_table = table["heading"].startswith("Reference")
                 setTotal = (
                     "hide" if not table["total"] else
                     "show")
-                draw_sim_block(worksheet, row=toprow, col=col,
+
+                draw_sim_block(worksheet, row=row, col=col,
                                heading=table["heading"],
                                data=data_matrix[category["abbr"]][table["abbr"]],
                                abbreviation=category["abbr"],
