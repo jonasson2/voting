@@ -39,7 +39,7 @@ class SimulationSettings(dict):
         self["gen_method"] = "gamma"
         self["const_cov"] = CONSTANTS["CoeffVar"]
         self["party_vote_cov"] = CONSTANTS["CoeffVar"]/2
-        self["use_thresholds"] = False
+        self["use_thresholds"] = True
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False

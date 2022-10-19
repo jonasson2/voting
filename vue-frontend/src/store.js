@@ -58,6 +58,18 @@ const store = new Vuex.Store({
       console.log('updateVoteSums')
       setVoteSums(state)
     },
+    threshold_method(state, systemidx) {
+      let method = state.systems[systemidx].adjustment_method
+      if (method == 'icelandic-law' || method == 'ice-shares'){
+        state.systems[systemidx].adjustment_threshold = 5
+      }
+      else if (method == 'norwegian-law') {
+        state.systems[systemidx].adjustment_threshold = 4
+      }
+      else{
+        state.systems[systemidx].adjustment_threshold = 0
+      }
+    },
     addSystem(state, system) {
       let idx = state.systems.length
       if (system.name == "System") system.name += "-" + (idx+1).toString();

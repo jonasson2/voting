@@ -23,6 +23,7 @@ class ElectionSystem(dict):
         self["compare_with"] = False
         self["parties"] = []
 
+
     def __deepcopy__(self, memo):
         ES = ElectionSystem()
         ES.update({k:deepcopy(v,memo) for (k,v) in self.items()})

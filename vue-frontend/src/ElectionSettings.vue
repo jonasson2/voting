@@ -180,6 +180,7 @@
         >
         <b-form-select
           v-model="systems[systemidx].adjustment_method"
+          @change="threshold_method(systemidx)"
           :options="capabilities.adjustment_methods"/>
       </b-form-group>
     </b-col>
@@ -343,6 +344,7 @@ export default {
       "clearWaitingForData",
       "setConstSpecOption",
       "setPartySpecOption",
+      "threshold_method",
     ]),
     ...mapActions([
       'recalc_sys_const',
