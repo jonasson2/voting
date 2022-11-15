@@ -411,7 +411,7 @@ class Election:
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()
-        col_sums = np.array(self.ref_seat_alloc)
+        col_sums = np.array(self.desired_col_sums)
         row_sums = np.array(self.desired_row_sums)
         if self.party_vote_info['specified'] and scaling in {"const", "party","total"}:
             scalar = sum(col_sums) / (sum(sum(x) for x in self.votes) +
