@@ -53,6 +53,7 @@ const store = new Vuex.Store({
       console.log("table=", table)
       state.vote_table = table
       setVoteSums(state)
+      state.vote_table.name = table.name
     },
     updateVoteSums(state) {
       console.log('updateVoteSums')

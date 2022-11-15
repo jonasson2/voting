@@ -440,7 +440,7 @@ class Election:
                         eta = row_sum/s if s > 0 else 1
                         ref_seat_shares[c, :] *= eta
                         error = max(error, abs(1 - eta))
-                    if all(i >= 1 for i in [col_sums[p]/ref_seat_shares.sum(0)[p] if ref_seat_shares.sum(0)[p] > 0 else 1 for p in range(ncols)]):
+                    if all(round(i, 7) >= 1 for i in [col_sums[p]/(ref_seat_shares.sum(0)[p] if ref_seat_shares.sum(0)[p] > 0 else 1) for p in range(ncols)]):
                         break
                     #party step
                     p_at_lim = p_null_seats.copy()
@@ -457,7 +457,6 @@ class Election:
                     for i in range(ncols-nparty_at_lim):
                         gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
                         gamma = np.amin(gammas)
-                        error = max(error, abs(1 - gamma))
                         p_gamma = p_under_lim[np.argmin(gammas)]
                         sum_shares = sum([ref_seat_shares.sum(axis=0)[p]*gamma for p in p_under_lim]) +\
                                      sum([ref_seat_shares.sum(axis=0)[p] for p in p_at_lim])
@@ -467,11 +466,13 @@ class Election:
                             ref_seat_shares[:,p] *= gamma
                         p_at_lim.append(p_gamma)
                         p_under_lim.remove(p_gamma)
+                        error = max(error, abs(1 - gamma))
                     if len(p_under_lim):
                         gamma = (self.total_const_seats - sum([ref_seat_shares.sum(axis=0)[p] for p in p_at_lim]))\
                                 /sum([ref_seat_shares.sum(axis=0)[p] for p in p_under_lim])
                         for p in p_under_lim:
                             ref_seat_shares[:, p] *= gamma
+                        error = max(error, abs(1 - gamma))
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = row_sums[c]
