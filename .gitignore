@@ -13,6 +13,8 @@ slurm*.out
 /local
 /share
 /temp
+/bigfiles
+/allt-thyskaland/kerg
 backend/*.xlsx
 pardir/
 __pycache__/
