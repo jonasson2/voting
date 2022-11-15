@@ -194,4 +194,4 @@ votes1.to_excel(writer, sheet_name='Erststimme', index=False)
 votes2.to_excel(writer, sheet_name='Zweitstimme', index=False)
 writer.save()
 #from google.colab import files
-#files.download('þýskaland-2021.xlsx')
+#files.download('þýskaland-2021.

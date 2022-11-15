@@ -9,7 +9,9 @@ else
   jobid=$1
 fi
 if [ -z "$jobid" ]; then
-  echo "Engar keyrslur í gangi á Elju"
+  echo "Engar keyrslur í gangi á Elju, næ í nýjustu skrá"
+  file=`ssh elja 'ls -rt *.out'|tail -1`
+  scp elja:$file .
   exit
 fi
 echo waiting for job $jobid

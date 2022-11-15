@@ -6,14 +6,14 @@ sys.path.append('~/voting/allt-thyskaland')
 from germany_methods import apportion_sainte_lague
 
 def read_excel(file):
-    import pandas as pd, numpy as np
+    import pandas as pd
     np.set_printoptions(linewidth=140)
     df = pd.read_excel(file, index_col=0)
     votes = np.array(df.iloc[:-1, :-1])
     const_seats = np.array(df.Total[:-1]).astype(int).tolist()
     party_seats = np.array(df.loc["Total"][:-1]).astype(int).tolist()
     #display(df)
-    return (votes, const_seats, party_seats)
+    return votes, const_seats, party_seats
 
 def read_json(filename):
     jsondata = load_json(filename)
@@ -45,7 +45,7 @@ def read_data(filename):
         (votes, const_seats, party_seats) = read_json(filename)
     else:
         raise ValueError('File extension must be .xlsx or .json')
-    return (np.array(votes), const_seats, party_seats)
+    return np.array(votes), const_seats, party_seats
 
 def gurobi_objval(model, vars, values):
     model.update()
@@ -73,7 +73,7 @@ def gurobi_max(votes, const_seats, party_seats, div, prior_alloc=None, start=Non
     for c in C:
         var = m.addMVar((NP, int(x_count[c])), vtype='B')
         x.append(var)
-    n = m.addMVar(votes.shape, vtype=gp.GRB.INTEGER)
+    n = m.addMVar(votes.shape, vtype=gp.GRB.INTEGER) # add bounds
     if start is not None:
         n.start = start
         for c in C:
@@ -82,14 +82,16 @@ def gurobi_max(votes, const_seats, party_seats, div, prior_alloc=None, start=Non
                 x[c][:,s-s0].start = [int(s < start[c,p]) for p in P]
     m.addConstrs((n[c,p] == sum(x[c][p,:]) for c in C for p in P))
     m.addConstrs((sum(n[:,p]) <= party_bound[p] for p in P))
-    # m.addConstrs((n[c,:] >= prior_alloc[c,:] for c in C))
+    m.addConstrs((n[c,:] >= prior_alloc[c,:] for c in C))
     m.addConstrs((sum(n[c,:]) == const_seat_sum[c] for c in C))
     obj = gp.LinExpr()
     for c in C:
         s0 = prior_const_seats[c]
         for s in S[c]:
             #print(c,s)
-            a = np.log(np.maximum(1,votes[c,:])/div[s])
+            zerovotes = votes[c,:] == 0
+            a = np.log(votes[c,:]/div[s])
+            a[zerovotes] = 0
             obj.add(gp.LinExpr((a[p], x[c][p,s-s0]) for p in P))
     m.setObjective(obj, sense=gp.GRB.MAXIMIZE)
 
@@ -116,7 +118,7 @@ def entropy(votes, seats, div):
     for c in C:
         for p in P:
             for s in range(seats[c,p]):
-                summa += np.log(np.maximum(1, votes[c,p])/div[s])
+                summa += np.log(np.maximum(1, votes[c,p]/div[s]))
     return summa
 
 import sys

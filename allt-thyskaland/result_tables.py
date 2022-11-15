@@ -1,72 +1,133 @@
 import pandas as pd, numpy as np
 from numpy import c_, r_
 from copy import copy, deepcopy
+from dictionaries import method_measures, land_stats
 from util import disp
-from dictionaries import party_measures, land_measures, alloc_measures, measure_dicts, \
-    measure_formats
 pd.options.display.width = 0
 pd.options.display.float_format = " {:,.2f}".format
-
-def method_measure_table(running):
-    # select can be party, 'mean' 'max' or 'sum'
-    methods = list(running.keys())
-    A = []
-    for mth in methods:
-        measures = list(running[mth].keys())
-        for m in alloc_measures:
-            measures.remove(m)
-        row = []
-        for m in measures:
-            select = measure_dicts[m][1]
-            running_entry = running[mth][m]
-            if running_entry.shape == 1:
-                sel_index = 0
-            else:
-                sel_index = running_entry.entries.index(select)
-            avg = running_entry.mean()[sel_index]
-            error = running_entry.error()[sel_index]
-            fmt = measure_formats[m]
-            entry = f"{avg:{fmt}} ± {error:{fmt}}"
-            row.append(entry)
-        A.append(row)
-    df = pd.DataFrame(A, index=methods, columns=measures)
-    title = f'AVERAGE SIMULATED MEASURES'
-    df.attrs['title'] = title
-    df.index.name = 'methods: const-state'
-    return df
+np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=120)
 
 def add_summary_stats(index, seats):
     seats1 = copy(seats)
     for i in index:
-        if i=='mean':  seats1 = r_[seats1, seats.mean()]
-        elif i=='min': seats1 = r_[seats1, seats.min()]
-        elif i=='max': seats1 = r_[seats1, seats.max()]
-        elif i=='sum': seats1 = r_[seats1, seats.sum()]
+        if i=='avg':  seats1 = r_[seats1, sum(seats)/len(seats)]
+        elif i=='min': seats1 = r_[seats1, min(seats)]
+        elif i=='max': seats1 = r_[seats1, max(seats)]
+        elif i=='sum': seats1 = r_[seats1, sum(seats)]
     return seats1
 
-def measure_table(running, ref_alloc, method, select):
+def method_measure_table(methods, stats, type):
+    if not methods:
+        return
+    A = []
+    measures = (method_measures if type == 'land'
+                else land_stats['const'] if type == 'constituency'
+                else land_stats['pairs'])
+    cols = []
+    for m in measures:
+        if m.endswith('dispar'):
+            cols.append('min_' + m)
+            cols.append('max_' + m)
+        else:
+            cols.append(m)
+    for mth in methods:
+        row = []
+        for m in measures:
+            stat = stats[mth][m]
+            name = stat.name
+            entry = get_stat(stat)
+            row.append(entry)
+            if name.endswith('dispar'):
+                entry = get_stat(stat, oper='max')
+                row.append(entry)
+        A.append(row)
+    idx = [m[:-1] if m.endswith('C') else m for m in methods]
+    df = pd.DataFrame(A, index=idx, columns=cols)
+    title = f'{type.upper()} METHODS: AVERAGE SIMULATED MEASURES'
+    df.attrs['title'] = title
+    df.index.name = 'method'
+    print_df(df)
+    #return df
+
+def measure_table(method, stats, data, info, measures, select):
     # select is a list of measure short names
-    if method not in running:
+    is_pair = '-' in method
+    index = list(info[select].values()) + ['min', 'max', 'sum', 'avg']
+    if is_pair:
+        #land_method, _ = method.split('-')
+        descriptor = "METHOD PAIR"
+    else:
+        descriptor = "LAND METHOD"
+    if method not in stats:
         return None
-    measure_list = party_measures if select == 'party' else land_measures
-    measures = [r for r in running[method].keys() if r in measure_list]
-    index = running[method][measures[0]].entries
+    else:
+        stats = stats[method]
     A = np.zeros((len(index), 0))
     for m in measures:
-        avg = running[method][m].mean()
-        error = running[method][m].error()
-        fmt = measure_formats[m]
-        column = [f"{a:{fmt}} ± {e:{fmt}}" for (a, e) in zip(avg, error)]
-        A = c_[A, column]
-    title = f"{select.upper()} MEASURES FOR METHOD {method.upper()}"
-    seats = ref_alloc.sum(axis = (0 if select=='party' else 1))
-    df = pd.DataFrame(A, index=index, columns=measures)
+        if m in stats.keys():
+            column = get_stat(stats[m], by=select)
+            A = c_[A, column]
+    title = f"{select.upper()} MEASURES FOR {descriptor} {method.upper()}"
+    seats = data["partyseats"] if select=='party' else data["landseats"]
+    df = pd.DataFrame(A, index=index, columns=[m for m in measures if m in stats.keys()])
     df['seats'] = [f"{s:.0f}" for s in add_summary_stats(df.index, seats)]
     df.attrs['title'] = title
     df.index.name = select
-    return df
+    print_df(df)
+    #return df
 
-def print_df(dfs, formats=None, wrap_headers=False):
+def get_stat(stat, by = None, oper = None):
+    with_detail = False
+    name = stat.name
+    if stat.shape == 1:
+        idx = 0
+    else:
+        if oper is None:
+            if ':' in name:
+                (_, name) = name.split(':')
+            oper = ('min' if name.startswith('min') or name.endswith('dispar')
+                    else 'max' if name.startswith('max')
+                    else 'sum'
+            )
+        lenopt = len(stat.options)
+        oper_pos = stat.options.index(oper) - lenopt
+        idx = (stat.shape + oper_pos if isinstance(stat.shape, int)
+               else tuple(s + oper_pos for s in stat.shape))
+    fmt = '.2%' if name.endswith(('share', 'marg', 'rate')) else '.2f';
+    fmts = '.1%' if name.endswith(('share', 'marg', 'rate')) else '.1f';
+    val = stat.numpy_mean()
+    error = stat.numpy_error()
+    std = stat.numpy_std()
+    if by is None:
+        val = val[idx]
+        error = error[idx]
+        std = std[idx]
+    elif isinstance(stat.shape, int):
+        pass
+    elif by == 'land':
+        nland = stat.shape[0]
+        val = val[range(nland), idx[1]]
+        error = error[range(nland), idx[1]]
+        std = std[range(nland), idx[1]]
+    elif by == 'party':
+        nparty = stat.shape[1]
+        val = val[idx[0], range(nparty)]
+        error = error[idx[0], range(nparty)]
+        std = std[idx[0], range(nparty)]
+    else:
+        raise ValueError
+    def entry(v, e, s):
+        if with_detail:
+            return f"{v:{fmt}} (±{e:{fmt}} s:{s:{fmts}})"
+        else:
+            return f"{v:{fmts}}"
+    if isinstance(val, float):
+        e = entry(val, error, std)
+    else:
+        e = [entry(v, e, s) for (v, e, s) in zip(val, error, std)]
+    return e
+
+def print_df(dfs, formats=None, wrap_headers=True):
     # e.g. print_df(df, {'': '.2f', 'col2: '.1%'})
     if dfs is None: return
 
@@ -84,7 +145,7 @@ def print_df(dfs, formats=None, wrap_headers=False):
         formatters = {k: ("  {:" + v + "}").format for (k, v) in formats.items()}
         if '' not in formatters: formatters[''] = " {:.2f}".format
         default_format = formatters['']
-        return (formatters, default_format)
+        return formatters, default_format
 
     def block(df, formats):
         (formatters, default_format) = get_formatters(formats)
@@ -121,21 +182,34 @@ def print_df(dfs, formats=None, wrap_headers=False):
 
 def wrap_hdr(df):
     import re
-    tr = {'max':'maximum', 'min':'minimum', 'marg':'margin', 'freq':'frequency', 'alloc':
-          'allocations', 'neg':'negative', 'dispar':'disparity', 'bundes':'bundeswide'}
+    translate = {
+        'alloc': 'allocations',
+        'abs':   'absolute',
+        'bundes':'bundeswide',
+        'dispar':'disparity',
+        'diff':  'difference',
+        'diffs': 'differences',
+        'freq':  'frequency',
+        'marg':  'margin',
+        'max':   'maximum',
+        'min':   'minimum',
+        'neg':   'negative',
+        'opt':   'optimal',
+        'sum':   'sum of',
+    }
     #tr = {}
     if all('_' not in l for l in df.columns):
         return df
     def lineswrap(hdr):
-        # Replace _ with space, replace abbreviations accoding to tr, and return hdr
-        # split into two part of minimal max len
+        # Replace _ with space, replace abbreviations accoding to translate, and return
+        # hdr split into two part of minimal max len
         words = hdr.split('_')
-        for (s1,s2) in tr.items():
+        for (s1,s2) in translate.items():
             words = [re.sub(f"^{s1}$", s2, w) for w in words]
         tuples = [(' '.join(words[:i]), ' '.join(words[i:])) for i in range(len(words))]
         hdrlens = [max(len(x),len(y)) for (x,y) in tuples]
         (x,y) = tuples[hdrlens.index(min(hdrlens))]
-        return (' ' + x, ' ' + y)
+        return ' ' + x, ' ' + y
     df = deepcopy(df)
     df.columns = pd.MultiIndex.from_tuples([lineswrap(h) for h in df.columns])
     return df

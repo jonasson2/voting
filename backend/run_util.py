@@ -29,6 +29,7 @@ def get_arguments(args, description=None, epilog=None):
             else:
                 p.add_argument(name, type=type, help=help, nargs='?', default=arg[3])
     n = p.parse_args()
+    print(vars(n).values())
     return vars(n).values()
 
 def runshell(command):

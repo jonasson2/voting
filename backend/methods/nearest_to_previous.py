@@ -90,7 +90,8 @@ def nearest_to_previous(m_votes,
                       "ratio": max_ratio, "party": maxP, "reason": reason}
         last_index[maxC] = maxP
         allocation_sequence.append(allocation)
-    return alloc_list.tolist(), (allocation_sequence, print_demo_table)
+    stepbystep = {"data": allocation_sequence, "function": print_demo_table}
+    return alloc_list.tolist(), stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE

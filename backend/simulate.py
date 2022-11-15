@@ -12,12 +12,15 @@ from generate_votes import generate_votes
 from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
+from table_util import np_add_total, np_add_totals
 from util import hms, shape, average, count
 from copy import deepcopy, copy
 from util import disp, dispv, remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
 import numpy as np
+from numpy import vstack
+
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
 
@@ -133,18 +136,18 @@ class Simulation():
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
-            ids = add_totals(election.ref_seat_shares)
+            ids = np_add_totals(election.ref_seat_shares)
             neg_margins, neg_parties = self.calculate_negative_margins(election)
             const_party_margins, cpm_counts = self.neg_margin_matrix(neg_margins, neg_parties)
             if self.party_votes_specified:
-                ids.append(add_total(election.total_ref_nat))
-                ids.append([x+y for (x,y) in zip(ids[-2], ids[-1])])
+                ids = vstack((ids, np_add_total(election.total_ref_nat)))
+                ids = vstack((ids, ids[-2] + ids[-1]))
             self.base_allocations.append({
                 "fixed_seats": election.results["fix"],
                 "adj_seats":   election.results["adj"],
                 "total_seats": election.results["all"],
                 "total_seat_percentages": find_percentages(election.results["all"]),
-                "ref_seat_shares": ids,
+                "ref_seat_shares": ids.tolist(),
                 "ref_seat_alloc": election.ref_seat_alloc,
                 "party_disparity": disparity,
                 "party_excess": excess,
@@ -163,7 +166,8 @@ class Simulation():
         begin_time = datetime.now()
         for i in range(self.sim_count):
             self.iteration = i + 1
-            print(f'iteration = {self.iteration}')
+            if tasknr==0:
+                print(f'iteration = {self.iteration}')
             (votes, party_votes) = next(gen)
             self.run_and_collect_measures(votes, party_votes)  # This allocates
             round_end = datetime.now()
@@ -204,9 +208,9 @@ class Simulation():
 
     def collect_vote_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
-            votes = np.array(add_totals(election.m_votes))
+            votes = np_add_totals(election.votes)
             if self.party_votes_specified:
-                votes = np.vstack((votes, add_total(election.nat_votes)))
+                votes = np.vstack((votes, np_add_total(election.nat_votes)))
             vote_percentages = find_percentages(votes)
             #const_party_disparity = self.calculate_const_party_disparity(election)
             #self.stat["neg_margin"][i].update()
@@ -218,9 +222,9 @@ class Simulation():
             cs = np.array(election.results["fix"])
             ts = np.array(election.results["all"])
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
-            ids = np.array(add_totals(election.ref_seat_shares))
+            ids = np_add_totals(election.ref_seat_shares)
             if self.party_votes_specified:
-                ids = np.vstack((ids, add_total(election.total_ref_nat)))
+                ids = np.vstack((ids, np_add_total(election.total_ref_nat)))
                 ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
@@ -347,7 +351,7 @@ class Simulation():
             option = remove_prefix(measure, "dev_")
             comparison_system = system.generate_system(option)
             comparison_election = Election(comparison_system,
-                                           election.m_votes,
+                                           election.votes,
                                            election.party_vote_info)
             comparison_election.run()
             self.add_deviation(election, comparison_election, measure, deviations)
@@ -366,6 +370,7 @@ class Simulation():
             result1 = election.results[key]
             result2 = comparison_election.results[key]
             deviations.add(measure, sum_abs_diff(result1, result2))
+
 
     def sum_func(self, election, function, div_h, election_number):
         measure = 0

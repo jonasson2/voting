@@ -9,11 +9,14 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 # from methods.monge import monge
 from methods.nearest_to_previous import nearest_to_previous
 from methods.relative_superiority import relative_superiority
+#from methods.rel_sup import rel_sup
+from specified_col_sums_allocate import rel_sup
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import max_const_seat_share
 from methods.max_const_vote_percentage import max_const_vote_percentage
 from methods.switching import switching
+from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
 
@@ -69,6 +72,7 @@ ADJUSTMENT_METHOD_NAMES = [
     # "monge", "text":                "Monge"},
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
+    {"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 DEMO_TABLE_FORMATS = {
     "icelandic-law":             "clsl1%",
@@ -81,7 +85,9 @@ DEMO_TABLE_FORMATS = {
     "nearest-to-previous":       "clssl3",
     "farthest-from-next":        "clssl3",
     "switching":                 ("sccc","clss3"),
-    "alternating-scaling":       ""}
+    "alternating-scaling":       "",
+    "gurobi":                    "",
+    }
 # s = special, center if all party names are less than 2 chars, else left
 
 SEAT_SPECIFICATION_OPTIONS = {
@@ -143,12 +149,14 @@ ADJUSTMENT_METHODS = {
     "norwegian-law": norwegian_apportionment,
     "max-const-seat-share": max_const_seat_share,
     "max-const-vote-percentage": max_const_vote_percentage,
-    "relative-superiority": relative_superiority,
+    #"relative-superiority": relative_superiority,
+    "relative-superiority": rel_sup,
     "relative-sup-simple": relative_superiority_simple,
     "nearest-to-previous": nearest_to_previous,
     "farthest-from-next": farthest_from_next,
     "switching": switching,
     "alternating-scaling": alt_scaling,
+    "gurobi": gurobi_optimal,
     # "monge": monge,
 }
 
