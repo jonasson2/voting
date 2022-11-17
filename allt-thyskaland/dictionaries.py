@@ -4,7 +4,7 @@ sys.path.append('../backend/methods')
 from nearest_to_previous import nearest_to_previous
 from switching import switching
 from relative_superiority import relative_superiority
-#from rel_sup import rel_sup
+from rel_sup import rel_sup
 from max_const_seat_share import max_const_seat_share
 from max_vote_percentage import max_vote_percentage
 from switching import switching

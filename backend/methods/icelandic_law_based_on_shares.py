@@ -4,6 +4,7 @@ import random
 
 def icelandic_share_apportionment(m_votes,
                                   v_desired_row_sums,
+                                  v_desired_col_sums,
                                   m_prior_allocations,
                                   divisor_gen,
                                   adj_seat_gen,
@@ -11,7 +12,7 @@ def icelandic_share_apportionment(m_votes,
     """
     Apportion based on Icelandic law nr. 112/2021.
     """
-    m_allocations = deepcopy(m_prior_allocations)
+    m_allocations = m_prior_allocations.tolist()
     v_seats = [sum(x) for x in zip(*m_prior_allocations)]
     v_votes = [sum(x) for x in zip(*m_votes)]
     num_allocated = sum(v_seats)

@@ -279,7 +279,7 @@ def main():
         ('votepct', 'votepct'),
     ])
     all = [(m1, m2) for m1 in all_land_methods for m2 in all_const_methods]
-    method_desc = '[pairs, all, or m1-m2 (e.g. scand-votepct]'
+    method_desc = '[pairs, all, or m1-m2 (e.g. votepct-scand]'
     args = [
         ['nsim', int, 'total number of simulations', 5],
         ['-ncores', int, 'number of cores', 8],

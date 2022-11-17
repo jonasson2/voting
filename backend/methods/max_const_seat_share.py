@@ -8,7 +8,7 @@ def max_const_seat_share(
         m_prior_allocations,
         divisor_gen,
         **kwargs):
-    m_allocations = deepcopy(m_prior_allocations)
+    m_allocations = m_prior_allocations.tolist()
 
     num_allocated = sum([sum(c) for c in m_allocations])
     total_seats = sum(v_desired_row_sums)

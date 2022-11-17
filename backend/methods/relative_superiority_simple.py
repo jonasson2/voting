@@ -16,7 +16,7 @@ def relative_superiority_simple(m_votes,
     assert all(len(row) == num_parties for row in m_votes)
     assert len(m_prior_allocations) == num_constituencies
     assert all(len(row) == num_parties for row in m_prior_allocations)
-    m_allocations = deepcopy(m_prior_allocations)
+    m_allocations = m_prior_allocations.tolist()
     num_allocated = sum([sum(x) for x in m_allocations])
     num_total_seats = sum(v_desired_row_sums)
     allocation_sequence = []

@@ -3,14 +3,18 @@ from division_rules import dhondt_gen, sainte_lague_gen, \
     adams_gen
 from division_rules import droop, hare
 
+from methods.specified_col_sums_methods import relative_superiority
+from methods.specified_col_sums_methods import relative_superiority_simple
+# from methods.specified_col_sums_methods import max_const_vote_percentage
+
 from methods.alternating_scaling import alt_scaling, alt_scaling_old
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 # from methods.monge import monge
 from methods.nearest_to_previous import nearest_to_previous
-from methods.relative_superiority import relative_superiority
-#from methods.rel_sup import rel_sup
-from specified_col_sums_allocate import rel_sup
+#from methods.relative_superiority import relative_superiority
+#from methods.rel_sup import relative_superiority
+#from specified_col_sums_allocate import rel_sup
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import max_const_seat_share
@@ -19,12 +23,11 @@ from methods.switching import switching
 from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
+from specified_col_sums_allocate import specified_col_sums_allocate
 
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
-
-
 
 CONSTANTS = {
     'CoeffVar': 0.25,
@@ -55,7 +58,7 @@ RULE_NAMES = [
     {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
     {"value": "danish",          "text": "Danish"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
-    {"value": "adams",          "text": "Adams"},
+    {"value": "adams",           "text": "Adams"},
     {"value": "hare",            "text": "Hare quota"},
     {"value": "droop",           "text": "Droop quota"},
 ]
@@ -69,7 +72,6 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
     {"value": "farthest-from-next",        "text": "Farthest-from-next"},
-    # "monge", "text":                "Monge"},
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     {"value": "gurobi",                    "text": "Optimal with Gurobi"},    
@@ -144,19 +146,19 @@ STATISTICS_HEADINGS = {
 # "kur": "KURTOSIS"})
 
 ADJUSTMENT_METHODS = {
-    "icelandic-law": icelandic_apportionment,
-    "ice-shares": icelandic_share_apportionment,
-    "norwegian-law": norwegian_apportionment,
-    "max-const-seat-share": max_const_seat_share,
+    "icelandic-law":             icelandic_apportionment,
+    "ice-shares":                icelandic_share_apportionment,
+    "norwegian-law":             norwegian_apportionment,
+    "max-const-seat-share":      max_const_seat_share,
     "max-const-vote-percentage": max_const_vote_percentage,
     #"relative-superiority": relative_superiority,
-    "relative-superiority": rel_sup,
-    "relative-sup-simple": relative_superiority_simple,
-    "nearest-to-previous": nearest_to_previous,
-    "farthest-from-next": farthest_from_next,
-    "switching": switching,
-    "alternating-scaling": alt_scaling,
-    "gurobi": gurobi_optimal,
+    "relative-superiority":      relative_superiority,
+    "relative-sup-simple":       relative_superiority_simple,
+    "nearest-to-previous":       nearest_to_previous,
+    "farthest-from-next":        farthest_from_next,
+    "switching":                 switching,
+    "alternating-scaling":       alt_scaling,
+    "gurobi":                    gurobi_optimal,
     # "monge": monge,
 }
 

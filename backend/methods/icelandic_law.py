@@ -14,7 +14,7 @@ def icelandic_apportionment(
     """
     Apportion based on Icelandic law nr. 112/2021.
     """
-    m_allocations = deepcopy(m_prior_allocations)
+    m_allocations = m_prior_allocations.tolist()
 
     # 2.1.
     #   (Deila skal í atkvæðatölur samtakanna með tölu kjördæmissæta þeirra,

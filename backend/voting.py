@@ -278,16 +278,15 @@ class Election:
             #desired_col_sums = self.desired_col_sums
         fixed_seats = [con["num_fixed_seats"] for con in consts]
         (all_const_seats, stepbystep) = method (
-            m_votes=self.votes,
-            v_desired_row_sums = self.desired_row_sums,
-            v_desired_col_sums = self.desired_col_sums,
-            m_prior_allocations = self.results["fixed_const_seats"],
-            divisor_gen = self.gen,
+            self.votes,
+            self.desired_row_sums,
+            self.desired_col_sums,
+            np.array(self.results["fixed_const_seats"]),
+            self.gen,
             # kwargs-arguments:
             adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx
             v_fixed_seats = fixed_seats, # used by norwegian_law
             last = self.last, # used by nearest_to_previous
-            #party_votes_specified = self.party_vote_info['specified'],
             nat_prior_allocations = (self.results['fixed_nat_seats']
                                      if self.party_vote_info['specified']
                                      else None),

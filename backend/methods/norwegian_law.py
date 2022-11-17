@@ -8,7 +8,7 @@ def norwegian_apportionment(m_votes,
                             divisor_gen,
                             v_fixed_seats,
                             **kwargs):
-    m_allocations = deepcopy(m_prior_allocations)
+    m_allocations = m_prior_allocations.tolist()
 
     num_allocated = sum([sum(c) for c in m_allocations])
     total_seats = sum(v_desired_row_sums)

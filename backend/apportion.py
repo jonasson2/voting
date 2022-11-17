@@ -238,11 +238,14 @@ def threshold_drop(v_votes, threshold):
 def compute_forced(votes, free_const_seats, free_party_seats):
     # See "sætaskorður.pdf" in the doc folder
     from numpy import where, maximum
-    n = free_const_seats.sum()
-    party_zero_sum = where(votes == 0, free_const_seats[:, None], 0).sum(axis=0)
+    n = free_party_seats.sum()
     const_zero_sum = where(votes == 0, free_party_seats[None, :], 0).sum(axis=1)
-    max_zero_sum = maximum(const_zero_sum[:,None], party_zero_sum[None,:])
-    lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + max_zero_sum
+    if n == free_const_seats.sum:
+        party_zero_sum = where(votes == 0, free_const_seats[:, None], 0).sum(axis=0)
+        zero_sum = maximum(const_zero_sum[:,None], party_zero_sum[None,:])
+    else:
+        zero_sum = const_zero_sum[:,None]
+    lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + zero_sum
     return where(votes > 0, np.maximum(0, lower_bounds), 0)
 
 def forced_stepbystep_entries(forced):
