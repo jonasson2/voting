@@ -77,7 +77,11 @@
       </b-button>
     </b-container>
     <p></p>
-    <h4 style="margin-bottom:0px">Quality measures</h4>
+    <h4 style="..."
+        >Quality measures</h4>
+     <b-alert :show="true">
+        Seat shares are calculated based only on the first system, thus seat minus seat shares quality measures should not be used when comparing considerably different systems. Such as systems with different division rules.
+    </b-alert>
     <QualityMeasures
       :vuedata="vuedata"
       :stats="vuedata.stats"

@@ -132,30 +132,38 @@ class Simulation():
 
     def run_initial_elections(self):
         #total_overhang = sum(sum(x) for x in overhang)
+        firstSystem = self.reference_handler.elections[0]
+        firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"])
+        ids = np_add_totals(firstSystem.ref_seat_shares)
+        if self.party_votes_specified:
+            ids = vstack((ids, np_add_total(firstSystem.total_ref_nat)))
+            ids = vstack((ids, ids[-2] + ids[-1]))
+
         for i,election in enumerate(self.reference_handler.elections):
-            election.calculate_ref_seat_shares(self.sim_settings["scaling"])
+            #election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
-            ids = np_add_totals(election.ref_seat_shares)
+            #ids = np_add_totals(election.ref_seat_shares)
             neg_margins, neg_parties = self.calculate_negative_margins(election)
             const_party_margins, cpm_counts = self.neg_margin_matrix(neg_margins, neg_parties)
-            if self.party_votes_specified:
-                ids = vstack((ids, np_add_total(election.total_ref_nat)))
-                ids = vstack((ids, ids[-2] + ids[-1]))
+            #if self.party_votes_specified:
+            #    ids = vstack((ids, np_add_total(election.total_ref_nat)))
+            #    ids = vstack((ids, ids[-2] + ids[-1]))
             self.base_allocations.append({
                 "fixed_seats": election.results["fix"],
                 "adj_seats":   election.results["adj"],
                 "total_seats": election.results["all"],
                 "total_seat_percentages": find_percentages(election.results["all"]),
-                "ref_seat_shares": ids.tolist(),
                 "ref_seat_alloc": election.ref_seat_alloc,
                 "party_disparity": disparity,
                 "party_excess": excess,
                 "party_shortage": shortage,
                 "party_overhang": party_overhang,
                 "neg_margins": const_party_margins,
-                "neg_margin_count": cpm_counts
+                "neg_margin_count": cpm_counts,
             })
+            if i==0:
+                self.base_allocations[0]["ref_seat_shares"]= ids.tolist()
             #self.disparity_data[i].loc[len(self.disparity_data[i])] = disparity
 
     def simulate(self, tasknr=0, monitor=None):
@@ -219,21 +227,29 @@ class Simulation():
             self.stat["sim_vote_percentages"][i].update(vote_percentages)
 
     def collect_seat_measures(self):
+        firstSystem = self.election_handler.elections[0]
+        firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"])
+        ids = np_add_totals(firstSystem.ref_seat_shares)
+        if self.party_votes_specified:
+            ids = np.vstack((ids, np_add_total(firstSystem.total_ref_nat)))
+            ids = np.vstack((ids, ids[-2, :] + ids[-1, :]))
+        self.stat["ref_seat_shares"][0].update(ids)
+
         for (i,election) in enumerate(self.election_handler.elections):
             cs = np.array(election.results["fix"])
             ts = np.array(election.results["all"])
-            election.calculate_ref_seat_shares(self.sim_settings["scaling"])
-            ids = np_add_totals(election.ref_seat_shares)
-            if self.party_votes_specified:
-                ids = np.vstack((ids, np_add_total(election.total_ref_nat)))
-                ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
+            #election.calculate_ref_seat_shares(self.sim_settings["scaling"])
+            #ids = np_add_totals(election.ref_seat_shares)
+            #if self.party_votes_specified:
+            #    ids = np.vstack((ids, np_add_total(election.total_ref_nat)))
+            #    ids = np.vstack((ids, ids[-2,:] + ids[-1,:]))
             adj = ts - cs  # this computes the adjustment seats
             sh = ts/np.maximum(1, ts[:, -1, None])  # divide by last column
             self.stat["total_seat_percentages"][i].update(sh)
             self.stat["fixed_seats"][i].update(cs)
             self.stat["adj_seats"][i].update(adj)
             self.stat["total_seats"][i].update(ts)
-            self.stat["ref_seat_shares"][i].update(ids)
+            #self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_party_measures(self):
         for (i, election) in enumerate(self.election_handler.elections):
@@ -241,7 +257,7 @@ class Simulation():
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
-            self.stat["party_ref_seat_shares"][i].update(election.total_ref_seat_shares)
+            self.stat["party_ref_seat_shares"][i].update(self.election_handler.elections[0].total_ref_seat_shares)
             self.stat["party_total_seats"][i].update(election.results["all_grand_total"])
             self.stat["ref_seat_alloc"][i].update(election.ref_seat_alloc)
             self.stat["party_disparity"][i].update(disparity)
@@ -308,7 +324,7 @@ class Simulation():
 
     def calculate_negative_margins(self, election):
         seats = election.results["all_const_seats"]
-        shares = election.ref_seat_shares
+        shares = self.reference_handler.elections[0].ref_seat_shares
         neg_margins = []
         neg_parties = []
         for (srow,hrow) in zip(seats, shares):
@@ -381,13 +397,13 @@ class Simulation():
                 s = election.results["all_const_seats"][c][p]
                 if self.vote_table['votes'][c][p] == 0:
                     continue
-                h = election.ref_seat_shares[c][p]
+                h = self.election_handler.elections[0].ref_seat_shares[c][p]
                 if div_h:
-                    if (self.base_allocations[election_number]['ref_seat_shares']
+                    if (self.base_allocations[0]['ref_seat_shares']
                         [num_c-1][p] == 0):
                             continue
                     if h == 0:
-                        h = self.base_allocations[election_number]['ref_seat_shares'][c][p]
+                        h = self.base_allocations[0]['ref_seat_shares'][c][p]
                 measure += function(h, s)
         return measure
 
@@ -396,13 +412,13 @@ class Simulation():
         for p in range(self.nparty):
             if name.endswith('overall'):
                 s = election.results['all_grand_total'][p]
-                h = election.total_ref_seat_shares[p]
+                h = self.election_handler.elections[0].total_ref_seat_shares[p]
             elif name.endswith('const'):
                 s = election.results['all_const_total'][p]
-                h = election.total_ref_seat_shares[p] - election.total_ref_nat[p]
+                h = self.election_handler.elections[0].total_ref_seat_shares[p] - self.election_handler.elections[0].total_ref_nat[p]
             elif name.endswith('nat'):
                 s = election.results['all_nat_seats'][p]
-                h = election.total_ref_nat[p]
+                h = self.election_handler.elections[0].total_ref_nat[p]
             if name.startswith('sum'):
                 measure += function(h,s)
             elif name.startswith('max'):
@@ -431,13 +447,13 @@ class Simulation():
                 self.stat["list_sens"][i].update(list_seat_diff)
 
     def bias(self, election):
-        (slope,corr) = find_bias(election.results['all_const_seats'], election.ref_seat_shares)
+        (slope,corr) = find_bias(election.results['all_const_seats'], self.election_handler.elections[0].ref_seat_shares)
         return slope,corr
 
     # Loosemore-Hanby
     def sum_abs(self, election):
         lh = sum([
-            abs(election.ref_seat_shares[c][p] - election.results['all_const_seats'][c][p])
+            abs(self.election_handler.elections[0].ref_seat_shares[c][p] - election.results['all_const_seats'][c][p])
             for p in range(self.nparty)
             for c in range(election.num_constituencies())
         ])
@@ -445,7 +461,7 @@ class Simulation():
 
     # Minimized by Sainte Lague
     def sum_sq(self, election):
-        ids = election.ref_seat_shares
+        ids = self.election_handler.elections[0].ref_seat_shares
         stl = sum([
             (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
             for p in range(self.nparty)
@@ -456,7 +472,7 @@ class Simulation():
 
     # Maximized by d'Hondt
     def min_seat_val(self, election):
-        ids = election.ref_seat_shares
+        ids = self.election_handler.elections[0].ref_seat_shares
         dh_min = min([
             ids[c][p]/float(election.results['all_const_seats'][c][p])
             for p in range(self.nparty)
@@ -467,7 +483,7 @@ class Simulation():
 
     # Minimized by d'Hondt
     def sum_pos(self, election):
-        ids = election.ref_seat_shares
+        ids = self.election_handler.elections[0].ref_seat_shares
         dh_sum = sum([
             max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
             for p in range(self.nparty)

@@ -514,9 +514,9 @@ def simulation_to_xlsx(results, filename):
     data_matrix = {
         "base": {
             "vp":  nat_base_vote_percentages,
-            "rss": [results["base_allocations"][r]["ref_seat_shares"][-1] for r in range(nsys)],
+            "rss": [results["base_allocations"][0]["ref_seat_shares"][-1] for r in range(nsys)],
             "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
-            "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
+            "ra":  [add_total(results["base_allocations"][0]["ref_seat_alloc"]) for r in range(nsys)],
             "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
             "ovh": [results["base_allocations"][r]["party_overhang"] for r in range(nsys)],
             "exs": [results["base_allocations"][r]["party_excess"] for r in range(nsys)],
@@ -683,7 +683,7 @@ def simulation_to_xlsx(results, filename):
             "base": {
                 "v": xtd_votes,
                 "vp": xtd_percentages,
-                "rss": results["base_allocations"][r]["ref_seat_shares"],
+                "rss": results["base_allocations"][0]["ref_seat_shares"],
                 "cs": results["base_allocations"][r]["fixed_seats"],
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],

@@ -119,6 +119,9 @@
       <b-alert :show="showAlert()">
       All system names should be unique
       </b-alert>
+      <b-alert :show="sysidx==0">
+        The settings of the first system will be used for calculations of seat shares
+      </b-alert>
       <ElectionSettings
         :systemidx="activeSystemIndex"
         :capabilities="capabilities"
