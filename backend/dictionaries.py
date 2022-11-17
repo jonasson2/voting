@@ -5,25 +5,21 @@ from division_rules import droop, hare
 
 from methods.specified_col_sums_methods import relative_superiority
 from methods.specified_col_sums_methods import relative_superiority_simple
-# from methods.specified_col_sums_methods import max_const_vote_percentage
+from methods.specified_col_sums_methods import max_const_vote_percentage
 
 from methods.alternating_scaling import alt_scaling, alt_scaling_old
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
-# from methods.monge import monge
 from methods.nearest_to_previous import nearest_to_previous
 #from methods.relative_superiority import relative_superiority
-#from methods.rel_sup import relative_superiority
-#from specified_col_sums_allocate import rel_sup
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import max_const_seat_share
-from methods.max_const_vote_percentage import max_const_vote_percentage
+# from methods.max_const_vote_percentage import max_const_vote_percentage
 from methods.switching import switching
 from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
-from specified_col_sums_allocate import specified_col_sums_allocate
 
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
