@@ -164,6 +164,7 @@ class Simulation():
             return
         gen = self.gen_votes()
         begin_time = datetime.now()
+        random.seed(42)
         for i in range(self.sim_count):
             self.iteration = i + 1
             if tasknr==0:

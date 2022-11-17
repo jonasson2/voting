@@ -36,13 +36,15 @@ def specified_col_sums_allocate(votes, total_const_seats, total_party_seats,
         # PREPARE NOT-FORCED ALLOCATION
         openC = free_const_seats > 0
         openP = free_party_seats > 0
-        assert sum(openP) != 1
+        if sum(openP) == 1:
+            print(sum(openP))
+            pass
 
         # DETERMINE CRITERION FOR EACH NON-FULL CONSTITUENCY
         for c in find(openC):
             (party[c], criteria[c]) = compute_criteria(
-                votes[c,openP], alloc_list[c,openP], div, total_const_seats[c],
-                total_party_seats, criteria[c])
+                votes[c,openP], alloc_list[c,openP], div, nseats=total_const_seats[c],
+                npartyseats=total_party_seats, criterion=criteria[c])
 
         # SELECT CONSTITUENCY AND PARTY WITH MAXIMUM CRITERION
         maxC = np.argmax(criteria)
@@ -57,7 +59,10 @@ def specified_col_sums_allocate(votes, total_const_seats, total_party_seats,
         free_const_seats[maxC] -= 1
         free_party_seats[maxP] -= 1
         if free_const_seats[maxC] <= 0:
-            criteria[c] = -1
+            criteria[maxC] = -1
+        if not all(free_const_seats >= 0):
+            print(free_const_seats)
+            #assert all(free_const_seats >= 0)
 
     # PREPARE OBJECTS TO RETURN
     data = {"name":criterion_name, "sequence": allocation_sequence}
