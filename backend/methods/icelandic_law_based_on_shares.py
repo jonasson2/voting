@@ -61,7 +61,8 @@ def icelandic_share_apportionment(m_votes,
             })
         else:
             invalid.append(idx)
-    return m_allocations, (seats_info, print_demo_table)
+    stepbystep = {"data": seats_info, "function": print_demo_table}
+    return m_allocations, stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment

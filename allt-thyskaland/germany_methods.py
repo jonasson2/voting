@@ -31,7 +31,7 @@ def max_share(votes, max_col_sums):
 def max_relative_margin(votes_all, max_col_sums):
     return max_margin(votes_all, max_col_sums, 'relative')
 
-def max_absolute_margin(votes_all, max_col_sums):
+def abs_margin_const(votes_all, max_col_sums):
     return max_margin(votes_all, max_col_sums, 'absolute')
 
 def max_margin(votes_all, max_col_sums, type):
@@ -75,14 +75,6 @@ def optimal_const(votes, max_col_sums):
     party = [alloc[c].index(1) for c in range(nconst)]
     return party
 
-def gurobi_const(votes, max_col_sums):
-    (nconst, nparty) = votes.shape
-    row_sums = np.ones(nconst, int)
-    prior_alloc = np.zeros(votes.shape, int)
-    alloc, _ = gurobi_optimal(votes, row_sums, max_col_sums, prior_alloc,sainte_lague_gen)
-    party = [alloc[c].index(1) for c in range(nconst)]
-    return party
-
 def apportion_sainte_lague(votes, num_seats, prior_alloc = None):
     n = len(votes)
     if prior_alloc is not None:
@@ -115,4 +107,19 @@ def länder_first(votes, _, c_alloc):
         alloc[c,:-1] = apportion_sainte_lague(votes[c,:-1], c_alloc[c])
     return alloc
 
-
+def gurobi_optimal_const(votes, max_col_sums):
+    from gurobipy import Model, quicksum, GRB
+    (NC, NP) = votes.shape
+    P = range(NP)
+    C = range(NC)
+    m = Model()
+    zerovotes = np.where(votes > 0, 1, 0)
+    x = m.addMVar((NC, NP), vtype='B', ub=zerovotes)
+    m.addConstrs((sum(x[:,p]) <= max_col_sums[p] for p in P))
+    m.addConstrs((sum(x[c,:]) == 1 for c in C))
+    A = np.log(np.where(votes > 0, votes, 1))
+    m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
+    m.setParam('OutputFlag', False)
+    m.optimize()
+    selected = [x.X.astype(int)[c,:].tolist().index(1) for c in C]
+    return selected

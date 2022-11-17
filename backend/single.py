@@ -47,7 +47,7 @@ def main():
     handler.to_xlsx("single.xlsx")
     votes_to_excel(votes, "votes.xlsx")
 
-    print('results=', results)
+    disp(results, title='results')
 
 if __name__ == "__main__":
     main()

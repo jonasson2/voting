@@ -216,12 +216,6 @@ def elections_to_xlsx(elections, filename):
         worksheet = workbook.add_worksheet(sheet_name[:31])
         worksheet.set_column(0, 0, 31)
         parties = system["parties"] + ["Total"]
-        #xtd_votes = add_totals(election.m_votes)
-        #xtd_fixed_seats = add_totals(election.m_fixed_seats)
-        #xtd_total_seats = add_totals(election.results)
-        #xtd_adj_seats = m_subtract(xtd_total_seats, xtd_fixed_seats)
-        # xtd_final_votes = add_totals([election.v_votes_eliminated])[0]
-        # xtd_final_shares = find_percentages([xtd_final_votes])[0]
         now = datetime.now().strftime('%Y-%m-%d %H:%M')
         info = [
             ["Date:",

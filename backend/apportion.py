@@ -234,3 +234,47 @@ def threshold_drop(v_votes, threshold):
         else:
             cutoff = [max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
     return cutoff
+
+def compute_forced(votes, free_const_seats, free_party_seats):
+    # See "sætaskorður.pdf" in the doc folder
+    from numpy import where, maximum
+    n = free_const_seats.sum()
+    party_zero_sum = where(votes == 0, free_const_seats[:, None], 0).sum(axis=0)
+    const_zero_sum = where(votes == 0, free_party_seats[None, :], 0).sum(axis=1)
+    max_zero_sum = maximum(const_zero_sum[:,None], party_zero_sum[None,:])
+    lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + max_zero_sum
+    return where(votes > 0, np.maximum(0, lower_bounds), 0)
+
+def forced_stepbystep_entries(forced):
+    entries = []
+    for (c, p) in zip(*forced.nonzero()):
+        for _ in range(forced[c, p]):
+            entry = {'const': c, 'party': p, 'reason': "Only list available"}
+            entries.append(entry)
+    return entries
+
+def extend_div(div, div_gen):
+    N = len(div)
+    div = np.r_[div, [next(div_gen) for _ in range(N + 1)]]
+    return div
+
+def superiority(votes, alloc, nseats, div, npartyseats):
+    score = votes/div[alloc]
+    seats = alloc.copy()
+    party_next = np.argmax(score)
+    score_next = score[party_next]
+    # score[party_next] = 0  # þessi lína eða sú næsta ekki báðar
+    seats[party_next] += 1
+    nalloc = 1
+    while True:
+        if all(score == 0):
+            return party_next, 10000000
+        party = np.argmax(score)
+        seats[party] += 1
+        score[party] = votes[party]/div[seats[party]]
+        nalloc += 1
+        if nalloc > nseats:
+            super = score_next/score[party]
+            return party_next, super
+        #if seats[party] >= npartyseats[party]:
+        #    score[party] = 0

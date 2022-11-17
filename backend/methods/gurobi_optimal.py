@@ -18,7 +18,8 @@ def gurobi_optimal(m_votes,
     N = max(max(const_seats), max(party_seats)) + 1
     div = np.array([next(div_gen) for _ in range(N + 1)])
     x = gurobi_max(votes, const_seats, party_seats, div, prior_alloc)
-    return x.astype(int).tolist(), ([], print_demo_table)
+    stepbystep = {"data": [], "function": print_demo_table}
+    return x.astype(int).tolist(), stepbystep
 
 def gurobi_max(votes, const_seats, party_seats, div, prior_alloc=None, start=None):
     import gurobipy as gp
@@ -52,7 +53,7 @@ def gurobi_max(votes, const_seats, party_seats, div, prior_alloc=None, start=Non
     for c in C:
         s0 = prior_const_seats[c]
         for s in S[c]:
-            a = np.log(np.maximum(1,votes[c,:])/div[s])
+            a = np.log(np.where(votes[c,:] > 0, votes[c,:]/div[s], 1))
             obj.add(gp.LinExpr((a[p], x[c][p,s-s0]) for p in P))
     m.setObjective(obj, sense=gp.GRB.MAXIMIZE)
     m.setParam('OutputFlag', False)

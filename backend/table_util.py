@@ -1,6 +1,7 @@
 from math import log
 from copy import deepcopy
 import numpy as np
+from numpy import r_
 
 def find_bias(seats, ref_seat_shares):
     ref_seat_shares = np.array(ref_seat_shares).flatten()
@@ -44,8 +45,17 @@ def add_totals(m):
     nm.append(totals)
     return nm
 
+def np_add_totals(m):
+    """Add sums of rows and columns to a matrix"""
+    nm = np.vstack((m, m.sum(0)))
+    nm = np.c_[nm, nm.sum(1)]
+    return nm
+
 def add_total(l):
     return l + [sum(l)]
+
+def np_add_total(x):
+    return r_[x, x.sum()]
 
 def add_total_column(m):
     nm = deepcopy(m)
@@ -64,7 +74,8 @@ def find_shares_1d(v_votes):
     s = sum(v_votes)
     return [float(v)/s for v in v_votes] if s!=0 else v_votes
 
-def entropy(votes, allocations, divisor_gen):
+def entropy_old(votes, allocations, divisor_gen):
+    import numpy as np
     """
     Calculate entropy of the election, taking into account votes and
      allocations.
@@ -85,4 +96,30 @@ def entropy(votes, allocations, divisor_gen):
                 dk = next(gen)
                 e += log(votes[c][p]/dk)
 
+    return e
+
+def entropy(votes, seats, divisor_gen):
+    votes = np.array(votes)
+    seats = np.array(seats)
+    div_gen = divisor_gen()
+    div = np.array([next(div_gen) for _ in range(seats.max())])
+    (m,n) = votes.shape
+    C = range(m)
+    P = range(n)
+    summa = 0
+    for c in C:
+        for p in P:
+            if votes[c, p] > 0:
+                for s in range(seats[c,p]):
+                    summa += np.log(votes[c,p]/div[s])
+    return summa
+
+def entropy_single(votes, selected):
+    votes = np.array(votes)
+    m = votes.shape[0]
+    C = range(m)
+    v = votes[C,selected]
+    if any(v==0):
+        pass
+    e = sum(np.log(np.where(v>0, v, 1)))
     return e

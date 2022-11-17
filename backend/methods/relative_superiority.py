@@ -51,7 +51,6 @@ def relative_superiority(m_votes,
                 num_total_seats=v_row_sums[c] + 1,
                 prior_allocations=m_allocations[c],
                 divisor_gen=divisor_gen,
-                v_max_left=v_slacks
             )
             diff = v_subtract(alloc_next, m_allocations[c])
             next_in = diff.index(1)
@@ -79,7 +78,6 @@ def relative_superiority(m_votes,
                 num_total_seats=v_desired_row_sums[c],
                 prior_allocations=m_allocations[c],
                 divisor_gen=divisor_gen,
-                v_max_left=v_slacks
             )
 
             # Calculate relative superiority
@@ -121,9 +119,8 @@ def relative_superiority(m_votes,
         party = first["party"]
         m_allocations[const][party] += 1
         allocation_sequence.append(first)
-
-    return m_allocations, (allocation_sequence, print_demo_table)
-
+    stepbystep = {"data": allocation_sequence, "function": print_demo_table}
+    return m_allocations, stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",

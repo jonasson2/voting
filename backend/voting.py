@@ -3,12 +3,13 @@
 This module contains the core voting system logic.
 """
 
-from table_util import entropy, scale_matrix, add_total_column
+from table_util import entropy, add_total_column
 from apportion import apportion1d_general
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
 from dictionaries import DEMO_TABLE_FORMATS
 from util import disp, subtract_m
 from copy import deepcopy
+import numpy as np
 
 class Election:
     """A single election."""
@@ -16,9 +17,11 @@ class Election:
     def __init__(self, system, votes, party_vote_info, vote_table_name=''):
         self.system = system
         self.party_vote_info = party_vote_info
-        self.set_votes(votes, party_vote_info["votes"])
+        self.party_votes = np.array(party_vote_info["votes"])
+        self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
+        self.stored_entropy = None
 
     def num_constituencies(self):
         return len(self.system["constituencies"])
@@ -27,23 +30,25 @@ class Election:
         return len(self.system["parties"])
 
     def entropy(self):
-        return entropy(self.m_votes, self.results['all_const_seats'], self.gen)
+        if self.stored_entropy is None:
+            self.stored_entropy = entropy(self.votes, self.results['all_const_seats'],
+                                          self.gen)
+        return self.stored_entropy
 
     def set_reference_results(self):
         self.reference_results = self.results['all_const_seats']
 
-    def set_votes(self, votes, party_votes):
-        # m_votes: Matrix of votes (numconst by numpart)
-        # v_votes: Vector of votes (numpart, colsums of m_votes)
-        self.party_vote_info["votes"] = deepcopy(party_votes)
+    def set_votes(self, votes, party_votes=None):
+        # votesums: column sums of m_votes
+        if party_votes:
+            self.party_votes = np.array(party_votes)
         if self.num_constituencies() == 1:
-            self.m_votes = [[sum(x) for x in zip(*votes)]]
+            self.votes = votes.sum(0)[None,:]
         else:
-            if len(votes) != self.num_constituencies():
-                assert len(votes) == self.num_constituencies()
-            self.m_votes = deepcopy(votes)
+            assert len(votes) == self.num_constituencies()
+            self.votes = np.array(votes)
         assert all(len(row) == self.num_parties() for row in votes)
-        self.v_votes = [sum(x) for x in zip(*votes)]
+        self.votesums = self.votes.sum(0)
 
     @staticmethod
     def display_seats(allSeats, adjSeats):
@@ -56,8 +61,8 @@ class Election:
 
     def prepare_results(self):
         results = self.results
-        votes = deepcopy(self.m_votes)
-        votes.append(self.v_votes)
+        votes = self.votes.tolist()
+        votes.append(self.votesums.tolist())
 
         row_names = [
             const["name"] for const in self.system["constituencies"]
@@ -70,7 +75,8 @@ class Election:
         adj.append(results["adj_const_total"])
 
         if self.party_vote_info["specified"]:
-            votes.append(self.nat_votes) #TODO:  kemur villa ef reynt er að bæta við lista af strengjum, bæta frekar við lista af atkvæðum notuðum til grundvallar?
+            votes.append(self.nat_votes.tolist())
+            #TODO:  kemur villa ef reynt er að bæta við lista af strengjum, bæta frekar við lista af atkvæðum notuðum til grundvallar?
             all.append(results["all_nat_seats"])
             all.append(results["all_grand_total"])
             fix.append(results["fixed_nat_seats"])
@@ -140,8 +146,8 @@ class Election:
         all_const_seats = self.results["all_const_seats"]
         for c in range(self.num_constituencies()):
             for p in range(self.num_parties()):
-                over[c] = [r > 0 and v == 0
-                           for (r, v) in zip(all_const_seats[c], self.m_votes[c])]
+                over[c] = [r > 0 and float(v) == 0
+                           for (r, v) in zip(all_const_seats[c], self.votes[c])]
         return over
 
     def any_voteless(self):
@@ -157,7 +163,7 @@ class Election:
             num_seats = constituencies[i]["num_fixed_seats"]
             if num_seats != 0:
                 alloc, _, last_in, _ = apportion1d_general(
-                    v_votes = self.m_votes[i],
+                    v_votes = self.votes[i],
                     num_total_seats = num_seats,
                     prior_allocations=[],
                     rule = self.system.get_generator("primary_divider"),
@@ -176,12 +182,12 @@ class Election:
 
         opt = self.system["seat_spec_options"]["party"]
         if opt == "totals":
-            votes = self.v_votes
+            votes = self.votesums
         elif opt == "party_vote_info":
-            votes = self.party_vote_info['votes']
+            votes = self.party_votes
         else:
             assert (opt == "average")
-            votes = [(x + y) / 2 for (x, y) in zip(self.v_votes, self.party_vote_info['votes'])]
+            votes = (self.votes_sums + self.party_votes)/2
         self.nat_votes = votes
 
         if self.party_vote_info["specified"]:
@@ -197,7 +203,7 @@ class Election:
                 for i in range(len(v_allocations)):
                     v_allocations[i] += nat_fixed_alloc[i]
             else:
-                nat_fixed_alloc = [0]*len(self.party_vote_info["votes"])            
+                nat_fixed_alloc = [0]*len(self.party_votes)
             self.results["fixed_nat_seats"] = nat_fixed_alloc
             
         self.results["fixed_const_seats"] = m_allocations
@@ -257,7 +263,7 @@ class Election:
                 parties = self.system["parties"]
                 constIdx = const.index(constituency)
                 partyIdx = parties.index(party)
-                if self.m_votes[constIdx][partyIdx] < 1:
+                if self.votes[constIdx,partyIdx] < 1:
                     row[criteria_idx] = "Forced allocation"
         return demoTable
 
@@ -271,37 +277,36 @@ class Election:
         #else:
             #desired_col_sums = self.desired_col_sums
         fixed_seats = [con["num_fixed_seats"] for con in consts]
-        self.method = method(m_votes=self.m_votes,
-                             v_desired_row_sums = self.desired_row_sums,
-                             v_desired_col_sums = self.desired_col_sums,
-                             m_prior_allocations = self.results["fixed_const_seats"],
-                             divisor_gen = self.gen,
-                             # kwargs-arguments:
-                             adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx
-                             v_fixed_seats = fixed_seats, # used by norwegian_law
-                             last = self.last, # used by nearest_to_previous
-                             #party_votes_specified = self.party_vote_info['specified'],
-                             nat_prior_allocations = (self.results['fixed_nat_seats']
-                                                      if self.party_vote_info['specified']
-                                                      else None),
-                             # nat_seats = (self.party_vote_info['num_fixed_seats']
-                             #              + self.party_vote_info['num_adj_seats']
-                             #              if self.party_vote_info['specified']
-                             #              else 0),
-                             ) # last three used by optimal
-        all_const_seats, self.demo_table_info = self.method
-        adj_const_seats = subtract_m(
-            all_const_seats, self.results["fixed_const_seats"])
+        (all_const_seats, stepbystep) = method (
+            m_votes=self.votes,
+            v_desired_row_sums = self.desired_row_sums,
+            v_desired_col_sums = self.desired_col_sums,
+            m_prior_allocations = self.results["fixed_const_seats"],
+            divisor_gen = self.gen,
+            # kwargs-arguments:
+            adj_seat_gen = self.adj_seat_gen, # both icelandic_xxx
+            v_fixed_seats = fixed_seats, # used by norwegian_law
+            last = self.last, # used by nearest_to_previous
+            #party_votes_specified = self.party_vote_info['specified'],
+            nat_prior_allocations = (self.results['fixed_nat_seats']
+                                     if self.party_vote_info['specified']
+                                     else None),
+        )
+        adj_const_seats = subtract_m(all_const_seats, self.results["fixed_const_seats"])
         self.results["all_const_seats"] = all_const_seats
         self.results["adj_const_seats"] = adj_const_seats
         self.results["adj_const_total"] = [sum(x) for x in zip(*adj_const_seats)]
         self.results["all_const_total"] = [sum(x) for x in zip(*all_const_seats)]
 
-        alloc_sequence = self.demo_table_info[0]
+        alloc_sequence = stepbystep["data"]
         self.demo_tables = []
         format = DEMO_TABLE_FORMATS[self.system["adjustment_method"]]
-        format = [format] if len(self.demo_table_info) == 2 else format
-        for i, print_demo_table in enumerate(self.demo_table_info[1:]):
+        functions = [stepbystep["function"]]
+        if "additional_function" in stepbystep:
+            functions.append(stepbystep["additional_function"])
+        else:
+            format = [format]            
+        for i, print_demo_table in enumerate(functions):
             headers, steps, sup_header = print_demo_table(self.system, alloc_sequence)
             demo_table = {
                 "headers":    headers,
@@ -350,8 +355,8 @@ class Election:
             self.calculate_ref_seat_shares_new(scaling)
             return
         import numpy as np, numpy.linalg as la
-        scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
-        ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
+        scalar = float(self.total_const_seats)/sum(sum(x) for x in self.votes)
+        ref_seat_shares = self.votes*scalar
         ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
         # assert self.solvable
         # rein = 0
@@ -392,13 +397,13 @@ class Election:
                     s = sum(ref_seat_shares[:, p])
                     tau = col_sum/s if s > 0 else 1
                     ref_seat_shares[:, p] *= tau
-        self.ref_seat_shares = ref_seat_shares.tolist()
+        self.ref_seat_shares = ref_seat_shares
         factor = sum(self.results["all_grand_total"])/sum(self.nat_votes)
-        self.total_ref_seat_shares = [x*factor for x in self.nat_votes]
+        self.total_ref_seat_shares = self.nat_votes*factor
 
         if self.party_vote_info["specified"]:
             factor = sum(self.results["all_nat_seats"])/sum(self.nat_votes)
-            self.ref_nat_seat_shares = [x*factor for x in self.nat_votes]
+            self.ref_nat_seat_shares = self.nat_votes*factor
         else:
             self.ref_nat_seat_shares = None
 
@@ -406,21 +411,20 @@ class Election:
         import numpy as np, numpy.linalg as la
         nrows = self.num_constituencies()
         ncols = self.num_parties()
-        col_sums = np.array(self.ref_seat_alloc)
+        col_sums = np.array(self.desired_col_sums)
         row_sums = np.array(self.desired_row_sums)
         if self.party_vote_info['specified'] and scaling in {"const", "party","total"}:
-            scalar = sum(col_sums) / (sum(sum(x) for x in self.m_votes) +
-                                      sum(self.party_vote_info['votes']))
-            ref_seat_shares = \
-                np.array(scale_matrix(np.vstack((self.m_votes,
-                         self.party_vote_info['votes'])), scalar))
+            scalar = sum(col_sums) / (sum(sum(x) for x in self.votes) +
+                                      sum(self.party_votes))
+            matrix = np.vstack(self.votes, self.party_votes)
+            ref_seat_shares = matrix*scalar
             if scaling == 'const':
                 nrows += 1
                 row_sums = np.append(row_sums, sum(col_sums) -
                                      self.total_const_seats)
         else:
-            scalar = float(self.total_const_seats)/sum(sum(x) for x in self.m_votes)
-            ref_seat_shares = np.array(scale_matrix(self.m_votes, scalar))
+            scalar = float(self.total_const_seats)/sum(sum(x) for x in self.votes)
+            ref_seat_shares = self.votes * scalar
         error = 1
         row_constraints = scaling in {"both", "const"}
         col_constraints = scaling in {"both", "party"}
@@ -486,20 +490,14 @@ class Election:
                     tau = col_sum/s if s > 0 else 1
                     ref_seat_shares[:, p] *= tau
 
-        self.ref_seat_shares = ref_seat_shares.tolist()
+        self.ref_seat_shares = ref_seat_shares
         if self.party_vote_info['specified']:
             if row_constraints and col_constraints:
-                self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
-                self.total_ref_nat = [x - y for x, y in zip(self.ref_seat_alloc, self.total_ref_seat_shares)]
+                self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
+                self.total_ref_nat = self.desired_col_sums - self.total_ref_seat_shares
             else:
-                self.total_ref_nat = self.ref_seat_shares.pop()
-                self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
+                self.total_ref_nat = self.ref_seat_shares[-1]
+                self.ref_seat_shares = self.ref_seat_shares[:-1]
+                self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
         else:
-            self.total_ref_seat_shares = [sum(x) for x in zip(*self.ref_seat_shares)]
-
-
-
-
-
-
-
+            self.total_ref_seat_shares = self.ref_seat_shares.sum(0)

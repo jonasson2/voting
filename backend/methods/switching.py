@@ -92,9 +92,9 @@ def switching(m_votes,
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         if not C:
-            print('No surplus/wanting pair found')
-            print('  surplus:', find(surplus))
-            print('  wanting:', find(wanting))
+            # print('No surplus/wanting pair found')
+            # print('  surplus:', find(surplus))
+            # print('  wanting:', find(wanting))
             break
         else:
             cmin = np.argmin(ratio)
@@ -114,7 +114,12 @@ def switching(m_votes,
         "switches": switches,
     }
 
-    return alloc.tolist(), (steps, print_demo_table1, print_demo_table2) 
+    stepbystep = {
+        "data": steps,
+        "function": print_demo_table1,
+        "additional_function": print_demo_table2
+    }
+    return alloc.tolist(), stepbystep
 
 def print_demo_table1(rules, steps):
     sup_header = "Nationally apportioned vs. full constituency allocation"

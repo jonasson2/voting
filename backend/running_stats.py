@@ -4,35 +4,33 @@ from copy import deepcopy
 from util import disp
 
 class Running_stats:
-    def __init__(self, shape=1, parallel=False, name="", entries=None, options=[]):
+    def __init__(self, shape=1, parallel=False, name="", options=None):
         # Names may be a list of length shape. When shape is not two-dimensional,
-        # options may be a list of strings from "mean", "min" and max".
-        if entries is None and shape==1:
-            entries = [name]*shape
-        assert(type(shape) in {int,float} or len(options)==0)
         self.parallel = parallel
         self.name = name
-        self.entries = deepcopy(entries)
-        self.options = options
-        if options:
-            self.entries.extend(options)
-        if len(options)!= 0:
-            shape += len(options)
-        self.shape = shape
+        self.options = ([] if options is None
+                        else ['min', 'max', 'sum', 'avg'] if options=='all'
+                        else options)
+        if isinstance(shape, (tuple, list)):
+            nr = shape[0] + len(self.options)
+            nc = shape[1] + len(self.options)
+            self.shape = (nr, nc)
+        else:
+            self.shape = shape + len(self.options)
         self.n = 0
-        self.M1 = np.zeros(shape)
-        self.M2 = np.zeros(shape)
+        self.M1 = np.zeros(self.shape)
+        self.M2 = np.zeros(self.shape)
         if not self.parallel:
-            self.M3 = np.zeros(shape)
-            self.M4 = np.zeros(shape)
-        self.big = np.zeros(shape)
-        self.small = np.zeros(shape)
+            self.M3 = np.zeros(self.shape)
+            self.M4 = np.zeros(self.shape)
+        self.big = np.zeros(self.shape)
+        self.small = np.zeros(self.shape)
 
     def __repr__(self):
         s = [f"Running_stats:",
              f"   n: {self.n}",
              f"   name: {self.name}",
-             f"   {wrap('entries:', self.entries, 3)}",
+             f"   shape: {self.shape}",
              f"   {wrap('mean:', self.mean(), 3)}",
              f"   {wrap('std: ', self.std(), 3)}",
              f"   {wrap('error: ', self.std(), 3)}"]
@@ -45,16 +43,34 @@ class Running_stats:
         for (key,val) in dictionary.items():
             setattr(self, key, val)
         return self
-    
-    def update(self, values): # A should have shape "shape"
-        if type(values) in {int,float,np.float64}:
+
+    @classmethod
+    def optfun(cls, o):
+        return (np.min if o=="min"
+                else np.max if o=="max"
+                else np.sum if o=="sum"
+                else np.mean if o=="mean" or o=="avg"
+                else None)
+
+    def extend(self, A):
+        A = np.array(A)
+        optfuns = [self.optfun(o) for o in self.options]
+        if len(self.options) == 0:
+            return A
+        elif not isinstance(self.shape, tuple):
+            B = np.hstack([fun(A,0) for fun in optfuns])
+            return np.r_[A, B]
+        else:
+            B = np.vstack([fun(A,0) for fun in optfuns])
+            AB = np.vstack((A, B))
+            C = np.vstack([fun(AB,1) for fun in optfuns])
+            ABC = np.c_[AB, C.T]
+            return ABC
+
+    def update(self, values): # values should have shape "shape"
+        if type(values) in {int,float,np.float64,np.int64}:
             values = [values]
-        A = r_[np.array(values), np.zeros(len(self.options))] if len(self.options) else np.array(values)
-        for (i,opt) in enumerate(self.options, len(values)):
-            if opt=="mean":  A[i] = np.mean(values)
-            elif opt=="max": A[i] = max(values)
-            elif opt=="min": A[i] = min(values)
-            elif opt=="sum": A[i] = sum(values)
+        A = self.extend(values)
         n1 = self.n
         self.n += 1
         n = self.n
@@ -92,15 +108,24 @@ class Running_stats:
     def mean(self):
         return self.M1.tolist()
 
-    def std(self):
+    def numpy_mean(self):
+        return self.M1
+
+    def numpy_std(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return np.sqrt(var).tolist()
+        return np.sqrt(var)
+
+    def std(self):
+        return self.numpy_std().tolist()
 
     def error(self):
+        return self.numpy_error().tolist()
+
+    def numpy_error(self):
         n = self.n
         var = self.M2/max(1,n-1)
-        return 2*np.sqrt(var/max(1,n)).tolist()
+        return 2*np.sqrt(var/max(1,n))
 
     def lo95ci(self):
         n = self.n
@@ -138,22 +163,14 @@ def combine_stat(stat1, stat2):
             assert(key1==key2)
             combine_stat(stat1[key1], stat2[key2])
 
-def to_dataframe(stat):
-    # Create Pandas dataframes from stat which may be a Running stats object with
-    # shape (n,m), a dictionary of Running_stats objects with shape (n) or a dictionary
-    # of dictionaries of objects with shape (1). Row and column entries are taken from
-    # the keys of the dictionaries and/or the entries of the objects. Four dataframes
-    # are returned, with the mean, standard deviation, min and max.
-    #for key
-    if isinstance(stat, Running_stats):
-        (m,n) = stat.M1.shape
-
 def wrap(name, L, skip=0):
     from textwrap import TextWrapper as wrapper
     if isinstance(L[0], (float,int)):
         s = "[" + ', '.join(f"{l:.2f}" for l in L) + "]"
+    elif isinstance(L[0][0], (float,int)):
+        s = 'Fylki'
     else:
-        s = "[" + ", ".join(L) + "]"
+        s = 'Óþekkt'
     tw = wrapper()
     tw.initial_indent = name + ' '
     tw.subsequent_indent = ' ' * (len(name) + 2 + skip)

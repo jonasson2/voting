@@ -3,7 +3,6 @@ from electionSystem import set_one_const, set_const_adj, set_const_fixed
 from electionSystem import set_nat_seats, set_nat_seats_adj, set_nat_seats_fixed
 from electionSystem import set_custom, set_copy
 from voting import Election
-from table_util import add_totals
 from input_util import check_systems
 from excel_util import elections_to_xlsx
 from util import disp, remove_prefix

@@ -47,8 +47,8 @@ def max_const_seat_share(
             "maximum": maximum,
         })
 
-    return m_allocations, (allocation_sequence, print_demo_table)
-
+    stepbystep = {"data": allocation_sequence, "function": print_demo_table}
+    return m_allocations, stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
