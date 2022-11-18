@@ -51,7 +51,7 @@ function_dict_party = {
 class MeasureGroups(dict):
     def __init__(self, systems, party_votes_specified, nr=0):
         self["shareTitle"] = {
-            "title": "Seats minus seat shares, sum over allocations to:",
+            "title": "Seats minus reference seat shares, sum over allocations to:",
             "rows":  {}
         }
 

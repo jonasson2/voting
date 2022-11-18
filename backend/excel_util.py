@@ -455,6 +455,9 @@ def simulation_to_xlsx(results, filename):
     worksheet.write(toprow,c,"Vote table:",fmt["h"])
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
+    worksheet.write(toprow, c, "Reference system:", fmt["h"])
+    worksheet.write(toprow, c + 1, results["systems"][0]["name"], fmt["basic"])
+    toprow += 1
     worksheet.set_column(c,c,20)
     c += 1
     worksheet.set_column(c,c,25)
@@ -514,9 +517,9 @@ def simulation_to_xlsx(results, filename):
     data_matrix = {
         "base": {
             "vp":  nat_base_vote_percentages,
-            "rss": [results["base_allocations"][0]["ref_seat_shares"][-1] for r in range(nsys)],
+            "rss": [results["base_allocations"][0]["ref_seat_shares"][-1]], #for r in range(nsys)
             "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
-            "ra":  [add_total(results["base_allocations"][0]["ref_seat_alloc"]) for r in range(nsys)],
+            "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
             "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
             "ovh": [results["base_allocations"][r]["party_overhang"] for r in range(nsys)],
             "exs": [results["base_allocations"][r]["party_excess"] for r in range(nsys)],
@@ -528,7 +531,7 @@ def simulation_to_xlsx(results, filename):
     for stat in STATISTICS_HEADINGS.keys():
         data_matrix[stat] = {
             "vp":  [party_measures[r]['nat_vote_percentages'][stat] for r in range(nsys)],
-            "rss": [add_total(party_measures[r]['party_ref_seat_shares'][stat]) for r in range(nsys)],
+            "rss": [add_total(party_measures[0]['party_ref_seat_shares'][stat])],
             "ts":  [add_total(party_measures[r]['party_total_seats'][stat]) for r in range(nsys)],
             "ra":  [add_total(party_measures[r]['ref_seat_alloc'][stat]) for r in range(nsys)],
             "dis": [party_measures[r]['party_disparity'][stat] for r in range(nsys)],
@@ -683,7 +686,7 @@ def simulation_to_xlsx(results, filename):
             "base": {
                 "v": xtd_votes,
                 "vp": xtd_percentages,
-                "rss": results["base_allocations"][0]["ref_seat_shares"],
+                "rss": results["base_allocations"][0]["ref_seat_shares"] if r==0 else None,
                 "cs": results["base_allocations"][r]["fixed_seats"],
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],
@@ -698,7 +701,7 @@ def simulation_to_xlsx(results, filename):
             data_matrix[stat] = {
                 "v": results["vote_data"][r]["sim_votes"][stat][:k],
                 "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k],
-                "rss": seat_measures["ref_seat_shares"][stat][:k],
+                "rss": seat_measures["ref_seat_shares"][stat][:k] if r==0 else None,
                 "cs": seat_measures["fixed_seats"][stat][:k],
                 "as": seat_measures["adj_seats"][stat][:k],
                 "ts": seat_measures["total_seats"][stat][:k],
@@ -772,6 +775,8 @@ def simulation_to_xlsx(results, filename):
 
         col = 2
         for table in tables:
+            if r > 0 and table["abbr"] == "rss":
+                continue
             worksheet.write(toprow, col, table["heading"], fmt["h"])
             worksheet.write_row(
                 toprow + 1,
@@ -794,6 +799,8 @@ def simulation_to_xlsx(results, filename):
             row = toprow
             if category['abbr'] != "base" and combined: row += len(base_const_names)-1
             for table in tables:
+                if data_matrix[category["abbr"]][table["abbr"]] is None:
+                    continue
                 #is_refseatshare_table = table["heading"].startswith("Reference")
                 setTotal = (
                     "hide" if not table["total"] else

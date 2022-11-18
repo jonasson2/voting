@@ -230,20 +230,7 @@ class Election:
                 threshold_choice = choice,
                 threshold_seats = seats
             )
-        if self.party_vote_info["specified"]: # TODO: mögulega óþarft?
-            self.desired_const_col_sums, _, _, _ \
-                = apportion1d_general(
-                    v_votes = self.nat_votes,
-                    num_total_seats = self.total_const_seats,
-                    prior_allocations = self.results["fixed_const_total"],
-                    rule = self.system.get_generator("adj_determine_divider"),
-                    type_of_rule = self.system.get_type("adj_determine_divider"),
-                    threshold_percent=threshold,
-                    threshold_choice=choice,
-                    threshold_seats=seats
-                )
-        else:
-            self.desired_const_col_sums = self.desired_col_sums
+
 
         self.ref_seat_alloc, _, _, _ \
             = apportion1d_general(
@@ -359,13 +346,15 @@ class Election:
             if row_constraints and col_constraints:
                 while True:
                     iter+=1
-                    # exit condition
-                    if m.isclose(sum(abs(sum(ref_seat_shares[c, :])-row_sums[c]) for c in range(nrows)), 0.0, abs_tol=1e-7) and \
-                        m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0) for p in range(ncols)), 0.0, abs_tol=1e-7):
-                        break
                     # overall step
                     delta = sum(sum(x) for x in ref_seat_shares) / sum(row_sums)
                     ref_seat_shares /= delta
+                    # exit condition
+                    if m.isclose(sum(abs(sum(ref_seat_shares[c, :])-row_sums[c])
+                                     for c in range(nrows)), 0.0, abs_tol=1e-7) and \
+                        m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
+                                      for p in range(ncols)), 0.0, abs_tol=1e-7):
+                        break
                     # constituency step
                     for c in range(nrows):
                         row_sum = row_sums[c]
@@ -398,9 +387,9 @@ class Election:
                     tau = col_sum / s if s > 0 else 1
                     ref_seat_shares[:, p] *= tau
         self.ref_seat_shares = ref_seat_shares
+        self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
         if self.party_vote_info['specified']:
-            self.total_ref_nat = self.desired_col_sums - self.ref_seat_shares.sum(0)
-            self.total_ref_seat_shares = self.desired_col_sums
+            self.total_ref_nat = self.desired_col_sums - self.total_ref_seat_shares
         else:
             self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
 
@@ -441,7 +430,8 @@ class Election:
                         eta = row_sum/s if s > 0 else 1
                         ref_seat_shares[c, :] *= eta
                         error = max(error, abs(1 - eta))
-                    if all(round(i, 7) >= 1 for i in [col_sums[p]/(ref_seat_shares.sum(0)[p] if ref_seat_shares.sum(0)[p] > 0 else 1) for p in range(ncols)]):
+                    if all(round(i, 7) >= 1 for i in [col_sums[p]/(ref_seat_shares.sum(0)[p] \
+                            if ref_seat_shares.sum(0)[p] > 0 else 1) for p in range(ncols)]):
                         break
                     #party step
                     p_at_lim = p_null_seats.copy()

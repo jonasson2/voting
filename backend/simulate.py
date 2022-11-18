@@ -144,7 +144,8 @@ class Simulation():
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
             #ids = np_add_totals(election.ref_seat_shares)
-            neg_margins, neg_parties = self.calculate_negative_margins(election)
+            neg_margins, neg_parties = \
+                self.calculate_negative_margins(election, firstSystem.ref_seat_shares)
             const_party_margins, cpm_counts = self.neg_margin_matrix(neg_margins, neg_parties)
             #if self.party_votes_specified:
             #    ids = vstack((ids, np_add_total(election.total_ref_nat)))
@@ -252,12 +253,12 @@ class Simulation():
             #self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_party_measures(self):
+        self.stat["party_ref_seat_shares"][0].update(self.election_handler.elections[0].total_ref_seat_shares)
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
-            self.stat["party_ref_seat_shares"][i].update(self.election_handler.elections[0].total_ref_seat_shares)
             self.stat["party_total_seats"][i].update(election.results["all_grand_total"])
             self.stat["ref_seat_alloc"][i].update(election.ref_seat_alloc)
             self.stat["party_disparity"][i].update(disparity)
@@ -275,7 +276,8 @@ class Simulation():
         for i, (ref_election, election) in enumerate(zip(ref_elections, elections)):
             system = election.system
             self.add_deviation(election, ref_election, "dev_ref", deviations)
-            neg_margins, neg_parties = self.calculate_negative_margins(election)
+            neg_margins, neg_parties = \
+                self.calculate_negative_margins(election, elections[0].ref_seat_shares)
             const_party_margins, cpm_counts = self.neg_margin_matrix(neg_margins, neg_parties)
             self.stat["neg_margin"][i].update(const_party_margins)
             self.stat["neg_margin_count"][i].update(cpm_counts)
@@ -322,12 +324,11 @@ class Simulation():
                     zip(election.results['fixed_const_total'], election.ref_seat_alloc)]
         return overhang
 
-    def calculate_negative_margins(self, election):
+    def calculate_negative_margins(self, election, ref_seat_shares):
         seats = election.results["all_const_seats"]
-        shares = self.reference_handler.elections[0].ref_seat_shares
         neg_margins = []
         neg_parties = []
-        for (srow,hrow) in zip(seats, shares):
+        for (srow,hrow) in zip(seats, ref_seat_shares):
             diff = [s - h for (s,h) in zip(srow, hrow)]
             maxdiff = max(diff)
             maxparty = diff.index(maxdiff)
@@ -408,17 +409,18 @@ class Simulation():
         return measure
 
     def party_func(self, name, election, function):
+        firstSystem = self.election_handler.elections[0]
         measure = 0
         for p in range(self.nparty):
             if name.endswith('overall'):
                 s = election.results['all_grand_total'][p]
-                h = self.election_handler.elections[0].total_ref_seat_shares[p]
+                h = firstSystem.total_ref_seat_shares[p]
             elif name.endswith('const'):
                 s = election.results['all_const_total'][p]
-                h = self.election_handler.elections[0].total_ref_seat_shares[p] - self.election_handler.elections[0].total_ref_nat[p]
+                h = firstSystem.total_ref_seat_shares[p] - self.election_handler.elections[0].total_ref_nat[p]
             elif name.endswith('nat'):
                 s = election.results['all_nat_seats'][p]
-                h = self.election_handler.elections[0].total_ref_nat[p]
+                h = firstSystem.total_ref_nat[p]
             if name.startswith('sum'):
                 measure += function(h,s)
             elif name.startswith('max'):

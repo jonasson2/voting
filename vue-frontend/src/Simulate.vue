@@ -78,10 +78,12 @@
     </b-container>
     <p></p>
     <h4 style="..."
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Reference seat shares are calculated based only on the first system,
+        thus seat minus reference seat shares quality measures
+        should not be used when comparing considerably different systems.
+        Such as systems with different division rules."
         >Quality measures</h4>
-     <b-alert :show="true">
-        Seat shares are calculated based only on the first system, thus seat minus seat shares quality measures should not be used when comparing considerably different systems. Such as systems with different division rules.
-    </b-alert>
     <QualityMeasures
       :vuedata="vuedata"
       :stats="vuedata.stats"
