@@ -96,7 +96,7 @@ def nearest_to_previous(m_votes,
 def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE
     headers = ["Adj. seat #", "Constituency", "Next party", "Last party",
-               "Criteria", "Ratio of scores"]
+               "Criteria", "Score/ratio of scores"]
     criterion = {}
     criterion["MAX"] = "Max ratio of next-in to previous-in vote score"
     criterion["VOTE"] = "No const. seat, thus using max list vote"

@@ -23,6 +23,9 @@ class ElectionSystem(dict):
         self["compare_with"] = False
         self["parties"] = []
 
+    def copy_info_from_votes(self, votes):
+        self["constituencies"] = deepcopy(votes["constituencies"])
+        self["parties"] = deepcopy(votes["parties"])
 
     def __deepcopy__(self, memo):
         ES = ElectionSystem()

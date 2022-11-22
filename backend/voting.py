@@ -121,18 +121,18 @@ class Election:
             "display_results":  dispResult
         }
 
-    def run(self, use_thresholds=True):
+    def assign_seats(self, use_thresholds=True):
         self.fixed_seats_alloc = []
         self.order = []
-        self.desired_row_sums = [
+        self.desired_row_sums = np.array([
             const["num_fixed_seats"] + const["num_adj_seats"]
             for const in self.system["constituencies"]
-        ]
+        ])
         party_vote_info = self.party_vote_info
         self.total_const_seats = sum(self.desired_row_sums)
-        self.run_primary_apportionment(use_thresholds)
-        self.run_determine_total_party_seats(use_thresholds)
-        self.run_adjustment_apportionment()
+        self.apportion_fixed_seats(use_thresholds)
+        self.apportion_total_party_seats(use_thresholds)
+        self.allocate_adjustment_seats()
         if party_vote_info["specified"]:
             self.add_national_adjustment_seats()
         else:
@@ -153,7 +153,7 @@ class Election:
     def any_voteless(self):
         return any(v for x in self.voteless_seats() for v in x)
 
-    def run_primary_apportionment(self, use_thresholds):
+    def apportion_fixed_seats(self, use_thresholds):
         constituencies = self.system["constituencies"]
         threshold = self.system["constituency_threshold"] if use_thresholds else 0
         m_allocations = []
@@ -209,7 +209,7 @@ class Election:
         self.results["fixed_const_seats"] = m_allocations
         self.results["fixed_grand_total"] = v_allocations
 
-    def run_determine_total_party_seats(self, use_thresholds):
+    def apportion_total_party_seats(self, use_thresholds):
         """Calculate the number of adjustment seats each party gets."""
         nat_seats = ((self.system["nat_seats"]['num_fixed_seats'] +
                       self.system["nat_seats"]['num_adj_seats']) \
@@ -223,7 +223,7 @@ class Election:
             = apportion1d_general(
                 v_votes = self.nat_votes,
                 num_total_seats = self.total_const_seats + nat_seats,
-                prior_allocations = self.results["fixed_grand_total"],
+                prior_allocations = np.array(self.results["fixed_grand_total"]),
                 rule = self.system.get_generator("adj_determine_divider"),
                 type_of_rule = self.system.get_type("adj_determine_divider"),
                 threshold_percent = threshold,
@@ -254,7 +254,7 @@ class Election:
                     row[criteria_idx] = "Forced allocation"
         return demoTable
 
-    def run_adjustment_apportionment(self):
+    def allocate_adjustment_seats(self):
         """Conduct adjustment seat apportionment."""
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
         self.gen = self.system.get_generator("adj_alloc_divider")
@@ -373,7 +373,9 @@ class Election:
                             ref_seat_shares[:, p] *= tau
                         else:
                             ref_seat_shares[:, p] /= tau
-                print(iter) #TODO: remove this iter if it all works and program doesn't get stuck fro too long in loop
+                print(f'calculate_ref_seat_shares, iteration count = {iter}')
+                # TODO: remove this print if it all works and program doesn't get stuck
+                # for too long in the loop
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = row_sums[c]

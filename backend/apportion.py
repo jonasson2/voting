@@ -1,6 +1,7 @@
 from copy import copy, deepcopy
 from table_util import find_shares_1d
 import numpy as np
+from numpy import flatnonzero as find
 from util import dispv
 
 def apportion(v, xp, total_seats, inverse_divisors, col_with_party_votes=False):
@@ -98,12 +99,17 @@ def apportion1d_general(
         - information about the first seat that was not allocated
     """
     N = len(v_votes)
-    allocations = deepcopy(prior_allocations) if prior_allocations else [0]*N
+    allocations = deepcopy(prior_allocations) if len(prior_allocations) else [0]*N
 
     seat_gen = seat_generator(
-        votes = threshold_drop(v_votes, threshold=[threshold_choice,
-                                        threshold_percent, threshold_seats,
-                                        (prior_allocations if prior_allocations else None)]),
+        votes = threshold_drop(
+            v_votes,
+            threshold = [
+                threshold_choice,
+                threshold_percent,
+                threshold_seats,
+                prior_allocations if len(prior_allocations) else None
+            ]),
         num_total_seats = num_total_seats,
         prior_allocations = deepcopy(allocations),
         rule = rule,
@@ -246,13 +252,17 @@ def compute_forced(votes, free_const_seats, free_party_seats):
     else:
         zero_sum = const_zero_sum[:,None]
     lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + zero_sum
-    return where(votes > 0, np.maximum(0, lower_bounds), 0)
+    forced = where(votes > 0, np.maximum(0, lower_bounds), 0)
+    parties = np.array([find(f)[0] if any(f) else -1 for f in forced], int)
+    return forced, parties
 
-def forced_stepbystep_entries(forced):
+def forced_stepbystep_entries(forced, has_last_party):
     entries = []
     for (c, p) in zip(*forced.nonzero()):
         for _ in range(forced[c, p]):
             entry = {'const': c, 'party': p, 'reason': "Only list available"}
+            if has_last_party:
+                entry['last_party'] = -1
             entries.append(entry)
     return entries
 
