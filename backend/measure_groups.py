@@ -49,12 +49,9 @@ function_dict_party = {
 }
 
 class MeasureGroups(dict):
-    def __init__(self, systems, party_votes_specified, nr=0):
-
-
-
+    def __init__(self, systems, party_votes_specified, qm_topleft2=None, nr=0):
         self["shareTitle"] = {
-            "title": f" settings of {systems[0]['name']}). Sum over allocations to:",
+            "title": qm_topleft2,
             "rows":  {}
         }
 

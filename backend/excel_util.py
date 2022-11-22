@@ -430,7 +430,9 @@ def simulation_to_xlsx(results, filename):
     party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
     data = results["data"]
     systems = results["systems"]
-    groups = MeasureGroups(systems, party_votes_specified)
+    qm_topleft1 =  "Seats minus reference seat shares (based on"
+    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
+    groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     edata = {}
     edata["stats"] = EXCEL_HEADINGS.keys()
     edata["stat_headings"] = EXCEL_HEADINGS
@@ -446,6 +448,8 @@ def simulation_to_xlsx(results, filename):
             edata[id].append(row)
 
     # QUALITY MEASURES
+    qm_topleft1 =  "Seats minus reference seat shares (based on"
+    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
     worksheet = workbook.add_worksheet("Quality measures")
     worksheet.freeze_panes(4,2)
     toprow = 0
@@ -456,9 +460,9 @@ def simulation_to_xlsx(results, filename):
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
     worksheet.set_column(c,c,20)
+    worksheet.write(toprow+1,c,qm_topleft1,fmt["h"])
     c += 1
     worksheet.set_column(c,c,25)
-    worksheet.write(toprow+1,c,"Tested systems: ",fmt["h_right"])
     c += 1
 
     for stat in edata["stats"]:
