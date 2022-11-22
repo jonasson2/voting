@@ -21,7 +21,9 @@ def add_vuedata(sim_result_dict, parallel):
         return
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
     systems = sim_result_dict["systems"]
-    groups = MeasureGroups(systems, party_votes_specified)
+    qm_topleft1 =  "Seats minus reference seat shares (based on"
+    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
+    groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
     nsim = sim_result_dict["iteration"]
@@ -34,8 +36,7 @@ def add_vuedata(sim_result_dict, parallel):
     vuedata["group_titles"] = {}
     vuedata["footnotes"] = {}
     vuedata["show"] = {}
-    vuedata["group_titles"]["topLeft"] = 'Seats minus reference seat shares ' +\
-                                         '(based on'
+    vuedata["group_titles"]["topLeft"] = qm_topleft1
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
