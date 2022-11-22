@@ -34,6 +34,8 @@ def add_vuedata(sim_result_dict, parallel):
     vuedata["group_titles"] = {}
     vuedata["footnotes"] = {}
     vuedata["show"] = {}
+    vuedata["group_titles"]["topLeft"] = 'Seats minus reference seat shares ' +\
+                                         '(based on'
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]

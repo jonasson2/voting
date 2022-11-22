@@ -455,9 +455,6 @@ def simulation_to_xlsx(results, filename):
     worksheet.write(toprow,c,"Vote table:",fmt["h"])
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
-    worksheet.write(toprow, c, "Reference system:", fmt["h"])
-    worksheet.write(toprow, c + 1, results["systems"][0]["name"], fmt["basic"])
-    toprow += 1
     worksheet.set_column(c,c,20)
     c += 1
     worksheet.set_column(c,c,25)

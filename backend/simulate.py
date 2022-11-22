@@ -134,7 +134,7 @@ class Simulation():
         #total_overhang = sum(sum(x) for x in overhang)
         firstSystem = self.reference_handler.elections[0]
         firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"])
-        firstSystem.test_calculate_ref_seat_shares(self.sim_settings["scaling"])
+        #firstSystem.symmetric_calculate_ref_seat_shares(self.sim_settings["scaling"])
         ids = np_add_totals(firstSystem.ref_seat_shares)
         if self.party_votes_specified:
             ids = vstack((ids, np_add_total(firstSystem.total_ref_nat)))
@@ -231,7 +231,7 @@ class Simulation():
     def collect_seat_measures(self):
         firstSystem = self.election_handler.elections[0]
         firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"])
-        firstSystem.test_calculate_ref_seat_shares(self.sim_settings["scaling"])
+        #firstSystem.symmetric_calculate_ref_seat_shares(self.sim_settings["scaling"])
         ids = np_add_totals(firstSystem.ref_seat_shares)
         if self.party_votes_specified:
             ids = np.vstack((ids, np_add_total(firstSystem.total_ref_nat)))

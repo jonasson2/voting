@@ -3,7 +3,7 @@
   <table style="position:relative">
     <thead> 
       <tr>                                      <!-- STATISTICS HEADING -->
-        <td class="firstcol topleft"></td>
+        <th class="firstcol top"> {{group_titles["topLeft"]}} </th>
         <template v-for="stat in stats">
           <th :colspan="nsys" :key="stat" class="top">
             {{stat_headings[stat]}}
