@@ -49,7 +49,7 @@ class TestBasicAllocation(unittest.TestCase):
 
         votes = [[501, 400], [301, 200]]
         election = Election(rules, votes)
-        election.run()
+        election.assign_seats()
         self.assertEqual(election.results, [[2, 1], [2, 1]])
 
     def test_election_basic2(self):
@@ -64,5 +64,5 @@ class TestBasicAllocation(unittest.TestCase):
         votes = [[4000, 2000, 3500], [3000, 1000, 2500]]
 
         election = Election(rules, votes)
-        election.run()
+        election.assign_seats()
         self.assertEqual(election.results, [[1, 1, 0], [1, 0, 1]])

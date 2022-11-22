@@ -38,8 +38,8 @@ class MeasureTest(TestCase):
         sim = simulate.Simulation(self.s_rules, [self.e_rules], self.vote_table)
 
         #Act
-        base_results = election.run()
-        comparison_results = comparison_election.run()
+        base_results = election.assign_seats()
+        comparison_results = comparison_election.assign_seats()
         sim.simulate()
         sim_result = sim.get_results_dict()
 
@@ -83,8 +83,8 @@ class MeasureTest(TestCase):
         sim = simulate.Simulation(self.s_rules, [self.e_rules], self.vote_table)
 
         #Act
-        base_results = election.run()
-        comparison_results = comparison_election.run()
+        base_results = election.assign_seats()
+        comparison_results = comparison_election.assign_seats()
         sim.simulate()
         sim_result = sim.get_results_dict()
 
@@ -128,8 +128,8 @@ class MeasureTest(TestCase):
         comparison_election = voting.Election(comparison_rules, [v_votes])
 
         #Act
-        base_results = election.run()
-        comparison_results = comparison_election.run()
+        base_results = election.assign_seats()
+        comparison_results = comparison_election.assign_seats()
 
         #Assert
         self.assertEqual(base_results,       [[2, 0],

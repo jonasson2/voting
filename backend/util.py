@@ -235,7 +235,7 @@ def process_vote_table(rows, filename):
     return res
 
 def parsint(value):
-    print(value)
+    #print(value)
     return int(value) if value else 0
 
 def determine_table_name(first,filename):

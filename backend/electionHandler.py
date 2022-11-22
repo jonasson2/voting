@@ -26,7 +26,7 @@ class ElectionHandler:
         for election in self.elections:
             if votes:
                 election.set_votes(votes, party_votes)
-            election.run(use_thresholds)
+            election.assign_seats(use_thresholds)
             
     def setup_elections(self, vote_table, systems):
         [constituencies_list,nat_seats] = update_constituencies(vote_table, systems)

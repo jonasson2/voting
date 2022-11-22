@@ -371,7 +371,7 @@ class Simulation():
             comparison_election = Election(comparison_system,
                                            election.votes,
                                            election.party_vote_info)
-            comparison_election.run()
+            comparison_election.assign_seats()
             self.add_deviation(election, comparison_election, measure, deviations)
 
     def add_deviation(self, election, comparison_election, prefix, deviations):
@@ -436,7 +436,7 @@ class Simulation():
         sens_votes = generate_votes(votes, variation_coefficient, sens_method)
         for (i, election) in enumerate(elections):
             sens_election = Election(election.system, sens_votes)
-            sens_election.run()
+            sens_election.assign_seats()
             party_seats1 = election.desired_col_sums
             party_seats2 = sens_election.desired_col_sums
             party_seat_diff = sum_abs_diff(party_seats1, party_seats2)

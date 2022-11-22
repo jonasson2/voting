@@ -31,7 +31,7 @@ class AdjustmentMethodsTestMeta(type):
 
             rules["adjustment_method"] = method
             election = Election(rules, votes)
-            election.run()
+            election.assign_seats()
 
         return fn
 
@@ -111,7 +111,7 @@ class TestAdjustmentMethods(TestCase):
     def test_alternating_scaling(self):
         self.rules["adjustment_method"] = "alternating-scaling"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -124,7 +124,7 @@ class TestAdjustmentMethods(TestCase):
         self.rules["adj_alloc_divider"] = "sainte-lague"
         self.rules["adjustment_method"] = "alternating-scaling"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[1,3,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,3,3,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,3,0,0,0,0,0,0,0,0,1,0,1,1],
@@ -134,7 +134,7 @@ class TestAdjustmentMethods(TestCase):
     def test_alternating_scaling_6c(self):
         self.rules_6c["adjustment_method"] = "alternating-scaling"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,3,3,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,4,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -144,7 +144,7 @@ class TestAdjustmentMethods(TestCase):
     def test_var_alt_scal(self):
         self.rules["adjustment_method"] = "var-alt-scal"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -154,7 +154,7 @@ class TestAdjustmentMethods(TestCase):
     def test_var_alt_scal_6c(self):
         self.rules_6c["adjustment_method"] = "var-alt-scal"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,3,3,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,4,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -164,7 +164,7 @@ class TestAdjustmentMethods(TestCase):
     def test_icelandic_law(self):
         self.rules["adjustment_method"] = "icelandic-law"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -174,7 +174,7 @@ class TestAdjustmentMethods(TestCase):
     def test_icelandic_law_6c(self):
         self.rules_6c["adjustment_method"] = "icelandic-law"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,4,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -219,9 +219,9 @@ class TestAdjustmentMethods(TestCase):
         ss_election = Election(ss_rules, votes)
 
         #Act
-        dd_results = dd_election.run()
-        sd_results = sd_election.run()
-        ss_results = ss_election.run()
+        dd_results = dd_election.assign_seats()
+        sd_results = sd_election.assign_seats()
+        ss_results = ss_election.assign_seats()
 
         #Assert
         self.assertEqual(dd_election.v_desired_col_sums,
@@ -254,7 +254,7 @@ class TestAdjustmentMethods(TestCase):
         self.rules["adjustment_method"] = "icelandic-law"
         self.rules["adj_determine_divider"] = "hare"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -264,7 +264,7 @@ class TestAdjustmentMethods(TestCase):
     def test_switching(self):
         self.rules["adjustment_method"] = "switching"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -297,7 +297,7 @@ class TestAdjustmentMethods(TestCase):
     def test_switching_6c(self):
         self.rules_6c["adjustment_method"] = "switching"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -307,12 +307,12 @@ class TestAdjustmentMethods(TestCase):
     def test_monge(self):
         self.rules["adjustment_method"] = "monge"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(0, 0)
     def test_nearest_neighbor(self):
         self.rules["adjustment_method"] = "nearest-neighbor"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [0,4,3,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -322,7 +322,7 @@ class TestAdjustmentMethods(TestCase):
     def test_nearest_neighbor_6c(self):
         self.rules_6c["adjustment_method"] = "nearest-neighbor"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[1,3,2,0,0,0,0,0,0,0,0,1,0,0,1],
                                    [1,3,2,0,0,0,0,0,0,0,0,1,0,3,0],
                                    [0,5,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -332,7 +332,7 @@ class TestAdjustmentMethods(TestCase):
     def test_norwegian_icelandic(self):
         self.rules["adjustment_method"] = "norwegian-icelandic"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -342,7 +342,7 @@ class TestAdjustmentMethods(TestCase):
     def test_norwegian_icelandic_6c(self):
         self.rules_6c["adjustment_method"] = "norwegian-icelandic"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[1,3,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [0,4,3,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [2,4,3,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -352,7 +352,7 @@ class TestAdjustmentMethods(TestCase):
     def test_relative_superiority_simple(self):
         self.rules["adjustment_method"] = "relative-superiority-simple"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,4,0,0,0,0,0,0,0,0,2,0,0,0],
@@ -374,7 +374,7 @@ class TestAdjustmentMethods(TestCase):
     def test_relative_superiority(self):
         self.rules["adjustment_method"] = "relative-superiority"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,4,0,0,0,0,0,0,0,0,1,0,0,0],
@@ -396,7 +396,7 @@ class TestAdjustmentMethods(TestCase):
     def test_relative_superiority_6c(self):
         self.rules_6c["adjustment_method"] = "relative-superiority"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,3,3,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [0,4,4,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -409,7 +409,7 @@ class TestAdjustmentMethods(TestCase):
         self.rules["adj_determine_divider"] = "dhondt"
         self.rules["adj_alloc_divider"] = "sainte-lague"
         election = Election(self.rules, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,3,3,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,3,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -422,7 +422,7 @@ class TestAdjustmentMethods(TestCase):
         self.rules_6c["adj_determine_divider"] = "dhondt"
         self.rules_6c["adj_alloc_divider"] = "sainte-lague"
         election = Election(self.rules_6c, self.votes)
-        results = election.run()
+        results = election.assign_seats()
         self.assertEqual(results, [[0,4,2,0,0,0,0,0,0,0,0,1,0,1,0],
                                    [1,4,2,0,0,0,0,0,0,0,0,1,0,2,0],
                                    [1,4,3,0,0,0,0,0,0,0,0,1,0,1,0],
@@ -526,7 +526,7 @@ class DividerRulesTestMeta(type):
             self.rules["primary_divider"] = rule
             self.rules["adjustment_divider"] = rule
             election = Election(self.rules, self.votes)
-            election.run()
+            election.assign_seats()
 
         return fn
 

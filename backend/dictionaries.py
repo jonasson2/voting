@@ -3,15 +3,17 @@ from division_rules import dhondt_gen, sainte_lague_gen, \
     adams_gen
 from division_rules import droop, hare
 
-from methods.specified_col_sums_methods import relative_superiority
-from methods.specified_col_sums_methods import relative_superiority_simple
-#from methods.specified_col_sums_methods import max_const_vote_percentage
-from methods.max_const_vote_percentage import max_const_vote_percentage
+from methods.common_methods import relative_superiority
+from methods.common_methods import rel_sup_simple
+#from methods.common_methods import max_const_vote_percentage
+from methods.common_methods import max_const_vote_percentage
+from methods.common_methods import max_const_seat_share
+from methods.common_methods import nearest_to_previous
 
 from methods.alternating_scaling import alt_scaling, alt_scaling_old
 from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
-from methods.nearest_to_previous import nearest_to_previous
+#from methods.nearest_to_previous import nearest_to_previous
 #from methods.relative_superiority import relative_superiority
 from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
@@ -147,7 +149,6 @@ ADJUSTMENT_METHODS = {
     "norwegian-law":             norwegian_apportionment,
     "max-const-seat-share":      max_const_seat_share,
     "max-const-vote-percentage": max_const_vote_percentage,
-    #"relative-superiority": relative_superiority,
     "relative-superiority":      relative_superiority,
     "relative-sup-simple":       relative_superiority_simple,
     "nearest-to-previous":       nearest_to_previous,

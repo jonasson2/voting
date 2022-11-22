@@ -30,7 +30,7 @@ def calc_share(votes):
     return share
 
 def randomize_votes(votes, partyvotes, cv, pcv, nsim):
-    rng = np.random.default_rng(68)
+    rng = np.random.default_rng(seed=42)
     shape = 1/cv**2
     scale = 1/shape
     gv = []

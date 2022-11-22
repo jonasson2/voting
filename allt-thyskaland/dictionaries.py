@@ -4,9 +4,16 @@ sys.path.append('../backend/methods')
 from nearest_to_previous import nearest_to_previous
 from switching import switching
 from relative_superiority import relative_superiority
-from rel_sup import rel_sup
+#from rel_sup import rel_sup
 from max_const_seat_share import max_const_seat_share
-from max_vote_percentage import max_vote_percentage
+from specified_col_sums_methods import \
+    max_const_vote_percentage, \
+    nearest_to_previous, \
+    max_const_seat_share, \
+    relative_superiority, \
+    rel_sup_medium, \
+    rel_sup_simple
+# from max_vote_percentage import max_vote_percentage
 from switching import switching
 from alternating_scaling import alt_scaling
 from alternating_scaling import alt_scaling_new
@@ -15,27 +22,12 @@ from max_absolute_margin import max_absolute_margin
 from gurobi_optimal import gurobi_optimal
 from germany_methods import parties_first, länder_first, max_share, max_relative_margin, \
     abs_margin_const, scandinavian, optimal_const, gurobi_optimal_const
+from method_abbrevs import method_dicts_land
 
 fmt = '.1f'
 pct = '.1%'
 nland = 16,
 nparty = 9
-
-method_dicts_land = [
-    {'short': 'votepct',  'fun': max_vote_percentage,  'title': "Max vote share"},
-    {'short': 'relmarg',  'fun': farthest_from_next,   'title': "Relative margin"},
-    {'short': 'absmarg',  'fun': max_absolute_margin,  'title': "Absolute margin"},
-    #{'short': 'optimal',  'fun': alt_scaling,          'title': 'Optimal'},
-    {'short': 'optimal',  'fun': alt_scaling_new,       'title': 'Optimal'},
-    {'short': 'party1st', 'fun': parties_first,        'title': "Parties first"},
-    {'short': 'land1st',  'fun': länder_first,         'title': "Länder first"},
-    {'short': 'gurobi',   'fun': gurobi_optimal,       'title': "Optimal w/Gurobi"},
-    {'short': 'switch',   'fun': switching,            'title': "Seat switching"},
-    #{'short': 'relsup',   'fun': relative_superiority, 'title': "Relative superiority"},
-    {'short': 'relsup',   'fun': rel_sup, 'title': "Relative superiority"},
-    {'short': 'nearprev', 'fun': nearest_to_previous,  'title': "Nearest to previous"},
-    #'seatsh':   (max_const_seat_share,      "Max seat share"),
-]
 
 method_dicts_const = [
     {'short': 'scandC',   'fun': scandinavian, 'title': "Scandinavian"},

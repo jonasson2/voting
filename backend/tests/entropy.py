@@ -18,7 +18,7 @@ class TestEntropy(unittest.TestCase):
         ]
         self.votes = [[500, 400],[300, 200]]
         self.election = Election(self.rules, self.votes)
-        self.election.run()
+        self.election.assign_seats()
 
     def test_entropy_calculation(self):
         self.assertEqual(round(self.election.entropy(), 2), 42.95)
@@ -30,7 +30,7 @@ class TestEntropy(unittest.TestCase):
         self.rules["adj_determine_divider"] = "sainte-lague"
         self.rules["adj_alloc_divider"] = "sainte-lague"
         self.sl_election = Election(self.rules, self.votes)
-        self.sl_election.run()
+        self.sl_election.assign_seats()
         ss_entropy = self.sl_election.entropy()
         sd_entropy = entropy(self.votes, self.sl_election.results, dhondt_gen)
         self.assertNotEqual(ds_entropy, dd_entropy)

@@ -15,7 +15,7 @@ class TestElection(unittest.TestCase):
         ]
         votes = [[500, 400],[300, 200]]
         election = Election(rules, votes)
-        election.run()
+        election.assign_seats()
         res = election.get_results_dict()
         print(res)
         self.assertEqual(res["rules"], rules)
@@ -33,4 +33,4 @@ class TestElection(unittest.TestCase):
         votes = [[1, 0],[0, 100]]
         election = Election(rules, votes)
         with self.assertRaises(ValueError):
-            election.run()
+            election.assign_seats()

@@ -22,8 +22,6 @@ def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
             break
         for j in range(ncols):
             (y[:, j], sigma) = apportion_orig(v[:, j], prior_alloc[:, j], c[j], div)
-            if sigma==0:
-                pass
             v[:, j] = v[:, j]/sigma
         if np.array_equal(x, y):
             break
