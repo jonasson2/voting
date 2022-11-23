@@ -236,7 +236,6 @@ class Simulation():
         if self.party_votes_specified:
             ids = np.vstack((ids, np_add_total(firstSystem.total_ref_nat)))
             ids = np.vstack((ids, ids[-2, :] + ids[-1, :]))
-        self.stat["ref_seat_shares"][0].update(ids)
 
         for (i,election) in enumerate(self.election_handler.elections):
             cs = np.array(election.results["fix"])
@@ -252,14 +251,15 @@ class Simulation():
             self.stat["fixed_seats"][i].update(cs)
             self.stat["adj_seats"][i].update(adj)
             self.stat["total_seats"][i].update(ts)
-            #self.stat["ref_seat_shares"][i].update(ids)
+            self.stat["ref_seat_shares"][i].update(ids)
 
     def collect_party_measures(self):
-        self.stat["party_ref_seat_shares"][0].update(self.election_handler.elections[0].total_ref_seat_shares)
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
+            self.stat["party_ref_seat_shares"][i].update(
+                self.election_handler.elections[0].total_ref_seat_shares)
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
             self.stat["party_total_seats"][i].update(election.results["all_grand_total"])
             self.stat["ref_seat_alloc"][i].update(election.ref_seat_alloc)
