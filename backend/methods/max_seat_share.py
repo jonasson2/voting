@@ -58,7 +58,7 @@ def max_const_seat_share(
         const_seats[maxC] -= 1
         party_seats[maxP] -= 1
     stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return alloc_list.tolist(), stepbystep
+    return alloc_list, stepbystep
 
     m_allocations = deepcopy(m_prior_allocations)
 

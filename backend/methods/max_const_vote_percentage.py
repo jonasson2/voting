@@ -1,5 +1,6 @@
 #coding:utf-8
 from copy import deepcopy
+import numpy as np
 
 def max_const_vote_percentage(
        m_votes,
@@ -48,7 +49,7 @@ def max_const_vote_percentage(
         })
 
     stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return m_allocations, stepbystep
+    return np.array(m_allocations), stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",

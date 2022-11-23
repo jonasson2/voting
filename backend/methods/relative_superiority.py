@@ -2,6 +2,7 @@
 from copy import deepcopy, copy
 from apportion import apportion1d
 from table_util import v_subtract
+import numpy as np
 
 def relative_superiority(m_votes,
                          v_desired_row_sums,
@@ -120,7 +121,7 @@ def relative_superiority(m_votes,
         m_allocations[const][party] += 1
         allocation_sequence.append(first)
     stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return m_allocations, stepbystep
+    return np.array(m_allocations), stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",

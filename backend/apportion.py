@@ -50,7 +50,6 @@ def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
     v_max_left = copy(v_max_left) if v_max_left else [num_total_seats]*N
 
     num_allocated = sum(prior_allocations)
-    min_used = 1000000
     while num_allocated < num_total_seats:
         divided_votes = [float(v_votes[i])/divisors[i]
                          if v_max_left[i]>0 else 0
@@ -58,14 +57,13 @@ def apportion1d(v_votes, num_total_seats, prior_allocations, divisor_gen,
         maxvote = max(divided_votes)
         if maxvote == 0:
             raise ValueError(f"No valid recipient of seat nr. {num_allocated+1}")
-        min_used = maxvote
         maxparty = divided_votes.index(maxvote)
         divisors[maxparty] = next(divisor_gens[maxparty])
         allocations[maxparty] += 1
         num_allocated += 1
         v_max_left[maxparty] -= 1
 
-    return allocations, (divisors, divisor_gens, min_used)
+    return allocations, (divisors, divisor_gens)
 
 def apportion1d_general(
     v_votes,
@@ -92,15 +90,18 @@ def apportion1d_general(
                             and threshold_seats (0 for both, 1 for either)
         - threshold_seats: A cutoff threshold in range of 0 to 10
     Outputs:
-        - allocations vector
+        - allocations vector (list of int)
         - a generator that generates a sequence of seat allocations,
         - including vote values used.
         - easy reference to the last seat to be allocated
         - information about the first seat that was not allocated
     """
     N = len(v_votes)
-    allocations = deepcopy(prior_allocations) if len(prior_allocations) else [0]*N
-
+    allocations = (
+        np.zeros(N, int) if len(prior_allocations) == 0
+        else prior_allocations.copy() if isinstance(prior_allocations, np.ndarray)
+        else np.array(prior_allocations)
+    )
     seat_gen = seat_generator(
         votes = threshold_drop(
             v_votes,
@@ -122,9 +123,8 @@ def apportion1d_general(
         seat = next(gen)
         allocations[seat["idx"]] += 1
         last_in = seat
-    next_in_line = next(gen)
 
-    return allocations, seat_gen, last_in, next_in_line
+    return allocations, seat_gen, last_in
 
 def seat_generator(
     votes,

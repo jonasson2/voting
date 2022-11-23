@@ -24,7 +24,8 @@ function plot_1st_votes()
       w = (nyr(J) - 2); w = w/sum(w);
       n_corr(p,l) = sum(J);
       corrpl = corr(P, C(:,J), rows='pairwise');
-      scatter(vs{l}(p,:), corrpl, 
+      scatter(vs{l}(p,:), corrpl, 'o', 'filled', markersize=77, ...
+        markerfacecolor=litir(:,p))
       avg_corr(p,l) = sum(w.*corrpl);
     end
   end
@@ -34,6 +35,7 @@ function plot_1st_votes()
 end
 
 function vs = const_vote_share(cv)
+  % cv is nparty by nland cell array of nconst{p}{l} dimensional vectors
   np = length(cv);
   nl = 16;
   for l=1:nl

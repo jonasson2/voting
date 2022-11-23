@@ -1,6 +1,7 @@
 #coding:utf-8
 from copy import deepcopy
 import random
+import numpy as np
 
 def icelandic_share_apportionment(m_votes,
                                   v_desired_row_sums,
@@ -63,7 +64,7 @@ def icelandic_share_apportionment(m_votes,
         else:
             invalid.append(idx)
     stepbystep = {"data": seats_info, "function": print_demo_table}
-    return m_allocations, stepbystep
+    return np.array(m_allocations), stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     # Return data to print breakdown of adjustment seat apportionment
