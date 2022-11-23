@@ -150,7 +150,7 @@
       <b-form-group
         label-for="input-horizontal"
         label-cols="auto"
-        label="Votes-and-seats table name"
+        label="Votes-and-seats table"
         >
         <b-form-input
           class="pt-0 pb-0"

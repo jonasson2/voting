@@ -359,8 +359,9 @@ def simulation_to_xlsx(results, filename):
         {"label": "Apply randomness to",
          "data": results["sim_settings"]["selected_rand_constit"]},
         {"label": "Scaling of votes for reference seat shares",
-         "data": SCALING_NAMES[results["sim_settings"]["scaling"]]
-        }
+         "data": SCALING_NAMES[results["sim_settings"]["scaling"]]},
+        {"label": "Reference seat shares based on settings of",
+         "data": results["systems"][0]["name"]}
     ]
 
     # COMMON SETTINGS
@@ -381,7 +382,7 @@ def simulation_to_xlsx(results, filename):
     row += 2
     worksheet.write(row, c1, "Source votes and seats", fmt["h"])
     row += 1
-    worksheet.write(row, c1, "Vote table", fmt["basic"])
+    worksheet.write(row, c1, "Votes-and-seats table", fmt["basic"])
     worksheet.write(row, c2, results["vote_table"]["name"], fmt["basic"])
     row += 1
     worksheet.write(row, c1, "Number of constituencies", fmt["basic"])
@@ -456,7 +457,7 @@ def simulation_to_xlsx(results, filename):
     c = 0
     worksheet.write(toprow,c,"QUALITY MEASURES",fmt["h"])
     toprow += 1
-    worksheet.write(toprow,c,"Vote table:",fmt["h"])
+    worksheet.write(toprow,c,"Votes-and-seats table:",fmt["h"])
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
     worksheet.set_column(c,c,20)
@@ -551,7 +552,7 @@ def simulation_to_xlsx(results, filename):
     c = 0
     worksheet.write(toprow,c,"ALLOCATION SUMMARY",fmt["h"])
     toprow += 1
-    worksheet.write(toprow,c,"Vote table:",fmt["h"])
+    worksheet.write(toprow,c,"Votes-and-seats table:",fmt["h"])
     worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
     toprow += 1
     worksheet.set_column(c,c,20)
@@ -562,7 +563,7 @@ def simulation_to_xlsx(results, filename):
 
     summary_tables = [
         {"abbr": "vp", "heading": "Vote percentages"},
-        {"abbr": "rss", "heading": "Reference seat shares"},
+        {"abbr": "rss", "heading": "Total reference seat shares"},
         {"abbr": "ts", "heading": "Total seats"},
         {"abbr": "ra", "heading": "Reference allocations"},
         {"abbr": "dis", "heading": "Disparity (excess if positive/deficiency if negative)"},
@@ -753,6 +754,7 @@ def simulation_to_xlsx(results, filename):
         worksheet.write(toprow, c1, "Electoral system:", fmt["h"])
         worksheet.write(toprow, c2, results["systems"][r]["name"], fmt["basic"])
         toprow += 1
+        worksheet.write(toprow, c1, "Votes-and-seats table:", fmt["h"])
         worksheet.write(toprow, c2, results["vote_table"]["name"], fmt["basic"])
         toprow += 1
         worksheet.write(toprow, c2 + 1, "Rule", fmt["h"])
