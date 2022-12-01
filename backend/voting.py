@@ -332,13 +332,14 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
+
     def calculate_ref_seat_shares(self, scaling):
         import numpy as np, numpy.linalg as la, math as m
         nrows = self.num_constituencies()
         ncols = self.num_parties()
         col_sums = np.array(self.desired_col_sums)
         row_sums = np.array(self.desired_row_sums)
-        ref_seat_shares = np.copy(self.votes).astype(float)
+        ref_seat_shares = np.copy(self.votes).astype(float)*self.total_const_seats/sum(self.votesums)
         row_constraints = scaling in {"both", "const"}
         col_constraints = scaling in {"both", "party"}
         if ncols > 1 and nrows > 1:
@@ -346,36 +347,42 @@ class Election:
             if row_constraints and col_constraints:
                 while True:
                     iter+=1
-                    # overall step
-                    delta = sum(sum(x) for x in ref_seat_shares) / sum(row_sums)
-                    ref_seat_shares /= delta
+                    # constituency step
+                    for c in range(nrows):
+                        s = sum(ref_seat_shares[c, :])
+                        eta = s/row_sums[c] if row_sums[c] > 0 else 0
+                        if eta == 0:
+                            ref_seat_shares[c, :] *= 0
+                        else:
+                            ref_seat_shares[c, :] /= eta
+                    # party step
+                    while list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p], range(ncols))):
+                        H = list(filter(lambda p:
+                                        sum(ref_seat_shares[:, p]) >= col_sums[p],
+                                        range(ncols)))
+                        not_H = list(set(range(ncols)) - set(H))
+                        if not_H:
+                            s = sum(sum(ref_seat_shares[:, p]) for p in not_H)
+                            tau = s/(self.total_const_seats-sum(col_sums[p] for p in H))
+                            for p in not_H:
+                                if tau == 0:
+                                    ref_seat_shares[:, p] *= 0
+                                else:
+                                    ref_seat_shares[:, p] /= tau
+                        for p in H:
+                            s = sum(ref_seat_shares[:, p])
+                            tau = s / col_sums[p] if col_sums[p] > 0 else 0
+                            if tau == 0:
+                                ref_seat_shares[:, p] *= 0
+                            else:
+                                ref_seat_shares[:, p] /= tau
                     # exit condition
                     if m.isclose(sum(abs(sum(ref_seat_shares[c, :])-row_sums[c])
                                      for c in range(nrows)), 0.0, abs_tol=1e-7) and \
                         m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
                                       for p in range(ncols)), 0.0, abs_tol=1e-7):
                         break
-                    # constituency step
-                    for c in range(nrows):
-                        row_sum = row_sums[c]
-                        s = sum(ref_seat_shares[c, :])
-                        eta = s/row_sum if row_sum > 0 else 0
-                        if eta == 0:
-                            ref_seat_shares[c, :] *= 0
-                        else:
-                            ref_seat_shares[c, :] /= eta
-                    # party step
-                    for p in range(ncols):
-                        col_sum = col_sums[p]
-                        s = sum(ref_seat_shares[:, p])
-                        tau = max(s/col_sum, 1) if col_sum > 0 else 0
-                        if tau == 0:
-                            ref_seat_shares[:, p] *= tau
-                        else:
-                            ref_seat_shares[:, p] /= tau
-                print(f'calculate_ref_seat_shares, iteration count = {iter}')
-                # TODO: remove this print if it all works and program doesn't get stuck
-                # for too long in the loop
+                print(f'calculate_ref_seat_shares:\titeration count = {iter}')
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = row_sums[c]
@@ -395,53 +402,44 @@ class Election:
         else:
             self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
 
-    def symmetric_calculate_ref_seat_shares(self, scaling):
-        #TODO: Hvort við ætlum að græja þetta eða ekki
-        print('Testing ref seat symmetric algo: ', end=' ')
+    def calculate_ref_seat_shares_old(self, scaling):
         import numpy as np, numpy.linalg as la, math as m
+        scalar = float(self.total_const_seats) / sum(sum(x) for x in self.votes)
+        ref_seat_shares = self.votes * scalar
+        ref_seat_shares = np.maximum(1e-8, ref_seat_shares)
+        # assert self.solvable
+        # rein = 0
         nrows = self.num_constituencies()
         ncols = self.num_parties()
-        col_sums = np.array(self.desired_col_sums)
-        row_sums = np.array(self.desired_row_sums)
-        ref_seat_shares = np.copy(self.votes).astype(float)
-        row_constraints = scaling in {"both", "const"}
-        col_constraints = scaling in {"both", "party"}
+        eta = np.ones(nrows)
+        tau = np.ones(ncols)
+        error = 1
+        iter = 0
+        col_sums = self.desired_col_sums
+        row_sums = self.desired_row_sums
         if ncols > 1 and nrows > 1:
-            iter = 0
+            row_constraints = scaling in {"both", "const"}
+            col_constraints = scaling in {"both", "party"}
             if row_constraints and col_constraints:
                 while True:
-                    iter+=1
-                    # overall step
-                    delta = sum(sum(x) for x in ref_seat_shares) / sum(row_sums)
-                    ref_seat_shares /= delta
-                    # exit condition
-                    if m.isclose(sum(max(sum(ref_seat_shares[c, :])-row_sums[c], 0.0)
+                    if m.isclose(sum(abs(sum(ref_seat_shares[c, :])-row_sums[c])
                                      for c in range(nrows)), 0.0, abs_tol=1e-7) and \
                         m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
                                       for p in range(ncols)), 0.0, abs_tol=1e-7):
                         break
-                    # constituency step
+                    elif iter==400:
+                        break
+                    iter +=1
+                    error = 0
                     for c in range(nrows):
-                        row_sum = row_sums[c]
+                        row_sum = self.desired_row_sums[c]
                         s = sum(ref_seat_shares[c, :])
-                        eta = max(s/row_sum, 1) if row_sum > 0 else 0
-                        if eta == 0:
-                            ref_seat_shares[c, :] *= 0
-                        else:
-                            ref_seat_shares[c, :] /= eta
-                    # overall step 2
-                    #delta = sum(sum(x) for x in ref_seat_shares) / sum(row_sums)
-                    #ref_seat_shares /= delta
-                    # party step
+                        eta = row_sum / s if s > 0 else 1
+                        ref_seat_shares[c, :] *= eta
+                        error = max(error, abs(1 - eta))
                     for p in range(ncols):
                         col_sum = col_sums[p]
                         s = sum(ref_seat_shares[:, p])
-                        tau = max(s/col_sum, 1) if col_sum > 0 else 0
-                        if tau == 0:
-                            ref_seat_shares[:, p] *= tau
-                        else:
-                            ref_seat_shares[:, p] /= tau
-                    #if iter > 100:
-                    #    break
-                print(iter) #TODO: remove this iter if it all works and program doesn't get stuck fro too long in loop
-
+                        tau = col_sum / s if s > 0 else 1
+                        ref_seat_shares[:, p] *= tau
+                        error = max(error, abs(1 - tau))
