@@ -1,6 +1,6 @@
 #coding:utf-8
 from copy import deepcopy, copy
-from apportion import apportion1d, superiority, compute_forced, forced_stepbystep_entries
+from apportion import superiority, compute_forced, forced_stepbystep_entries
 import numpy as np
 from numpy import flatnonzero as find
     
@@ -72,7 +72,7 @@ def common_allocate(
     # PREPARE OBJECTS TO RETURN
     data = {"name":criterion_name, "sequence": allocation_sequence}
     stepbystep = {"data": data, "function": print_demo_table}
-    return alloc_list.tolist(), stepbystep
+    return alloc_list, stepbystep
 
 def print_demo_table(rules, data):
     alloc_seq = data["sequence"]

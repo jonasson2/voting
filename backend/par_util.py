@@ -28,6 +28,21 @@ def parallel_dir():
 def write_json(simid, data, suffix):
     dir = parallel_dir()
     filename = dir/f'{simid}-{suffix}.json'
+
+    def show(key):
+        if key in data:
+            disp(data[key])
+
+    # for (k,v) in data.items():
+    #     print("key:", k)
+    #     with open('a', 'w') as fd:
+    #         json.dump(v, fd)
+    # if "base_allocations" in data:
+    #     for ib,b in enumerate(data["base_allocations"]):
+    #         for (k,v) in b.items():
+    #             print(f"base_allocations[{ib}].{k} = {v} ({type(v[-1])})")
+    #             with open('a', 'w') as fd:
+    #                 json.dump(v, fd)
     with open(filename, 'w', encoding='utf-8') as fd:
         json.dump(data, fd, indent=2, ensure_ascii=False)
 

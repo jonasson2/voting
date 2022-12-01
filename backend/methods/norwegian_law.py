@@ -1,5 +1,6 @@
 #coding:utf-8
 from copy import deepcopy
+import numpy as np
 
 def norwegian_apportionment(m_votes,
                             v_desired_row_sums,
@@ -49,7 +50,7 @@ def norwegian_apportionment(m_votes,
         })
 
     stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return m_allocations, stepbystep
+    return np.array(m_allocations), stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",

@@ -77,7 +77,7 @@ def farthest_from_next(m_votes,
                       "ratio": max_ratio, "reason": reason}
         allocation_sequence.append(allocation)
     stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return alloc_list.tolist(), stepbystep
+    return alloc_list, stepbystep
 
 def print_demo_table(rules, allocation_sequence):
     # CONSTRUCT STEP-BY-STEP TABLE

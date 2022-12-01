@@ -156,7 +156,7 @@ class Simulation():
                 "adj_seats":   election.results["adj"],
                 "total_seats": election.results["all"],
                 "total_seat_percentages": find_percentages(election.results["all"]),
-                "ref_seat_alloc": election.ref_seat_alloc,
+                "ref_seat_alloc": election.results["ref_seat_alloc"],
                 "party_disparity": disparity,
                 "party_excess": excess,
                 "party_shortage": shortage,
@@ -306,7 +306,8 @@ class Simulation():
 
     def calculate_disparity(self, election):
         excess, shortage, disparity = 0, 0, 0
-        for alloc, result in zip(election.ref_seat_alloc, election.results['all_grand_total']):
+        for alloc, result in zip(election.results['ref_seat_alloc'],
+                                 election.results['all_grand_total']):
             diff = result - alloc
             disparity += abs(diff)
             excess += max(0, diff)
@@ -315,7 +316,8 @@ class Simulation():
 
     def calculate_party_disparity(self, election):
         disparity, excess, shortage = [], [], []
-        for alloc, result in zip(election.ref_seat_alloc, election.results['all_grand_total']):
+        for alloc, result in zip(election.results["ref_seat_alloc"],
+                                 election.results["all_grand_total"]):
             disparity.append(result - alloc)
             excess.append(max(0, result-alloc))
             shortage.append(max(0, -(result-alloc)))
@@ -323,7 +325,8 @@ class Simulation():
 
     def calculate_potential_overhang(self, election):
         overhang = [max(0, cs - rss) for (cs, rss) in
-                    zip(election.results['fixed_const_total'], election.ref_seat_alloc)]
+                    zip(election.results['fixed_const_total'],
+                        election.results['ref_seat_alloc'])]
         return overhang
 
     def calculate_negative_margins(self, election, ref_seat_shares):
@@ -391,10 +394,9 @@ class Simulation():
             result2 = comparison_election.results[key]
             deviations.add(measure, sum_abs_diff(result1, result2))
 
-
     def sum_func(self, election, function, div_h, election_number):
         measure = 0
-        num_c = election.num_constituencies()
+        num_c = election.nconst
         for c in range(num_c):
             for p in range(self.nparty):
                 s = election.results["all_const_seats"][c][p]
@@ -459,7 +461,7 @@ class Simulation():
         lh = sum([
             abs(self.election_handler.elections[0].ref_seat_shares[c][p] - election.results['all_const_seats'][c][p])
             for p in range(self.nparty)
-            for c in range(election.num_constituencies())
+            for c in range(election.nconst)
         ])
         return lh
 
@@ -469,7 +471,7 @@ class Simulation():
         stl = sum([
             (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
             for p in range(self.nparty)
-            for c in range(election.num_constituencies())
+            for c in range(election.nconst)
             if ids[c][p] != 0
         ])
         return stl
@@ -480,7 +482,7 @@ class Simulation():
         dh_min = min([
             ids[c][p]/float(election.results['all_const_seats'][c][p])
             for p in range(self.nparty)
-            for c in range(election.num_constituencies())
+            for c in range(election.nconst)
             if election.results['all_const_seats'][c][p] != 0
         ])
         return dh_min
@@ -491,7 +493,7 @@ class Simulation():
         dh_sum = sum([
             max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
             for p in range(self.nparty)
-            for c in range(election.num_constituencies())
+            for c in range(election.nconst)
             if ids[c][p] != 0
         ])
         return dh_sum

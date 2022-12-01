@@ -49,29 +49,32 @@ def alt_scaling_new(votes, const_seats, party_seats, prior_alloc, div):
         seats, separator = apportion_equalities(votes.flatten(), prior_vector,
                                                 total_seats, div, mix_factor_country)
         seats = seats.reshape((nconst, nparty))
-        if all(np.sum(seats,1) == const_seats) and all(np.sum(seats,0) <= party_seats):
-            break
         votes /= separator
+        score_min = min(1, separator)
 
         # CONSTITUENCY SCALING
         for c in range(nconst):
-            _, separator = apportion_equalities(votes[c,:], prior_alloc[c,:],
+            _, separatorC = apportion_equalities(votes[c,:], prior_alloc[c,:],
                                                 const_seats[c], div, mix_factor_const)
-            votes[c,:] = votes[c,:]/separator
+            votes[c,:] = votes[c,:]/separatorC
 
         # PARTY SCALING
         for p in range(nparty):
             # _, separator = apportion_equalities(votes[:,p], prior_alloc[:,p],
             #                                     party_seats[p], div, mix_factor_party)
-            _, separator = apportion_until_score_min(votes[:,p], prior_alloc[:,p],
-                                                party_seats[p], div, 0, mix_factor_party)
-            votes[:,p] = votes[:,p]/separator
+            _, separatorP = apportion_until_score_min(votes[:,p], prior_alloc[:,p], \
+                party_seats[p], div, score_min, mix_factor_party)
+            votes[:,p] = votes[:,p]/separatorP
+
+        # CONVERGENCE TEST
+        if all(np.sum(seats,1) == const_seats) and all(np.sum(seats,0) <= party_seats):
+            break
         if iter == 99:
             print(f'alt_scaling_ineq: No convergence in 99 iterations on core {icore}')
     #seats[0,0] += 1
     stepbystep = {"data": [], "function": print_demo_table}
 
-    return seats.tolist(), stepbystep
+    return seats, stepbystep
 
     # else:
     #    print('iter:', iter)
@@ -97,10 +100,9 @@ def alt_scaling(m_votes,
     N = max(max(const_seats), max(party_seats)) + 1
     div = np.array([next(div_gen) for i in range(N + 1)])
 
-    if nat_seats == 0:
-        x = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div)
+    if False: #nat_seats == 0:
+        seats = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div)
         stepbystep = {"data": [], "function": print_demo_table}
-        seats = x.astype(int).tolist()
     else:
         seats, stepbystep = alt_scaling_new(votes, const_seats, party_seats, prior_alloc,
                                             div)
@@ -193,11 +195,11 @@ def apportion_until_score_min(votes, seats_in, max_seats, div, score_min, mix_fa
         return seats, score_min  # öll skor < score_min
     while sum(seats) < max_seats:
         k = score.argmax()
+        if score[k] < score_min:
+            break
         last_score = score[k]
         seats[k] += 1
         score[k] = votes[k]/div[seats[k]]
-        if score[k] < score_min:
-            break
     k_next = score.argmax()
     score[k_next] = votes[k_next]/div[seats[k_next]]
     separator = (score_min if sum(seats) < max_seats
@@ -206,7 +208,7 @@ def apportion_until_score_min(votes, seats_in, max_seats, div, score_min, mix_fa
 
 def apportion_equalities(votes, seats_in, max_seats, div, mix_factor):
     seats = seats_in.copy()
-    if max_seats == 0:
+    if sum(seats) >= max_seats:
         return seats, np.inf
     score = votes/div[seats]
     while sum(seats) < max_seats:

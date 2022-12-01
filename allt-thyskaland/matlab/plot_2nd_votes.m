@@ -232,8 +232,9 @@ end
 % The default marker of gscatter is . (dot) and the size is measured in points
 % of a corresponding full-height letter (same as for plot). A suitable size
 % might be ~20. Marker o has a diameter 3.41 times the diameter of dot (or
-% 1/2.93). With scatter the marker size is measured as the area of a square with
-% the same diameter as the o marker.
+% 1/0.293). With scatter the marker size is measured as the area of a square with
+% the same diameter as the o marker, so for a gscatter marker . of size 20 the
+% corresponding scatter marker would be o of size (0.293x20)^2 = 34.
 
 
 

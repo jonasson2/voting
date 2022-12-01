@@ -44,7 +44,7 @@ def switching(m_votes,
     full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
     temp_votes[:,full] = 0
     for c in range(num_constituencies):
-        alloc_const, _,_,_ = apportion1d_general(
+        alloc_const, _,_ = apportion1d_general(
             v_votes = list(temp_votes[c,:]),
             num_total_seats = desired_const[c],
             prior_allocations = list(alloc_prior[c,:]),
@@ -119,7 +119,7 @@ def switching(m_votes,
         "function": print_demo_table1,
         "additional_function": print_demo_table2
     }
-    return alloc.tolist(), stepbystep
+    return alloc, stepbystep
 
 def print_demo_table1(rules, steps):
     sup_header = "Nationally apportioned vs. full constituency allocation"
