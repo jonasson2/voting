@@ -1,6 +1,8 @@
 import pandas as pd, numpy as np
+import warnings
 from numpy import NaN
-
+def nowarning():
+    warnings.simplefilter(action="ignore", category="FutureWarning")
 # The files read here are from:
 # (1) https://www.bundeswahlleiter.de/bundestagswahlen/2013/ergebnisse.html
 #     and select Tabellen: Endgültige Ergebnisse nach Wahlkreisen aller Bundestagswahlen
@@ -8,6 +10,7 @@ from numpy import NaN
 #     and select "Tabelle...tabellarischer Aufbau"
 # (3) https://www.bundeswahlleiter.de/bundestagswahlen/2021/ergebnisse/opendata/csv/
 
+land_number_reference_year = 1990
 parties = ['SPD', 'FDP', 'Grüne', 'PDS', 'Linke', 'AfD', 'CDU', 'other']
 years = [1990, 1994, 1998, 2002, 2005, 2009, 2013, 2017, 2021]
 
@@ -63,7 +66,7 @@ def select_parties(dfin):
     return df
 
 def read_one_year(yr):
-    file = f'./kerg/btw{yr}_kerg.csv'
+    file = f'../bigfiles/kerg/btw{yr}_kerg.csv'
     if yr <= 2002:
         df = pd.read_csv(file, sep=';', decimal=',', header = [5,6])
         df.dropna(axis=0, how='all', inplace=True)
@@ -104,19 +107,21 @@ def extract_länder(zweit):
     select = (900 < zweit.Nr) & (zweit.Nr <= 916)
     zweit = zweit[select].copy()
     zweit['Nr'] = zweit.Nr - 900
-    zweit.set_index('Nr',drop=True,inplace=True)
-    return zweit.sort_index()
+    zweit.set_index('Name',drop=True,inplace=True)
+    return zweit
 
-def split_kerg_into_kreise(erst):
-    const = [None]*17
+def split_kerg_into_kreise(erst, land_dict):
+    const = {}
     begin = 0
     for i in range(len(erst)):
         Nr = erst.iloc[i,0]
         if 900 < Nr < 917:
-            land = Nr - 901
+            land = land_dict[Nr]
             const[land] = erst.iloc[begin:i,:]
             const[land].reset_index(drop=True, inplace=True)
             begin = i+1
+    for c in const.values():
+        c.set_index('Name', drop=True, inplace=True)
     return const
 
 def read_kerg1():
@@ -125,14 +130,15 @@ def read_kerg1():
     for yr in years:
         print(yr)
         (erst, zweit) = read_one_year(yr)
-        erst = split_kerg_into_kreise(erst)
+        isLand = zweit.Nr > 900
+        land_dict = zweit[isLand].loc[:,('Nr', 'Name')].set_index('Nr')['Name'].to_dict()
+        erst = split_kerg_into_kreise(erst, land_dict)
         zweit = extract_länder(zweit)
         const_votes.append(erst)
         party_votes.append(zweit)
-    pass
     return const_votes, party_votes
 
-def to_json(pvotes, cvotes, const, parties, länder):
+def to_json(pvotes, cvotes, cvote_dict, const, parties, länder):
     import json
     colors = {
         "SPD":   'orangered',
@@ -144,61 +150,80 @@ def to_json(pvotes, cvotes, const, parties, länder):
         "CDU":   'black',
         "other": 'darkgray',
         }
-    cv = [[[v for (c,v) in cvpl.items()] for cvpl in cvp] for cvp in cvotes]
+    cv = [[cvyl.tolist() for cvyl in cvl] for cvl in cvotes]
     with open('partyvotes.json', 'w') as f:
         json.dump({
-            'pv':      [v.tolist() for v in pvotes],
-            'cv':      cv,
-            'const':   const,
-            'parties': parties,
-            'lander':  länder.tolist(),
-            'colors':  [colors[p] for p in parties],
-            'years':   years,
+            'pv':         pvotes.tolist(),
+            'cv':         cv,
+            'cvote_dict': cvote_dict,
+            'const':      const,
+            'parties':    parties,
+            'lander':     länder,
+            'colors':     [colors[p] for p in parties],
+            'years':      years,
         }, f)
 
-np.set_printoptions(suppress=True, floatmode="fixed", precision=2, linewidth=130)
-cv, pv = read_kerg1()
-länder = pv[0].Name
-nparty = len(parties)
-nland = len(länder)
-nyear = len(years)
+def get_votes_from_pandas(pv, cv, yr):
+    nland = len(länder)
+    nparty = len(parties)
+    pvotes = np.zeros((nland, nparty))
+    cvotes = [None]*nland
+    constituencies = {}
+    k = years.index(yr)
+    df = pv[k]
+    for (l,land) in enumerate(länder):
+        constituencies[l] = list(cv[k][land].index)
+        nconst = len(constituencies[l])
+        cvotes[l] = np.zeros((nconst, nparty))
+    for (p, party) in enumerate(parties):
+        for (l,land) in enumerate(länder):
+            pvotes[l, p] = df.loc[land, party] if party in df else NaN
+            dfc = cv[k][land]
+            for (c, const) in enumerate(constituencies[l]):
+                cvotes[l][c, p] = dfc.loc[const, party] if party in dfc else NaN
+    return pvotes, cvotes, constituencies
 
-# PARTY VOTES (ZWEITSTIMMEN)
-pvotes = [None]*nparty
-for (party_number, party) in enumerate(parties):
-    pvotes[party_number] = np.zeros((16, nyear))
-    for (election_number, df) in enumerate(pv):
-        pvotes[party_number][:,election_number] = df[party].values if party in df else NaN
+if __name__ == "__main__":
+    np.set_printoptions(suppress=True, floatmode="fixed", precision=2, linewidth=130)
+    cv, pv = read_kerg1()
+    land_number_index = years.index(land_number_reference_year)
+    länder = list(pv[land_number_index].index)
+    nparty = len(parties)
+    nland = len(länder)
+    nyear = len(years)
 
-# CONSTITUENCY VOTES (ERSTSTIMMEN), GET SETS OF ALL CONSTIUENCIES IN EACH LAND
-const = [None]*nland
-for l in range(nland):
-    C = set()
-    for yr in range(nyear):
-        Name = cv[yr][l].Name
-        C |= set(Name)
-    const[l] = list(C)
+    # GET VOTES FROM PANDAS
+    pvotes = np.zeros((nyear, nland, nparty))
+    cvotes = [None]*nyear
+    constituencies = [None]*nyear
+    for (k,yr) in enumerate(years):
+        cvotes[k] = [None]*nland
+        constituencies[k] = [None]*nland
+        pvotes[k], cvotes[k], constituencies[k] = get_votes_from_pandas(pv, cv, yr)
 
-# CONSTRUCT DICTIONARIES CONST -> [VOTES-1990,...,VOTES2021] FOR EACH PARTY,LAND
-cvotes = [[{} for _ in range(nland)] for _ in range(nparty)]
-for p in range(nparty):
+    # GET SETS OF ALL CONSTIUENCIES IN EACH LAND
+    const = [None]*nland
     for l in range(nland):
-        for c in const[l]:
-            cvotes[p][l][c] = [NaN]*nyear
+        C = set()
+        for yr in range(nyear):
+            C |= set(constituencies[yr][l])
+        const[l] = list(C)
 
-# POPULATE THE DICTIONARIES
-for l in range(nland):
-    nconst = len(const[l])
-    for yr in range(nyear):
-        df = cv[yr][l]
-        constituency = df.Name
-        for p, party in enumerate(parties):
-            if party in df:
-                cvotespl = cvotes[p][l]
-                for (i,c) in enumerate(df.Name):
-                    cvotespl[c][yr] = float(df[party][i])
+    # CONSTRUCT DICTIONARIES CONST -> [VOTES-1990,...,VOTES2021] FOR EACH PARTY,LAND
+    cvote_dict = [[{} for _ in range(nland)] for _ in range(nparty)]
+    for p in range(nparty):
+        for l in range(nland):
+            for cname in const[l]:
+                cvote_dict[p][l][cname] = [NaN]*nyear
 
-# WRITE TO JSON FILE
-to_json(pvotes, cvotes, const, parties, länder)
+    # POPULATE THE DICTIONARIES
+    for l in range(nland):
+        for yr in range(nyear):
+            for p in range(nparty):
+                for (c,cname) in enumerate(constituencies[yr][l]):
+                    cvote_dict[p][l][cname][yr] = cvotes[yr][l][c,p]
 
-pass
+    # WRITE TO JSON FILE
+    to_json(pvotes, cvotes, cvote_dict, const, parties, länder)
+
+    pass

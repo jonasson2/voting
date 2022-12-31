@@ -12,8 +12,11 @@ def get_hostname():
 def get_arguments(args, description=None, epilog=None):
     # Get arguments from command line and provide help. Returns a list
     # in the same order as the arguments in args.
-    from argparse import RawTextHelpFormatter as raw
-    p = ArgumentParser(description = description, epilog=epilog, formatter_class=raw)
+    from argparse import RawTextHelpFormatter as raw, ArgumentDefaultsHelpFormatter as dhf
+    from argparse import SUPPRESS
+    class rawdhf(raw, dhf): pass
+    p = ArgumentParser(description = description, epilog=epilog, formatter_class=rawdhf)
+    #p = ArgumentParser(description=description, epilog=epilog)
     for arg in args:
         (name, type, help) = arg[:3]
         if name[0] == '-':
@@ -23,20 +26,19 @@ def get_arguments(args, description=None, epilog=None):
                 p.add_argument(short, full, action='store_true', help=help)
             else:
                 assert len(arg) > 3
+                df = arg[3] if arg[3] else SUPPRESS
                 if len(arg) == 5:
                     t = type
-                    df = arg[3]
                     mv = arg[4]
                     p.add_argument(short, full, type=t, help=help, default=df, metavar=mv)
                 else:
-                    p.add_argument(short, full, type=type, help=help, default=arg[3])
+                    p.add_argument(short, full, type=type, help=help, default=df)
         else:
             if len(arg) == 3:
                 p.add_argument(name, type=type, help=help)
             else:
                 p.add_argument(name, type=type, help=help, nargs='?', default=arg[3])
     n = p.parse_args()
-    print(vars(n).values())
     return vars(n).values()
 
 def runshell(command):

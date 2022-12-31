@@ -56,7 +56,7 @@ def main():
             ['json_file|method', str, ('json file with settings and possibly votes,\n'
                                        'or name of method (requires -v)'),
              defaultmethod],
-            ['-vote', str, 'specify vote file', '', 'file']],
+            ['-vote', str, 'specify vote file', None, 'file']],
         description=("Compute results for a single election, methods can be one of:\n"
                     "   party1st   relmarg    relsup      switch\n"
                     "   land1st    absmarg    relsupsmp   optimal\n"

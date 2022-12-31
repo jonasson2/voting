@@ -1,30 +1,35 @@
-[pv, cv, flokkar, lond, litir, ar] = read_votes();
-flokkar(flokkar=='CDU') = 'CDU/CSU';
+%#ok<*AGROW> 
+[partyvotes, ~, parties, lander, colors, ar] = read_votes();
+parties(parties=='CDU') = 'CDU/CSU';
 set(0, defaultaxeslinewidth=1)
 set(0, defaultaxesticklength=[0,0])
+set(0, defaultaxesxgrid='on', defaultaxesygrid='on')
+set(0, defaultaxesbox='on')
 figure_positions()
 %pv = set_old_linke_to_nan(pv, flokkar, ar);
-pv(pv==0) = NaN;
+partyvotes(partyvotes==0) = NaN;
 east = 11:16;
 west = 1:10;
-OTHER = flokkar=="other";
-[bv, land_weights] = bundeswide(pv);
+OTHER = parties=="other";
+bv = bundeswide(partyvotes);
 %pv(:, PDS, west) = NaN;
-vote_share = pv./sum(pv, 2, 'omitnan')*100; % Standardize
-vote_plot(bv, litir, flokkar, ar, fig=1)
-SEL = ismember(flokkar, ["SPD", "FDP", "Grüne", "Linke", "CDU/CSU"]);
-corr_compute(pv, lond, flokkar, litir, SEL, fig=5)
-%title_g = 'Sum over all Länder';
+votesum = sum(partyvotes, 2, 'omitnan');
+vote_share = partyvotes./votesum*100; % Standardize
+vote_plot(bv, colors, parties, ar, fig=1)
+SEL = ismember(parties, ["SPD", "FDP", "Grüne", "Linke", "CDU/CSU"]);
+R = corr_compute(partyvotes, lander, SEL, fig=5);
+%title_g = 'Sum over all Länder';a
 %title_l = 'Individual Länder';
 [title_g, title_l] = deal('');
-pg = CoV_plot(bv, litir, flokkar, title_g, SEL, fig=4);
-pl = CoV_plot(vote_share, litir, flokkar, title_l, SEL, fig=3);
-pg
-pl
+pg = CoV_plot(bv, colors, parties, title_g, SEL, fig=4);
+pl = CoV_plot(vote_share, colors, parties, title_l, SEL, fig=3);
+fmt = "%s:\nCoV = %.0f - %.2f×(voteshare)\n";
+fprintf(fmt, 'Whole-Germany CoV', pg(2), -pg(1))
+fprintf(fmt, 'CoV in each Land', pl(2), -pl(1))
 fig 2; clf
 for land = 1:16
   subplot(4,4,land)
-  CoV_plot(vote_share(:,:,land), litir, flokkar, lond{land}, SEL);
+  CoV_plot(vote_share(:,:,land), colors, parties, lander{land}, SEL);
   legend off
   xlabel('Avg. vote share')
   set(gca, 'TitleFontWeight', 'normal');
@@ -32,6 +37,13 @@ end
 tightaxis(4, 4, [5,13], [5,5,5,10])
 save_fig()
 CoV_par = [round(pl(1)*100)/100, round(pl(2))];
+[mu, Sig] = generate_2nd_parameters(CoV_par, R);
+colors(parties=="PDS", :) = [];
+parties(parties=="PDS") = [];
+parties = cellstr(parties);
+lander = cellstr(lander);
+votesum = reshape(votesum(end,:,:), 1, []);
+save model_params.mat votesum mu Sig lander parties colors
 
 function [bv, land_weights] = bundeswide(pv)
   total_votes = squeeze(sum(pv,2,'omitnan'));
@@ -41,64 +53,113 @@ function [bv, land_weights] = bundeswide(pv)
   bv = bv./sum(bv, 2, 'omitnan')*100; % Standardize
 end
 
-function corr_compute(pv, lond, flokkar, litir, SEL, fig, nr)
+function R = corr_compute(pv, lander, SEL, fig, nr)
   if exist('fig', 'var') && fig=="fig", figure(nr); clf, end
   P = find(SEL);
   hold on
-  D = distance_matrix(lond);
-  W = 1:10;
-  E = 12:16;
-  west_dist = D(W,W);
-  east_dist = D(E,E);
-  for j=1:length(P)
-    p = P(j);
+  D = distance_matrix(lander);
+  clear cew cbw cbe cw ce C w
+  for k=1:length(P)
+    p = P(k);
     X = pv(:,p,:)./sum(pv, 2, 'omitnan')*100;
     X = squeeze(X);
-    X(X==0) = 16;
-    CW = corr(X(:,W), rows='pairwise');
-    CE = corr(X(:,E), rows='pairwise');
-    cew(:,:,j) = corr(X(:,W),X(:,E));
-    cbw(:,:,j) = corr(X(:,11), X(:,W));
-    cbe(:,:,j) = corr(X(:,11), X(:,E));
-    cw(:,:,j) = CW;
-    ce(:,:,j) = CE;
-    litur = litir(p,:);    
-    % scatter(vecl(east_dist),vecl(CE),50,litur,"filled")
-    scatter(vecl(west_dist),vecl(CW),50,litur,"filled")
+    % X = detrend(X, 'omitnan');
+    C(:,:,k) = corr(X, rows='pairwise');
+    %     for i=1:16
+    %       for j=1:16
+    %         w(i,j,k) = sum(isfinite(X(:,i)) & isfinite(X(:,j))) - 1;
+    %       end
+    %     end
     %
   end
+  % w = w./sum(w,3);
+  % C = sum(C.*w,3); 
+  % C(1:17:end) = 1;
+  C = mean(C, 3);
+  R = corr_par(C, lander);
+  [line, R] = dist_plot(C, D, R);
+  R = tril(R, -1) + tril(R, -1)';
+  %R = R - 0.01;
+  R(1:17:end) = 1;
+  fprintf('Distance–correlation relationship, west: ')
+  fprintf('C = %.2f – %.5f×(distance in km)\n', line(2), -line(1))
+end
+
+function heading(h), fprintf('\n%s:\n', h), end
+function dispsingle(h, x), fprintf('%s: %.2f\n', h, x), end
+
+function [line, R] = dist_plot(C, D, R)
+  figure(5), clf
+  ax = gca();
   xlabel('Distance between geographic centers of the Länder, km')
-  ylabel('Pairwise correlation')
-  grid on
-  [~,leg] = legend(flokkar(P), location='southwest');
-  legmkr = findobj(leg, 'type', 'patch');
-  set(legmkr, markersize=sqrt(50))
-  dw = vecl(west_dist);
-  de = vecl(east_dist);
-  cw = vecl(mean(cw,3));
-  ce = vecl(mean(ce,3));
-  cew = mean(cew,3);
-  cbw = mean(cbw,3);
-  cbe = mean(cbe,3);
-  vv = [];
-  for k=0:100:500
-    I = k < dw & dw <= k+100;
-    if k==500, I = k < dw; end
-    d1 = mean(dw(I));
-    v1 = mean(cw(I));
-    plot(d1, v1, 'O', linewidth=4, markersize=20, color=rgb('gray'))
-    vv = [vv v1];
-  end
+  ylabel('Average correlation')
   axis([0,640,0.50,1])
-  set(gca, 'ytick', 0.5:0.1:1)
-  %title(['Correlation between vote shares 1990–2021, Länder of former '...
-  %  'W-Germany excl. Berlin'])
-  %moveTitleUp()
-  set(gca, 'TitleFontWeight', 'normal')
-  tightaxis([0,0,5,10])
+  set(ax, 'ytick', 0.5:0.1:1)
+  set(ax, 'TitleFontWeight', 'normal')
   save_fig()
-  show(vv, '-digits:3/')
-end 
+  Dwest = vecl(D(1:10, 1:10));
+  Cwest = vecl(C(1:10,1:10));
+  [~, edges, bins] = histcounts(Dwest, [0:100:500, 700]);
+  line = polyfit(Dwest, Cwest, 1);
+  X = [0, 650];
+  Y = polyval(line, X);
+  hold on
+  ax.XLim = X;
+  ax.YLim = [0.7, 1];
+  plot(Dwest, Cwest, '.', markersize=15, color=rgb('brown'))
+  plot(X, Y, color=[rgb('darkgray') 0.6], linewidth=5)
+  tightaxis([0,0,5,10])
+  for k=1:length(edges)-1
+    correl = Cwest(bins==k);
+    hdr = sprintf("West-West, %d–%d km", edges(k), edges(k+1));
+    dispsingle(hdr, mean(correl, 'all'))
+  end
+  for i=1:10
+    for j=1:i-1
+      R(i,j) = round(polyval(line, D(i,j)), 2);
+    end
+  end
+end
+
+function R = corr_par(C, lander)
+  BBS = 8:10;
+  BTS = [13, 15, 16];
+  disp('BBS, BTS:')
+  disp(lander(BBS))
+  disp(lander(BTS))
+  other7 = 1:7;
+  Berlin = 11;
+  other2 = setdiff(12:16, BTS);
+  west_groups = {BBS, other7, Berlin};
+  east_groups = {BTS, other2, Berlin};
+  west = unique([other7, BBS]);
+  east = unique([BTS, other2]);
+  for i=1:3
+    G1 = west_groups{i};
+    for j=1:3
+      G2 = east_groups{j};
+      M = round(mean(C(G1, G2), 'all'), 3);
+      table3(i,j) = M;
+      R(G2, G1) = M;
+    end    
+  end
+  heading('Table 3 (BBS, other 7, Berlin vs. BTS, other2, Berlin)')
+  show(table3, '-d2')
+  for i=1:2
+    G = east_groups{i};
+    tableEE(i,i) = round(mean(vecl(C(G,G))), 3);
+  end
+  tableEE(2,1) = round(mean(C(east_groups{1}, east_groups{2}), 'all'), 3);
+  tableEE(1,2) = tableEE(2,1);
+  heading('Table 2 (within East; BTS, other2, Berlin)')
+  show(tableEE, '-d2')
+  meaneast = round(mean(vecl(C(east, east))), 3);
+  dispsingle('East-East', meaneast)
+  dispsingle('West-West', mean(vecl(C(west, west))))
+  R(east, east) = meaneast;
+  R(BTS, Berlin) = table3(3, 1);
+  R(other2, Berlin) = table3(3, 2);
+end
 
 function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   demingpar = 1000;
@@ -132,7 +193,6 @@ function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   %t = linspace(0,60);
   %yt = CoV_interp(t, c0, c40);
   xmax = 50;
-  ymax = max(50, max(yp));
   ymax = 60;
   hold on
   %p = plot(t, yt, color=rgb('darkgray'), linewidth=4);
@@ -147,7 +207,6 @@ function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   legend([g;gh], [flokkar; 'best fit'], NumColumns=2, location="northeast")
   xlabel('Vote share, average over all elections, %')
   ylabel('Coefficent of variation, %')
-  grid on
   if ~isempty(titill)
     title(titill);
     moveTitleUp()
@@ -172,7 +231,6 @@ function vote_plot(bv, litir, flokkar, ar, fig, nr)
   set(gca, 'yticklabels', ytick)
   ylabel('Vote share, %')
   legend(flokkar(1:size(bv,2)), NumColumns=2, Location='northeast')
-  grid on
   %title('Share of votes summed over all Länder');
   %moveTitleUp()
   tightaxis([0,0,4,0])

@@ -5,9 +5,9 @@ from copy import deepcopy
 sys.path.append('~/voting/backend/methods')
 from alternating_scaling import alt_scaling
 from division_rules import sainte_lague_gen
-from gurobi_optimal import gurobi_optimal
+import gurobipy
 
-def max_share(votes, max_col_sums):
+def votepct_const(votes, max_col_sums):
     voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
     (nconst, nparty) = np.shape(voteshare)
     col_sum = np.zeros(nparty)
@@ -28,7 +28,7 @@ def max_share(votes, max_col_sums):
             openP[p] = False
     return party
 
-def max_relative_margin(votes_all, max_col_sums):
+def rel_margin_const(votes_all, max_col_sums):
     return max_margin(votes_all, max_col_sums, 'relative')
 
 def abs_margin_const(votes_all, max_col_sums):
@@ -72,7 +72,7 @@ def optimal_const(votes, max_col_sums):
     row_sums = np.ones(nconst, int)
     prior_alloc = np.zeros(votes.shape, int)
     alloc, _ = alt_scaling(votes, row_sums, max_col_sums, prior_alloc, sainte_lague_gen)
-    party = [alloc[c].index(1) for c in range(nconst)]
+    party = [np.argmax(alloc[c]) for c in range(nconst)]
     return party
 
 def apportion_sainte_lague(votes, num_seats, prior_alloc = None):
@@ -107,6 +107,11 @@ def länder_first(votes, _, c_alloc):
         alloc[c,:-1] = apportion_sainte_lague(votes[c,:-1], c_alloc[c])
     return alloc
 
+def status_string(status):
+    sc = gurobipy.StatusConstClass
+    d = {sc.__dict__[k]: k for k in sc.__dict__.keys() if k[0] >= 'A' and k[0] <= 'Z'}
+
+
 def gurobi_optimal_const(votes, max_col_sums):
     from gurobipy import Model, quicksum, GRB
     (NC, NP) = votes.shape
@@ -121,5 +126,44 @@ def gurobi_optimal_const(votes, max_col_sums):
     m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
     m.setParam('OutputFlag', False)
     m.optimize()
-    selected = [x.X.astype(int)[c,:].tolist().index(1) for c in C]
+    if m.status == GRB.OPTIMAL:
+        selected = [x.X.astype(int)[c, :].tolist().index(1) for c in C]
+        return selected
+    else:
+        m.write('model.mps')
+        m.setParam('OutputFlag', True)
+        m.optimize()
+        return None
+
+from pulp import *
+def pulp_optimal_const(votes, max_col_sums):
+    solvers = [GLPK_CMD, GUROBI, COIN_CMD]
+    solver_to_use = 0;
+    SOLVED = 1
+    (NC, NP) = votes.shape
+    P = range(NP)
+    C = range(NC)
+    m = LpProblem("PuLP_optimal_const", LpMaximize)
+    A = np.log(np.where(votes > 0, votes, 1))
+    x = {(c,p):LpVariable(f"x_{c}_{p}", cat=LpBinary) for p in P for c in C if votes[c,p]}
+    obj = LpAffineExpression({x[c,p]: A[c,p] for p in P for c in C if votes[c,p]})
+    csParty = [LpAffineExpression({x[c,p]: 1.0 for p in P if votes[c,p]}) for c in C]
+    csConst = [LpAffineExpression({x[c,p]: 1.0 for c in C if votes[c,p]}) for p in P]
+    m.setObjective(obj)
+    for csp in csParty:
+        m += LpConstraint(e=csp, sense=LpConstraintEQ, rhs=1.0)
+    for csc, colsum in zip(csConst, max_col_sums):
+        m += LpConstraint(csc, sense=LpConstraintLE, rhs = colsum)
+    m.solve(solvers[solver_to_use](msg=0))
+    if m.sol_status != SOLVED:
+        status = m.sol_status
+        print('Solving again with verbose on:')
+        m.solve(solvers[solver_to_use](msg=1))
+        expl = constants.LpStatus[status] if status in constants.LpStatus else "unknown"
+        raise RuntimeError(f"PuLP solver failed with status = {status} ({expl})")
+    selected = np.zeros(NC, int)
+    for c in C:
+        for p in P:
+            if votes[c,p] and x[c,p].value():
+                selected[c] = p
     return selected

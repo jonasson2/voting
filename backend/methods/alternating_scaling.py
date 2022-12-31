@@ -100,7 +100,7 @@ def alt_scaling(m_votes,
     N = max(max(const_seats), max(party_seats)) + 1
     div = np.array([next(div_gen) for i in range(N + 1)])
 
-    if False: #nat_seats == 0:
+    if nat_seats == 0:
         seats = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div)
         stepbystep = {"data": [], "function": print_demo_table}
     else:

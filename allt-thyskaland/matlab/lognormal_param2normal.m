@@ -12,7 +12,7 @@ function [mu, Sig] = lognormal_param2normal(M, V, R)
   sig = sqrt(sig2);
   % For following, see question 6853 on stats.stackexchange
   e = sqrt(exp(sig2) - 1);
-  R = log((e*e').*R + 1)./(sig*sig');
+  Rnormal = log((e*e').*R + 1)./(sig*sig');
   D = diag(sig);
-  Sig = D*R*D;
+  Sig = D*Rnormal*D;
 end

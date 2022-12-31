@@ -254,6 +254,15 @@ def compute_forced(votes, free_const_seats, free_party_seats):
     lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + zero_sum
     forced = where(votes > 0, np.maximum(0, lower_bounds), 0)
     parties = np.array([find(f)[0] if any(f) else -1 for f in forced], int)
+    free_party = free_party_seats - forced.sum(0)
+    free_const = free_const_seats - forced.sum(1)
+    same = sum(free_const) == sum(free_party)
+    if same and sum(free_party > 0) == 1:
+        p = np.argmax(free_party > 0)
+        forced[:, p] += free_const
+    elif same and sum(free_const >0) == 1:
+        c = np.argmax(free_const > 0)
+        forced[c, :] += free_party
     return forced, parties
 
 def forced_stepbystep_entries(forced, has_last_party):
