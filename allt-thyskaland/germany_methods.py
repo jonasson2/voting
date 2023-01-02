@@ -28,6 +28,33 @@ def votepct_const(votes, max_col_sums):
             openP[p] = False
     return party
 
+def nlargest(x, n):
+    if n >= len(x):
+        return np.arange(len(x))
+    else:
+        return np.argpartition(x, -n)[-n:]
+
+def ampel_const(votes, max_col_sums):
+    V = votes[:,:-1]/np.sum(votes,1)[:,None]
+    (nconst, nparty) = np.shape(V)
+    free = max_col_sums.copy()
+    party = [-1]*nconst
+    openC = np.full(nconst, True)
+    openP = np.full(nparty, True)
+    while any(openC):
+        for p in find(openP):
+            sharep = V[openC, p]
+            istop = sharep == np.max(V[ix_(openC, openP)], 1)
+            top = nlargest(sharep[istop], free[p])
+            cmax = find(openC)[top]
+            for c in cmax:
+                party[c] = p
+                free[p] -= 1
+                openC[c] = False
+            if free[p] == 0:
+                openP[p] = False
+    return party
+
 def rel_margin_const(votes_all, max_col_sums):
     return max_margin(votes_all, max_col_sums, 'relative')
 

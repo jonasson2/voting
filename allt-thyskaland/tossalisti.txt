@@ -1,0 +1,21 @@
+LAND METHODS:
+prófa að keyra relsup full
+vantar að keyra absolute/relative margin fyrir löndin
+vantar optimal difference og
+   seats minus seat shares í fyrstu töflunni
+
+LAND-CONSTITUENCY METHODS:
+bæta við party1st:optimal difference
+   (munur sætum skv. viðk. aðferð og henni)
+vantar entropy-difference
+bæta við votepct:xxx
+
+AÐFERÐIR:
+ampel í kjördæmum
+ersatz í kjördæmum
+
+
+
+Landsúthlutun með öllum aðferðum
+
+bera saman lm-opt og lm-aðferð fyrir öll lm,aðferð

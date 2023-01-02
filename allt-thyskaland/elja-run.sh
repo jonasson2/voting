@@ -4,6 +4,6 @@
 rsync -a --exclude='*.out' ~/voting/allt-thyskaland/ elja:voting/allt-thyskaland
 rsync -a --exclude='*.out' ~/voting/backend/ elja:voting/backend
 rsync -a ./sbatch.sh elja:~/sbatch.sh
-if test -z "$1"; then param="512 -n0"; else param="$1"; fi
-jobid=$(ssh elja "sbatch --export=ALL,param=\"$param\" sbatch.sh" | sed 's/.* //')
-echo $jobid
+if test -z "$1"; then param="512 -n0"; else param="$*"; fi
+echo param=$param
+ssh -t elja "cd voting/allt-thyskaland && python run.py $param"

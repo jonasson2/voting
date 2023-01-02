@@ -2,7 +2,8 @@
 # - change-test
 import numpy as np, pandas as pd, sys, json
 from numpy import r_
-from pathos.multiprocessing import ProcessingPool as Pool
+from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
+print('cpu_count=', cpu_count())
 sys.path.append('~/voting/backend')
 sys.path.append('~/voting/backend/methods')
 from readkerg import readkerg2021
@@ -240,18 +241,22 @@ def main():
     # NÁ Í SKIPANALÍNUVIÐFÖNG
     pairs = []
     pairs.extend([
-        ('optimal', 'optimalC'),
-        ('optimal', 'absmargC'),
-        ('optimal', 'votepctC'),
         ('relsupmed', ''),
         # ('relsup', ''),
         # ('switch', ''),
         ('votepct', ''),
         ('absmarg', ''),
         ('relmarg', ''),
+        ('optimal', 'optimalC'),
+        ('optimal', 'relmargC'),
+        ('optimal', 'absmargC'),
+        ('optimal', 'votepctC'),
+        ('optimal', 'ampelC'),
         ('party1st', 'optimalC'),
+        ('party1st', 'relmargC'),
         ('party1st', 'absmargC'),
         ('party1st', 'votepctC'),
+        ('party1st', 'ampelC'),
     ])
     all = [(m1, m2) for m1 in all_land_methods for m2 in all_const_methods]
     method_desc = ('methods [pairs, all or mland,...:mconst,...;... where mland is one '
@@ -267,6 +272,8 @@ def main():
         ['-pcv', float, 'variation coefficient for party vote generation', 0.1]]
     desc = "Simulate for the whole of Germany"
     (nsim, ncores, methods, cv, pcv) = get_arguments(args=args, description=desc)
+    if ncores==0:
+        ncores = cpu_count()
     ncores = min(ncores, nsim)
     if methods=='all':
         method_list = all

@@ -20,7 +20,7 @@ from farthest_from_next import farthest_from_next
 from max_absolute_margin import max_absolute_margin
 #from gurobi_optimal import gurobi_optimal
 from germany_methods import parties_first, länder_first, votepct_const, rel_margin_const, \
-    abs_margin_const, scandinavian, optimal_const, \
+    abs_margin_const, scandinavian, optimal_const, ampel_const, \
     pulp_optimal_const
     # gurobi_optimal_const
 from method_abbrev import method_dicts_land
@@ -34,8 +34,9 @@ nparty = 9
 method_dicts_const = [
     #{'short': 'scandC',   'fun': scandinavian, 'title': "Scandinavian"},
     {'short': 'votepctC', 'fun': votepct_const, 'title': "Max vote percentage"},
+    {'short': 'ampelC', 'fun': ampel_const, 'title': "Ampel vote percentage"},
     {'short': 'absmargC','fun': abs_margin_const, 'title': "Max absolute margin"},
-    #{'short': 'relmargC', 'fun': rel_margin_const, 'title': "Max relative margin"},
+    {'short': 'relmargC', 'fun': rel_margin_const, 'title': "Max relative margin"},
     {'short': 'optimalC', 'fun': pulp_optimal_const, 'title': "Optimal"},
     #{'short': 'pulpC',    'fun': pulp_optimal_const, 'title': "Optimal w/PuLP"}
     #{'short': 'gurobiC',  'fun': gurobi_optimal_const, 'title': "Optimal w/Gurobi"}
