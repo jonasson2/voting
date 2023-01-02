@@ -19,7 +19,7 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import max_const_seat_share
 from methods.switching import switching
-from methods.gurobi_optimal import gurobi_optimal
+#from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
 from methods.max_absolute_margin import max_absolute_margin
@@ -75,7 +75,7 @@ ADJUSTMENT_METHOD_NAMES = [
        # = farthest-from-next með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
-    {"value": "gurobi",                    "text": "Optimal with Gurobi"},    
+    #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 DEMO_TABLE_FORMATS = {
     "icelandic-law":             "clsl1%",
@@ -89,7 +89,7 @@ DEMO_TABLE_FORMATS = {
     "farthest-from-next":        "clssl3",
     "switching":                 ("sccc","clss3"),
     "alternating-scaling":       "",
-    "gurobi":                    "",
+    #"gurobi":                    "",
     }
 # s = special, center if all party names are less than 2 chars, else left
 

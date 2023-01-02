@@ -5,7 +5,7 @@ from copy import deepcopy
 sys.path.append('~/voting/backend/methods')
 from alternating_scaling import alt_scaling
 from division_rules import sainte_lague_gen
-import gurobipy
+#import gurobipy
 
 def votepct_const(votes, max_col_sums):
     voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
@@ -106,11 +106,6 @@ def länder_first(votes, _, c_alloc):
         # skip last party (other)
         alloc[c,:-1] = apportion_sainte_lague(votes[c,:-1], c_alloc[c])
     return alloc
-
-def status_string(status):
-    sc = gurobipy.StatusConstClass
-    d = {sc.__dict__[k]: k for k in sc.__dict__.keys() if k[0] >= 'A' and k[0] <= 'Z'}
-
 
 def gurobi_optimal_const(votes, max_col_sums):
     from gurobipy import Model, quicksum, GRB

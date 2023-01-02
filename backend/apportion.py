@@ -246,7 +246,7 @@ def compute_forced(votes, free_const_seats, free_party_seats):
     from numpy import where, maximum
     n = free_party_seats.sum()
     const_zero_sum = where(votes == 0, free_party_seats[None, :], 0).sum(axis=1)
-    if n == free_const_seats.sum:
+    if n == free_const_seats.sum():
         party_zero_sum = where(votes == 0, free_const_seats[:, None], 0).sum(axis=0)
         zero_sum = maximum(const_zero_sum[:,None], party_zero_sum[None,:])
     else:
