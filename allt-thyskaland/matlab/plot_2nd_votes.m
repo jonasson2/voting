@@ -21,23 +21,23 @@ R = corr_compute(partyvotes, lander, SEL, fig=5);
 %title_g = 'Sum over all Länder';a
 %title_l = 'Individual Länder';
 [title_g, title_l] = deal('');
-pg = CoV_plot(bv, colors, parties, title_g, SEL, fig=4);
-pl = CoV_plot(vote_share, colors, parties, title_l, SEL, fig=3);
-fmt = "%s:\nCoV = %.0f - %.2f×(voteshare)\n";
-fprintf(fmt, 'Whole-Germany CoV', pg(2), -pg(1))
-fprintf(fmt, 'CoV in each Land', pl(2), -pl(1))
+pg = RSD_plot(bv, colors, parties, title_g, SEL, fig=4);
+pl = RSD_plot(vote_share, colors, parties, title_l, SEL, fig=3);
+fmt = "%s:\nRSD = %.0f - %.2f×(voteshare)\n";
+fprintf(fmt, 'Whole-Germany RSD', pg(2), -pg(1))
+fprintf(fmt, 'RSD in each Land', pl(2), -pl(1))
 fig 2; clf
 for land = 1:16
   subplot(4,4,land)
-  CoV_plot(vote_share(:,:,land), colors, parties, lander{land}, SEL);
+  RSD_plot(vote_share(:,:,land), colors, parties, lander{land}, SEL);
   legend off
   xlabel('Avg. vote share')
   set(gca, 'TitleFontWeight', 'normal');
 end
 tightaxis(4, 4, [5,13], [5,5,5,10])
 save_fig()
-CoV_par = [round(pl(1)*100)/100, round(pl(2))];
-[mu, Sig] = generate_2nd_parameters(CoV_par, R);
+RSD_par = [round(pl(1)*100)/100, round(pl(2))];
+[mu, Sig] = generate_2nd_parameters(RSD_par, R);
 colors(parties=="PDS", :) = [];
 parties(parties=="PDS") = [];
 parties = cellstr(parties);
@@ -161,7 +161,7 @@ function R = corr_par(C, lander)
   R(other2, Berlin) = table3(3, 2);
 end
 
-function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
+function p = RSD_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   demingpar = 1000;
   vote_share = vote_share(:, SEL, :);
   litir = litir(SEL,:);
@@ -191,7 +191,7 @@ function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   p0 = polyval(p,0);
   pbreak = polyval(p,xbreak);
   %t = linspace(0,60);
-  %yt = CoV_interp(t, c0, c40);
+  %yt = RSD_interp(t, c0, c40);
   xmax = 50;
   ymax = 60;
   hold on
@@ -206,7 +206,7 @@ function p = CoV_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   set(gca,'ytick', 0:10:ymax)
   legend([g;gh], [flokkar; 'best fit'], NumColumns=2, location="northeast")
   xlabel('Vote share, average over all elections, %')
-  ylabel('Coefficent of variation, %')
+  ylabel('Relative standard deviation, %')
   if ~isempty(titill)
     title(titill);
     moveTitleUp()

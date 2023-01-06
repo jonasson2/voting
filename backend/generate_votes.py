@@ -7,7 +7,7 @@ def adjustment(vote):
 
 def generate_votes (
     base_votes,      # 2d - votes for each list
-    var_coeff,       # coefficient of variation, SD/mean
+    var_coeff,       # relative SD, SD/mean
     distribution,    # "beta", "uniform"...
     apply_random=-1, # -1: apply randomness to all constituencies
     #                # otherwise only to constituency rand_constit

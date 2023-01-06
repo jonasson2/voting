@@ -15,10 +15,10 @@ if [ -z "$jobid" ]; then
   exit
 fi
 echo waiting for job $jobid
-while [ "$(ssh elja squeue -hj$jobid)" ]; do
-  sleep 0.5
+while [ "$(ssh elja squeue -h | grep -w $jobid)" ]; do
+  sleep 0.3
 done
-sleep 1.0
+sleep 0.3
 titill='"Hermun á Elju"'
 texti='"Verki '$jobid' lokið"'
 hljod='"default"'

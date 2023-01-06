@@ -37,7 +37,7 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="Distribution used to simulate votes of each list, with the
-                 specified coefficient of variation and the source votes as 
+                 specified relative SD and the source votes as 
                  expected values"
           >
           <b-form-select
@@ -46,7 +46,7 @@
             />
         </b-form-group>
         <b-form-group
-          label="Coefficient of variation for constituency votes"
+          label="Relative standard deviation for constituency votes"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -57,11 +57,11 @@
           <b-input-group>
             <b-form-input
               type="text"
-              v-model.number="sim_settings.const_cov"/>
+              v-model.number="sim_settings.const_rsd"/>
           </b-input-group>
         </b-form-group>
         <b-form-group
-          label="Coefficient of variation for national party votes"
+          label="Relative standard deviation for national party votes"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
@@ -72,7 +72,7 @@
           <b-input-group>
             <b-form-input
               type="text"
-              v-model.number="sim_settings.party_vote_cov"/>
+              v-model.number="sim_settings.party_vote_rsd"/>
           </b-input-group>
         </b-form-group>
         <b-form-group

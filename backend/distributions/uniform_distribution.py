@@ -2,7 +2,7 @@ from random import uniform
 from math import sqrt
 
 def uniform_distribution(mu, var_coeff):
-    # The uniform distribution is parameterized with its mean and coefficient of variation
+    # The uniform distribution is parameterized with its mean and relative SD
     # (standard deviation divided by mean). 
 
     sigma = var_coeff*mu

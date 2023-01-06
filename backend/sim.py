@@ -37,23 +37,23 @@ def read_data(vote_file, json_file):
         votes = load_votes(vote_path)
     return votes, vote_path, systems, sim_settings
 
-def set_sim_settings(sim_settings, n_sim, n_cpu, sens_cv, cv, pcv):
+def set_sim_settings(sim_settings, n_sim, n_cpu, sens_rsd, rsd, prsd):
     settings = deepcopy(sim_settings)
     settings["simulation_count"] = n_sim
     settings["cpu_count"] = n_cpu
-    settings["const_cov"] = cv
-    settings["party_vote_cov"] = pcv
-    settings["sens_cv"] = sens_cv
+    settings["const_rsd"] = rsd
+    settings["party_vote_rsd"] = prsd
+    settings["sens_rsd"] = sens_rsd
     settings["sensitivity"] = True
     return settings
 
-def filenames(sens_cv, n_cores, n_sim, vote_path):
+def filenames(sens_rsd, n_cores, n_sim, vote_path):
     from datetime import datetime
     host = get_hostname()
-    fraccv = f'{sens_cv}'[2:]
+    fracrsd = f'{sens_rsd}'[2:]
     now = datetime.now().strftime('%Y.%m.%dT%H.%M')
     votestem = vote_path.stem
-    folder = Path.home() / 'runpar' / fraccv / votestem / host
+    folder = Path.home() / 'runpar' / fracrsd / votestem / host
     folder.mkdir(parents=True, exist_ok=True)
     metadatafile = folder / "meta.json"
     histfile = folder / "h.csv"
@@ -62,7 +62,7 @@ def filenames(sens_cv, n_cores, n_sim, vote_path):
         def log(s): print(s, file=logf)
         log(f'Host:          {host}')
         log(f'Votes:         {votestem}')
-        log(f'Adjust-CV:     {sens_cv}')
+        log(f'Adjust-RSD:     {sens_rsd}')
         log(f'Time:          {now}')
         log(f'n_cores:       {n_cores}')
         log(f'reps per core: {n_sim}')
@@ -70,22 +70,22 @@ def filenames(sens_cv, n_cores, n_sim, vote_path):
 
 def main():
     create_SIMULATIONS()
-    (n_reps, n_cores, json_file, vote_file, Stop, sens_cv, cv, pcv) = get_arguments(
+    (n_reps, n_cores, json_file, vote_file, Stop, sens_rsd, rsd, prsd) = get_arguments(
         args=[
             ['n_reps', int, 'total number of simulations', 10],
             ['n_cores', int, 'number of cores', 1],
             ['json_file', str, 'json file with settings and possibly votes', defaultfile],
             ['-votes', str, 'vote file', ''],
             ['-Stop', int, 'stop after specified time (in seconds)', -1],
-            ['-sens_cv', float, 'coefficient of variation for adjustment', 0.01],
-            ['-cv', float, 'variation coefficient for vote generation', 0.3],
-            ['-pcv', float, 'variation coefficient for party vote generation', 0.1]],
+            ['-sens_rsd', float, 'relative SD for adjustment', 0.01],
+            ['-rsd', float, 'relative SD for vote generation', 0.3],
+            ['-prsd', float, 'relative SD for party vote generation', 0.1]],
         description="Simulate sensitivity of elections")
     (votes, vote_path, systems, sim_settings) = read_data(vote_file, json_file)
-    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_cv, cv, pcv)
-    (metadatafile, histfile, logfile) = filenames(sens_cv, n_cores, n_reps, vote_path)
+    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_rsd, rsd, prsd)
+    (metadatafile, histfile, logfile) = filenames(sens_rsd, n_cores, n_reps, vote_path)
 
-    random.seed(42)
+    #random.seed(42)
     systemnames = [s["name"] for s in systems]
     if sim_settings['simulation_count'] == 0: return
     sim_settings["sensitivity"] = False

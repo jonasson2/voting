@@ -40,8 +40,8 @@ class SimulationSettings(dict):
         self["simulation_count"] = 200
         self["cpu_count"] = CONSTANTS['default_cpu_count']
         self["gen_method"] = "gamma"
-        self["const_cov"] = CONSTANTS["CoeffVar"]
-        self["party_vote_cov"] = CONSTANTS["CoeffVar"]/2
+        self["const_rsd"] = CONSTANTS["CoeffVar"]
+        self["party_vote_rsd"] = CONSTANTS["CoeffVar"]/2
         self["use_thresholds"] = True
         self["scaling"] = "both"
         self["selected_rand_constit"] = "All constituencies"
@@ -67,8 +67,8 @@ class Simulation():
         self.parties = vote_table["parties"]
         self.sim_count = sim_settings["simulation_count"]
         self.distribution = sim_settings["gen_method"]
-        self.const_cov = sim_settings["const_cov"]
-        self.party_vote_cov = sim_settings["party_vote_cov"]
+        self.const_rsd = sim_settings["const_rsd"]
+        self.party_vote_rsd = sim_settings["party_vote_rsd"]
         self.terminate = False
         # ------- Following properties are only used by excel_util.py
         self.constituencies = [c['name'] for c in vote_table["constituencies"]]
@@ -174,7 +174,7 @@ class Simulation():
             return
         gen = self.gen_votes()
         begin_time = datetime.now()
-        random.seed(42)
+        #random.seed(42)
         for i in range(self.sim_count):
             self.iteration = i + 1
             if tasknr==0:
@@ -196,11 +196,11 @@ class Simulation():
         # Generate votes similar to given votes using selected distribution
         while True:
             votes = generate_votes(
-                self.election_handler.votes, self.const_cov,
+                self.election_handler.votes, self.const_rsd,
                 self.distribution, self.apply_random)
             if self.party_votes_specified:
                 party_votes = generate_votes(
-                    [self.election_handler.party_vote_info["votes"]], self.party_vote_cov,
+                    [self.election_handler.party_vote_info["votes"]], self.party_vote_rsd,
                     self.distribution, self.apply_random)
                 yield (votes, party_votes[0])
             else:
@@ -438,9 +438,9 @@ class Simulation():
 
     def run_sensitivity(self, votes):
         elections = self.election_handler.elections
-        variation_coefficient = self.sim_settings["sens_cv"]
+        relative_SD = self.sim_settings["sens_rsd"]
         sens_method = self.sim_settings["sens_method"]
-        sens_votes = generate_votes(votes, variation_coefficient, sens_method)
+        sens_votes = generate_votes(votes, relative_SD, sens_method)
         for (i, election) in enumerate(elections):
             sens_election = Election(election.system, sens_votes)
             sens_election.assign_seats()

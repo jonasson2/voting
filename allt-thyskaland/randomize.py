@@ -2,53 +2,80 @@ import numpy as np
 np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200)
 from scipy.io import loadmat
 
-RNG = np.random.default_rng(seed = 42)
-
-def random_votes(nsim, partyvotes, pcv, constvotes, cv, info, model_params):
-    # gcv[l] is nsim by nconst[l] by nparty
+def random_votes(nsim, partyvotes, prsd, constvotes, rsd, data_parties, rng):
+    model_params = loadmat("matlab/model_params.mat")
     parties = [m[0] for m in model_params['parties'][:,0]]
-    kerg_parties = list(info['party'].values())
-    nland = len(info['land'])
+    länder = [m[0] for m in model_params['lander'][:,0]]
+    nland = len(länder)
     nparty = len(parties)
     nconst = [constvotes[l].shape[0] for l in range(nland)]
     pv_means = np.zeros((nland, nparty))
     cv_means = [np.zeros((nconst[l], nparty)) for l in range(nland)]
-    for q in range(nparty):
-        p = parties[q]
-        Q = [k in ("CDU", "CSU") if p=="CDU/CSU"
-             else k in ("SSW", "other") if p=="other"
-             else k == p
-             for k in kerg_parties]
-        pv_means[:, q] = np.sum(partyvotes[:, Q])
+    for p in range(nparty):
         for l in range(nland):
-            cv_means[l][:, q] = np.sum(constvotes[l][:, Q])
-    gpv = random_partyvotes(nsim, pcv, pv_means)
-    gcv = random_const_votes(nsim, cv, cv_means)
-    gcv = [g/g.sum(-1)[:,:,None]*100 for g in gcv]
-    gpv = gpv/gpv.sum(-1)[:,:,None]*100
+            party = parties[p]
+            if party == 'CDU/CSU':
+                party = 'CSU' if länder[l] == 'Bayern' else 'CDU'
+            q = data_parties.index(party)
+            pv_means[l, p] = partyvotes[l, q]
+            cv_means[l][:, p] = np.sum(constvotes[l][:, q])
+    gpv = random_partyvotes(nsim, prsd, pv_means, rng)
+    gcv = random_const_votes(nsim, rsd, cv_means, rng)
+    [gcv, gpv] = move_CDU_CSU(gcv, gpv, parties, länder)
     return gcv, gpv
 
-def random_partyvotes(nsim, pcv, partyvotes):
-    shapep = 1/pcv**2
+def random_partyvotes(nsim, prsd, partyvotes, rng):
+    shapep = 1/prsd**2
     scalep = 1/shapep
     sizep = (nsim,) + np.shape(partyvotes)
-    gpv = RNG.gamma(shapep, scalep, size = sizep)*partyvotes
+    gpv = rng.gamma(shapep, scalep, size = sizep)*partyvotes
     return gpv
 
-def random_const_votes(nsim, cv, constvotes):
-    shape=1/cv**2
-    scale = 1/shape
+def random_const_votes(nsim, nconst, nparty, const_vote_params, param, rng):
+    rsd = param['rsd']
     gcv = []
-    for l in range(len(constvotes)):
-        size = (constvotes[l].shape[0], nsim, constvotes[l].shape[1])
-        randvotes = RNG.gamma(shape, scale, size=size)*constvotes[l][:,None,:]
-        gcv.append(randvotes)
+    party_votes = np.squeeze(const_vote_params['votes_all'])
+    for (l, num_const) in enumerate(nconst):
+        size = (nsim, num_const, nparty)
+        M = np.ones(size)
+        S = param['rsd']*M
+        (mu, sig) = lognparam(M, S**2)
+        cvl = rng.lognormal(mu, sig)
+        cvl *= party_votes[l]/nconst[l]
+        gcv.append(cvl)
     return gcv
 
-def correlated_votes(nsim, nconst):
+def regressed_const_votes(partyvotes, nconst, rng, data):
+    M = np.interp(partyvotes, *get_interp_points(data, "beta"))
+    nland = partyvotes.shape[1]
+    S = np.interp(partyvotes, *get_interp_points(data, "sigma"))
+    # S = S*0.9;
+    (mu, sig) = lognparam(M, S**2)
+    cv = []
+    for l in range(nland):
+        mul = np.tile(mu[:,l,:][:,None,:], (1, nconst[l], 1))
+        sigl = np.tile(sig[:,l,:][:,None,:], (1, nconst[l], 1))
+        cvl = np.zeros_like(sigl)
+        mask = sigl > 0
+        cvl[mask] = rng.lognormal(mul[mask], sigl[mask])
+        cv.append(cvl)
+    return cv
+
+def generate_votes(nsim, nconst, rng, param):
     model_params = loadmat("matlab/model_params.mat")
-    gpv = correlated_partyvotes(nsim, model_params)
-    gcv = regressed_const_votes(gpv, nconst)
+    nparty = len(model_params['parties'])
+    if param['uncorr']:
+        pRSD = param['prsd']
+        for p in range(nparty):
+            mu = model_params['mu'][:,p]
+            sig = mu*pRSD
+            model_params['Sig'][:,:,p] = np.diag(sig**2)
+    gpv = correlated_partyvotes(nsim, model_params, rng)
+    const_vote_params = loadmat("matlab/regression_params.mat")
+    if param['uncorr']:
+        gcv = random_const_votes(nsim, nconst, nparty, const_vote_params, param, rng)
+    else:
+        gcv = regressed_const_votes(gpv, nconst, rng, const_vote_params)
     votesum = model_params["votesum"]
     parties = [m[0] for m in model_params['parties'][:,0]]
     länder = [m[0] for m in model_params['lander'][:,0]]
@@ -58,13 +85,13 @@ def correlated_votes(nsim, nconst):
         gcv[l] *= votesum[0,l]/100
     return gcv, gpv
 
-def correlated_partyvotes(nsim, model_params):
+def correlated_partyvotes(nsim, model_params, rng):
     Sig = model_params["Sig"]
     mu = model_params["mu"]
     (nland, nparty) = mu.shape
     gpv = np.zeros((nsim, nland, nparty))
     for p in range(nparty):
-        X = RNG.multivariate_normal(mu[:,p], Sig[:,:,p], nsim)
+        X = rng.multivariate_normal(mu[:,p], Sig[:,:,p], nsim)
         gpv[:,:,p] = np.exp(X)
     return gpv
 
@@ -93,23 +120,6 @@ def move_CDU_CSU(gcv, gpv, parties, länder):
         gcv[bayern_idx][:, cdu_idx] = 0.0
     return gcv, gpv
 
-def regressed_const_votes(partyvotes, nconst):
-    data = loadmat("matlab/regression_params.mat")
-    M = np.interp(partyvotes, *get_interp_points(data, "beta"))
-    nland = partyvotes.shape[1]
-    S = np.interp(partyvotes, *get_interp_points(data, "sigma"))
-    # S = S*0.9;
-    (mu, sig) = lognparam(M, S**2)
-    cv = []
-    for l in range(nland):
-        mul = np.tile(mu[:,l,:][:,None,:], (1, nconst[l], 1))
-        sigl = np.tile(sig[:,l,:][:,None,:], (1, nconst[l], 1))
-        cvl = np.zeros_like(sigl)
-        mask = sigl > 0
-        cvl[mask] = RNG.lognormal(mul[mask], sigl[mask])
-        cv.append(cvl)
-    return cv
-
 def lognparam(M, V):
   # Return parameters of lognormal distribution with mean M and variance V.
   mask = M > 0
@@ -127,22 +137,18 @@ def get_interp_points(data, name):
     return (xp, yp)
 
 if __name__ == "__main__":
+    # tests only correlated votes
     import matplotlib.pyplot as plt
     import scipy.stats as st
     import json
     nsim = 99
-    cv = 0.3
-    pcv = 0.2
     model_params = loadmat("matlab/model_params.mat")
-    gpv = correlated_partyvotes(nsim, model_params)
+    rng = np.random.default_rng(42)
+    gpv = correlated_partyvotes(nsim, model_params, rng)
     [_, nland, nparty] = gpv.shape
     json = json.load(open('partyvotes.json'))
     nconst = [len(json['cv'][-1][l]) for l in range(nland)]
-    gcv = regressed_const_votes(gpv, nconst)
-    #[gcv, gpv] = correlated_votes(nsim)
-    #partyvotes = data["partyvotes"]
-    #constvotes = data["constvotes"]
-    #[gcv, gpv] = random_votes(nsim, partyvotes, pcv, constvotes, cv, info, model_params)
+    gcv = regressed_const_votes(gpv, nconst, rng)
     plt.figure(figsize=(10,8))
     corr = np.zeros((nland, nparty))
     for l in range(nland):

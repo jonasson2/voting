@@ -26,7 +26,8 @@ def get_arguments(args, description=None, epilog=None):
                 p.add_argument(short, full, action='store_true', help=help)
             else:
                 assert len(arg) > 3
-                df = arg[3] if arg[3] else SUPPRESS
+                help = arg[2] if arg[2] is not None else SUPPRESS
+                df = arg[3]
                 if len(arg) == 5:
                     t = type
                     mv = arg[4]
@@ -51,3 +52,6 @@ def run_parallel(node, command, errorfile=Path("/dev/null")):
     p = Popen(['ssh', node, runcmd], start_new_session=True, stdout = PIPE)
     pid = p.communicate()[0].decode().strip()
     return pid
+
+def dict_of(*vars):
+    return dict(((v, eval(v)) for v in vars))

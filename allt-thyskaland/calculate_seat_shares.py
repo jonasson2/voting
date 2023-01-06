@@ -16,7 +16,10 @@ def calculate_seat_shares(votes, row_sums, col_sums, scaling):
                 if col_sums[p] == 0:
                     p_null_seats.add(p)
                     ref_seat_shares[:, p] *= 0
+            iteration=0
             while round(error, 7) != 0.0:
+                iteration += 1
+                print('iteration, error=', iteration, error)
                 error = 0
                 #constituency step
                 for c in range(nrows):
@@ -52,6 +55,7 @@ def calculate_seat_shares(votes, row_sums, col_sums, scaling):
                 p_under_lim.remove(p_gamma)
                 nparty_at_lim = len(p_at_lim)
                 for i in range(ncols - nparty_at_lim):
+                    print('i=', i)
                     # gammas = np.array([col_sums[p]/ref_seat_shares.sum(axis=0)[p]
                     #                    for p in p_under_lim])
                     # gamma = np.amin(gammas)
