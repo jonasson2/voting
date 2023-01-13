@@ -39,7 +39,7 @@ def icelandic_apportionment(
     #   úthlutun allra jöfnunarsæta, sbr. 2. mgr. 8. gr.)
     invalid = []
     seats_info = []
-    adj_seat = adj_seat_gen()
+    adj_seat = adj_seat_gen() if adj_seat_gen else divisor_gen()
     while num_allocated < total_seats:
         #if all parties are either invalid or below threshold,
         #then no more seats can be allocated

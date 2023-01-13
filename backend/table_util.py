@@ -119,7 +119,5 @@ def entropy_single(votes, selected):
     m = votes.shape[0]
     C = range(m)
     v = votes[C,selected]
-    if any(v==0):
-        pass
     e = sum(np.log(np.where(v>0, v, 1)))
     return e

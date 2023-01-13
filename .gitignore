@@ -8,6 +8,8 @@ slurm*.out
 .tmp.driveupload
 .DS_Store
 .idea
+.ipynb_checkpoints/
+__pycache__/
 /include
 /lib
 /local
@@ -15,13 +17,13 @@ slurm*.out
 /temp
 /bigfiles
 /allt-thyskaland/kerg
-backend/*.xlsx
-pardir/
-__pycache__/
+/allt-thyskaland/matlab/*.png
+/allt-thyskaland/matlab/*.mat
+/backend/*.xlsx
+/pardir/
 /sensitivity/results/
 /pip-selfcheck.json
-venv/
-backend/logs/*.log
+/backend/logs/*.log
 /vue-frontend/node_modules
 /vue-frontend/package-lock.json
 /vue-frontend/static/js/bundle.js

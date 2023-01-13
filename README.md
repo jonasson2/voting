@@ -8,6 +8,7 @@ Biproportional allocation on matrices is a common issue that arises when you hav
 
 More generally this approach could be used to allocate limited resources to factories depending on their relative importance or needs, or to solve a number of other biproportional optimization problems.
 
+Note: conda create -c conda-forge --name voting --file requirements.txt python=3.
 
 ## Installation for use with browser interface
 

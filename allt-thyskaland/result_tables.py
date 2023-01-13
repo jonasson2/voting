@@ -1,7 +1,7 @@
 import pandas as pd, numpy as np
 from numpy import c_, r_
 from copy import copy, deepcopy
-from dictionaries import method_measures, land_stats
+from germany_dictionaries import method_measures, land_stats
 from util import disp
 pd.options.display.width = 0
 pd.options.display.float_format = " {:,.2f}".format
@@ -50,11 +50,11 @@ def method_measure_table(methods, stats, type):
     #return df
 
 def measure_table(method, stats, data, info, measures, select):
-    # select is a list of measure short names
-    is_pair = '-' in method
+    is_pair = ':' in method
     index = list(info[select].values()) + ['min', 'max', 'sum', 'avg']
+    print('method=', method)
     if is_pair:
-        #land_method, _ = method.split('-')
+        #land_method, _ = method.split('')
         descriptor = "METHOD PAIR"
     else:
         descriptor = "LAND METHOD"
@@ -68,7 +68,7 @@ def measure_table(method, stats, data, info, measures, select):
             column = get_stat(stats[m], by=select)
             A = c_[A, column]
     title = f"{select.upper()} MEASURES FOR {descriptor} {method.upper()}"
-    seats = data["partyseats"] if select=='party' else data["landseats"]
+    seats = data["partyseats"] if select=='party' else data["landseats2021"]
     df = pd.DataFrame(A, index=index, columns=[m for m in measures if m in stats.keys()])
     df['seats'] = [f"{s:.0f}" for s in add_summary_stats(df.index, seats)]
     df.attrs['title'] = title
@@ -83,8 +83,8 @@ def get_stat(stat, by = None, oper = None):
         idx = 0
     else:
         if oper is None:
-            if ':' in name:
-                (_, name) = name.split(':')
+            if '-' in name:
+                (_, name) = name.split('-')
             oper = ('min' if name.startswith('min') or name.endswith('dispar')
                     else 'max' if name.startswith('max')
                     else 'sum'
@@ -93,8 +93,8 @@ def get_stat(stat, by = None, oper = None):
         oper_pos = stat.options.index(oper) - lenopt
         idx = (stat.shape + oper_pos if isinstance(stat.shape, int)
                else tuple(s + oper_pos for s in stat.shape))
-    fmt = '.2%' if name.endswith(('share', 'marg', 'rate')) else '.2f';
-    fmts = '.1%' if name.endswith(('share', 'marg', 'rate')) else '.1f';
+    fmt = '.3%' if name.endswith(('share', 'marg', 'rate')) else '.3f';
+    fmts = '.2%' if name.endswith(('share', 'marg', 'rate')) else '.2f';
     val = stat.numpy_mean()
     error = stat.numpy_error()
     std = stat.numpy_std()

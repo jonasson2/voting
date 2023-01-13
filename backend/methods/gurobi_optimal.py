@@ -53,13 +53,20 @@ def gurobi_max(votes, const_seats, party_seats, div, prior_alloc=None, start=Non
     for c in C:
         s0 = prior_const_seats[c]
         for s in S[c]:
+            print('c,s=',c,s)
             a = np.log(np.where(votes[c,:] > 0, votes[c,:]/div[s], 1))
-            obj.add(gp.LinExpr((a[p], x[c][p,s-s0]) for p in P))
+            obj.add(gp.LinExpr([(a[p], x[c][p,s-s0]) for p in P]))
     m.setObjective(obj, sense=gp.GRB.MAXIMIZE)
     m.setParam('OutputFlag', False)
     m.optimize()
-    n = n.X.astype(int)
-    return n + prior_alloc
+    if m.status == gp.GRB.OPTIMAL:
+        n = n.X.astype(int)
+        return n + prior_alloc
+    else:
+        m.write('model.mps')
+        m.setParam('OutputFlag', True)
+        m.optimize()
+        return None
 
 def print_demo_table(rules, allocation_sequence):
     return [], [], None

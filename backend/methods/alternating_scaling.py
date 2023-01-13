@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import r_
 np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200)
-from apportion import apportion
+from apportion import apportion, compute_forced
 from copy import deepcopy
 global total_iter, total_step
 total_iter = 0
@@ -10,18 +10,23 @@ icore = 0
 
 def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
     x = prior_alloc.copy()
-    y = prior_alloc.copy()
     r = const_seats - np.sum(x, 1)
     c = party_seats - np.sum(x, 0)
     (nrows, ncols) = v.shape
+    forced, forced_party = compute_forced(v, r, c)
+    x += forced
+    y = x.copy()
+    xsaved = x.copy()
+    r -= forced.sum(1)
+    c -= forced.sum(0)
     for iter in range(1, 100):
         for i in range(nrows):
-            (x[i, :], rho) = apportion_orig(v[i, :], prior_alloc[i, :], r[i], div)
+            (x[i, :], rho) = apportion_orig(v[i, :], xsaved[i, :], r[i], div)
             v[i, :] = v[i, :]/rho
         if iter > 1 and np.array_equal(x, y):
             break
         for j in range(ncols):
-            (y[:, j], sigma) = apportion_orig(v[:, j], prior_alloc[:, j], c[j], div)
+            (y[:, j], sigma) = apportion_orig(v[:, j], xsaved[:, j], c[j], div)
             v[:, j] = v[:, j]/sigma
         if np.array_equal(x, y):
             break
@@ -100,7 +105,7 @@ def alt_scaling(m_votes,
     N = max(max(const_seats), max(party_seats)) + 1
     div = np.array([next(div_gen) for i in range(N + 1)])
 
-    if False: #nat_seats == 0:
+    if nat_seats == 0:
         seats = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div)
         stepbystep = {"data": [], "function": print_demo_table}
     else:

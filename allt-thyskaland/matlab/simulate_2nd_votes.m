@@ -20,7 +20,7 @@ end
 function check_simulation(pv, bv, CoV_par)
   [~, ~, flokkar, lond] = read_votes();
   flokkar(flokkar=="PDS") = [];
-  [~, ~, land_weights, M, V, CoV] = generate_2nd_parameters(CoV_par);
+  [~, ~, land_weights, M, V, ~, CoV] = generate_2nd_parameters(CoV_par);
   data_avg = sum(land_weights.*M, 2);
   avg_pv = squeeze(mean(pv))';
   SD_pv = squeeze(std(pv))';

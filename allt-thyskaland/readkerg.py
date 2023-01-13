@@ -1,9 +1,14 @@
 import sys
 sys.path.append("../backend")
-import numpy as np
+import numpy as np, pandas as pd, json
 from util import disp
 
-def readkerg():
+def read_sæti_fylkja():
+    sæti_fylkja = pd.read_excel('sæti-fylkja.xlsx')
+    land2sæti = dict(zip(sæti_fylkja.Land, sæti_fylkja.Sæti))
+    return land2sæti
+
+def readkerg2021():
     import openpyxl
     kergfile = "þýskaland-2021.xlsx"
     book = openpyxl.load_workbook(kergfile)
@@ -15,6 +20,7 @@ def readkerg():
         for row in rows:
             dictionary[row[0].value-1] = row[col].value
         return dictionary
+
     def getconst(sheet, nland):
         rows = iter(book[sheet].rows)
         dict1 = {}
@@ -77,9 +83,10 @@ def readkerg():
                 votes[l][c,-1] = other_votes.astype(int)
         return votes
 
-    party_votes = get_party_votes()
+    partyvote_mean = get_party_votes()
     const_votes = get_const_votes()
     votes = [np.array(cv) for cv in const_votes]
-    data = {"landseats": land_seats, "partyvotes": party_votes, "constvotes": votes}
+    data = {"landseats": land_seats, "partyvotes": partyvote_mean, "constvotes": votes,
+            "nconst": nconst}
     info = {"land": land, "party": party, "const": const}
     return info, data

@@ -7,7 +7,7 @@ import configparser
 import codecs
 from distutils.util import strtobool
 from traceback import format_exc
-from flask import jsonify
+#from flask import jsonify
 
 def remove_prefix(text, prefix):
     if text.startswith(prefix):

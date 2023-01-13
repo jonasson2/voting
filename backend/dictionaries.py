@@ -4,7 +4,7 @@ from division_rules import dhondt_gen, sainte_lague_gen, \
 from division_rules import droop, hare
 
 from methods.common_methods import relative_superiority
-from methods.common_methods import rel_sup_simple
+from methods.common_methods import rel_sup_simple, rel_sup_medium
 #from methods.common_methods import max_const_vote_percentage
 from methods.common_methods import max_const_vote_percentage
 from methods.common_methods import max_const_seat_share
@@ -15,13 +15,14 @@ from methods.icelandic_law import icelandic_apportionment
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.nearest_to_previous import nearest_to_previous
 #from methods.relative_superiority import relative_superiority
-from methods.relative_superiority_simple import relative_superiority_simple
+#from methods.relative_superiority_simple import relative_superiority_simple
 from methods.norwegian_law import norwegian_apportionment
 from methods.max_const_seat_share import max_const_seat_share
 from methods.switching import switching
-from methods.gurobi_optimal import gurobi_optimal
+#from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 from methods.farthest_from_next import farthest_from_next
+from methods.max_absolute_margin import max_absolute_margin
 
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
@@ -70,9 +71,11 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
     {"value": "farthest-from-next",        "text": "Farthest-from-next"},
+    {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
+       # = farthest-from-next með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
-    {"value": "gurobi",                    "text": "Optimal with Gurobi"},    
+    #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 DEMO_TABLE_FORMATS = {
     "icelandic-law":             "clsl1%",
@@ -86,7 +89,7 @@ DEMO_TABLE_FORMATS = {
     "farthest-from-next":        "clssl3",
     "switching":                 ("sccc","clss3"),
     "alternating-scaling":       "",
-    "gurobi":                    "",
+    #"gurobi":                    "",
     }
 # s = special, center if all party names are less than 2 chars, else left
 
@@ -150,12 +153,14 @@ ADJUSTMENT_METHODS = {
     "max-const-seat-share":      max_const_seat_share,
     "max-const-vote-percentage": max_const_vote_percentage,
     "relative-superiority":      relative_superiority,
-    "relative-sup-simple":       relative_superiority_simple,
+    "relative-sup-medium":       rel_sup_medium,
+    "relative-sup-simple":       rel_sup_simple,
     "nearest-to-previous":       nearest_to_previous,
+    "max-absolute-margin":       max_absolute_margin,
     "farthest-from-next":        farthest_from_next,
     "switching":                 switching,
     "alternating-scaling":       alt_scaling,
-    "gurobi":                    gurobi_optimal,
+    # "gurobi":                    gurobi_optimal,
     # "monge": monge,
 }
 

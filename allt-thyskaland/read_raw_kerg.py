@@ -37,7 +37,7 @@ np.set_printoptions(suppress=True, floatmode="fixed", precision=3)
 
 #@title LESA GÖGN OG SORTERA
 os.listdir()
-file = "kerg2.csv"
+file = "../bigfiles/kerg2.csv"
 df = pd.read_csv(file, sep=';', decimal=',', skiprows=9)
 summary = df[df.Gebietsname=="Bundesgebiet"].copy()
 summary.loc[:,"Prozent"] /= 100
