@@ -230,9 +230,11 @@ class Simulation():
 
     def collect_seat_measures(self):
         firstSystem = self.election_handler.elections[0]
-        firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"])
+        firstSystem.calculate_ref_seat_shares(self.sim_settings["scaling"], id=self.iteration)
+
         #firstSystem.symmetric_calculate_ref_seat_shares(self.sim_settings["scaling"])
         ids = np_add_totals(firstSystem.ref_seat_shares)
+
         if self.party_votes_specified:
             ids = np.vstack((ids, np_add_total(firstSystem.total_ref_nat)))
             ids = np.vstack((ids, ids[-2, :] + ids[-1, :]))
@@ -252,6 +254,7 @@ class Simulation():
             self.stat["adj_seats"][i].update(adj)
             self.stat["total_seats"][i].update(ts)
             self.stat["ref_seat_shares"][i].update(ids)
+
 
     def collect_party_measures(self):
         for (i, election) in enumerate(self.election_handler.elections):
