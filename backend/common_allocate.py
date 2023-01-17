@@ -66,8 +66,8 @@ def common_allocate(
         })
         free_const_seats[maxC] -= 1
         free_party_seats[maxP] -= 1
-        print(free_const_seats)
-        print(free_party_seats)
+        #print(free_const_seats) #Todo
+        #print(free_party_seats)
         assert all(free_const_seats >= 0)
         assert all(free_party_seats >= 0)
 

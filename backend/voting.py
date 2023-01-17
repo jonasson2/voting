@@ -328,7 +328,7 @@ class Election:
         if ncols > 1 and nrows > 1:
             iter = 0
             if row_constraints and col_constraints:
-                if sum(col_sums) != sum(row_sums): # förum í einfaldari gerð ef það eru jöfnur
+                if sum(col_sums) == sum(row_sums): # förum í einfaldari gerð ef það eru jöfnur
                     error = 1
                     while round(error, 7) != 0.0:
                         error = 0
@@ -355,7 +355,6 @@ class Election:
                                 ref_seat_shares[c, :] *= 0
                             else:
                                 ref_seat_shares[c, :] /= eta
-                        if id==22: print(f'point A.{iter}') #TODO: taka út
                         # party step
                         iii = 0
                         while list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p], range(ncols))):
@@ -379,7 +378,7 @@ class Election:
                                         ref_seat_shares[:, p] *= 0
                                     else:
                                         ref_seat_shares[:, p] /= tau
-                            if iii > 30: 
+                            if iii > 100:
                                 print('Calculate_ref_seat_shares: endless party step encountered')
                                 break
                     # exit condition
