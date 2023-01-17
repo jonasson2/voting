@@ -127,6 +127,10 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("selected_rand_constit", "All constituencies")
+    if "const_cov" in sim_settings:
+        sim_settings["const_rsd"] = sim_settings["const_cov"]
+    if "party_vote_cov" in sim_settings:
+        sim_settings["party_vote_rsd"] = sim_settings["party_vote_cov"]
 
     if "const_rsd" not in sim_settings:
         sim_settings["const_rsd"] = sim_settings["distribution_parameter"]
