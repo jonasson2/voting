@@ -13,10 +13,10 @@ from germany_dictionaries import all_land_methods, all_const_methods, method_fun
 from germany_methods import apportion_sainte_lague
 from division_rules import sainte_lague_gen
 from running_stats import Running_stats, combine_stat
-from util import disp, get_cpu_count
+from util import disp, get_cpu_count, infeasible_error
 from table_util import entropy_single, entropy
 from result_tables import method_measure_table, measure_table
-from calculate_seat_shares import calculate_seat_shares
+from calculate_seat_shares import calculate_seat_shares_orig
 print('importing randomize')
 from randomize import random_votes, generate_votes, move_CDU_CSU
 import alternating_scaling
@@ -70,6 +70,8 @@ def land_allocate(method, votes, partyseats, landseats):
     else:
         prior_alloc = np.zeros(votes.shape, int)
         alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen)
+        if alloc_seats is None:
+            return None
         alloc = np.array(alloc_seats)
     return alloc
 
@@ -137,13 +139,17 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
             print(f'Simulation #{k} on core #{icore}')
         nat_vote_share = gpv[k].sum(axis=0)/gpv[k].sum()
         partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], 598), 0]
-        seat_shares = calculate_seat_shares(gpv[k], landseats, partyseats, 'both')
+        seat_shares = calculate_seat_shares_orig(gpv[k], landseats, partyseats, 'both')
         selected_opt = {}
         entropy_opt = {}
         alloc = {}
         entro = {}
         for lm in landmethods:
-            alloc[lm] = land_allocate(lm, gpv[k], partyseats, landseats)
+            try:
+                alloc[lm] = land_allocate(lm, gpv[k], partyseats, landseats)
+            except infeasible_error:
+                print('caught exception')
+                raise
             entro[lm] = entropy(gpv[k], alloc[lm], sainte_lague_gen)
             selected_opt[lm] = {}
             entropy_opt[lm] = np.zeros(nland)

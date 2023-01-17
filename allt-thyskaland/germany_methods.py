@@ -145,28 +145,28 @@ def länder_first(votes, _, c_alloc):
         alloc[c,:-1] = apportion_sainte_lague(votes[c,:-1], c_alloc[c])
     return alloc
 
-def gurobi_optimal_const(votes, party_seats):
-    from gurobipy import Model, quicksum, GRB
-    (NC, NP) = votes.shape
-    P = range(NP)
-    C = range(NC)
-    m = Model()
-    zerovotes = np.where(votes > 0, 1, 0)
-    x = m.addMVar((NC, NP), vtype='B', ub=zerovotes)
-    m.addConstrs((sum(x[:,p]) <= party_seats[p] for p in P))
-    m.addConstrs((sum(x[c,:]) == 1 for c in C))
-    A = np.log(np.where(votes > 0, votes, 1))
-    m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
-    m.setParam('OutputFlag', False)
-    m.optimize()
-    if m.status == GRB.OPTIMAL:
-        selected = [x.X.astype(int)[c, :].tolist().index(1) for c in C]
-        return selected
-    else:
-        m.write('model.mps')
-        m.setParam('OutputFlag', True)
-        m.optimize()
-        return None
+# def gurobi_optimal_const(votes, party_seats):
+#     from gurobipy import Model, quicksum, GRB
+#     (NC, NP) = votes.shape
+#     P = range(NP)
+#     C = range(NC)
+#     m = Model()
+#     zerovotes = np.where(votes > 0, 1, 0)
+#     x = m.addMVar((NC, NP), vtype='B', ub=zerovotes)
+#     m.addConstrs((sum(x[:,p]) <= party_seats[p] for p in P))
+#     m.addConstrs((sum(x[c,:]) == 1 for c in C))
+#     A = np.log(np.where(votes > 0, votes, 1))
+#     m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
+#     m.setParam('OutputFlag', False)
+#     m.optimize()
+#     if m.status == GRB.OPTIMAL:
+#         selected = [x.X.astype(int)[c, :].tolist().index(1) for c in C]
+#         return selected
+#     else:
+#         m.write('model.mps')
+#         m.setParam('OutputFlag', True)
+#         m.optimize()
+#         return None
 
 from pulp import *
 def pulp_optimal_const(votes, party_seats):
