@@ -9,6 +9,9 @@ from distutils.util import strtobool
 from traceback import format_exc
 #from flask import jsonify
 
+class infeasible_error(ValueError):
+    pass
+
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
         return text[len(prefix):]

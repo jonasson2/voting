@@ -2,7 +2,7 @@ from copy import copy, deepcopy
 from table_util import find_shares_1d
 import numpy as np
 from numpy import flatnonzero as find
-from util import dispv
+from util import dispv, infeasible_error
 
 def apportion(v, xp, total_seats, inverse_divisors, col_with_party_votes=False):
     x = xp.copy()
@@ -256,6 +256,16 @@ def compute_forced(votes, free_const_seats, free_party_seats):
     parties = np.array([find(f)[0] if any(f) else -1 for f in forced], int)
     free_party = free_party_seats - forced.sum(0)
     free_const = free_const_seats - forced.sum(1)
+    if any(free_party < 0):
+        p = find(free_party < 0)[0]
+        msg = (f"Forced to allocate {forced.sum(0)[p]} seats to party {p}"
+               f" but only {free_party_seats[p]} seats available")
+        raise infeasible_error(msg)
+    if any(free_const < 0):
+        c = find(free_const < 0)[0]
+        msg = (f"Forced to allocate {forced.sum(1)[c]} seats in constituency {c}"
+               f" but only {free_const_seats[c]} seats available")
+        raise infeasible_error(msg)
     same = sum(free_const) == sum(free_party)
     if same and sum(free_party > 0) == 1:
         p = np.argmax(free_party > 0)

@@ -2,8 +2,7 @@
 # - change-test
 import numpy as np, pandas as pd, sys, json
 from numpy import r_
-from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
-print('cpu_count=', cpu_count())
+from pathos.multiprocessing import ProcessingPool as Pool
 sys.path.append('~/voting/backend')
 sys.path.append('~/voting/backend/methods')
 from readkerg import readkerg2021
@@ -14,11 +13,12 @@ from germany_dictionaries import all_land_methods, all_const_methods, method_fun
 from germany_methods import apportion_sainte_lague
 from division_rules import sainte_lague_gen
 from running_stats import Running_stats, combine_stat
-from util import disp
+from util import disp, get_cpu_count, infeasible_error
 from table_util import entropy_single, entropy
 from result_tables import method_measure_table, measure_table
-from calculate_seat_shares import calculate_seat_shares
-from randomize import random_votes, correlated_votes, move_CDU_CSU
+from calculate_seat_shares import calculate_seat_shares_orig
+print('importing randomize')
+from randomize import random_votes, generate_votes, move_CDU_CSU
 import alternating_scaling
 
 disp(width=60)
@@ -70,6 +70,8 @@ def land_allocate(method, votes, partyseats, landseats):
     else:
         prior_alloc = np.zeros(votes.shape, int)
         alloc_seats, _ =  fun(votes, landseats, partyseats, prior_alloc, sainte_lague_gen)
+        if alloc_seats is None:
+            return None
         alloc = np.array(alloc_seats)
     return alloc
 
@@ -91,31 +93,39 @@ def entropy_matrix(votes, seats, divisor_gen):
                     entropy[l,p] += np.log(votes[l,p]/div[s])
     return entropy
 
-def run_simulate(data, methodpairs, param, ntask, icore):
+def run_simulate(data, info, methodpairs, param, ntask, icore):
     alternating_scaling.icore = icore
+    uncorr = param['uncorr']
+    seed = [icore, param['seed']] if param['seed'] else None
     yr2021 = data['years'].index(2021)
     landseats = data["landseats2021"]
     parties = data['parties'].copy()
     länder = data["lander"]
     PDS = parties.index('PDS')
     partyvotes = np.delete(np.array(data["pv"][yr2021]), PDS, axis=1)
+    (nland, nparty) = partyvotes.shape
+    constvotes = [None]*nland
+    for l in range(nland):
+        constvotes[l] = np.delete(np.array(data["cv"][yr2021][l]), PDS, axis=1)
     parties.pop(PDS)
-    constvotes = data["cv"][yr2021]
     [constvotes, partyvotes] = move_CDU_CSU(constvotes, partyvotes, parties, länder)
+    nparty += 1
     CDU = parties.index('CDU')
     parties.insert(CDU + 1, 'CSU')
-    (nland, nparty) = partyvotes.shape
     nconst = data["nconst2021"]  #np.array([c.shape[0] for c in constvotes]);
     landmethods, constmethods, pairmethods = splitmethods(methodpairs)
     constmethod_dict = {lm: set() for lm in landmethods}
+    rng = np.random.default_rng(seed)
     for p in pairmethods:
         (lm,cm) = p.split(':')
         constmethod_dict[lm].add(cm)
     assert all(n == len(c) for (n,c) in zip(nconst, constvotes))
-    #cv = param['cv']
-    #pcv = param['pcv']
-    #gv, gpv = random_votes(ntask, partyvotes, pcv, constvotes, cv)
-    gcv, gpv = correlated_votes(ntask, nconst)
+    # if uncorr:
+    #     rsd = param['rsd']
+    #     prsd = param['prsd']
+    #     gcv, gpv = random_votes(ntask, partyvotes, prsd, constvotes, rsd, parties, rng)
+    # else:
+    gcv, gpv = generate_votes(ntask, nconst, rng, param)
     share = [v/v.sum(2)[:,:,None] for v in gcv]
     max_neg_marg = np.zeros(nland)
     neg_marg_count = np.zeros(nland)
@@ -129,13 +139,17 @@ def run_simulate(data, methodpairs, param, ntask, icore):
             print(f'Simulation #{k} on core #{icore}')
         nat_vote_share = gpv[k].sum(axis=0)/gpv[k].sum()
         partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], 598), 0]
-        seat_shares = calculate_seat_shares(gpv[k], landseats, partyseats, 'both')
+        seat_shares = calculate_seat_shares_orig(gpv[k], landseats, partyseats, 'both')
         selected_opt = {}
         entropy_opt = {}
         alloc = {}
         entro = {}
         for lm in landmethods:
-            alloc[lm] = land_allocate(lm, gpv[k], partyseats, landseats)
+            try:
+                alloc[lm] = land_allocate(lm, gpv[k], partyseats, landseats)
+            except infeasible_error:
+                print('caught exception')
+                raise
             entro[lm] = entropy(gpv[k], alloc[lm], sainte_lague_gen)
             selected_opt[lm] = {}
             entropy_opt[lm] = np.zeros(nland)
@@ -151,6 +165,7 @@ def run_simulate(data, methodpairs, param, ntask, icore):
             total_land_disparity = sum(np.maximum(land_disparity, 0))
             seats_minus_shares = abs(alloc[lm] - seat_shares).sum(0)
             entropy_diff = entro["optimal"] - entro[lm]
+            #print('lm, ed:', lm, entropy_diff)
             opt_diff = abs(alloc[lm] - alloc["optimal"]).sum(0)
             stat = stats[lm]
             dispar = any(land_disparity) or any(party_disparity)
@@ -194,9 +209,9 @@ def display_results(methodpairs, stats, data, info):
     (landmethods, constmethods, pairmethods) = splitmethods(methodpairs)
     # partyvotes = data["pv"]
     # data["partyseats"] = r_[apportion_sainte_lague(partyvotes.sum(0)[:-1], 598), 0]
-    method_measure_table(landmethods, stats, 'land')
-    method_measure_table(constmethods, stats, 'constituency')
-    method_measure_table(pairmethods, stats, 'land-constituency')
+    method_measure_table(landmethods, stats, info, 'land')
+    method_measure_table(constmethods, stats, info, 'constituency')
+    method_measure_table(pairmethods, stats, info, 'land-constituency')
     measure_table('optimal', stats, data, info, by_land, 'land')
     measure_table('party1st', stats, data, info, by_land, 'land')
     measure_table('absmarg', stats, data, info, by_land, 'land')
@@ -207,13 +222,13 @@ def display_results(methodpairs, stats, data, info):
     measure_table('party1st:ampelC', stats, data, info, by_land,  'land')
     pass
 
-def parallel_simulate(data, methods, param, ncores):
+def parallel_simulate(data, info, methods, param, ncores):
     nsim = param['nsim']
     ntask = [nsim//ncores + (1 if i < nsim % ncores else 0) for i in range(ncores)]
     pool = Pool(ncores)
     icores = list(range(ncores))
-    stats = pool.map(run_simulate, [data]*ncores, [methods]*ncores, [param]*ncores, ntask,
-                     icores)
+    stats = pool.map(run_simulate, [data]*ncores, [info]*ncores, [methods]*ncores,
+                     [param]*ncores, ntask, icores)
     running0 = stats.pop(0)
     for r in stats:
         combine_stat(running0, r)
@@ -242,7 +257,7 @@ def main():
     pairs = []
     pairs.extend([
         ('relsupmed', ''),
-        # ('relsup', ''),
+        ('relsup', ''),
         # ('switch', ''),
         ('votepct', ''),
         ('absmarg', ''),
@@ -264,16 +279,22 @@ def main():
                    + land_method_table + '\n'
                    + 'and mconst is one of:'
                    + const_method_table + '\n]')
+    uncorr_desc = 'use uncorrelated votes with RSD given by options -c & -p'
     args = [
         ['nsim', int, 'total number of simulations', 100],
-        ['-ncores', int, 'number of cores', 8],
+        ['-detail', bool, 'show results with CI and SD'],
+        ['-uncorr', bool, uncorr_desc],
+        ['-ncores', int, 'number of cores', 0, 'N'],
+        ['-seed', int, 'seed to use (default: None)', None],
         ['-methods', str, method_desc, 'pairs'],
-        ['-cv', float, 'variation coefficient for constituency vote generation',  0.3],
-        ['-pcv', float, 'variation coefficient for party vote generation', 0.1]]
-    desc = "Simulate for the whole of Germany"
-    (nsim, ncores, methods, cv, pcv) = get_arguments(args=args, description=desc)
+        ['-rsd', float, 'relative SD for constituency vote generation',  0.3],
+        ['-prsd', float, 'relative SD for party vote generation', 0.1],
+    ]
+    desc = "Simulate for the whole of Germany using correlated votes by default"
+    (nsim, detail, uncorr, ncores, seed, methods, rsd, prsd) = get_arguments(args=args,
+                                                                        description=desc)
     if ncores==0:
-        ncores = cpu_count()
+        ncores = get_cpu_count()
     ncores = min(ncores, nsim)
     if methods=='all':
         method_list = all
@@ -289,19 +310,19 @@ def main():
             for lm in lms:
                 for cm in cms:
                     method_list.append((lm, cm + 'C'))
-    jsondata = json.load(open('partyvotes.json'))
     info, _ = readkerg2021()
     SSW = list(info["party"].values()).index('SSW')
     del info["party"][SSW]
+    info['detail'] = detail
     data = read_data()
     # RUN THE SIMULATION
     percore = round(nsim/ncores, 1)
     print(f'Carrying out {nsim} simulations on {ncores} cores ({percore} per core)')
-    param = {'cv':cv, 'pcv':pcv, 'nsim':nsim}
+    param = {'rsd':rsd, 'prsd':prsd, 'nsim':nsim, 'uncorr':uncorr, 'seed':seed}
     if ncores == 1:
-        stats = run_simulate(data, method_list, param, nsim, 0)
+        stats = run_simulate(data, info, method_list, param, nsim, 0)
     else:
-        stats = parallel_simulate(data, method_list, param, ncores)
+        stats = parallel_simulate(data, info, method_list, param, ncores)
     display_results(method_list, stats, data, info)
 
 if __name__ == "__main__":

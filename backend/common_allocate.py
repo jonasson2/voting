@@ -3,7 +3,7 @@ from copy import deepcopy, copy
 from apportion import superiority, compute_forced, forced_stepbystep_entries
 import numpy as np
 from numpy import flatnonzero as find
-    
+
 def common_allocate(
         votes, total_const_seats, total_party_seats, prior_alloc, div_gen,
         compute_criteria, criterion_name, reason, nolast_reason=None, last=None):
@@ -66,6 +66,8 @@ def common_allocate(
         })
         free_const_seats[maxC] -= 1
         free_party_seats[maxP] -= 1
+        print(free_const_seats)
+        print(free_party_seats)
         assert all(free_const_seats >= 0)
         assert all(free_party_seats >= 0)
 

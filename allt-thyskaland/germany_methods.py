@@ -7,11 +7,14 @@ from alternating_scaling import alt_scaling
 from division_rules import sainte_lague_gen
 #import gurobipy
 
-def votepct_const(votes, max_col_sums):
+def find_first(p):
+    return np.argmax(p)
+
+def votepct_const(votes, party_seats):
     voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
     (nconst, nparty) = np.shape(voteshare)
     col_sum = np.zeros(nparty)
-    party = [-1]*nconst
+    party = [None]*nconst
     openC = np.full(nconst, True)
     openP = np.full(nparty, True)
     for n in range(nconst):
@@ -24,48 +27,56 @@ def votepct_const(votes, max_col_sums):
         party[const] = p
         col_sum[p] += 1
         openC[const] = False
-        if col_sum[p] == max_col_sums[p]:
+        if col_sum[p] == party_seats[p]:
             openP[p] = False
     return party
 
-def nlargest(x, n):
-    if n >= len(x):
-        return np.arange(len(x))
+def pos_n_largest(x, select, n):
+    # return the positions of the n largest elements in x
+    if n >= sum(select):
+        return find(select)
     else:
-        return np.argpartition(x, -n)[-n:]
+        large = np.argpartition(x[select], -n)[-n:]
+        return find(select)[large]
 
-def ampel_const(votes, max_col_sums):
-    V = votes[:,:-1]/np.sum(votes,1)[:,None]
-    (nconst, nparty) = np.shape(V)
-    free = max_col_sums.copy()
-    party = [-1]*nconst
+def ampel_const(votes, party_seats):
+    # Returns list of parties that are allocated the seat in each constituency
+    voteshare = votes[:,:-1]/np.sum(votes,1)[:,None]
+    (nconst, nparty) = np.shape(voteshare)
+    n_available_seats = party_seats.copy()
+    party = np.zeros(nconst, int)
     openC = np.full(nconst, True)
     openP = np.full(nparty, True)
     while any(openC):
-        for p in find(openP):
-            sharep = V[openC, p]
-            istop = sharep == np.max(V[ix_(openC, openP)], 1)
-            top = nlargest(sharep[istop], free[p])
-            cmax = find(openC)[top]
-            for c in cmax:
-                party[c] = p
-                free[p] -= 1
-                openC[c] = False
-            if free[p] == 0:
+        share = voteshare[ix_(openC, openP)]
+        maxshare = share.max(1)[:,None]
+        largest = np.argmax(share == maxshare, 1)
+        P = find(openP)
+        C = find(openC)
+        [nC, nP] = share.shape
+        is_largest = np.full((nC, nP), False)
+        is_largest[range(nC), largest] = True
+        for (j,p) in enumerate(P):
+            i = pos_n_largest(share[:,j], is_largest[:,j], n_available_seats[p])
+            C_to_allocate = C[i]
+            party[C_to_allocate] = p
+            n_available_seats[p] -= len(C_to_allocate)
+            openC[C_to_allocate] = False
+            if n_available_seats[p] <= 0:
                 openP[p] = False
     return party
 
-def rel_margin_const(votes_all, max_col_sums):
-    return max_margin(votes_all, max_col_sums, 'relative')
+def rel_margin_const(votes_all, party_seats):
+    return max_margin(votes_all, party_seats, 'relative')
 
-def abs_margin_const(votes_all, max_col_sums):
-    return max_margin(votes_all, max_col_sums, 'absolute')
+def abs_margin_const(votes_all, party_seats):
+    return max_margin(votes_all, party_seats, 'absolute')
 
-def max_margin(votes_all, max_col_sums, type):
+def max_margin(votes_all, party_seats, type):
     votes = votes_all[:,:-1]
     (nconst, nparty) = votes.shape
     col_sum = np.zeros(nparty)
-    party = [-1]*nconst
+    party = [None]*nconst
     pmax = np.argmax(votes, axis=1)
     I = range(nconst)
     share_rest = deepcopy(votes)
@@ -78,7 +89,7 @@ def max_margin(votes_all, max_col_sums, type):
         advantage[const] = -1
         pmax[const] = -1
         col_sum[p] += 1
-        if col_sum[p] == max_col_sums[p]:
+        if col_sum[p] == party_seats[p]:
             C = find(pmax==p)
             for c in C:
                 q = np.argmax(share_rest[c,:])
@@ -94,11 +105,11 @@ def scandinavian(votes, _):
     party = np.argmax(votes[:,:-1], 1)
     return party
 
-def optimal_const(votes, max_col_sums):
+def optimal_const(votes, party_seats):
     (nconst, nparty) = votes.shape
     row_sums = np.ones(nconst, int)
     prior_alloc = np.zeros(votes.shape, int)
-    alloc, _ = alt_scaling(votes, row_sums, max_col_sums, prior_alloc, sainte_lague_gen)
+    alloc, _ = alt_scaling(votes, row_sums, party_seats, prior_alloc, sainte_lague_gen)
     party = [np.argmax(alloc[c]) for c in range(nconst)]
     return party
 
@@ -134,31 +145,31 @@ def länder_first(votes, _, c_alloc):
         alloc[c,:-1] = apportion_sainte_lague(votes[c,:-1], c_alloc[c])
     return alloc
 
-def gurobi_optimal_const(votes, max_col_sums):
-    from gurobipy import Model, quicksum, GRB
-    (NC, NP) = votes.shape
-    P = range(NP)
-    C = range(NC)
-    m = Model()
-    zerovotes = np.where(votes > 0, 1, 0)
-    x = m.addMVar((NC, NP), vtype='B', ub=zerovotes)
-    m.addConstrs((sum(x[:,p]) <= max_col_sums[p] for p in P))
-    m.addConstrs((sum(x[c,:]) == 1 for c in C))
-    A = np.log(np.where(votes > 0, votes, 1))
-    m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
-    m.setParam('OutputFlag', False)
-    m.optimize()
-    if m.status == GRB.OPTIMAL:
-        selected = [x.X.astype(int)[c, :].tolist().index(1) for c in C]
-        return selected
-    else:
-        m.write('model.mps')
-        m.setParam('OutputFlag', True)
-        m.optimize()
-        return None
+# def gurobi_optimal_const(votes, party_seats):
+#     from gurobipy import Model, quicksum, GRB
+#     (NC, NP) = votes.shape
+#     P = range(NP)
+#     C = range(NC)
+#     m = Model()
+#     zerovotes = np.where(votes > 0, 1, 0)
+#     x = m.addMVar((NC, NP), vtype='B', ub=zerovotes)
+#     m.addConstrs((sum(x[:,p]) <= party_seats[p] for p in P))
+#     m.addConstrs((sum(x[c,:]) == 1 for c in C))
+#     A = np.log(np.where(votes > 0, votes, 1))
+#     m.setObjective(quicksum(A[c,p]*x[c,p] for p in P for c in C), sense=GRB.MAXIMIZE)
+#     m.setParam('OutputFlag', False)
+#     m.optimize()
+#     if m.status == GRB.OPTIMAL:
+#         selected = [x.X.astype(int)[c, :].tolist().index(1) for c in C]
+#         return selected
+#     else:
+#         m.write('model.mps')
+#         m.setParam('OutputFlag', True)
+#         m.optimize()
+#         return None
 
 from pulp import *
-def pulp_optimal_const(votes, max_col_sums):
+def pulp_optimal_const(votes, party_seats):
     solvers = [GLPK_CMD, GUROBI, COIN_CMD]
     solver_to_use = 0;
     SOLVED = 1
@@ -174,7 +185,7 @@ def pulp_optimal_const(votes, max_col_sums):
     m.setObjective(obj)
     for csp in csParty:
         m += LpConstraint(e=csp, sense=LpConstraintEQ, rhs=1.0)
-    for csc, colsum in zip(csConst, max_col_sums):
+    for csc, colsum in zip(csConst, party_seats):
         m += LpConstraint(csc, sense=LpConstraintLE, rhs = colsum)
     m.solve(solvers[solver_to_use](msg=0))
     if m.sol_status != SOLVED:

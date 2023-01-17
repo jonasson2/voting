@@ -16,14 +16,14 @@ def add_summary_stats(index, seats):
         elif i=='sum': seats1 = r_[seats1, sum(seats)]
     return seats1
 
-def method_measure_table(methods, stats, type):
-    if not methods:
-        return
+def method_measure_table(methods, stats, info, type):
     A = []
     measures = (method_measures if type == 'land'
                 else land_stats['const'] if type == 'constituency'
                 else land_stats['pairs'])
     cols = []
+    if not measures:
+        return
     for m in measures:
         if m.endswith('dispar'):
             cols.append('min_' + m)
@@ -35,10 +35,10 @@ def method_measure_table(methods, stats, type):
         for m in measures:
             stat = stats[mth][m]
             name = stat.name
-            entry = get_stat(stat)
+            entry = get_stat(stat, with_detail=info["detail"])
             row.append(entry)
             if name.endswith('dispar'):
-                entry = get_stat(stat, oper='max')
+                entry = get_stat(stat, oper='max', with_detail=info["detail"])
                 row.append(entry)
         A.append(row)
     idx = [m[:-1] if m.endswith('C') else m for m in methods]
@@ -52,7 +52,6 @@ def method_measure_table(methods, stats, type):
 def measure_table(method, stats, data, info, measures, select):
     is_pair = ':' in method
     index = list(info[select].values()) + ['min', 'max', 'sum', 'avg']
-    print('method=', method)
     if is_pair:
         #land_method, _ = method.split('')
         descriptor = "METHOD PAIR"
@@ -65,7 +64,7 @@ def measure_table(method, stats, data, info, measures, select):
     A = np.zeros((len(index), 0))
     for m in measures:
         if m in stats.keys():
-            column = get_stat(stats[m], by=select)
+            column = get_stat(stats[m], by=select, with_detail=info["detail"])
             A = c_[A, column]
     title = f"{select.upper()} MEASURES FOR {descriptor} {method.upper()}"
     seats = data["partyseats"] if select=='party' else data["landseats2021"]
@@ -76,8 +75,7 @@ def measure_table(method, stats, data, info, measures, select):
     print_df(df)
     #return df
 
-def get_stat(stat, by = None, oper = None):
-    with_detail = False
+def get_stat(stat, by = None, oper = None, with_detail=False):
     name = stat.name
     if stat.shape == 1:
         idx = 0

@@ -108,7 +108,7 @@ def check_simul_settings(sim_settings):
 
     Raises:
         KeyError: If simulation settings are missing a component
-        ValueError: If coefficient of variation is too high
+        ValueError: If relative SD is too high
     """
     if "row_constraints" in sim_settings and "col_constraints" in sim_settings:
         for key in ["row_constraints", "col_constraints"]:
@@ -123,27 +123,27 @@ def check_simul_settings(sim_settings):
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
     sim_settings.setdefault("cpu_count", 4)
-    sim_settings.setdefault("sens_cv", 0.01)
+    sim_settings.setdefault("sens_rsd", 0.01)
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("selected_rand_constit", "All constituencies")
 
-    if "const_cov" not in sim_settings:
-        sim_settings["const_cov"] = sim_settings["distribution_parameter"]
-    if "party_vote_cov" not in sim_settings:
-        sim_settings["party_vote_cov"] = sim_settings["const_cov"]/2
+    if "const_rsd" not in sim_settings:
+        sim_settings["const_rsd"] = sim_settings["distribution_parameter"]
+    if "party_vote_rsd" not in sim_settings:
+        sim_settings["party_vote_rsd"] = sim_settings["const_rsd"]/2
     if "use_thresholds" not in sim_settings:
         sim_settings["use_thresholds"] = False
-    variance_coefficient = sim_settings["const_cov"]
+    variance_coefficient = sim_settings["const_rsd"]
     if sim_settings["gen_method"] == "beta":
         if variance_coefficient >= 0.75:
-            raise ValueError("Coefficient of variation must be less than 0.75")
+            raise ValueError("Relative standard deviation must be less than 0.75")
     elif sim_settings["gen_method"] == "uniform":
         if variance_coefficient >= 1/sqrt(3):
-            raise ValueError("Coefficient of variation must be less than 0.57735")
+            raise ValueError("Relative standard deviation must be less than 0.57735")
     elif sim_settings["gen_method"] == "gamma":
         if variance_coefficient >= 1:
-            raise ValueError("Coefficient of variation must be less than 1")
+            raise ValueError("Relative standard deviation must be less than 1")
     if sim_settings["selected_rand_constit"] == "All":
         sim_settings["selected_rand_constit"] = "All constituencies"
     sim_count = sim_settings["simulation_count"]

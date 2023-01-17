@@ -1,7 +1,7 @@
 from random import gammavariate
 
 def gamma_distribution(mu, var_coeff):
-    # Parameterize with mean and coefficient of variation (standard deviation divided by mean).
+    # Parameterize with mean and relative SD (standard deviation divided by mean).
     if var_coeff == 0:
         return mu
     else:
