@@ -75,7 +75,7 @@ def main():
             ['n_reps', int, 'total number of simulations', 10],
             ['n_cores', int, 'number of cores', 1],
             ['json_file', str, 'json file with settings and possibly votes', defaultfile],
-            ['-votes', str, 'vote file', ''],
+            ['-votes', str, 'vote file', None],
             ['-Stop', int, 'stop after specified time (in seconds)', -1],
             ['-sens_cv', float, 'coefficient of variation for adjustment', 0.01],
             ['-cv', float, 'variation coefficient for vote generation', 0.3],

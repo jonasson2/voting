@@ -355,7 +355,7 @@ class Election:
                                 ref_seat_shares[c, :] *= 0
                             else:
                                 ref_seat_shares[c, :] /= eta
-                        if id==22: print(f'point A.{iter}')
+                        if id==22: print(f'point A.{iter}') #TODO: taka út
                         # party step
                         iii = 0
                         while list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p], range(ncols))):
@@ -364,6 +364,13 @@ class Election:
                                             sum(ref_seat_shares[:, p]) >= col_sums[p],
                                             range(ncols)))
                             not_H = list(set(range(ncols)) - set(H))
+                            for p in H:
+                                s = sum(ref_seat_shares[:, p])
+                                tau = s / col_sums[p] if col_sums[p] > 0 else 0
+                                if tau == 0:
+                                    ref_seat_shares[:, p] *= 0
+                                else:
+                                    ref_seat_shares[:, p] /= tau
                             if not_H:
                                 s = sum(sum(ref_seat_shares[:, p]) for p in not_H)
                                 tau = s/(self.total_const_seats-sum(col_sums[p] for p in H))
@@ -372,13 +379,6 @@ class Election:
                                         ref_seat_shares[:, p] *= 0
                                     else:
                                         ref_seat_shares[:, p] /= tau
-                            for p in H:
-                                s = sum(ref_seat_shares[:, p])
-                                tau = s / col_sums[p] if col_sums[p] > 0 else 0
-                                if tau == 0:
-                                    ref_seat_shares[:, p] *= 0
-                                else:
-                                    ref_seat_shares[:, p] /= tau
                             if iii > 30: 
                                 print('Calculate_ref_seat_shares: endless party step encountered')
                                 break
