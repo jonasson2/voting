@@ -325,6 +325,7 @@ class Election:
         ref_seat_shares = np.copy(self.votes).astype(float)*self.total_const_seats/sum(self.votesums)
         row_constraints = scaling in {"both", "const"}
         col_constraints = scaling in {"both", "party"}
+        error = 1e-8
         if ncols > 1 and nrows > 1:
             iter = 0
             if row_constraints and col_constraints:
@@ -359,11 +360,11 @@ class Election:
                             ref_seat_shares[c, :] /= eta
                     # party step
                     iii = 0
-                    over = list(filter(lambda p: round(sum(ref_seat_shares[:, p]), 9) > col_sums[p], range(ncols)))
+                    over = list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p] + error, range(ncols)))
                     while over:
                         iii +=1
                         H = list(filter(lambda p:
-                                        round(sum(ref_seat_shares[:, p]), 9) >= col_sums[p],
+                                        sum(ref_seat_shares[:, p]) >= col_sums[p] - error,
                                         range(ncols)))
                         not_H = list(set(range(ncols)) - set(H))
                         for p in H:
@@ -376,17 +377,18 @@ class Election:
                         if not_H:
                             s = sum(sum(ref_seat_shares[:, p]) for p in not_H)
                             tau = s/(self.total_const_seats-sum(col_sums[p] for p in H))
+                            print(tau)
                             for p in not_H:
                                 if tau == 0:
                                     ref_seat_shares[:, p] *= 0
                                 else:
                                     ref_seat_shares[:, p] /= tau
-                        over = list(filter(lambda p: round(sum(ref_seat_shares[:, p]), 7) > col_sums[p], range(ncols)))
+                        over = list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p] + error, range(ncols)))
                 # exit condition
-                    if m.isclose(sum(abs(sum(ref_seat_shares[c, :])-row_sums[c])
-                                     for c in range(nrows)), 0.0, abs_tol=1e-7) and \
-                        m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
-                                      for p in range(ncols)), 0.0, abs_tol=1e-7):
+                    if np.all([m.isclose(abs(sum(ref_seat_shares[c, :]) - row_sums[c]), 0.0, abs_tol=error)
+                                     for c in range(nrows)]):
+                            #and m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
+                            #          for p in range(ncols)), 0.0, abs_tol=1e-8):
                         break
                 print(f'calculate_ref_seat_shares:\titeration count = {iter}')
             elif row_constraints:
