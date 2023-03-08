@@ -22,7 +22,7 @@ def method_measure_table(methods, stats, info, type):
                 else land_stats['const'] if type == 'constituency'
                 else land_stats['pairs'])
     cols = []
-    if not measures:
+    if not measures or not methods:
         return
     for m in measures:
         if m.endswith('dispar'):

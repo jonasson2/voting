@@ -97,21 +97,21 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     alternating_scaling.icore = icore
     uncorr = param['uncorr']
     seed = [icore, param['seed']] if param['seed'] else None
-    yr2021 = data['years'].index(2021)
+    # yr2021 = data['years'].index(2021)
     landseats = data["landseats2021"]
-    parties = data['parties'].copy()
-    länder = data["lander"]
-    PDS = parties.index('PDS')
-    partyvotes = np.delete(np.array(data["pv"][yr2021]), PDS, axis=1)
-    (nland, nparty) = partyvotes.shape
-    constvotes = [None]*nland
-    for l in range(nland):
-        constvotes[l] = np.delete(np.array(data["cv"][yr2021][l]), PDS, axis=1)
-    parties.pop(PDS)
-    [constvotes, partyvotes] = move_CDU_CSU(constvotes, partyvotes, parties, länder)
-    nparty += 1
-    CDU = parties.index('CDU')
-    parties.insert(CDU + 1, 'CSU')
+    # parties = data['parties'].copy()
+    # länder = data["lander"]
+    # PDS = parties.index('PDS')
+    # partyvotes = np.delete(np.array(data["pv"][yr2021]), PDS, axis=1)
+    # (nland, nparty) = partyvotes.shape
+    # constvotes = [None]*nland
+    # for l in range(nland):
+    #     constvotes[l] = np.delete(np.array(data["cv"][yr2021][l]), PDS, axis=1)
+    # parties.pop(PDS)
+    # [constvotes, partyvotes] = move_CDU_CSU(constvotes, partyvotes, parties, länder)
+    # nparty += 1
+    # CDU = parties.index('CDU')
+    # parties.insert(CDU + 1, 'CSU')
     nconst = data["nconst2021"]  #np.array([c.shape[0] for c in constvotes]);
     landmethods, constmethods, pairmethods = splitmethods(methodpairs)
     constmethod_dict = {lm: set() for lm in landmethods}
@@ -119,14 +119,16 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     for p in pairmethods:
         (lm,cm) = p.split(':')
         constmethod_dict[lm].add(cm)
-    assert all(n == len(c) for (n,c) in zip(nconst, constvotes))
     # if uncorr:
     #     rsd = param['rsd']
     #     prsd = param['prsd']
     #     gcv, gpv = random_votes(ntask, partyvotes, prsd, constvotes, rsd, parties, rng)
     # else:
     gcv, gpv = generate_votes(ntask, nconst, rng, param)
-    share = [v/v.sum(2)[:,:,None] for v in gcv]
+    (nt, nland, nparty) = gpv.shape
+    assert ntask == nt
+    PARTY = 2
+    share = [v/v.sum(PARTY)[:,:,None] for v in gcv]
     max_neg_marg = np.zeros(nland)
     neg_marg_count = np.zeros(nland)
     min_seat_share = np.zeros(nland)
@@ -137,7 +139,8 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     for k in range(ntask):
         if icore==0 and k % 1 == 0:
             print(f'Simulation #{k} on core #{icore}')
-        nat_vote_share = gpv[k].sum(axis=0)/gpv[k].sum()
+        LAND = 0
+        nat_vote_share = gpv[k].sum(axis=LAND)/gpv[k].sum()
         partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], 598), 0]
         seat_shares = calculate_seat_shares_orig(gpv[k], landseats, partyseats, 'both')
         selected_opt = {}
@@ -250,6 +253,8 @@ def splitmethods(methodlist):
         landmethods = methodlist
         constmethods = []
         pairmethods = []
+    if 'optimal' not in landmethods:
+        landmethods.append('optimal')
     return landmethods, constmethods, pairmethods
 
 def main():
@@ -309,7 +314,7 @@ def main():
             cms = cmethods.split(',')
             for lm in lms:
                 for cm in cms:
-                    method_list.append((lm, cm + 'C'))
+                    method_list.append((lm, cm + 'C' if cm else cm))
     info, _ = readkerg2021()
     SSW = list(info["party"].values()).index('SSW')
     del info["party"][SSW]

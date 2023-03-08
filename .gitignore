@@ -10,6 +10,7 @@ slurm*.out
 .idea
 .ipynb_checkpoints/
 __pycache__/
+/alex4
 /include
 /lib
 /local

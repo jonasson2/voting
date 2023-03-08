@@ -49,7 +49,6 @@ def regressed_const_votes(partyvotes, nconst, rng, data):
     M = np.interp(partyvotes, *get_interp_points(data, "beta"))
     nland = partyvotes.shape[1]
     S = np.interp(partyvotes, *get_interp_points(data, "sigma"))
-    # S = S*0.9;
     (mu, sig) = lognparam(M, S**2)
     cv = []
     for l in range(nland):
@@ -65,25 +64,33 @@ def generate_votes(nsim, nconst, rng, param):
     model_params = loadmat("matlab/model_params.mat")
     nparty = len(model_params['parties'])
     if param['uncorr']:
-        pRSD = param['prsd']
-        for p in range(nparty):
-            mu = model_params['mu'][:,p]
-            sig = mu*pRSD
-            model_params['Sig'][:,:,p] = np.diag(sig**2)
-    gpv = correlated_partyvotes(nsim, model_params, rng)
+        mu = model_params['mu']
+        RSD = param['prsd']
+        gpv = uncorrelated_partyvotes(nsim, mu, RSD, rng)
+    else:
+        gpv = correlated_partyvotes(nsim, model_params, rng)
     const_vote_params = loadmat("matlab/regression_params.mat")
     if param['uncorr']:
         gcv = random_const_votes(nsim, nconst, nparty, const_vote_params, param, rng)
     else:
         gcv = regressed_const_votes(gpv, nconst, rng, const_vote_params)
-    votesum = model_params["votesum"]
+    votesum = model_params["votesum"].flatten()
     parties = [m[0] for m in model_params['parties'][:,0]]
     länder = [m[0] for m in model_params['lander'][:,0]]
     [gcv, gpv] = move_CDU_CSU(gcv, gpv, parties, länder)
-    gpv *= votesum[:,:,None]/100
+    gpv *= votesum[None,:,None]/100
     for l in range(16):
-        gcv[l] *= votesum[0,l]/100
+        gcv[l] *= votesum[l]/100/nconst[l]
     return gcv, gpv
+
+def uncorrelated_partyvotes(nsim, mu, RSD, rng):
+    sig = np.sqrt(np.log(1 + RSD**2))
+    (nland, nparty) = mu.shape
+    gpv = np.zeros((nsim, nland, nparty))
+    for p in range(nparty):
+        for l in range(nland):
+            gpv[:,l,p] = rng.lognormal(mu[l,p], sig, nsim)
+    return gpv
 
 def correlated_partyvotes(nsim, model_params, rng):
     Sig = model_params["Sig"]
