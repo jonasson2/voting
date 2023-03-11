@@ -46,18 +46,34 @@
             />
         </b-form-group>
         <b-form-group
-          label="Relative standard deviation for constituency votes"
+          label="Relative standard deviation for list votes"
           label-cols="auto"
           style="font-size:110%"
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="Standard deviation of simulated votes divided by their mean.
-                 Valid range 0–0.75 (beta), 0–1 (gamma), 0–0.577 (uniform)."
+                 Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
+                 0–0.577 (uniform)."
           >
           <b-input-group>
             <b-form-input
               type="text"
               v-model.number="sim_settings.const_rsd"/>
+          </b-input-group>
+        </b-form-group>
+        <b-form-group
+          label="Correlation between list votes within each party"
+          label-cols="auto"
+          style="font-size:110%"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          title="Correlation between list votes within each party,
+                 use only with log-normal distribution, else 0 is used."
+          >
+          <b-input-group>
+            <b-form-input
+              type="text"
+              v-model.number="sim_settings.const_corr"/>
           </b-input-group>
         </b-form-group>
         <b-form-group
@@ -67,12 +83,28 @@
           v-b-tooltip.hover.bottom.v-primary.ds500
           label-for="input-horizontal"
           title="Standard deviation of simulated votes divided by their mean.
-                 Valid range 0–0.75 (beta), 0–1 (gamma), 0–0.577 (uniform)."
+                 Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
+                 0–0.577 (uniform)."
           >
           <b-input-group>
             <b-form-input
               type="text"
               v-model.number="sim_settings.party_vote_rsd"/>
+          </b-input-group>
+        </b-form-group>
+        <b-form-group
+          label="Correlation between list votes and national party votes"
+          label-cols="auto"
+          style="font-size:110%"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          label-for="input-horizontal"
+          title="Correlation between list votes and national party votes,
+                 use only with log-normal distribution, else 0 is used."
+          >
+          <b-input-group>
+            <b-form-input
+              type="text"
+              v-model.number="sim_settings.party_vote_corr"/>
           </b-input-group>
         </b-form-group>
         <b-form-group
@@ -87,24 +119,6 @@
             v-model="sim_settings.use_thresholds"
             :options="sim_capabilities.use_thresholds"/>
         </b-form-group>
-        <!-- <b-form-group -->
-        <!--   label="Apply randomness to" -->
-        <!--   style="font-size:110%" -->
-        <!--   v-b-tooltip.hover.bottom.v-primary.ds500 -->
-        <!--   label-for="input-horizontal" -->
-        <!--   label-cols="auto" -->
-        <!--   title="Only the specified constituency will have its votes drawn  -->
-        <!--          at random, the remaining constituencies will use the  -->
-        <!--          reference votes on all replications. Default is to draw  -->
-        <!--          all votes at random." -->
-        <!--   > -->
-        <!--   <b-input-group> -->
-        <!--     <b-form-select -->
-        <!--       v-model="sim_settings.selected_rand_constit" -->
-        <!--       :options="const_names" -->
-        <!--       /> -->
-        <!--   </b-input-group> -->
-        <!-- </b-form-group> -->
       </b-col>
       <b-col cols=4>
         <b-form-group style="font-size:110%"

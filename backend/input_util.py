@@ -126,7 +126,6 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sens_rsd", 0.01)
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
-    sim_settings.setdefault("selected_rand_constit", "All constituencies")
     if "const_cov" in sim_settings:
         sim_settings["const_rsd"] = sim_settings["const_cov"]
     if "party_vote_cov" in sim_settings:
@@ -134,8 +133,12 @@ def check_simul_settings(sim_settings):
 
     if "const_rsd" not in sim_settings:
         sim_settings["const_rsd"] = sim_settings["distribution_parameter"]
+    if "const_corr" not in sim_settings:
+        sim_settings["const_corr"] = 0
     if "party_vote_rsd" not in sim_settings:
         sim_settings["party_vote_rsd"] = sim_settings["const_rsd"]/2
+    if "party_vote_corr" not in sim_settings:
+        sim_settings["party_vote_corr"] = 0
     if "use_thresholds" not in sim_settings:
         sim_settings["use_thresholds"] = False
     variance_coefficient = sim_settings["const_rsd"]
@@ -145,11 +148,9 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] == "uniform":
         if variance_coefficient >= 1/sqrt(3):
             raise ValueError("Relative standard deviation must be less than 0.57735")
-    elif sim_settings["gen_method"] == "gamma":
+    elif sim_settings["gen_method"] in ["gamma", "log-normal"]:
         if variance_coefficient >= 1:
             raise ValueError("Relative standard deviation must be less than 1")
-    if sim_settings["selected_rand_constit"] == "All":
-        sim_settings["selected_rand_constit"] = "All constituencies"
     sim_count = sim_settings["simulation_count"]
     digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
     if sim_count > 2000 and digoce:

@@ -364,7 +364,7 @@ class Election:
                     while over:
                         iii +=1
                         H = list(filter(lambda p:
-                                        sum(ref_seat_shares[:, p]) >= col_sums[p] - error,
+                                        sum(ref_seat_shares[:, p]) >= col_sums[p] + error,
                                         range(ncols)))
                         not_H = list(set(range(ncols)) - set(H))
                         for p in H:
@@ -377,7 +377,6 @@ class Election:
                         if not_H:
                             s = sum(sum(ref_seat_shares[:, p]) for p in not_H)
                             tau = s/(self.total_const_seats-sum(col_sums[p] for p in H))
-                            print(tau)
                             for p in not_H:
                                 if tau == 0:
                                     ref_seat_shares[:, p] *= 0

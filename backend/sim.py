@@ -42,7 +42,9 @@ def set_sim_settings(sim_settings, n_sim, n_cpu, sens_rsd, rsd, prsd):
     settings["simulation_count"] = n_sim
     settings["cpu_count"] = n_cpu
     settings["const_rsd"] = rsd
+    #settings["corr"] = corr
     settings["party_vote_rsd"] = prsd
+    #settings["party_vote_corr"] = pcorr
     settings["sens_rsd"] = sens_rsd
     settings["sensitivity"] = True
     return settings
@@ -82,7 +84,8 @@ def main():
             ['-prsd', float, 'relative SD for party vote generation', 0.1]],
         description="Simulate sensitivity of elections")
     (votes, vote_path, systems, sim_settings) = read_data(vote_file, json_file)
-    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_rsd, rsd, prsd)
+    sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_rsd,
+                                    rsd, prsd)
     (metadatafile, histfile, logfile) = filenames(sens_rsd, n_cores, n_reps, vote_path)
 
     #random.seed(42)

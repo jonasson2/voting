@@ -8,7 +8,7 @@ from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
 from dictionaries import HISTOGRAM_MEASURES, PARTY_MEASURES
 from dictionaries import STATISTICS_HEADINGS, EXCEL_HEADINGS
 from electionHandler import ElectionHandler
-from generate_votes import generate_votes
+from generate_votes import generate_votes, generate_corr_votes
 from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
@@ -39,12 +39,13 @@ class SimulationSettings(dict):
         self["simulate"] = False
         self["simulation_count"] = 200
         self["cpu_count"] = CONSTANTS['default_cpu_count']
-        self["gen_method"] = "gamma"
+        self["gen_method"] = "log-normal"
         self["const_rsd"] = CONSTANTS["CoeffVar"]
+        self["const_corr"] = CONSTANTS["ConstCorr"]
         self["party_vote_rsd"] = CONSTANTS["CoeffVar"]/2
+        self["party_vote_corr"] = CONSTANTS["PartyVoteCorr"]
         self["use_thresholds"] = True
         self["scaling"] = "both"
-        self["selected_rand_constit"] = "All constituencies"
         self["sensitivity"] = False
 
     def abs(q, s):      return abs(q - s)
@@ -68,7 +69,9 @@ class Simulation():
         self.sim_count = sim_settings["simulation_count"]
         self.distribution = sim_settings["gen_method"]
         self.const_rsd = sim_settings["const_rsd"]
+        self.const_corr = sim_settings["const_corr"]
         self.party_vote_rsd = sim_settings["party_vote_rsd"]
+        self.party_vote_corr = sim_settings["party_vote_corr"]
         self.terminate = False
         # ------- Following properties are only used by excel_util.py
         self.constituencies = [c['name'] for c in vote_table["constituencies"]]
@@ -76,7 +79,6 @@ class Simulation():
         self.nparty = len(self.parties)
         self.nconst = len(self.constituencies)
         self.sensitivity = sim_settings["sensitivity"]
-        self.apply_random = self.index_of_const_to_apply_randomness_to()
         # -------- Following is used for plotting
         #self.disparity_data = [pd.DataFrame(columns=self.parties) for sys in range(self.nsys)]
         # --------
@@ -195,16 +197,27 @@ class Simulation():
     def gen_votes(self):
         # Generate votes similar to given votes using selected distribution
         while True:
-            votes = generate_votes(
-                self.election_handler.votes, self.const_rsd,
-                self.distribution, self.apply_random)
-            if self.party_votes_specified:
-                party_votes = generate_votes(
-                    [self.election_handler.party_vote_info["votes"]], self.party_vote_rsd,
-                    self.distribution, self.apply_random)
-                yield (votes, party_votes[0])
+            if self.distribution == 'log-normal':
+                votes, party_votes = generate_corr_votes(
+                    self.election_handler.votes,
+                    self.const_rsd,
+                    self.const_corr,
+                    self.election_handler.party_vote_info["votes"],
+                    self.party_vote_rsd,
+                    self.party_vote_corr
+                    )
+                yield (votes, party_votes)
             else:
-                yield (votes, None)
+                votes = generate_votes(
+                    self.election_handler.votes, self.const_rsd,
+                    self.distribution)
+                if self.party_votes_specified:
+                    party_votes = generate_votes(
+                        [self.election_handler.party_vote_info["votes"]], self.party_vote_rsd,
+                        self.distribution)
+                    yield (votes, party_votes[0])
+                else:
+                    yield (votes, None)
 
     def run_and_collect_measures(self, votes, party_votes):
         use_thresholds = self.sim_settings["use_thresholds"]
@@ -500,14 +513,6 @@ class Simulation():
             if ids[c][p] != 0
         ])
         return dh_sum
-
-    def index_of_const_to_apply_randomness_to(self):
-        sel_rand = self.sim_settings["selected_rand_constit"]
-        if sel_rand not in self.constituencies or sel_rand == "All constituencies":
-            index = -1
-        else:
-            index = self.constituencies.index(sel_rand)
-        return index
 
     def attributes(self):
         builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones

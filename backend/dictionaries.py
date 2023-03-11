@@ -27,9 +27,12 @@ from methods.max_absolute_margin import max_absolute_margin
 from distributions.symmetric_beta_distribution import symmetric_beta_distribution
 from distributions.gamma_distribution import gamma_distribution
 from distributions.uniform_distribution import uniform_distribution
+from distributions.log_normal_distribution import log_normal_distribution
 
 CONSTANTS = {
     'CoeffVar': 0.25,
+    'ConstCorr': 0.5,
+    'PartyVoteCorr': 0.5,
     'simulation_id_length': 20,
     'default_cpu_count': get_cpu_count()/2
 }
@@ -116,6 +119,7 @@ SEAT_SPECIFICATION_OPTIONS = {
 }
 
 GENERATING_METHOD_NAMES = [
+    {"value": "log-normal", "text": "Log-normal distribution"},
     {"value": "gamma",   "text": "Gamma distribution"},
     {"value": "beta",    "text": "Symmetric beta distribution"},
     {"value": "uniform", "text": "Uniform distribution"},
@@ -165,6 +169,7 @@ ADJUSTMENT_METHODS = {
 }
 
 GENERATING_METHODS = {
+    "log-normal": log_normal_distribution,
     "gamma": gamma_distribution,
     "beta": symmetric_beta_distribution,
     "uniform": uniform_distribution
