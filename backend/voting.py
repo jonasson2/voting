@@ -36,14 +36,14 @@ class Election:
 
     def set_votes(self, votes, party_votes=None):
         # votesums: column sums of m_votes
+        self.votes = np.array(votes)
         if party_votes:
             self.party_votes = np.array(party_votes)
         if self.nconst == 1:
-            self.votes = votes.sum(0)[None,:]
+            self.votes = self.votes.sum(0)[None,:]
         else:
-            assert len(votes) == self.nconst
-            self.votes = np.array(votes)
-        assert all(len(row) == self.nparty for row in votes)
+            assert len(self.votes) == self.nconst
+        assert all(len(row) == self.nparty for row in self.votes)
         self.votesums = self.votes.sum(0)
 
     @staticmethod

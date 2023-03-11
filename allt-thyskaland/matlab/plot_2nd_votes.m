@@ -221,7 +221,16 @@ function p = RSD_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
 end
 
 function vote_plot(bv, litir, flokkar, ar, fig, nr)
-  if fig=="fig", figure(nr); clf; end
+  if fig=="fig"
+    if ishandle(nr)
+      figure(nr);
+      clf;
+    else
+      return
+    end
+  else
+    error('Illegal call')
+  end
   hold on
   colororder(litir)
   plot(bv, linew=3.5)
@@ -251,17 +260,23 @@ function save_fig()
 end
 
 function figure_positions()
+  function figpos_if_selected(fig, x, y, w, h)
+    global FIGURES %#ok<GVMIS> 
+    if ismember(fig, FIGURES)
+      figpos(fig, x, y, w, h)
+    end
+  end
   w = 440;
   h = 400;
   wnarrow = 340;
   hextra = round(1.8*h);
   wextra = round(1.3*w);
   %for i=1:6, figure(i); end
-  figpos(1, 'left', h, w, h)
-  figpos(2, 'right', 'bottom', wextra, hextra)
-  figpos(5, 'left', 0, w, h)
-  figpos(3, w, h, wnarrow, h)
-  figpos(4, w, 0, wnarrow, h)
+  figpos_if_selected(1, 'left', h, w, h)
+  figpos_if_selected(2, 'right', 'bottom', wextra, hextra)
+  figpos_if_selected(3, w, h, wnarrow, h)
+  figpos_if_selected(4, w, 0, wnarrow, h)
+  figpos_if_selected(5, 'left', 0, w, h)
 end
 
 function fixcolors(gv, color)
