@@ -1,6 +1,7 @@
 function [mu, Sig] = lognormal_param2normal(M, V, R)
   % Return parameters of multivariate normal distribution corresponding to the
   % lognormal distribution with mean M, variance V and correlation matrix R.
+  assert(all(diag(R)==1))
   M = M(:);
   if length(V)==1
     V = repmat(V, size(M));
