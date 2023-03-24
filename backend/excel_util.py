@@ -371,8 +371,8 @@ def simulation_to_xlsx(results, filename):
     c1 = 0
     c2 = c1 + 1
     row = 0
-    worksheet.set_column(c1, c1, 35)
-    worksheet.set_column(c2, c2, 35)
+    worksheet.set_column(c1, c1, 43)
+    worksheet.set_column(c2, c2, 43)
     worksheet.write(row, c1, "Date:", fmt["h"])
     worksheet.write(row, c2, datetime.now(), fmt["time"])
     total_votes = sum(sum(row) for row in results["vote_table"]["votes"])
@@ -700,18 +700,21 @@ def simulation_to_xlsx(results, filename):
             }
         }
         seat_measures = results["data"][r]["seat_measures"]
-        k = -1 if combined else len(results["vote_data"][r]["sim_votes"][stat])
+        k_votes = -1 if combined else len(results["vote_data"][r]["sim_votes"][stat])
+        k_seats = -1 if combined else len(seat_measures["fixed_seats"]["avg"])
+
         for stat in STATISTICS_HEADINGS.keys():
             data_matrix[stat] = {
-                "v": results["vote_data"][r]["sim_votes"][stat][:k],
-                "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k],
-                "rss": results["data"][0]["seat_measures"]["ref_seat_shares"][stat][:k],
-                "cs": seat_measures["fixed_seats"][stat][:k],
-                "as": seat_measures["adj_seats"][stat][:k],
-                "ts": seat_measures["total_seats"][stat][:k],
-                "tsp": seat_measures["total_seat_percentages"][stat][:k],
-                "nmp": results["vote_data"][r]["neg_margin"][stat][:k],
-                "nmc": results["vote_data"][r]["neg_margin_count"][stat][:k],
+                "v": results["vote_data"][r]["sim_votes"][stat][:k_votes],
+                "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k_votes],
+                "rss": results["data"][0]["seat_measures"]["ref_seat_shares"][stat][
+                       :k_seats],
+                "cs": seat_measures["fixed_seats"][stat][:k_seats],
+                "as": seat_measures["adj_seats"][stat][:k_seats],
+                "ts": seat_measures["total_seats"][stat][:k_seats],
+                "tsp": seat_measures["total_seat_percentages"][stat][:k_seats],
+                    "nmp": results["vote_data"][r]["neg_margin"][stat],
+                "nmc": results["vote_data"][r]["neg_margin_count"][stat],
             }
         alloc_info = [{
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
