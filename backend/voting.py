@@ -389,7 +389,6 @@ class Election:
                             #and m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
                             #          for p in range(ncols)), 0.0, abs_tol=1e-8):
                         break
-                print(f'calculate_ref_seat_shares:\titeration count = {iter}')
             elif row_constraints:
                 for c in range(nrows):
                     row_sum = row_sums[c]
