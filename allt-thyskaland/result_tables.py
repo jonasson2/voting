@@ -62,13 +62,17 @@ def measure_table(method, stats, data, info, measures, select):
     else:
         stats = stats[method]
     A = np.zeros((len(index), 0))
-    for m in measures:
-        if m in stats.keys():
-            column = get_stat(stats[m], by=select, with_detail=info["detail"])
-            A = c_[A, column]
+    #print(f'{land_stats["land"]=}')
+    #print(f'{measures=}')
+    #print(f'{stats.keys()=}')
+    pass
+    M = [m for m in measures if m in stats.keys()]
+    for m in M:
+        column = get_stat(stats[m], by=select, with_detail=info["detail"])
+        A = c_[A, column]
     title = f"{select.upper()} MEASURES FOR {descriptor} {method.upper()}"
     seats = data["partyseats"] if select=='party' else data["landseats2021"]
-    df = pd.DataFrame(A, index=index, columns=[m for m in measures if m in stats.keys()])
+    df = pd.DataFrame(A, index=index, columns=M)
     df['seats'] = [f"{s:.0f}" for s in add_summary_stats(df.index, seats)]
     df.attrs['title'] = title
     df.index.name = select

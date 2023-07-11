@@ -66,6 +66,7 @@ land_stats = {
         'max_neg_marg',
         'neg_marg_count',
         'const_opt_diff',
+        'winner_all_diff',
         'const_entropy_diff',
     ],
 }

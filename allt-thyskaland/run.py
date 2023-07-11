@@ -95,6 +95,7 @@ def entropy_matrix(votes, seats, divisor_gen):
 
 def run_simulate(data, info, methodpairs, param, ntask, icore):
     alternating_scaling.icore = icore
+    qm = info['quality-measures']
     uncorr = param['uncorr']
     seed = [icore, param['seed']] if param['seed'] else None
     # yr2021 = data['years'].index(2021)
@@ -133,9 +134,12 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     neg_marg_count = np.zeros(nland)
     min_seat_share = np.zeros(nland)
     const_opt_diff = np.zeros(nland)
+    winner_all_diff = np.zeros(nland)
     const_entropy = np.zeros(nland)
     stats = initialize_stats(methodpairs, nland, nparty)
     optimal_const_fun = method_funs_const["optimalC"]
+    if qm == 'sel':
+        pass
     for k in range(ntask):
         if icore==0 and k % 1 == 0:
             print(f'Simulation #{k} on core #{icore}')
@@ -198,6 +202,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                     seat_share = voteshare[I, selected]
                     min_seat_share[l] = seat_share.min()
                     const_opt_diff[l] = seat_diff(selected_opt[lm][l], selected)
+                    winner_all_diff[l] = sum(voteshare.argmax(axis=1) != selected)
                     const_entropy[l] = entropy_single(voteshare, selected)
                 stat = stats[method]
                 const_entropy_diff = entropy_opt[lm] - const_entropy
@@ -205,6 +210,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                 stat['neg_marg_count'].update(neg_marg_count)
                 stat['min_seat_share'].update(min_seat_share)
                 stat['const_opt_diff'].update(const_opt_diff)
+                stat['winner_all_diff'].update(winner_all_diff)
                 stat['const_entropy_diff'].update(const_entropy_diff)
     return stats
 
@@ -279,39 +285,40 @@ def main():
         ('party1st', 'ampelC'),
     ])
     all = [(m1, m2) for m1 in all_land_methods for m2 in all_const_methods]
-    method_desc = ('methods [pairs, all or mland,...:mconst,...;... where mland is one '
-                   'of:'
+    method_desc =('methods [pairs, all or mland+...:mconst+...,... where mland is one of:'
                    + land_method_table + '\n'
                    + 'and mconst is one of:'
                    + const_method_table + '\n]')
     uncorr_desc = 'use uncorrelated votes with RSD given by options -c & -p'
     args = [
-        ['nsim', int, 'total number of simulations', 100],
+        ['nsim',    int, 'total number of simulations', 100],
         ['-detail', bool, 'show results with CI and SD'],
         ['-uncorr', bool, uncorr_desc],
         ['-ncores', int, 'number of cores', 0, 'N'],
-        ['-seed', int, 'seed to use (default: None)', None],
-        ['-methods', str, method_desc, 'pairs'],
-        ['-rsd', float, 'relative SD for constituency vote generation',  0.3],
-        ['-prsd', float, 'relative SD for party vote generation', 0.1],
+        ['-seed',   int, 'seed to use', None],
+        ['-methods',str, method_desc, 'pairs'],
+        ['-qm',     str, 'quality measures [all/sel]', 'sel'],
+        ['-rsd',    float, 'relative SD for constituency vote generation',  0.3],
+        ['-prsd',   float, 'relative SD for party vote generation', 0.1],
     ]
     desc = "Simulate for the whole of Germany using correlated votes by default"
-    (nsim, detail, uncorr, ncores, seed, methods, rsd, prsd) = get_arguments(args=args,
-                                                                        description=desc)
+    (nsim, detail, uncorr, ncores, seed, methods, qm, rsd, prsd) = get_arguments(
+                                                            args=args, description=desc)
     if ncores==0:
         ncores = get_cpu_count()
     ncores = min(ncores, nsim)
+
     if methods=='all':
         method_list = all
     elif methods=='pairs':
         method_list = pairs
     else:
         method_list = []
-        mpairs = methods.split(';')
+        mpairs = methods.split(',')
         for mp in mpairs:
             (lmethods, cmethods) = mp.split(':')
-            lms = lmethods.split(',')
-            cms = cmethods.split(',')
+            lms = lmethods.split('+')
+            cms = cmethods.split('+')
             for lm in lms:
                 for cm in cms:
                     method_list.append((lm, cm + 'C' if cm else cm))
@@ -319,6 +326,7 @@ def main():
     SSW = list(info["party"].values()).index('SSW')
     del info["party"][SSW]
     info['detail'] = detail
+    info['quality-measures'] = qm
     data = read_data()
     # RUN THE SIMULATION
     percore = round(nsim/ncores, 1)
