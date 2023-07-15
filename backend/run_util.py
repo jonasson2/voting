@@ -9,6 +9,11 @@ def get_hostname():
     host = remove_suffix(socket.gethostname(), '.local')
     return host
 
+def argument_string():
+    import sys
+    argstr = ' '.join(sys.argv[1:])
+    return argstr
+
 def get_arguments(args, description=None, epilog=None):
     # Get arguments from command line and provide help. Returns a list
     # in the same order as the arguments in args.
@@ -39,8 +44,12 @@ def get_arguments(args, description=None, epilog=None):
                 p.add_argument(name, type=type, help=help)
             else:
                 p.add_argument(name, type=type, help=help, nargs='?', default=arg[3])
-    n = p.parse_args()
-    return vars(n).values()
+    n, unknown = p.parse_known_args()
+    arguments = vars(n)
+    arguments["combine"] = unknown;
+    if arguments['nsim'] != 0:
+        assert(len(unknown) == 0)
+    return arguments.values()
 
 def runshell(command):
     result = run(command, stdout=PIPE, shell=True).stdout.decode().splitlines()

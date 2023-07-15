@@ -531,6 +531,7 @@ class Simulation():
 
 class Sim_result:
     # Results from one simulation, or several combined simulations
+    # Not used in Germany simulations
     def __init__(self, dictionary):
         def ishistogram(x):
             return isinstance(x, dict) and 'histcounts' in x

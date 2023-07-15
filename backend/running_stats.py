@@ -4,8 +4,10 @@ from copy import deepcopy
 from util import disp
 
 class Running_stats:
+    members = ["parallel", "name", "options", "shape", "n"]
+    np_members = ["M1", "M2", "M3", "M4", "big", "small"]
     def __init__(self, shape=1, parallel=False, name="", options=None):
-        # Names may be a list of length shape. When shape is not two-dimensional,
+        # name may be a list of length shape. When shape is not two-dimensional,
         self.parallel = parallel
         self.name = name
         self.options = ([] if options is None
@@ -20,9 +22,8 @@ class Running_stats:
         self.n = 0
         self.M1 = np.zeros(self.shape)
         self.M2 = np.zeros(self.shape)
-        if not self.parallel:
-            self.M3 = np.zeros(self.shape)
-            self.M4 = np.zeros(self.shape)
+        self.M3 = np.zeros(self.shape)
+        self.M4 = np.zeros(self.shape)
         self.big = np.zeros(self.shape)
         self.small = np.zeros(self.shape)
 
@@ -38,11 +39,32 @@ class Running_stats:
         return r
 
     @classmethod
-    def from_dict(cls,dictionary):
+    def from_dict(cls, dictionary):
         self = cls()
-        for (key,val) in dictionary.items():
-            setattr(self, key, val)
+        for m in cls.members:
+            setattr(self, m, dictionary[m])
+        for m in cls.np_members:
+            setattr(self, m, np.array(dictionary[m]))
         return self
+
+    def to_dict(self):
+        D = {m: getattr(self, m) for m in self.members}
+        D.update({m: getattr(self, m).tolist() for m in self.np_members})
+        return D
+
+    @classmethod
+    def to_dicts(cls, stats):
+        if isinstance(stats, Running_stats):
+            return stats.to_dict()
+        else:
+            return {key: cls.to_dicts(val) for (key,val) in stats.items()}
+
+    @classmethod
+    def from_dicts(cls, stats):
+        if 'n' in stats and np.isreal(stats['n']):
+            return cls.from_dict(stats)
+        else:
+            return {key: cls.from_dicts(val) for (key,val) in stats.items()}
 
     @classmethod
     def optfun(cls, o):
@@ -155,7 +177,9 @@ def combine_stat(stat1, stat2):
     # stat1 and stat2 are Running_stats or dictionaries of Running_stats with same keys
     # or (recursively) dictionaries of dictionaries of running_stats etc.
     # Each dictionary entry of stat1 is combined with the corresponding entry of stat2.
-    if isinstance(stat1, Running_stats):
+    if stat1 is None:
+        stat1 = stat2
+    elif isinstance(stat1, Running_stats):
         assert(isinstance(stat2, Running_stats))
         stat1.combine(stat2)
     else:

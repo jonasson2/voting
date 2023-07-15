@@ -30,6 +30,7 @@ def get_status(monitor, nsim):
 
 def parallel_simulate(simid):
     # INITIALIZE
+    print('in parallel_simulate')
     data = read_sim_settings(simid)
     sim_settings = data["sim_settings"]
     if sim_settings["simulation_count"] == 0:

@@ -6,7 +6,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 sys.path.append('~/voting/backend')
 sys.path.append('~/voting/backend/methods')
 from readkerg import readkerg2021
-from run_util import get_arguments
+from run_util import get_arguments, argument_string
 from germany_dictionaries import all_land_methods, all_const_methods, method_funs_const, \
     method_funs_land, scalar_stats, land_stats, party_stats, by_land, by_party, \
     land_method_table, const_method_table
@@ -17,8 +17,8 @@ from util import disp, get_cpu_count, infeasible_error
 from table_util import entropy_single, entropy
 from result_tables import method_measure_table, measure_table
 from calculate_seat_shares import calculate_seat_shares_orig
-print('importing randomize')
 from randomize import random_votes, generate_votes, move_CDU_CSU
+from datetime import datetime
 import alternating_scaling
 
 disp(width=60)
@@ -263,6 +263,25 @@ def splitmethods(methodlist):
         landmethods.append('optimal')
     return landmethods, constmethods, pairmethods
 
+def save_stats(stats):
+    import os, json, gzip
+    env = os.environ
+    if "SLURM_ARRAY_JOB_ID" in env:
+        jobid = env["SLURM_ARRAY_JOB_ID"] + ":" + env["SLURM_ARRAY_TASK_ID"]
+    else:
+        jobid = os.environ.get("SLURM_JOB_ID", os.getpid())
+    file = f"stats-{jobid}.gz"
+    D = Running_stats.to_dicts(stats)
+    with gzip.open(file, "wt") as f:
+        json.dump(D, f)
+    return jobid
+
+def load_stats(file):
+    import json, gzip
+    with gzip.open(file) as f:
+        D = json.load(f)
+    return Running_stats.from_dicts(D)
+
 def main():
     # NÁ Í SKIPANALÍNUVIÐFÖNG
     pairs = []
@@ -291,21 +310,27 @@ def main():
                    + const_method_table + '\n]')
     uncorr_desc = 'use uncorrelated votes with RSD given by options -c & -p'
     args = [
-        ['nsim',    int, 'total number of simulations', 100],
+        ['nsim',    int, ('total number of simulations\n' +
+                          '(if 0, combine stats-files given on command line:\n' +
+                          '   run.py 0 [options] stats_xxx.gz...)'), 100],
         ['-detail', bool, 'show results with CI and SD'],
         ['-uncorr', bool, uncorr_desc],
-        ['-ncores', int, 'number of cores', 0, 'N'],
-        ['-seed',   int, 'seed to use', None],
-        ['-methods',str, method_desc, 'pairs'],
-        ['-qm',     str, 'quality measures [all/sel]', 'sel'],
-        ['-rsd',    float, 'relative SD for constituency vote generation',  0.3],
-        ['-prsd',   float, 'relative SD for party vote generation', 0.1],
+        ['-ncores', int,  'number of cores (0 to use all available)', 0, 'N'],
+        ['-seed',   int,  'seed to use', None],
+        ['-methods',str,  method_desc, 'pairs'],
+        ['-qm',     str,  'quality measures [all/sel]', 'sel'],
+        ['-Quiet',  bool, 'suppress output'],
+        ['-rsd',    float,'relative SD for constituency vote generation',  0.3],
+        ['-prsd',   float,'relative SD for party vote generation', 0.1],
     ]
     desc = "Simulate for the whole of Germany using correlated votes by default"
-    (nsim, detail, uncorr, ncores, seed, methods, qm, rsd, prsd) = get_arguments(
-                                                            args=args, description=desc)
+
+    (nsim, detail, uncorr, ncores, seed, methods, qm, Quiet, rsd, prsd, combine) = \
+                                                get_arguments(args=args, description=desc)
+
     if ncores==0:
         ncores = get_cpu_count()
+    print(f'cpu_count={get_cpu_count()}')
     ncores = min(ncores, nsim)
 
     if methods=='all':
@@ -329,14 +354,31 @@ def main():
     info['quality-measures'] = qm
     data = read_data()
     # RUN THE SIMULATION
-    percore = round(nsim/ncores, 1)
-    print(f'Carrying out {nsim} simulations on {ncores} cores ({percore} per core)')
-    param = {'rsd':rsd, 'prsd':prsd, 'nsim':nsim, 'uncorr':uncorr, 'seed':seed}
-    if ncores == 1:
-        stats = run_simulate(data, info, method_list, param, nsim, 0)
+    print(f'Time:    {datetime.now().strftime("%d-%b-%Y %H:%M")}')
+    print(f'Options: {argument_string()}')
+    if nsim > 0:
+        percore = round(nsim/ncores, 1)
+        print(f'Carrying out {nsim} simulations on {ncores} cores ({percore} per core)')
+        param = {'rsd':rsd, 'prsd':prsd, 'nsim':nsim, 'uncorr':uncorr, 'seed':seed}
+        if ncores == 1:
+            stats = run_simulate(data, info, method_list, param, nsim, 0)
+        else:
+            stats = parallel_simulate(data, info, method_list, param, ncores)
+        jobid = save_stats(stats)
     else:
-        stats = parallel_simulate(data, info, method_list, param, ncores)
-    display_results(method_list, stats, data, info)
+        print(f'Combining results from several nodes')
+        assert(len(combine) > 0)
+        stats = load_stats(combine[0])
+        for f in combine[1:]:
+            print(f'File: {f}')
+            s = load_stats(f)
+            combine_stat(stats, s)
+    if not Quiet:
+        display_results(method_list, stats, data, info)
+    else:
+        jobid = save_stats(stats)
+        print(f'Saving statistics for job {jobid}')
 
 if __name__ == "__main__":
     main()
+

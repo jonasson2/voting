@@ -8,10 +8,13 @@ if [ "$1" == "" ]; then
 else
   jobid=$1
 fi
+dir=voting/allt-thyskaland
 if [ -z "$jobid" ]; then
   echo "Engar keyrslur í gangi á Elju, næ í nýjustu skrá"
-  file=`ssh elja 'ls -rt *.out'|tail -1`
-  scp elja:$file .
+  file=$(ssh elja "cd $dir;ls -rt *.out"|tail -1)
+  scp elja:$dir/$file .
+  echo tail:
+  tail $file
   exit
 fi
 echo waiting for job $jobid
@@ -23,4 +26,6 @@ titill='"Hermun á Elju"'
 texti='"Verki '$jobid' lokið"'
 hljod='"default"'
 osascript -e "display notification $texti with title $titill sound name $hljod"
-scp elja:slurm-$jobid.out .
+scp elja:$dir/slurm-$jobid.out .
+echo tail:
+tail slurm-$jobid.out
