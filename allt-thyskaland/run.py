@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # - change-test
 import numpy as np, pandas as pd, sys, json
+# sys.path.append('~/voting/backend')
+# sys.path.append('~/voting/backend/methods')
 from numpy import r_
 from pathos.multiprocessing import ProcessingPool as Pool
-sys.path.append('~/voting/backend')
-sys.path.append('~/voting/backend/methods')
 from readkerg import readkerg2021
 from run_util import get_arguments, argument_string
 from germany_dictionaries import all_land_methods, all_const_methods, method_funs_const, \
@@ -98,8 +98,8 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     qm = info['quality-measures']
     uncorr = param['uncorr']
     seed = [icore, param['seed']] if param['seed'] else None
+    exact = param['exact']
     # yr2021 = data['years'].index(2021)
-    landseats = data["landseats2021"]
     # parties = data['parties'].copy()
     # länder = data["lander"]
     # PDS = parties.index('PDS')
@@ -114,6 +114,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     # CDU = parties.index('CDU')
     # parties.insert(CDU + 1, 'CSU')
     nconst = data["nconst2021"]  #np.array([c.shape[0] for c in constvotes]);
+    nland = len(nconst)
     landmethods, constmethods, pairmethods = splitmethods(methodpairs)
     constmethod_dict = {lm: set() for lm in landmethods}
     rng = np.random.default_rng(seed)
@@ -125,11 +126,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     #     prsd = param['prsd']
     #     gcv, gpv = random_votes(ntask, partyvotes, prsd, constvotes, rsd, parties, rng)
     # else:
-    gcv, gpv = generate_votes(ntask, nconst, rng, param)
-    (nt, nland, nparty) = gpv.shape
-    assert ntask == nt
-    PARTY = 2
-    share = [v/v.sum(PARTY)[:,:,None] for v in gcv]
+    nparty = len(data['parties'])
     max_neg_marg = np.zeros(nland)
     neg_marg_count = np.zeros(nland)
     min_seat_share = np.zeros(nland)
@@ -140,29 +137,55 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     optimal_const_fun = method_funs_const["optimalC"]
     if qm == 'sel':
         pass
-    for k in range(ntask):
-        if icore==0 and k % 1 == 0:
-            print(f'Simulation #{k} on core #{icore}')
+    simulation_number = 0
+    nrepeat = 0;
+    was_infeasible = {}
+    INFEASIBLE = {lm: False for lm in landmethods}
+    while simulation_number < ntask:
+        if icore==0 and simulation_number % 1 == 0:
+            print(f'Simulation #{simulation_number} on core #{icore}')
         LAND = 0
-        nat_vote_share = gpv[k].sum(axis=LAND)/gpv[k].sum()
-        partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], 598), 0]
-        seat_shares = calculate_seat_shares_orig(gpv[k], landseats, partyseats, 'both')
+        PARTY = 1
+        gcv, gpv = generate_votes(1, nconst, rng, param, varmulti=1.0, corrmulti=1.0)
+        share = [v/v.sum(PARTY)[:, None] for v in gcv]
+        nat_vote_share = gpv.sum(axis=LAND)/gpv.sum()
+        if exact is None:
+            landseats = data["landseats2021"]
+            totalseats = 598
+        else:
+            landseats = exact*nconst
+            totalseats = sum(landseats)
+        partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], totalseats), 0]
+        seat_shares = calculate_seat_shares_orig(gpv, landseats, partyseats, 'both')
         selected_opt = {}
         entropy_opt = {}
         alloc = {}
         entro = {}
         for lm in landmethods:
+            was_infeasible[lm] = 1 if INFEASIBLE[lm] else 0
             try:
-                alloc[lm] = land_allocate(lm, gpv[k], partyseats, landseats)
-            except infeasible_error:
-                print('caught exception')
-                raise
-            entro[lm] = entropy(gpv[k], alloc[lm], sainte_lague_gen)
+                alloc[lm] = land_allocate(lm, gpv, partyseats, landseats)
+                toofew = any(alloc[lm].sum(axis=1) < nconst)
+                zerovotealloc =  np.any((alloc[lm] > 0) & (gpv == 0))
+                INFEASIBLE[lm] = toofew or zerovotealloc
+            except infeasible_error as e:
+                print(f"Caught infeasible error: {e}")
+                INFEASIBLE[lm] = True
+        if any(INFEASIBLE.values()):
+            nrepeat += 1
+            if nrepeat > max(5, ntask//2):
+                print(f'Too many infeasible votes, try smaller vote variance')
+                raise(RuntimeError('Many infeasible'))
+            print('Infeasible votes generated, Repeating simulation')
+            continue
+        for lm in landmethods:
+            entro[lm] = entropy(gpv, alloc[lm], sainte_lague_gen)
             selected_opt[lm] = {}
             entropy_opt[lm] = np.zeros(nland)
             for l in range(nland):
-                voteshare = share[l][k]
-                selected_opt[lm][l] = optimal_const_fun(voteshare, alloc[lm][l, :])
+                voteshare = share[l]
+                selected = optimal_const_fun(voteshare, alloc[lm][l, :])
+                selected_opt[lm][l] = selected
                 entropy_opt[lm][l] = entropy_single(voteshare, selected_opt[lm][l])
         for lm in landmethods:
             party_alloc = alloc[lm].sum(axis=0)
@@ -177,6 +200,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
             stat = stats[lm]
             dispar = any(land_disparity) or any(party_disparity)
             failure_rate = 1 if dispar and not lm.endswith('1st') else 0
+            stat['infeasible_rate'].update(was_infeasible[lm])
             stat['failure_rate'].update(failure_rate)
             stat['land_dispar'].update(land_disparity)
             stat['total_land_disparity'].update(total_land_disparity)
@@ -190,7 +214,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                 const_method_fun = method_funs_const[cm]
                 method = f"{lm}:{cm}"
                 for l in range(nland):
-                    voteshare = share[l][k]
+                    voteshare = share[l]
                     if cm=="optimalC":
                         selected = selected_opt[lm][l]
                     else:
@@ -212,6 +236,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                 stat['const_opt_diff'].update(const_opt_diff)
                 stat['winner_all_diff'].update(winner_all_diff)
                 stat['const_entropy_diff'].update(const_entropy_diff)
+        simulation_number += 1
     return stats
 
 def display_results(methodpairs, stats, data, info):
@@ -219,16 +244,15 @@ def display_results(methodpairs, stats, data, info):
     # partyvotes = data["pv"]
     # data["partyseats"] = r_[apportion_sainte_lague(partyvotes.sum(0)[:-1], 598), 0]
     method_measure_table(landmethods, stats, info, 'land')
-    method_measure_table(constmethods, stats, info, 'constituency')
+    # method_measure_table(constmethods, stats, info, 'constituency')
     method_measure_table(pairmethods, stats, info, 'land-constituency')
-    measure_table('optimal', stats, data, info, by_land, 'land')
     measure_table('party1st', stats, data, info, by_land, 'land')
-    measure_table('absmarg', stats, data, info, by_land, 'land')
-    measure_table('party1st:optimalC', stats, data, info, by_land, 'land')
-    measure_table('party1st:relmargC', stats, data, info, by_land, 'land')
-    measure_table('party1st:absmargC', stats, data, info, by_land, 'land')
-    measure_table('party1st:votepctC', stats, data, info, by_land,  'land')
-    measure_table('party1st:ampelC', stats, data, info, by_land,  'land')
+    # measure_table('absmarg', stats, data, info, by_land, 'land')
+    # measure_table('party1st:optimalC', stats, data, info, by_land, 'land')
+    # measure_table('party1st:relmargC', stats, data, info, by_land, 'land')
+    # measure_table('party1st:absmargC', stats, data, info, by_land, 'land')
+    # measure_table('party1st:votepctC', stats, data, info, by_land,  'land')
+    # measure_table('party1st:ampelC', stats, data, info, by_land,  'land')
     pass
 
 def parallel_simulate(data, info, methods, param, ncores):
@@ -263,20 +287,22 @@ def splitmethods(methodlist):
         landmethods.append('optimal')
     return landmethods, constmethods, pairmethods
 
-def save_stats(stats):
+def save_stats(adir, stats):
     import os, json, gzip
     env = os.environ
+    if not os.path.exists(adir):
+        os.makedirs(adir)
     if "SLURM_ARRAY_JOB_ID" in env:
         jobid = env["SLURM_ARRAY_JOB_ID"] + ":" + env["SLURM_ARRAY_TASK_ID"]
     else:
         jobid = os.environ.get("SLURM_JOB_ID", os.getpid())
-    file = f"stats-{jobid}.gz"
+    file = f"{adir}/stats-{jobid}.gz"
     D = Running_stats.to_dicts(stats)
     with gzip.open(file, "wt") as f:
         json.dump(D, f)
     return jobid
 
-def load_stats(file):
+def load_stats(adir, file):
     import json, gzip
     with gzip.open(file) as f:
         D = json.load(f)
@@ -311,22 +337,28 @@ def main():
     uncorr_desc = 'use uncorrelated votes with RSD given by options -c & -p'
     args = [
         ['nsim',    int, ('total number of simulations\n' +
-                          '(if 0, combine stats-files given on command line:\n' +
-                          '   run.py 0 [options] stats_xxx.gz...)'), 100],
+                          'or 0 to combine stats-files given on command line:\n' +
+                          '   run.py 0 [options] stats_xxx.gz...\n'
+                          'or those in the adir subdirectory:\n'
+                          '   run.py 0 -a subdir [options]'),
+         100],
         ['-detail', bool, 'show results with CI and SD'],
         ['-uncorr', bool, uncorr_desc],
         ['-ncores', int,  'number of cores (0 to use all available)', 0, 'N'],
         ['-seed',   int,  'seed to use', None],
         ['-methods',str,  method_desc, 'pairs'],
         ['-qm',     str,  'quality measures [all/sel]', 'sel'],
-        ['-Quiet',  bool, 'suppress output'],
         ['-rsd',    float,'relative SD for constituency vote generation',  0.3],
         ['-prsd',   float,'relative SD for party vote generation', 0.1],
+        ['-adir',   str, 'subdirectory for batch array submission', '.'],
+        ['-exact',  int, ("number of seats to allocate in each constituency using exact" +
+                         "allocation of constitituency seats to parties (don't use" +
+                         "'Landeslisten'; e.g. if =3 then allocate 897 seats)"), None],
     ]
     desc = "Simulate for the whole of Germany using correlated votes by default"
 
-    (nsim, detail, uncorr, ncores, seed, methods, qm, Quiet, rsd, prsd, combine) = \
-                                                get_arguments(args=args, description=desc)
+    (nsim, detail, uncorr, ncores, seed, methods, qm, rsd, prsd, adir, exact, combine)\
+        =                                      get_arguments(args=args, description=desc)
 
     if ncores==0:
         ncores = get_cpu_count()
@@ -359,24 +391,36 @@ def main():
     if nsim > 0:
         percore = round(nsim/ncores, 1)
         print(f'Carrying out {nsim} simulations on {ncores} cores ({percore} per core)')
-        param = {'rsd':rsd, 'prsd':prsd, 'nsim':nsim, 'uncorr':uncorr, 'seed':seed}
+        param = {'rsd':rsd, 'prsd':prsd, 'nsim':nsim, 'uncorr':uncorr, 'seed':seed,
+                 'exact':exact}
         if ncores == 1:
             stats = run_simulate(data, info, method_list, param, nsim, 0)
         else:
             stats = parallel_simulate(data, info, method_list, param, ncores)
-        jobid = save_stats(stats)
     else:
         print(f'Combining results from several nodes')
-        assert(len(combine) > 0)
-        stats = load_stats(combine[0])
-        for f in combine[1:]:
-            print(f'File: {f}')
-            s = load_stats(f)
-            combine_stat(stats, s)
-    if not Quiet:
+        if len(combine)==0:
+            from glob import glob
+            combine = glob(adir + "/*.gz")
+        if len(combine)==0:
+            print("No files to combine found")
+            exit(1)
+        total = 0
+        for i in range(len(combine)):
+            file = combine[i]
+            s = load_stats(adir, file)
+            if i==0:
+                stats = s
+            else:
+                combine_stat(stats, s)
+            n = Running_stats.length(s)
+            print(f'File: {file} with results of {n} simulations')
+            total += n
+        print(f'Total: {total} simulations')
+    if adir=="." or nsim == 0:
         display_results(method_list, stats, data, info)
     else:
-        jobid = save_stats(stats)
+        jobid = save_stats(adir, stats)
         print(f'Saving statistics for job {jobid}')
 
 if __name__ == "__main__":

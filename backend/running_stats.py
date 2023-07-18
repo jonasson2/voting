@@ -54,6 +54,7 @@ class Running_stats:
 
     @classmethod
     def to_dicts(cls, stats):
+        # works recursively; see comments in combine_stat
         if isinstance(stats, Running_stats):
             return stats.to_dict()
         else:
@@ -61,10 +62,21 @@ class Running_stats:
 
     @classmethod
     def from_dicts(cls, stats):
+        # works recursively; see comments in combine_stat
         if 'n' in stats and np.isreal(stats['n']):
             return cls.from_dict(stats)
         else:
             return {key: cls.from_dicts(val) for (key,val) in stats.items()}
+
+    @classmethod
+    def length(cls, stats):
+        if isinstance(stats, Running_stats):
+            return stats.n
+        elif not isinstance(stats,dict) or len(stats)==0:
+            return None
+        else:
+            first = next(iter(stats.values()))
+            return cls.length(first)
 
     @classmethod
     def optfun(cls, o):

@@ -81,6 +81,7 @@ party_stats = [
 scalar_stats = [
     'entropy_diff',
     'failure_rate',
+    'infeasible_rate',
     'total_land_disparity',
 ]
 

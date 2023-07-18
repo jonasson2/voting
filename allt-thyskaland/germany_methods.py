@@ -168,6 +168,17 @@ def länder_first(votes, _, c_alloc):
 #         m.optimize()
 #         return None
 
+def printProblem(votes, party_seats, NC, NP):
+    print(f'Shape of constraint matrix: ({NC}, {NP})')
+    nzp = np.array([[1 if votes[c, p] else 0 for p in range(NP)] for c in range(NC)])
+    print(f'Votes:')
+    print(votes)
+    print(f'Nonzero pattern:')
+    print(nzp)
+    print('Max column sums (party_seats):')
+    print(party_seats)
+    print(f'Total seats: {np.sum(party_seats)}')
+
 from pulp import *
 def pulp_optimal_const(votes, party_seats):
     solvers = [GLPK_CMD, GUROBI, COIN_CMD]
@@ -190,8 +201,8 @@ def pulp_optimal_const(votes, party_seats):
     m.solve(solvers[solver_to_use](msg=0))
     if m.sol_status != SOLVED:
         status = m.sol_status
-        print('Solving again with verbose on:')
-        m.solve(solvers[solver_to_use](msg=1))
+        print('*** Linear programming solver failure in single constituency alocation')
+        printProblem(votes, party_seats, NC, NP)
         expl = constants.LpStatus[status] if status in constants.LpStatus else "unknown"
         raise RuntimeError(f"PuLP solver failed with status = {status} ({expl})")
     selected = np.zeros(NC, int)
