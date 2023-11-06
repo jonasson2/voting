@@ -5,6 +5,9 @@ from copy import deepcopy
 sys.path.append('~/voting/backend/methods')
 from alternating_scaling import alt_scaling
 from division_rules import sainte_lague_gen
+from methods.common_methods import max_absolute_margin
+from methods.common_methods import max_relative_margin
+
 #import gurobipy
 
 def find_first(p):
@@ -66,40 +69,60 @@ def ampel_const(votes, party_seats):
                 openP[p] = False
     return party
 
-def rel_margin_const(votes_all, party_seats):
-    return max_margin(votes_all, party_seats, 'relative')
+def rel_margin_const(votes, party_seats):
+    return max_margin(votes, party_seats, 'relative')
 
 def abs_margin_const(votes_all, party_seats):
     return max_margin(votes_all, party_seats, 'absolute')
 
-def max_margin(votes_all, party_seats, type):
-    votes = votes_all[:,:-1]
+def max_margin(votes, party_seats, type):
     (nconst, nparty) = votes.shape
-    col_sum = np.zeros(nparty)
-    party = [None]*nconst
-    pmax = np.argmax(votes, axis=1)
-    I = range(nconst)
-    share_rest = deepcopy(votes)
-    share_rest[I, pmax] = -1
-    advantage = votes[I, pmax]/np.max(share_rest, axis=1)
-    for n in range(nconst):
-        const = np.argmax(advantage)
-        p = pmax[const]
-        party[const] = p
-        advantage[const] = -1
-        pmax[const] = -1
-        col_sum[p] += 1
-        if col_sum[p] == party_seats[p]:
-            C = find(pmax==p)
-            for c in C:
-                q = np.argmax(share_rest[c,:])
-                pmax[c] = q
-                share_rest[c, q] = -1
-                max_rest = max(share_rest[c,:])
-                advantage[c] = (0 if max_rest == 0
-                                else votes[c, q]/max_rest if type=='relative'
-                                else votes[c, q] - max_rest > 0)
-    return party
+    assert(party_seats.sum() >= nconst)
+    allocated = np.zeros(nparty)
+    openP = [p for p in range(nparty) if party_seats[p] > 0]
+    openC = list(range(nconst))
+    selected = [None]*nconst
+    while openC:
+        margin = np.zeros(len(openC))
+        jmax = np.zeros(len(openC), int)
+        for (k,c) in enumerate(openC):
+            v = votes[c, openP]
+            j = v.argmax()
+            if len(v) > 1:
+                if type=='absolute':
+                    margin[k] = (v[j] - np.delete(v, j)).min()
+                else: #type=='relative'
+                    margin[k] = (v[j]/np.maximum(1e-10, np.delete(v, j))).min()
+            jmax[k] = j
+        kmax = margin.argmax()
+        cmax = openC[kmax]
+        pmax = openP[jmax[kmax]]
+        selected[cmax] = pmax
+        allocated[pmax] += 1
+        openC.remove(cmax)
+        if allocated[pmax] == party_seats[pmax]:
+            openP.remove(pmax)
+    return selected
+
+    # advantage = votes[I, pmax]/np.max(share_rest, axis=1)
+    # while any(free_seats):
+    #     const = np.argmax(advantage)
+    #     p = pmax[const]
+    #     party[const] = p
+    #     advantage[const] = -1
+    #     pmax[const] = -1
+    #     col_sum[p] += 1
+    #     if col_sum[p] == party_seats[p]:
+    #         C = find(pmax==p)
+    #         for c in C:
+    #             q = np.argmax(share_rest[c,:])
+    #             pmax[c] = q
+    #             share_rest[c, q] = -1
+    #             max_rest = max(share_rest[c,:])
+    #             advantage[c] = (0 if max_rest == 0
+    #                             else votes[c, q]/max_rest if type=='relative'
+    #                             else votes[c, q] - max_rest > 0)
+    # return party
 
 def scandinavian(votes, _):
     party = np.argmax(votes[:,:-1], 1)

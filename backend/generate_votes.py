@@ -54,14 +54,16 @@ def generate_corr_votes(
     for p in range(nparty):
         M_p = M[:, p]
         V = (M_p*const_rsd)**2
-        sigma = np.sqrt(np.log(1 + V / M_p**2))
+        deilir = np.max(1, M_p**2)
+        print("deilir=", deilir)
+        sigma = np.sqrt(np.log(1 + V / np.max(1, M_p**2)))
         mu = np.log(M_p) - sigma ** 2 / 2
         e = np.sqrt(np.exp(sigma ** 2) - 1)
 
         if include_pv:
             Mpv = party_votes[p]
             Vpv = (Mpv*party_vote_rsd)**2
-            sigma_pv = np.sqrt(np.log(1 + Vpv / Mpv**2))
+            sigma_pv = np.sqrt(np.log(1 + Vpv / np.max(1, Mpv**2)))
             mu_pv = np.log(Mpv) - sigma_pv ** 2 / 2
             e_pv = np.sqrt(np.exp(sigma_pv ** 2) - 1)
             corr = np.zeros((nconst + 1, nconst +1))

@@ -95,8 +95,12 @@ def get_stat(stat, by = None, oper = None, with_detail=False):
         oper_pos = stat.options.index(oper) - lenopt
         idx = (stat.shape + oper_pos if isinstance(stat.shape, int)
                else tuple(s + oper_pos for s in stat.shape))
-    fmt = '.3%' if name.endswith(('share', 'marg', 'rate')) else '.3f';
-    fmts = '.2%' if name.endswith(('share', 'marg', 'rate')) else '.2f';
+    fmt = ('.4f' if name.endswith('entropy_diff')
+            else '.3%' if name.endswith(('share', 'marg', 'rate'))
+            else '.3f')
+    fmts = ('.3f' if name.endswith('entropy_diff')
+            else '.2%' if name.endswith(('share', 'marg', 'rate'))
+            else '.2f')
     val = stat.numpy_mean()
     error = stat.numpy_error()
     std = stat.numpy_std()

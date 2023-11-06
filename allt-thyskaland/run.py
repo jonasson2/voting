@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 # - change-test
 import numpy as np, pandas as pd, sys, json
 # sys.path.append('~/voting/backend')
@@ -32,9 +32,9 @@ def addrun(n, name):
         options = None if n == 1 else 'all')
     return r
 
-def initialize_stats(methodlist, nland, nparty):
+def initialize_stats(methodlist, nland, nparty, exact):
     stats = {}
-    landmethods, constmethods, pairmethods = splitmethods(methodlist)
+    landmethods, constmethods, pairmethods = splitmethods(methodlist, exact)
     for lm in landmethods:
         stats[lm] = {}
         stat = stats[lm]
@@ -79,20 +79,6 @@ def seat_diff(selected1, selected2):
     d = sum(s1 != s2 for (s1, s2) in zip(selected1, selected2))
     return d
 
-def entropy_matrix(votes, seats, divisor_gen):
-    div_gen = divisor_gen()
-    div = np.array([next(div_gen) for _ in range(seats.max())])
-    (m,n) = votes.shape
-    L = range(m)
-    P = range(n)
-    entropy = np.zeros((m,n))
-    for l in L:
-        for p in P:
-            if votes[l,p] > 0:
-                for s in range(seats[l,p]):
-                    entropy[l,p] += np.log(votes[l,p]/div[s])
-    return entropy
-
 def run_simulate(data, info, methodpairs, param, ntask, icore):
     alternating_scaling.icore = icore
     qm = info['quality-measures']
@@ -115,7 +101,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     # parties.insert(CDU + 1, 'CSU')
     nconst = data["nconst2021"]  #np.array([c.shape[0] for c in constvotes]);
     nland = len(nconst)
-    landmethods, constmethods, pairmethods = splitmethods(methodpairs)
+    landmethods, constmethods, pairmethods = splitmethods(methodpairs, exact)
     constmethod_dict = {lm: set() for lm in landmethods}
     rng = np.random.default_rng(seed)
     for p in pairmethods:
@@ -133,7 +119,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     const_opt_diff = np.zeros(nland)
     winner_all_diff = np.zeros(nland)
     const_entropy = np.zeros(nland)
-    stats = initialize_stats(methodpairs, nland, nparty)
+    stats = initialize_stats(methodpairs, nland, nparty, exact)
     optimal_const_fun = method_funs_const["optimalC"]
     if qm == 'sel':
         pass
@@ -143,7 +129,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
     INFEASIBLE = {lm: False for lm in landmethods}
     while simulation_number < ntask:
         if icore==0 and simulation_number % 1 == 0:
-            print(f'Simulation #{simulation_number} on core #{icore}')
+            print(f'Simulation #{simulation_number} on core #{icore}', flush=True)
         LAND = 0
         PARTY = 1
         gcv, gpv = generate_votes(1, nconst, rng, param, varmulti=1.0, corrmulti=1.0)
@@ -153,15 +139,13 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
             landseats = data["landseats2021"]
             totalseats = 598
         else:
-            landseats = exact*nconst
+            landseats = exact*np.array(nconst)
             totalseats = sum(landseats)
         partyseats = r_[apportion_sainte_lague(nat_vote_share[:-1], totalseats), 0]
         seat_shares = calculate_seat_shares_orig(gpv, landseats, partyseats, 'both')
         selected_opt = {}
-        entropy_opt = {}
         alloc = {}
-        entro = {}
-        for lm in landmethods:
+        for lm in landmethods: # Allocate to parties in the Länder
             was_infeasible[lm] = 1 if INFEASIBLE[lm] else 0
             try:
                 alloc[lm] = land_allocate(lm, gpv, partyseats, landseats)
@@ -178,15 +162,16 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                 raise(RuntimeError('Many infeasible'))
             print('Infeasible votes generated, Repeating simulation')
             continue
-        for lm in landmethods:
-            entro[lm] = entropy(gpv, alloc[lm], sainte_lague_gen)
+        const_entropy_opt = {}
+        entropy_bundeswide = {}
+        for lm in landmethods: # Select candidates in constituencies
+            entropy_bundeswide[lm] = entropy(gpv, alloc[lm], sainte_lague_gen)
             selected_opt[lm] = {}
-            entropy_opt[lm] = np.zeros(nland)
+            const_entropy_opt[lm] = np.zeros(nland)
             for l in range(nland):
                 voteshare = share[l]
-                selected = optimal_const_fun(voteshare, alloc[lm][l, :])
-                selected_opt[lm][l] = selected
-                entropy_opt[lm][l] = entropy_single(voteshare, selected_opt[lm][l])
+                selected_opt[lm][l] = optimal_const_fun(voteshare, alloc[lm][l, :])
+                const_entropy_opt[lm][l] = entropy_single(voteshare, selected_opt[lm][l])
         for lm in landmethods:
             party_alloc = alloc[lm].sum(axis=0)
             land_alloc = alloc[lm].sum(axis=1)
@@ -194,7 +179,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
             land_disparity = land_alloc - landseats
             total_land_disparity = sum(np.maximum(land_disparity, 0))
             seats_minus_shares = abs(alloc[lm] - seat_shares).sum(0)
-            entropy_diff = entro["optimal"] - entro[lm]
+            entropy_diff = entropy_bundeswide["optimal"] - entropy_bundeswide[lm]
             #print('lm, ed:', lm, entropy_diff)
             opt_diff = abs(alloc[lm] - alloc["optimal"]).sum(0)
             stat = stats[lm]
@@ -213,6 +198,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
             for cm in constmethod_dict[lm]:
                 const_method_fun = method_funs_const[cm]
                 method = f"{lm}:{cm}"
+                const_entropy = np.zeros(nland)
                 for l in range(nland):
                     voteshare = share[l]
                     if cm=="optimalC":
@@ -229,7 +215,7 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
                     winner_all_diff[l] = sum(voteshare.argmax(axis=1) != selected)
                     const_entropy[l] = entropy_single(voteshare, selected)
                 stat = stats[method]
-                const_entropy_diff = entropy_opt[lm] - const_entropy
+                const_entropy_diff = const_entropy_opt[lm] - const_entropy
                 stat['max_neg_marg'].update(max_neg_marg)
                 stat['neg_marg_count'].update(neg_marg_count)
                 stat['min_seat_share'].update(min_seat_share)
@@ -239,8 +225,8 @@ def run_simulate(data, info, methodpairs, param, ntask, icore):
         simulation_number += 1
     return stats
 
-def display_results(methodpairs, stats, data, info):
-    (landmethods, constmethods, pairmethods) = splitmethods(methodpairs)
+def display_results(methodpairs, stats, data, info, exact):
+    (landmethods, constmethods, pairmethods) = splitmethods(methodpairs, exact)
     # partyvotes = data["pv"]
     # data["partyseats"] = r_[apportion_sainte_lague(partyvotes.sum(0)[:-1], 598), 0]
     method_measure_table(landmethods, stats, info, 'land')
@@ -274,15 +260,14 @@ def remove_duplicates(L):
             newL.append(l)
     return newL
 
-def splitmethods(methodlist):
+def splitmethods(methodlist, exact):
     if isinstance(methodlist[0], (tuple, list)):
-        landmethods = remove_duplicates([pair[0] for pair in methodlist])
-        constmethods = remove_duplicates([pair[1] for pair in methodlist if pair[1]])
-        pairmethods = [f"{pair[0]}:{pair[1]}" for pair in methodlist if pair[1]]
+        pairs = [pair for pair in methodlist if not (exact and pair[0]=='party1st')]
     else:
-        landmethods = methodlist
-        constmethods = []
-        pairmethods = []
+        pairs = [(lm,"") for lm in methodlist if not (exact and lm=='party1st')]
+    landmethods = remove_duplicates([pair[0] for pair in pairs])
+    constmethods = remove_duplicates([pair[1] for pair in pairs if pair[1]])
+    pairmethods = [f"{pair[0]}:{pair[1]}" for pair in pairs if pair[1]]
     if 'optimal' not in landmethods:
         landmethods.append('optimal')
     return landmethods, constmethods, pairmethods
@@ -334,7 +319,7 @@ def main():
                    + land_method_table + '\n'
                    + 'and mconst is one of:'
                    + const_method_table + '\n]')
-    uncorr_desc = 'use uncorrelated votes with RSD given by options -c & -p'
+    uncorr_desc = 'use uncorrelated votes'
     args = [
         ['nsim',    int, ('total number of simulations\n' +
                           'or 0 to combine stats-files given on command line:\n' +
@@ -348,14 +333,15 @@ def main():
         ['-seed',   int,  'seed to use', None],
         ['-methods',str,  method_desc, 'pairs'],
         ['-qm',     str,  'quality measures [all/sel]', 'sel'],
-        ['-rsd',    float,'relative SD for constituency vote generation',  0.3],
-        ['-prsd',   float,'relative SD for party vote generation', 0.1],
+        ['-rsd',    float,'relative SD for constituency votes',  None],
+        ['-prsd',   float,'relative SD for party vote generation', None],
         ['-adir',   str, 'subdirectory for batch array submission', '.'],
         ['-exact',  int, ("number of seats to allocate in each constituency using exact" +
                          "allocation of constitituency seats to parties (don't use" +
                          "'Landeslisten'; e.g. if =3 then allocate 897 seats)"), None],
     ]
-    desc = "Simulate for the whole of Germany using correlated votes by default"
+    desc = "Simulate for the whole of Germany using parameters from modelparams.mat " \
+           "votes by default"
 
     (nsim, detail, uncorr, ncores, seed, methods, qm, rsd, prsd, adir, exact, combine)\
         =                                      get_arguments(args=args, description=desc)
@@ -418,7 +404,7 @@ def main():
             total += n
         print(f'Total: {total} simulations')
     if adir=="." or nsim == 0:
-        display_results(method_list, stats, data, info)
+        display_results(method_list, stats, data, info, exact)
     else:
         jobid = save_stats(adir, stats)
         print(f'Saving statistics for job {jobid}')

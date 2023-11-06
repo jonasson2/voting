@@ -31,17 +31,23 @@ def random_partyvotes(nsim, prsd, partyvotes, rng):
     gpv = rng.gamma(shapep, scalep, size = sizep)*partyvotes
     return gpv
 
-def random_const_votes(nsim, nconst, nparty, const_vote_params, param, rng):
-    rsd = param['rsd']
+def random_const_votes(nsim, nconst, const_vote_params, param, rng):
+    RSD = param['rsd']
+    RSD_unspecified = RSD is None
     gcv = []
-    party_votes = np.squeeze(const_vote_params['votes_all'])
+    sourcevotes = const_vote_params["ref_votes"][0]
+    breakpoints = const_vote_params["breakpoints"][0]
+    values = const_vote_params["values"][0]
     for (l, num_const) in enumerate(nconst):
-        size = (nsim, num_const, nparty)
-        M = np.ones(size)
-        S = param['rsd']*M
+        M = sourcevotes[l]
+        if RSD_unspecified:
+            RSD = np.interp(M, breakpoints, values)
+        S = RSD*M
+        (nconst, nparty) = M.shape
         (mu, sig) = lognparam(M, S**2)
-        cvl = rng.lognormal(mu, sig)
-        cvl *= party_votes[l]/nconst[l]
+        cvl = np.zeros((nsim, nconst, nparty));
+        for k in range(nsim):
+            cvl[k,:,:] = rng.lognormal(mu, sig)
         gcv.append(cvl)
     return gcv
 
@@ -63,17 +69,17 @@ def regressed_const_votes(partyvotes, nconst, rng, data, varmulti=1.0):
 
 def generate_votes(nsim, nconst, rng, param, varmulti=1.0, corrmulti=1.0):
     model_params = loadmat("matlab/model_params.mat")
-    nparty = len(model_params['parties'])
-    if param['uncorr']:
-        mu = model_params['mu']
-        RSD = param['prsd']
-        gpv = uncorrelated_partyvotes(nsim, mu, RSD, rng)
+    UNCORR = param['uncorr']
+    if UNCORR:
+        PRSD = param['prsd']
+        gpv = uncorrelated_partyvotes(nsim, model_params, PRSD, rng)
     else:
         gpv = correlated_partyvotes(nsim, model_params, rng, varmulti, corrmulti)
-    const_vote_params = loadmat("matlab/regression_params.mat")
-    if param['uncorr']:
-        gcv = random_const_votes(nsim, nconst, nparty, const_vote_params, param, rng)
+    if UNCORR:
+        const_vote_params = loadmat("matlab/uncorr_model.mat")
+        gcv = random_const_votes(nsim, nconst, const_vote_params, param, rng)
     else:
+        const_vote_params = loadmat("matlab/regression_params.mat")
         gcv = regressed_const_votes(gpv, nconst, rng, const_vote_params, varmulti)
     votesum = model_params["votesum"].flatten()
     parties = [m[0] for m in model_params['parties'][:,0]]
@@ -87,18 +93,24 @@ def generate_votes(nsim, nconst, rng, param, varmulti=1.0, corrmulti=1.0):
     else:
         return gcv, gpv
 
-def uncorrelated_partyvotes(nsim, mu, RSD, rng):
-    sig = np.sqrt(np.log(1 + RSD**2))
-    (nland, nparty) = mu.shape
-    gpv = np.zeros((nsim, nland, nparty))
-    for p in range(nparty):
-        for l in range(nland):
-            gpv[:,l,p] = rng.lognormal(mu[l,p], sig, nsim)
+def uncorrelated_partyvotes(nsim, model_params, PRSD, rng):
+    if PRSD:
+        mu = model_params['mu']
+        sig = np.sqrt(np.log(1 + PRSD**2))
+        (nland, nparty) = mu.shape
+        gpv = np.zeros((nsim, nland, nparty))
+        for p in range(nparty):
+            for l in range(nland):
+                gpv[:, l, p] = rng.lognormal(mu[l, p], sig, nsim)
+    else:
+        gpv = correlated_partyvotes(nsim, model_params, rng, varmulti = 1, corrmulti = 0)
     return gpv
 
 def multiply_variance(A, varmulti, corrmulti):
     D = np.sqrt(np.diagonal(A))
     R = A/D[:,None]/D[None,:]*corrmulti
+    I = range(R.shape[0])
+    R[I,I] = 1.0
     Dm = D*np.sqrt(varmulti)
     A = R*Dm[:,None]*Dm[None,:]
     return A

@@ -5,11 +5,11 @@
 # or
 #   'submit.sh elja 4x1000' for 1000 simulation on each of 4 nodes
 # use 'ssh <cluster> squeue' to see queue information
-#elja-copy.sh
 cluster=$1
 shift
 nsim=$1
 shift
+copy.sh $cluster
 dir="~/voting/allt-thyskaland"
 subdir="."
 array=""

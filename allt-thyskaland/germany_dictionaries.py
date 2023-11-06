@@ -13,11 +13,11 @@ from common_methods import \
     rel_sup_medium, \
     rel_sup_simple
 # from max_vote_percentage import max_vote_percentage
+# from farthest_from_next import farthest_from_next
 from switching import switching
 from alternating_scaling import alt_scaling
 from alternating_scaling import alt_scaling_new
-from farthest_from_next import farthest_from_next
-from max_absolute_margin import max_absolute_margin
+# from max_absolute_margin import max_absolute_margin
 #from gurobi_optimal import gurobi_optimal
 from germany_methods import parties_first, länder_first, votepct_const, rel_margin_const, \
     abs_margin_const, scandinavian, optimal_const, ampel_const, \

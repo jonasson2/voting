@@ -96,7 +96,6 @@ function [line, R] = dist_plot(C, D, R)
   axis([0,640,0.50,1])
   set(ax, 'ytick', 0.5:0.1:1)
   set(ax, 'TitleFontWeight', 'normal')
-  save_fig()
   Dwest = vecl(D(1:10, 1:10));
   Cwest = vecl(C(1:10,1:10));
   [~, edges, bins] = histcounts(Dwest, [0:100:500, 700]);
@@ -109,6 +108,7 @@ function [line, R] = dist_plot(C, D, R)
   plot(Dwest, Cwest, '.', markersize=15, color=rgb('brown'))
   plot(X, Y, color=[rgb('darkgray') 0.6], linewidth=5)
   tightaxis([0,0,5,10])
+  save_fig()
   for k=1:length(edges)-1
     correl = Cwest(bins==k);
     hdr = sprintf("West-West, %d–%d km", edges(k), edges(k+1));
@@ -161,6 +161,14 @@ function R = corr_par(C, lander)
   R(other2, Berlin) = table3(3, 2);
 end
 
+function V = lognormal_variance(x)
+  z = log(x);
+  mu = mean(z, 'omitnan');
+  sig = std(z, 'omitnan');
+  M = exp(mu + sig.^2/2);
+  V = (exp(sig) - 1).*M.^2;
+end
+
 function p = RSD_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   demingpar = 1000;
   vote_share = vote_share(:, SEL, :);
@@ -170,11 +178,18 @@ function p = RSD_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   nd = ndims(vote_share);
   nflokkar = length(flokkar);
   xp = mean(vote_share, 'omitnan');
-  yp = std(vote_share, 0, 'omitnan')./xp*100;
+  V = lognormal_variance(vote_share);
+  yp = std(vote_share, 'omitnan')./xp*100;
   w = sum(~isnan(vote_share)) - 1;
   xp = xp(:)';
   yp = yp(:)';
   wp = w(:)';
+  if exist('nr', 'Var')
+    fprintf('nr=%d; ', nr)
+  else
+    fprintf('no nr; ')
+  end
+  fprintf('nd=%d\n', nd)
   if nd==3
     grp = repmat(1:nflokkar, 1, 16);
   else
@@ -205,7 +220,16 @@ function p = RSD_plot(vote_share, litir, flokkar, titill, SEL, fig, nr)
   set(gca,'xtick', 0:10:xmax)
   set(gca,'ytick', 0:10:ymax)
   legend([g;gh], [flokkar; 'best fit'], NumColumns=2, location="northeast")
-  xlabel('Vote share, average over all elections, %')
+  if exist('nr', 'Var')
+    if nr==4
+      st = "Whole Germany vote share";
+    else
+      st = "Vote share in individual Länder";
+    end
+  else
+    st = "Vote share";
+  end
+  xlabel(st + ", average over all elections, %")
   ylabel('Relative standard deviation, %')
   if ~isempty(titill)
     title(titill);
@@ -263,14 +287,15 @@ function figure_positions()
   function figpos_if_selected(fig, x, y, w, h)
     global FIGURES %#ok<GVMIS> 
     if ismember(fig, FIGURES)
-      figpos(fig, x, y, w, h)
+      figpos('TM',fig, x, y, w, h)
     end
   end
   w = 440;
   h = 400;
-  wnarrow = 340;
-  hextra = round(1.8*h);
-  wextra = round(1.3*w);
+  wnarrow = 390;
+  hextra = round(2.2*h);
+  wextra = round(1.5 ...
+    *w);
   %for i=1:6, figure(i); end
   figpos_if_selected(1, 'left', h, w, h)
   figpos_if_selected(2, 'right', 'bottom', wextra, hextra)

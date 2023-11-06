@@ -1,5 +1,5 @@
 function count_outliers(varargin)
-  fig = getKeywordParams(varargin, figure=6);
+  fig = getKeywordParams(figure=6);
   if ~exist("figure", "var"), fig = 6; end
   figure(fig); clf
   data = load('regression_params.mat');

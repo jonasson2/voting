@@ -25,6 +25,16 @@ def relative_superiority(*args, **_):
     heading = "Superiority ratio"
     return common_allocate(*args, superiority_full, heading, reason)
 
+def max_absolute_margin(*args, **_):
+    reason = "Max next-in and next-but-one-in vote score difference"
+    heading = "Margin"
+    return common_allocate(*args, absolute_margin, heading, reason)
+
+def max_relative_margin(*args, **_):
+    reason = "Max next-in and next-but-one-in vote score ratio"
+    heading = "Relative margin"
+    return common_allocate(*args, relative_margin, heading, reason)
+
 def rel_sup_medium(*args, **_):
     reason = "Max ratio of next-in vote score to computed substitute vote score"
     heading = "Superiority ratio"
@@ -54,10 +64,23 @@ def vote_percentage(votes, alloc, div, **_):
     party = np.argmax(pct)
     return party, pct[party]
 
+def absolute_margin(votes, alloc, div, **_):
+    quot = votes/div[alloc]
+    party = np.argmax(quot)
+    margin = (quot[party] - np.delete(quot, party)).min()
+    return party, margin
+
+def relative_margin(votes, alloc, div, **_):
+    quot = votes/div[alloc]
+    party = np.argmax(quot)
+    others = np.delete(quot, party)
+    margin = 10000000 if others.min() == 0 else (quot[party]/others).min()
+    return party, margin
+
 def seat_share(votes, alloc, div, **kwargs):
     nseats = kwargs["nseats"]
     ss = nseats.sum()*votes/div[alloc]/votes.sum()
-    party = np.argmax[ss]
+    party = np.argmax(ss)
     return party, ss[party]
 
 def superiority_simple(*args, **kwargs):

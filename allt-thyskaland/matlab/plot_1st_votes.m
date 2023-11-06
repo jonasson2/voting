@@ -1,7 +1,6 @@
 %#ok<*AGROW,*UNRCH,*ASGLU,*NASGU>
 function plot_1st_votes()
   set(0, 'defaultaxeslinewidth', 0.8)
-  LOG = false;
   BRK = [15, 25, 35, 50];
   set(0, 'defaultaxesticklength', [0,0])
   [partyvotes, constvotes_raw, parties, lander,colors,yr] = read_votes();
@@ -15,24 +14,28 @@ function plot_1st_votes()
     end
   end
   votesum = sum(partyvotes,2,'omitnan');
-  DROP = ismember(parties, ["PDS", "AfD"]);
   voteshareP = partyvotes./votesum*100;
   voteshare_mean = squeeze(mean(voteshareP(end-2:end,:,:),'omitnan'));
-  voteshareP(:,DROP,:) = [];
   for l=1:nland
     votesum = sum(constvotes{l}, 2, 'omitnan');
     V = constvotes{l}./votesum*100;
     V(V==0) = nan;
-    if LOG, V = log(V); end
-    V(:,DROP,:) = [];
     voteshareC{l} = V;
+  end
+  save constvotes.mat voteshareC parties lander colors -mat
+
+  % DROP PDS AND AfD FOR THE REST OF THIS PROCEDURE
+  DROP = ismember(parties, ["PDS", "AFD"]);
+  voteshareP(:,DROP,:) = [];
+  for l=1:nland
+    voteshareC{l}(:,DROP,:) = [];
   end
   parties(DROP) = [];
   nparty = nparty - sum(DROP);
   colors(DROP, :) = [];
-  annotate(margin=[3,1])
 
   % PLOT CONSTITUENCY VOTES ACCORDING TO PARTY VOTES FOR EACH LAND
+  annotate(margin=[3,1])
   figure(1); clf
   figpos('SM', 'l', 'b', 0.5, 1)
   clear pvotes_vec
@@ -67,17 +70,12 @@ function plot_1st_votes()
     xlabel('Party vote share (%)')
     ylabel('Constituency vote share (%)')
     vmax = max(50, max(pvotes_vec{l}) + 1);
-    setaxis(vmax, 0, 80, LOG)
+    setaxis(vmax, 0, 80)
     annotate(lander(l), "NW")
     Pl = pvotes_vec{l};
     Cl = cvotes_vec{l};
-    if LOG
-      par = polyfit_and_plot(Pl, Cl, 3);
-      label_values(@polyval, par, "cvs", digits=0, log=LOG)
-    else
-      [bstd,resrms(l)] = broken_line_fit_and_plot(Pl, Cl, breaks, log=LOG);
-      label_values(@broken_val, bstd, "cvs", digits=0, log=LOG,resrms=resrms(l))
-    end
+    [bstd,resrms(l)] = broken_line_fit_and_plot(Pl, Cl, breaks, zero=true);
+    label_values(@(x)bstd(x), "cvs", digits=0, resrms=resrms(l))
     grid on
     box on
   end
@@ -103,21 +101,16 @@ function plot_1st_votes()
       ymax = max(ymax, max(y));
     end
     xlabel('Party vote share (%)')
-    if LOG
-      ylbl = "SD of log(const. vote share)";
-      if lander(l)=="Berlin", ymax=3; else, ymax=2; end
-    else
-      ylbl = 'SD of constituency vote share (%)';
-      ymin = 0;
-      if lander(l)=="Berlin", ymax=17; else, ymax=9; end
-    end
+    ylbl = 'SD of constituency vote share (%)';
+    ymin = 0;
+    if lander(l)=="Berlin", ymax=17; else, ymax=9; end
     ylabel(ylbl)
     vmax = max(50, max(pvotes_vec{l}) + 1);
-    setaxis(vmax, ymin, ymax, LOG)
+    setaxis(vmax, ymin, ymax)
     annotate(lander(l), "NW")
     I = ~isnan(stdevs{l});
     pf = polyfit_and_plot(pvotes{l}(I), stdevs{l}(I), 1);
-    if ~LOG, label_values(@polyval, pf, "SD"); end
+    label_values(@(x) polyval(pf, x), "SD");
     grid on
     box on
   end
@@ -137,40 +130,32 @@ function plot_1st_votes()
   box on
   xlabel('Party vote share (%)')
   ylabel('Constituency vote share (%)')
-  if LOG
-    par = polyfit_and_plot(Pall, Call, 3, top=true);
-    label_values(@polyval, par, "cvs", log=LOG)
-    residuals = Call - polyval(par, Pall);
-  else
-    [bcvs,resrms] = broken_line_fit_and_plot(Pall, Call, BRK, log=LOG ...
-      ,                                      top=true, linewidth=6);
-    label_values(@broken_val, bcvs, "cvs", resrms=resrms)
-    residuals = Call - broken_val(bcvs, Pall);
-  end
-  setaxis(60, 0, max(Call), LOG)
+  [bcvs,resrms] = broken_line_fit_and_plot(Pall, Call, BRK, zero=true ...
+    ,                                      top=true, linewidth=6);
+  label_values(@(x) bcvs(x), "cvs", resrms=resrms)
+  residuals = Call - bcvs(Pall);
+  setaxis(60, 0, max(Call))
   large_marker_legend(parties, colors, 10)
   tightaxis()
   print -dpng cv-by-pv+party.png
 
   % PLOT CONSTITUENCY VOTES ACCORDING TO PARTY VOTES AND PARTY
-  if ~LOG
-    figure(4), clf
-    figpos('SM', 'l', 't', 0.3, 0.8)
-    for p=1:nparty
-      subplot(3,2,p)
-      J = Party==p;
-      hold on
-      plot(Pall(J), Call(J), '.', color=colors(p,:), markersize=mkrsiz*0.7)
-      [bparty, rrms] = broken_line_fit_and_plot(Pall(J), Call(J), BRK);
-      label_values(@broken_val, bparty, "cvs", resrms=rrms, values=[10,20])
-      xlabel('Party vote share (%)')
-      ylabel('Constituency vote share (%)')
-      annotate(parties(p), 'NW')
-      box on
-      grid on
-    end
-    tightaxis(3,2)
+  figure(4), clf
+  figpos('SM', 'l', 't', 0.3, 0.8)
+  for p=1:nparty - 1
+    subplot(3,2,p)
+    J = Party==p;
+    hold on
+    plot(Pall(J), Call(J), '.', color=colors(p,:), markersize=mkrsiz*0.7)
+    [bparty, rrms] = broken_line_fit_and_plot(Pall(J), Call(J), BRK, zero=true);
+    label_values(@(x) bparty(x), "cvs", resrms=rrms, values=[10,20])
+    xlabel('Party vote share (%)')
+    ylabel('Constituency vote share (%)')
+    annotate(parties(p), 'NW')
+    box on
+    grid on
   end
+  tightaxis(3,2)
   print -dpng cv-by-pv+party-panels.png
 
   % CALCULATE RESIDUALS, OUTLIERS AND SKEWNESS
@@ -211,9 +196,9 @@ function plot_1st_votes()
   hold on
   figpos('SM', 'r', 0.4, 0.2, 0.3)
   plot(V, R, '.', color=rgb("orangered"), markersize=30)
-  if LOG, ymax = 0.65; else, ymax = 8; end
+  ymax = 8;
   axis([0,55,0,ymax])
-  bstd = broken_line_fit_and_plot(V, R, 20, log=LOG);
+  bstd = broken_line_fit_and_plot(V, R, 20, zero=true);
   grid on
   box on
   xlabel('Party vote share (%)')
@@ -222,28 +207,26 @@ function plot_1st_votes()
   print -dpng resrms-by-pv.png
 
   % DISPLAY MODEL PARAMETERS ON SCREEN AND WRITE THEM TO FILE
-  if ~LOG
-    disp(' ')
-    disp('MODEL:')
-    disp('    CVS = l(PVS) + eps')
-    disp('  where eps ~ N(0,sig), l and sig are piecewise linear, and:')
-    clear beta_breaks sigma_breaks beta_values sigma_values
-    beta_breaks = [0, BRK, 100];
-    for k = 1:length(beta_breaks)
-      p = beta_breaks(k);
-      beta_values(k) = round(broken_val(bcvs, p), 1);
-      fprintf('    l(%d) = %.1f\n', p, beta_values(k));
-    end
-    sigma_breaks = [0, 20, 100];
-    sigmean20 = mean(broken_val(bstd, V(V>=20)));
-    sigma_values(1) = 0;
-    sigma_values(2:3) = round(sigmean20, 1);
-    for k = 1:3
-      fprintf('    sig(%d) = %.1f\n', sigma_breaks(k), sigma_values(k))
-    end
-    votes_all = sum(partyvotes(end,:,:),'omitnan');
-    save regression_params.mat -regexp '.*_breaks|.*_values|.*all'
+  disp(' ')
+  disp('MODEL:')
+  disp('    CVS = l(PVS) + eps')
+  disp('  where eps ~ N(0,sig), l and sig are piecewise linear, and:')
+  clear beta_breaks sigma_breaks beta_values sigma_values
+  beta_breaks = [0, BRK, 100];
+  for k = 1:length(beta_breaks)
+    p = beta_breaks(k);
+    beta_values(k) = round(bcvs(p), 1);
+    fprintf('    l(%d) = %.1f\n', p, beta_values(k));
   end
+  sigma_breaks = [0, 20, 100];
+  sigmean20 = mean(bstd(V(V>=20)));
+  sigma_values(1) = 0;
+  sigma_values(2:3) = round(sigmean20, 1);
+  for k = 1:3
+    fprintf('    sig(%d) = %.1f\n', sigma_breaks(k), sigma_values(k))
+  end
+  votes_all = sum(partyvotes(end,:,:),'omitnan');
+  save regression_params.mat -regexp '.*_breaks|.*_values|.*all'
 
   % PLOT RESIDUALS AND DISPLAY OUTLIER TABLE
   count_outliers(figure=6)
@@ -253,27 +236,16 @@ function plot_1st_votes()
   check1_2correlation()
 end
 
-function setaxis(xmax, ymin, ymax, LOG)
+function setaxis(xmax, ymin, ymax)
   set(gca, 'xlim', [0, xmax]);
   set(gca, 'xtick', 0:10:xmax);
-  if LOG
-    if ymax >= 4
-      ytick = [0.5 1 2 5 10 20 40 80];
-    else
-      ytick = 1:0.2:ymax;
-    end
-    yticks(log(ytick))
-    yticklabels(ytick)
-    ylim([log(ytick(1)), log(ytick(end))])
+  ylim([ymin, ymax])
+  if ymax > 30
+    set(gca, 'ytick', ymin:10:ymax)
+  elseif ymax > 10
+    set(gca, 'ytick', ymin:2:ymax)
   else
-    ylim([ymin, ymax])
-    if ymax > 30
-      set(gca, 'ytick', ymin:10:ymax)
-    elseif ymax > 10
-      set(gca, 'ytick', ymin:2:ymax)
-    else
-      set(gca, 'ytick', ymin:1:ymax)
-    end
+    set(gca, 'ytick', ymin:1:ymax)
   end
 end
 
@@ -286,19 +258,8 @@ function [x,y] = expand(X,Y)
   y(I) = [];
 end
 
-function [lw, clr] = linewidth_and_color(varargin)
-  [top, linewidth] = getKeywordParams(varargin, top=true, linewidth=4);
-  if top
-    lw = linewidth; 
-    clr = [rgb("dodgerblue"), 0.6]; 
-  else
-    lw = linewidth; 
-    clr = "darkgray"; 
-  end
-end
-
 function c = polyfit_and_plot(x, y, n, varargin)
-  [TOP, lw] = getKeywordParams(varargin, top=true, linewidth=4);
+  [TOP, lw] = getKeywordParams(top=true, linewidth=4);
   xmax = gca().XLim(2);
   c = polyfit(x, y, n);
   t = linspace(0, xmax);
@@ -310,63 +271,11 @@ function c = polyfit_and_plot(x, y, n, varargin)
   end
 end
 
-function [b,resrms] = broken_line_fit_and_plot(x, y, breaks, varargin)
-  [LOG, TOP, LW] = getKeywordParams(varargin, log=false, top=true, linewidth=4);
-  [lw, clr] = linewidth_and_color(linewidth=LW);
-  xmax = max(x);
-  ZERO = ~LOG;
-  b = broken_line_regress(x, breaks, y, ZERO);
-  t = linspace(0, xmax);
-  bt = broken_val(b, t);
-  ph = plot(t, bt, color=clr, linewidth=lw);
-  resrms = rms(y - broken_val(b,x));
-  if ~TOP
-    uistack(ph, 'bottom')
-  end
-end
-
-function b = broken_line_regress(x, breaks, y, ZERO)
-  I = ~isnan(x) & ~isnan(y);
-  x = x(I);
-  y = y(I);
-  if ~ZERO
-    X = ones(length(x), 1);
-  else
-    X = zeros(length(x), 0);
-  end
-  X = [X x(:)];
-  n = find(breaks < max(x), 1, 'last');
-  breaks = breaks(1:n);
-  for xi = breaks
-    X = [X max(0, x(:) - xi)];
-  end
-  b = {X\y(:), breaks, ZERO};
-end
-
-function val = broken_val(b, t)
-  c = b{1};
-  breaks = b{2};
-  ZERO = b{3};
-  if ZERO
-    val = c(1)*t; k = 1;
-  else
-    val = c(1) + c(2)*t; k = 2;
-  end
-  for i=1:length(breaks)
-    xi = breaks(i);
-    val = val + c(i+k)*max(0,t-xi);
-  end
-end
-
-function label_values(fun, par, ftxt, varargin)
-  [dig, LOG, resrms, values] = getKeywordParams(varargin, digits=1, ...
-    log=false, resrms=[], values = [10,40]);
-  val1 = fun(par, values(1));
-  val2 = fun(par, values(2));
-  if LOG
-    val1 = exp(val1);
-    val2 = exp(val2);
-  end
+function label_values(fun, ftxt, varargin)
+  [dig, resrms, values] = getKeywordParams(digits=1, ...
+    resrms=[], values = [10,40]);
+  val1 = fun(values(1));
+  val2 = fun(values(2));
   txt{1} = sprintf("%s(%d) = %.*f%%", ftxt, values(1), dig, val1);
   txt{2} = sprintf("%s(%d) = %.*f%%", ftxt, values(2), dig, val2);
   if ~isempty(resrms)
@@ -389,12 +298,4 @@ function [xvec,pvec] = combine_lander(X)
       pvec = [pvec; repmat(p, length(xp), 1)];
     end
   end
-end
-
-function large_marker_legend(strings, colors, msiz)
-  n = length(strings);
-  for i=1:n
-    p(i) = plot(nan, nan, '.', color=colors(i,:), markersize=msiz*1.5);
-  end
-  leg = legend(p, strings{:}, location='northwest');
 end
