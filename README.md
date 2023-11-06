@@ -1,37 +1,44 @@
 # Voting system simulator
 
-This is a voting system simulator intended to simulate various methods used in proportional voting systems, in particular those that use a biproportional apportionment method for allocation of adjustment seats based on national outcomes. Such systems are common, such as in Iceland, Sweden, and Norway.
+This is a voting system simulator intended to simulate various methods used in
+proportional voting systems, in particular those that use a biproportional
+apportionment method for allocation of adjustment seats based on national
+outcomes. Such systems are common, such as in Iceland, Sweden, and Norway.
 
-[M.L. Balinski and G. Demange][1] have shown that only one method, the Alternating-Scaling method, exists that upholds the five axioms for proportionality in matrices. All other methods are heuristic simplifications that approach the optimal solution to varying degrees. This software implements the Alternating-Scaling method, and various other methods for comparison, and provides mechanisms to compare them.
+[M.L. Balinski and G. Demange][1] have shown that only one method, the
+Alternating-Scaling method, exists that upholds the five axioms for
+proportionality in matrices. All other methods are heuristic simplifications
+that approach the optimal solution to varying degrees. This software implements
+the Alternating-Scaling method, and various other methods for comparison, and
+provides mechanisms to compare them.
 
-Biproportional allocation on matrices is a common issue that arises when you have multiple parties in multiple constituencies vying for a set number of seats which are pinned to different constituencies. The goal is to determine which parties get which seats in which constituencies.
+Biproportional allocation on matrices is a common issue that arises when you
+have multiple parties in multiple constituencies vying for a set number of seats
+which are pinned to different constituencies. The goal is to determine which
+parties get which seats in which constituencies.
 
-More generally this approach could be used to allocate limited resources to factories depending on their relative importance or needs, or to solve a number of other biproportional optimization problems.
+More generally this approach could be used to allocate limited resources to
+factories depending on their relative importance or needs, or to solve a number
+of other biproportional optimization problems.
 
-Note: conda create -c conda-forge --name voting --file requirements.txt python=3.
+## Installation for use with browser interface. These instructions assume conda (or mamba).
 
-## Installation for use with browser interface
-
-1. Make sure Python ≥ 3.9, pip and npm are available
+1. Make sure Python ≥ 3.9, mamba and npm are available
     for example for npm:
       brew install node
-2. [OPTIONAL] Create a new Python3 Virtualenv, e.g. 'voting', and enter it.
-    for example:  
-      conda create --name voting
-      conda activate voting
-3. Clone this repository
-    for example:
+2. Clone this repository
       git clone https://github.com/jonasson2/voting
-4. Install required packages:
-      (cd vue-frontend && npm install)
-      (cd backend && pip install -r requirements.txt)
-5. To run the simulator locally: (required )
-      (cd vue-frontend && npm run build)
+      cd voting
+3. Install required packages, create and enter voting environment:
+      mamba env create -f environment.yml
+      (cd vue-frontend && npm install && npm run build)
+4. To run the simulator locally:
+      (cd vue-frontend && npm run build) # If any changes to the vue/javascript programs
       (cd backend && python web.py)
       Direct a browser to `http://localhost:5000`
 
 
-## Command Line Interface
+## Command Line Interface [as of 2023 this is probably completely outdated]
 
 This is the basic interaction mode. To set it up follow steps 1–5a above. You feed it some data files, it feeds you some results.
 
