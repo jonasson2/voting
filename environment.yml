@@ -1,0 +1,24 @@
+name: voting
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - click
+  - flask
+  - flask-cors
+  - itsdangerous
+  - tabulate
+  - six
+  - werkzeug
+  - xlsxwriter
+  - openpyxl
+  - configparser
+  - numpy
+  - scipy
+  - psutil
+  - matplotlib
+  - pandas
+  - glpk
+  - pathos
+  - frozendict
+  - pulp
