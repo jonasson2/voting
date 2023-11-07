@@ -21,16 +21,14 @@ def generate_votes (
     for c in range(num_constit):
         generated_votes.append([])
         for p in range(num_parties):
-            # mean = xtd_shares[c][p]
             mean = base_votes[c][p]
-            # assert 0 <= mean and mean <= 1
-            if mean <= 1e-6:
-                vote = mean
-            vote = max(1, round(rand(mean, var_coeff)))
+            if mean == 0:
+                vote = 0
+            else:
+                vote = round(rand(mean, var_coeff))
             if vote >= 1:
                 vote = adjustment(vote)
             generated_votes[c].append(vote)
-
     return generated_votes
 
 def generate_corr_votes(
