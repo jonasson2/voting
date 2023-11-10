@@ -11,7 +11,7 @@ def max_const_vote_percentage(*args, **_):
 def max_const_seat_share(*args, **_):
     heading = "Const. seat share score"
     reason = "Max over all lists"
-    return common_allocate(*args, seat_share, heading, reason)
+    return common_allocate(*args, seat_share, heading, reason, prior=seat_share_prior)
 
 def nearest_to_previous(*args, last=None, **_):
     heading = "Score/ratio of scores"
@@ -77,11 +77,30 @@ def relative_margin(votes, alloc, div, **_):
     margin = 10000000 if others.min() == 0 else (quot[party]/others).min()
     return party, margin
 
+def seat_share_prior(votes, nseats):
+    nconst = len(nseats)
+    ssp = np.zeros(votes.shape)
+    for c in range(nconst):
+        ssp[c,:] = nseats[c]*votes[c,:]/votes[c,:].sum()
+    return ssp
+
 def seat_share(votes, alloc, div, **kwargs):
-    nseats = kwargs["nseats"]
-    ss = nseats.sum()*votes/div[alloc]/votes.sum()
+    ssp = kwargs["ssp"]
+    ss = ssp/div[alloc]
     party = np.argmax(ss)
+    print("ssp=", ssp)
+    print("party=", party)
+    print("ss", ss)
     return party, ss[party]
+
+# def seat_share(votes, alloc, div, **kwargs):
+#     nseats = kwargs["nseats"]
+#     ss = nseats.sum()*votes/div[alloc]/votes.sum()
+#     party = np.argmax(ss)
+#     print("nseats = ", nseats)
+#     print("ss = ", ss)
+#     print("party = ", party)
+#     return party, ss[party]
 
 def superiority_simple(*args, **kwargs):
     return compute_superiority(*args, **kwargs, kind='simple')

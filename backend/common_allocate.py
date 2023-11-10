@@ -6,7 +6,7 @@ from numpy import flatnonzero as find
 
 def common_allocate(
         votes, total_const_seats, total_party_seats, prior_alloc, div_gen,
-        compute_criteria, criterion_name, reason, nolast_reason=None, last=None):
+        compute_criteria, criterion_name, reason, nolast_reason=None, last=None, **kwargs):
 
     # PREPARE WORK ARRAYS
     nconst = len(total_const_seats)
@@ -26,16 +26,22 @@ def common_allocate(
     allocation_sequence = []
     last_party = [l['idx'] for l in last] if has_last else np.full(nconst, None)
 
+    if "prior" in kwargs:
+        prior = kwargs["prior"]
+        ssp = prior(votes, total_const_seats)
+    else:
+        ssp = None
+    
     while any(free_const_seats):
         # FORCED ALLOCATION
-        forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
-        alloc_list += forced
-        free_const_seats -= forced.sum(1)
-        free_party_seats -= forced.sum(0)
-        allocation_sequence.extend(forced_stepbystep_entries(forced, has_last))
-        last_party = np.where(forced_party >=0, forced_party, last_party)
-        if not any(free_const_seats):
-            break
+        # forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
+        # alloc_list += forced
+        # free_const_seats -= forced.sum(1)
+        # free_party_seats -= forced.sum(0)
+        # allocation_sequence.extend(forced_stepbystep_entries(forced, has_last))
+        # last_party = np.where(forced_party >=0, forced_party, last_party)
+        # if not any(free_const_seats):
+        #    break
 
         # PREPARE NOT-FORCED ALLOCATION
         openC = find(free_const_seats > 0)
@@ -46,9 +52,11 @@ def common_allocate(
         last_score = np.zeros(len(openC))
         for (k,c) in enumerate(openC):
             lp = find(openP==last_party[c])[0] if last_party[c] in openP else None
+            print("c=", c)
             (p, criteria[k]) = compute_criteria(
                 votes[c,openP], alloc_list[c,openP], div, nseats=total_const_seats[c],
-                npartyseats=total_party_seats[openP], last_party=lp)
+                npartyseats=total_party_seats[openP], last_party=lp,
+                ssp=ssp[c,openP] if "prior" in kwargs else None)
             party[c] = openP[p]
 
         # SELECT CONSTITUENCY AND PARTY WITH MAXIMUM CRITERION
