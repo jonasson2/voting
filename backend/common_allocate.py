@@ -34,14 +34,14 @@ def common_allocate(
     
     while any(free_const_seats):
         # FORCED ALLOCATION
-        # forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
-        # alloc_list += forced
-        # free_const_seats -= forced.sum(1)
-        # free_party_seats -= forced.sum(0)
-        # allocation_sequence.extend(forced_stepbystep_entries(forced, has_last))
-        # last_party = np.where(forced_party >=0, forced_party, last_party)
-        # if not any(free_const_seats):
-        #    break
+        forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
+        alloc_list += forced
+        free_const_seats -= forced.sum(1)
+        free_party_seats -= forced.sum(0)
+        allocation_sequence.extend(forced_stepbystep_entries(forced, has_last))
+        last_party = np.where(forced_party >=0, forced_party, last_party)
+        if not any(free_const_seats):
+           break
 
         # PREPARE NOT-FORCED ALLOCATION
         openC = find(free_const_seats > 0)

@@ -123,6 +123,7 @@ def compute_superiority(votes, alloc, div, **kwargs):
         seats[party_next] += 1
     nalloc = 1
     nfree = nseats - seats.sum()
+    score[party_next] = 0
     while True:
         if all(score == 0):
             return party_next, 10000000
