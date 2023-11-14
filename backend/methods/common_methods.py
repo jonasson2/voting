@@ -112,7 +112,7 @@ def superiority_full(*args, **kwargs):
     return compute_superiority(*args, **kwargs, kind='full')
 
 def compute_superiority(votes, alloc, div, **kwargs):
-    nseats, npartyseats, kind = get("nseats", "npartyseats", "kind")(kwargs)
+    nfree, npartyseats, kind = get("nfree", "npartyseats", "kind")(kwargs)
     score = votes/div[alloc]
     seats = alloc.copy()
     party_next = np.argmax(score)
@@ -122,17 +122,21 @@ def compute_superiority(votes, alloc, div, **kwargs):
     else:
         seats[party_next] += 1
     nalloc = 1
-    nfree = nseats - seats.sum()
-    score[party_next] = 0
+    score[party_next] = 0 # Bætt við 13. nóv. 2023 (KJ og ÞH)
+    print("party_next=", party_next, ", nfree=", nfree)
     while True:
         if all(score == 0):
             return party_next, 10000000
         party = np.argmax(score)
+        print("party=", party, ", score=", score)
+        if nalloc >= nfree:
+            superiority = score_next/score[party]
+            print("superiority=", superiority)
+            return party_next, superiority
         seats[party] += 1
         score[party] = votes[party]/div[seats[party]]
         nalloc += 1
-        if nalloc > nfree:
-            superiority = score_next/score[party]
-            return party_next, superiority
         if kind == "full" and seats[party] >= npartyseats[party]:
+            print("************************")
             score[party] = 0
+        
