@@ -11,7 +11,7 @@ def max_const_vote_percentage(*args, **_):
 def max_const_seat_share(*args, **_):
     heading = "Const. seat share score"
     reason = "Max over all lists"
-    return common_allocate(*args, seat_share, heading, reason, prior=seat_share_prior)
+    return common_allocate(*args, seat_share, heading, reason)
 
 def nearest_to_previous(*args, last=None, **_):
     heading = "Score/ratio of scores"
@@ -59,8 +59,9 @@ def nearest_to_prev_ratio(votes, alloc, div, **kwargs):
     party = np.argmax(ratio)
     return party, ratio[party]
 
-def vote_percentage(votes, alloc, div, **_):
-    pct = votes/div[alloc]/votes.sum()
+def vote_percentage(votes, alloc, div, **kwargs):
+    votesum = kwargs["votesum"]
+    pct = votes/votesum/div[alloc]
     party = np.argmax(pct)
     return party, pct[party]
 
@@ -77,30 +78,12 @@ def relative_margin(votes, alloc, div, **_):
     margin = 10000000 if others.min() == 0 else (quot[party]/others).min()
     return party, margin
 
-def seat_share_prior(votes, nseats):
-    nconst = len(nseats)
-    ssp = np.zeros(votes.shape)
-    for c in range(nconst):
-        ssp[c,:] = nseats[c]*votes[c,:]/votes[c,:].sum()
-    return ssp
-
 def seat_share(votes, alloc, div, **kwargs):
-    ssp = kwargs["ssp"]
-    ss = ssp/div[alloc]
+    votesum = kwargs["votesum"]
+    totconstseats = kwargs["totconstseats"]
+    ss = totconstseats*votes/votesum/div[alloc]
     party = np.argmax(ss)
-    print("ssp=", ssp)
-    print("party=", party)
-    print("ss", ss)
     return party, ss[party]
-
-# def seat_share(votes, alloc, div, **kwargs):
-#     nseats = kwargs["nseats"]
-#     ss = nseats.sum()*votes/div[alloc]/votes.sum()
-#     party = np.argmax(ss)
-#     print("nseats = ", nseats)
-#     print("ss = ", ss)
-#     print("party = ", party)
-#     return party, ss[party]
 
 def superiority_simple(*args, **kwargs):
     return compute_superiority(*args, **kwargs, kind='simple')
@@ -118,11 +101,11 @@ def compute_superiority(votes, alloc, div, **kwargs):
     party_next = np.argmax(score)
     score_next = score[party_next]
     if kind=="simple":
-        score[party_next] = 0
-    else:
         seats[party_next] += 1
+        score[party_next] = votes[party_next]/div[seats[party_next]]
+    else: # medium or full
+        score[party_next] = 0
     nalloc = 1
-    score[party_next] = 0 # Bætt við 13. nóv. 2023 (KJ og ÞH)
     print("party_next=", party_next, ", nfree=", nfree)
     while True:
         if all(score == 0):
@@ -139,4 +122,3 @@ def compute_superiority(votes, alloc, div, **kwargs):
         if kind == "full" and seats[party] >= npartyseats[party]:
             print("************************")
             score[party] = 0
-        

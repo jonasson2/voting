@@ -27,12 +27,7 @@ def common_allocate(
     allocation_sequence = []
     last_party = [l['idx'] for l in last] if has_last else np.full(nconst, None)
 
-    if "prior" in kwargs:
-        prior = kwargs["prior"]
-        ssp = prior(votes, total_const_seats)
-    else:
-        ssp = None
-    
+    votesum = votes.sum(1)
     while any(free_const_seats):
         # FORCED ALLOCATION
         forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
@@ -58,9 +53,15 @@ def common_allocate(
             print("alloc_list[c,:]=", alloc_list[c,:])
             print("total_const_seats[c]=", total_const_seats[c])
             (p, criteria[k]) = compute_criteria(
-                votes[c,openP], alloc_list[c,openP], div, nfree=free_const_seats[c],
-                npartyseats=total_party_seats[openP], last_party=lp,
-                ssp=ssp[c,openP] if "prior" in kwargs else None)
+                votes[c,openP],
+                alloc_list[c,openP],
+                div,
+                votesum = votesum[c],
+                nfree = free_const_seats[c],
+                totconstseats = total_const_seats[c],
+                npartyseats = total_party_seats[openP],
+                last_party = lp,
+                )
             party[c] = openP[p]
 
         # SELECT CONSTITUENCY AND PARTY WITH MAXIMUM CRITERION
