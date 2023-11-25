@@ -15,8 +15,6 @@ def common_allocate(
     free_party_seats = total_party_seats - alloc_list.sum(0)
     party = -np.ones(nconst, int)
     has_last = last is not None
-    # seats
-    print("free_const_seats=", free_const_seats)
 
     # CALCULATE DIVISORS
     N = max(max(total_const_seats), max(total_party_seats)) + 1
@@ -48,10 +46,6 @@ def common_allocate(
         last_score = np.zeros(len(openC))
         for (k,c) in enumerate(openC):
             lp = find(openP==last_party[c])[0] if last_party[c] in openP else None
-            print("c=", c)
-            print("openP=", openP)
-            print("alloc_list[c,:]=", alloc_list[c,:])
-            print("total_const_seats[c]=", total_const_seats[c])
             (p, criteria[k]) = compute_criteria(
                 votes[c,openP],
                 alloc_list[c,openP],

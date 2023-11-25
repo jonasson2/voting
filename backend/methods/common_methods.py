@@ -106,19 +106,15 @@ def compute_superiority(votes, alloc, div, **kwargs):
     else: # medium or full
         score[party_next] = 0
     nalloc = 1
-    print("party_next=", party_next, ", nfree=", nfree)
     while True:
         if all(score == 0):
             return party_next, 10000000
         party = np.argmax(score)
-        print("party=", party, ", score=", score)
         if nalloc >= nfree:
             superiority = score_next/score[party]
-            print("superiority=", superiority)
             return party_next, superiority
         seats[party] += 1
         score[party] = votes[party]/div[seats[party]]
         nalloc += 1
         if kind == "full" and seats[party] >= npartyseats[party]:
-            print("************************")
             score[party] = 0
