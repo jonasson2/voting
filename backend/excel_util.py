@@ -346,7 +346,7 @@ def simulation_to_xlsx(results, filename):
 
     gen_method = GMN[results["sim_settings"]["gen_method"]]
     sim_settings = [
-        {"label": "Number of simulations run",
+        {"label": "Number of simulations",
          "data": results["iteration"]},
         {"label": "Generating method",
          "data": results["sim_settings"]["gen_method"]},

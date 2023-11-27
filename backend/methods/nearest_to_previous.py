@@ -55,6 +55,7 @@ def nearest_to_previous(m_votes,
     for c in openC:
         for p in openP:
             next_quot[c,p] = votes[c,p]/divisors[alloc_list[c,p]]
+            print(f"c,p={c},{p}, {next_quot[c,p]=}, {last_quot[c]=}")
             ratio[c,p] = next_quot[c,p]/last_quot[c]
 
     # PRIMARY LOOP: REPEATEDLY ALLOCATE SEAT WITH MAXIMUM RATIO OF NEXT TO LAST
@@ -79,6 +80,7 @@ def nearest_to_previous(m_votes,
             next_quot[maxC, maxP] = (votes[maxC, maxP] /
                                      divisors[alloc_list[maxC, maxP]])
             for p in openP:
+                print(f"maxC,p={maxC},{p}, {next_quot[maxC,p]=}, {last_quot[maxC]=}")
                 if last_quot[maxC] > 0:
                     ratio[maxC, p] = next_quot[maxC, p]/last_quot[maxC]
                 else:
