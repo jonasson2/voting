@@ -59,7 +59,7 @@ def generate_corr_votes(
         if include_pv:
             Mpv = party_votes[p]
             Vpv = (Mpv*party_vote_rsd)**2
-            sigma_pv = np.sqrt(np.log(1 + Vpv / np.maximum|(1, Mpv**2)))
+            sigma_pv = np.sqrt(np.log(1 + Vpv / np.maximum(1, Mpv**2)))
             mu_pv = np.log(Mpv) - sigma_pv ** 2 / 2
             e_pv = np.sqrt(np.exp(sigma_pv ** 2) - 1)
             corr = np.zeros((nconst + 1, nconst +1))
