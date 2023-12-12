@@ -15,5 +15,5 @@ method_dicts_land = [
     {'short': 'relsup',   'long': 'relative-superiority','title': "Relative superiority"},
     {'short': 'relsupsmp','long': 'relative-sup-simple', 'title': "Rel. sup. simple"},
     {'short': 'relsupmed','long': 'relative-sup-medium', 'title': "Rel. sup. medium"},
-    {'short': 'nearprev', 'long': 'nearest-to-previous', 'title': "Nearest to previous"},
+    #{'short': 'nearprev', 'long': 'nearest-to-previous', 'title': "Nearest to previous"},
 ]

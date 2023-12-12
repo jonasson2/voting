@@ -354,7 +354,7 @@ def simulation_to_xlsx(results, filename):
          "data": results["sim_settings"]["const_rsd"]},
         {"label": "Correlation between list votes within each party",
          "data": results["sim_settings"]["const_corr"]},
-        {"label": "Relative standard deviation for party votes",
+        {"label": "Relative standard deviation for national party votes",
          "data": results["sim_settings"]["party_vote_rsd"]},
         {"label": "Correlation between list votes and national party votes",
          "data": results["sim_settings"]["party_vote_corr"]},

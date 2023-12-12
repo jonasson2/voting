@@ -7,7 +7,7 @@ from methods.common_methods import relative_superiority
 from methods.common_methods import rel_sup_simple, rel_sup_medium
 from methods.common_methods import max_const_vote_percentage
 from methods.common_methods import max_const_seat_share
-from methods.common_methods import nearest_to_previous
+#from methods.common_methods import nearest_to_previous
 from methods.common_methods import max_absolute_margin
 from methods.common_methods import max_relative_margin
 
@@ -73,10 +73,10 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
     {"value": "relative-superiority",      "text": "Relative superiority"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
-    {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
+    # {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
     {"value": "max-relative-margin",       "text": "Maximum relative margin"},
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
-       # = max-relative-margin með absolute mun
+    # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
@@ -89,7 +89,7 @@ DEMO_TABLE_FORMATS = {
     "max-const-vote-percentage": "clsl%",
     "relative-superiority":      "clsl3",
     "relative-sup-simple":       "clsl3",
-    "nearest-to-previous":       "clssl3",
+    # "nearest-to-previous":       "clssl3",
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
@@ -161,7 +161,7 @@ ADJUSTMENT_METHODS = {
     "relative-superiority":      relative_superiority,
     "relative-sup-medium":       rel_sup_medium,
     "relative-sup-simple":       rel_sup_simple,
-    "nearest-to-previous":       nearest_to_previous,
+    # "nearest-to-previous":       nearest_to_previous,
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,

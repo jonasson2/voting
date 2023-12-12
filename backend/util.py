@@ -139,8 +139,8 @@ def correct_deprecated(L):
     old_names = {
         "norwegian-icelandic": "max-const-seat-share",
         "pure-vote-ratios":    "max-const-vote-percentage",
-        "nearest-neighbor":    "nearest-to-previous",
-        "nearest-to-last":     "nearest-to-previous",
+        #"nearest-neighbor":    "nearest-to-previous",
+        #"nearest-to-last":     "nearest-to-previous",
     }
     translate = {
         "constituency_allocation_rule": "primary_divider",
