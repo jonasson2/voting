@@ -315,7 +315,7 @@ def get_presets_dict():
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"
     host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
-    port = os.environ.get("FLASK_RUN_PORT", "5000")
+    port = os.environ.get("FLASK_RUN_PORT", "5001")
     print(f"Running on {host}:{port}")
     app.debug = debug
     create_SIMULATIONS()

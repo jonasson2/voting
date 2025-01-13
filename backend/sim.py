@@ -72,9 +72,10 @@ def filenames(sens_rsd, n_cores, n_sim, vote_path):
 
 def main():
     create_SIMULATIONS()
-    (n_reps, n_cores, json_file, vote_file, Stop, sens_rsd, rsd, prsd) = get_arguments(
+    (n_reps, n_cores, json_file, vote_file, Stop, sens_rsd, rsd, prsd, rest) = \
+    get_arguments(
         args=[
-            ['n_reps', int, 'total number of simulations', 10],
+            ['nsim', int, 'total number of simulations', 10],
             ['n_cores', int, 'number of cores', 1],
             ['json_file', str, 'json file with settings and possibly votes', defaultfile],
             ['-votes', str, 'vote file', None],
@@ -106,7 +107,6 @@ def main():
     if sim_settings["sensitivity"]:
         hist = combine_histogram_lists(results)
         hist_array = histograms2array(hist)
-
         metadata = {
             "n_reps":        n_reps,
             "vote_file":     str(vote_file),

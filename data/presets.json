@@ -60,6 +60,12 @@
     "filename": "iceland-2021.csv"
   },
   {
+    "Name": "Alþingi",
+    "Country": "Iceland",
+    "Year": "2024",
+    "filename": "icel-2024-mbl.csv"
+  },
+  {
     "Name": "Eduskunta",
     "Country": "Finland",
     "Year": "2015",
