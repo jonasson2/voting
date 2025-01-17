@@ -7,6 +7,7 @@ from methods.common_methods import relative_superiority
 from methods.common_methods import rel_sup_simple, rel_sup_medium
 from methods.common_methods import max_const_vote_percentage
 from methods.common_methods import max_const_seat_share
+from methods.common_methods import adjustment_as_fixed
 #from methods.common_methods import nearest_to_previous
 from methods.common_methods import max_absolute_margin
 from methods.common_methods import max_relative_margin
@@ -71,6 +72,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "norwegian-law", "text": "Norwegian law 20/2002"},
     {"value": "max-const-seat-share",      "text": "Maximum constituency seat share"},
     {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
+    {"value": "adjustment-as-fixed",       "text": "Adjustment seats as fixed seats"},
     {"value": "relative-superiority",      "text": "Relative superiority"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     # {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
@@ -87,6 +89,7 @@ DEMO_TABLE_FORMATS = {
     "norwegian-law":             "clsl3",
     "max-const-seat-share":      "clsl3",
     "max-const-vote-percentage": "clsl%",
+    "adjustment-as-fixed":       "clsl3",
     "relative-superiority":      "clsl3",
     "relative-sup-simple":       "clsl3",
     # "nearest-to-previous":       "clssl3",
@@ -157,6 +160,7 @@ ADJUSTMENT_METHODS = {
     "ice-shares":                icelandic_share_apportionment,
     "norwegian-law":             norwegian_apportionment,
     "max-const-seat-share":      max_const_seat_share,
+    "adjustment-as-fixed":       adjustment_as_fixed,
     "max-const-vote-percentage": max_const_vote_percentage,
     "relative-superiority":      relative_superiority,
     "relative-sup-medium":       rel_sup_medium,

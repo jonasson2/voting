@@ -14,7 +14,7 @@ from pathlib import Path
 
 #sys_file = "default-rule.json"
 #sys_file = "2reglur.json"
-defaultfile = 'SmadæmiAlltInn.json'
+defaultfile = 'prufa.json'
 
 def read_data(vote_file, json_file):
     json_file = Path(json_file).expanduser()
@@ -73,17 +73,18 @@ def filenames(sens_rsd, n_cores, n_sim, vote_path):
 def main():
     create_SIMULATIONS()
     (n_reps, n_cores, json_file, vote_file, Stop, sens_rsd, rsd, prsd, rest) = \
-    get_arguments(
-        args=[
-            ['nsim', int, 'total number of simulations', 10],
-            ['n_cores', int, 'number of cores', 1],
-            ['json_file', str, 'json file with settings and possibly votes', defaultfile],
-            ['-votes', str, 'vote file', None],
-            ['-Stop', int, 'stop after specified time (in seconds)', -1],
-            ['-sens_rsd', float, 'relative SD for adjustment', 0.01],
-            ['-rsd', float, 'relative SD for vote generation', 0.3],
-            ['-prsd', float, 'relative SD for party vote generation', 0.1]],
-        description="Simulate sensitivity of elections")
+        get_arguments(
+            args=[
+                ['nsim', int, 'total number of simulations', 10],
+                ['n_cores', int, 'number of cores', 1, 'n'],
+                ['json_file', str, 'json file with settings and possibly votes',
+                 defaultfile],
+                ['-vote', str, 'vote file', None, 'file'],
+                ['-Stop', int, 'stop after specified time', -1, 'sec'],
+                ['-sens_rsd', float, 'relative SD for adjustment', 0.01, 's'],
+                ['-rsd', float, 'relative SD for vote generation', 0.3, 'r'],
+                ['-prsd', float, 'relative SD for party vote generation', 0.1, 'p']],
+            description="Simulate sensitivity of elections")
     (votes, vote_path, systems, sim_settings) = read_data(vote_file, json_file)
     sim_settings = set_sim_settings(sim_settings, n_reps, n_cores, sens_rsd,
                                     rsd, prsd)
@@ -92,11 +93,12 @@ def main():
     #random.seed(42)
     systemnames = [s["name"] for s in systems]
     if sim_settings['simulation_count'] == 0: return
-    sim_settings["sensitivity"] = False
+    sim_settings["sensitivity"] = True
     beginning_time = time.time()
     simid = new_simulation(votes, systems, sim_settings)
     stopped = False
     while True:
+        print('**********************')
         time.sleep(0.25)
         stop = Stop > 0 and not stopped and time.time() > beginning_time + Stop
         if stop:
@@ -120,6 +122,7 @@ def main():
     else:
         pass
     elapsed_time = hms(time.time() - beginning_time)
+    print('at X');
     simulation_to_excel(simid,'sim.xlsx')
     with open(logfile, 'a') as logf:
         for f in logf, sys.stdout:

@@ -5,6 +5,7 @@ method_dicts_land = [
     {'short': 'norway',   'long': 'norwegian-law',       'title': "Norwegian law"},    
     {'short': 'votepct',  'long': 'max-const-vote-percentage', 'title': "Max vote share"},
     {'short': 'seatsh',   'long': 'max-const-seat-share','title': "Max seat share"},
+    {'short': 'adjfix',   'long': 'adjustment-as-fixed', 'title': "Adj.seats as fixed"},
     {'short': 'relmarg',  'long': 'max-relative-margin',  'title': "Relative margin"},
     {'short': 'absmarg',  'long': 'max-absolute-margin', 'title': "Absolute margin"},
     {'short': 'optimal',  'long': 'alternating-scaling', 'title': 'Optimal'},

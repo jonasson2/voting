@@ -60,7 +60,8 @@ def main():
         description=("Compute results for a single election, methods can be one of:\n"
                     "   party1st   relmarg    relsup      switch\n"
                     "   land1st    absmarg    relsupsmp   optimal\n"
-                    "   votepct    nearprev   relsupmed   seatsh\n"))
+                    "   votepct    nearprev   relsupmed   seatsh\n"
+                    "   adjfix\n"))
     (votes, vote_path, systems) = read_data(vote_file, json_file_or_method)
 
     #random.seed(42)

@@ -14,7 +14,10 @@ import numpy as np
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, party_vote_info, vote_table_name=''):
+    def __init__(self, system, votes, party_vote_info=None, vote_table_name=''):
+        if party_vote_info is None:
+            party_vote_info = {'name':'-', 'num_fixed_seats':0, 'num_adj_seats':0,
+                               'votes':[],'specified':False, 'total':0}
         self.nconst = len(system["constituencies"])
         self.nparty = len(system["parties"])
         self.system = system

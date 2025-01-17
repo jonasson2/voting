@@ -20,6 +20,7 @@ def add_vuedata(sim_result_dict, parallel):
     if not data:
         return
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
+    print('party_votes_specified:', party_votes_specified)
     systems = sim_result_dict["systems"]
     qm_topleft1 =  "Seats minus reference seat shares (based on"
     qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
@@ -51,6 +52,7 @@ def add_vuedata(sim_result_dict, parallel):
             for stat in stats:
                 row[stat] = []
                 for s in range(len(systems)):
+                    #print('stat:', stat, ', measures:', data[s]["measures"].keys())
                     entry = data[s]["measures"][measure][stat]
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")

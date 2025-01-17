@@ -13,6 +13,11 @@ def max_const_seat_share(*args, **_):
     reason = "Max over all lists"
     return common_allocate(*args, seat_share, heading, reason)
 
+def adjustment_as_fixed(*args, **_):
+    heading = "Adustm. seats as fixed"
+    reason = "Max over all lists"
+    return common_allocate(*args, seat_share, heading, reason)
+
 def nearest_to_previous(*args, last=None, **_):
     heading = "Score/ratio of scores"
     reason = "Maximum ratio of previous in to next in score"
