@@ -9,14 +9,16 @@ def max_const_vote_percentage(*args, **_):
     return common_allocate(*args, vote_percentage, heading, reason)
 
 def max_const_seat_share(*args, **_):
+    print('in max_const_seat_share')
     heading = "Const. seat share score"
     reason = "Max over all lists"
     return common_allocate(*args, seat_share, heading, reason)
 
 def adjustment_as_fixed(*args, **_):
-    heading = "Adustm. seats as fixed"
+    heading = "Adjustm. seats as fixed"
     reason = "Max over all lists"
-    return common_allocate(*args, seat_share, heading, reason)
+    print('seat_share', seat_share)
+    return common_allocate(*args, adjust_as_fixed, heading, reason)
 
 def nearest_to_previous(*args, last=None, **_):
     heading = "Score/ratio of scores"
@@ -89,6 +91,12 @@ def seat_share(votes, alloc, div, **kwargs):
     ss = totconstseats*votes/votesum/div[alloc]
     party = np.argmax(ss)
     return party, ss[party]
+
+def adjust_as_fixed(votes, alloc, div, **kwargs):
+    votesum = kwargs["votesum"]
+    votequote = votes/div[alloc]
+    party = np.argmax(votequote)
+    return party, votequote[party]
 
 def superiority_simple(*args, **kwargs):
     return compute_superiority(*args, **kwargs, kind='simple')

@@ -69,6 +69,7 @@ def load_votes(filename, stream=None):
     return vote_table
 
 def single_election(votes, systems):
+    print('in single_election')
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
     if isinstance(votes, str):

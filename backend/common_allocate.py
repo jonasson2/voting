@@ -7,6 +7,7 @@ from numpy import flatnonzero as find
 def common_allocate(
         votes, total_const_seats, total_party_seats, prior_alloc, div_gen,
         compute_criteria, criterion_name, reason, nolast_reason=None, last=None, **kwargs):
+    print('in common_allocate')
 
     # PREPARE WORK ARRAYS
     nconst = len(total_const_seats)

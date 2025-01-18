@@ -10,12 +10,13 @@ def max_const_seat_share(
         divisor_gen,
         **kwargs):
     m_allocations = m_prior_allocations.tolist()
-
+    print('in max_const_seat_share')
     num_allocated = sum([sum(c) for c in m_allocations])
     total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
     
     for n in range(total_seats - num_allocated):
+        print('n=', n)
         m_seat_props = []
         maximums = []
         for c in range(len(m_votes)):
@@ -30,6 +31,8 @@ def max_const_seat_share(
                     seat_share = (float(m_votes[c][p])/s)*v_desired_row_sums[c]/divisor
                 else:
                     seat_share = 0
+                    
+                print('n, c, p, seat_share', n, c, p, seat_share)
                 m_seat_props[c].append(seat_share)
             maximums.append(max(m_seat_props[c]))
 

@@ -25,7 +25,8 @@ def adjustment_as_fixed(
                 div = divisor_gen()
                 for k in range(m_allocations[c][p]+1):
                     divisor = next(div)
-                    votequote = m_votes[c][p]/divisor
+                votequote = m_votes[c][p]/divisor
+                print('n, c, p, votequote', n, c, p, votequote)
                 m_seat_props[c].append(votequote)
             maximums.append(max(m_seat_props[c]))
 
