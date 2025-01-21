@@ -7,7 +7,6 @@ from methods.common_methods import relative_superiority
 from methods.common_methods import rel_sup_simple, rel_sup_medium
 from methods.common_methods import max_const_vote_percentage
 from methods.common_methods import max_const_seat_share
-from methods.common_methods import adjustment_as_fixed
 #from methods.common_methods import nearest_to_previous
 from methods.common_methods import max_absolute_margin
 from methods.common_methods import max_relative_margin
@@ -23,6 +22,7 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.farthest_from_next import farthest_from_next
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
+from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 

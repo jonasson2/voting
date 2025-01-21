@@ -1,67 +1,64 @@
-#coding:utf-8
-from copy import deepcopy
+from apportion import apportion1d_general
 import numpy as np
+from numpy import argmin, flatnonzero as find
+from copy import deepcopy
 
-def adjustment_as_fixed(
-        m_votes,
-        v_desired_row_sums,
-        v_desired_col_sums,
-        m_prior_allocations,
-        divisor_gen,
-        **kwargs):
-    m_allocations = m_prior_allocations.tolist()
+def min_with_index(x, I=None):
+    if I is None:
+        i = np.argmin(x)
+    else:
+        i = np.argmin(np.where(I, x, np.inf))
+    return (x[i], i)
 
-    num_allocated = sum([sum(c) for c in m_allocations])
-    total_seats = sum(v_desired_row_sums)
-    allocation_sequence = []
+def max_with_index(x, I=None):
+    if I is None:
+        i = np.argmax(x)
+    else:
+        i = np.argmax(np.where(I, x, -np.inf))
+    return (x[i], i)
+
+# This function allocates all adjustment seats as if they were fixed.
+# It is identical to the first part of the switching function, skipping
+# the switch stage.
+def adjustment_as_fixed(m_votes,
+              v_desired_row_sums,
+              v_desired_col_sums,
+              m_prior_allocations,
+              divisor_gen,
+              **kwargs):
+
+    # CREATE NUMPY ARRAYS AND COUNTS FROM PARAMETER LISTS
+    votes = np.array(m_votes, float)
+    alloc_prior = np.array(m_prior_allocations)
+    desired_const = np.array(v_desired_row_sums)
+    max_party = np.array(v_desired_col_sums)
+    num_constituencies = len(v_desired_row_sums)
+    num_parties        = len(v_desired_col_sums)
+    assert(sum(max_party) >= sum(desired_const))
+
+    # CALCULATE DIVISORS
+    N = max(max(desired_const), max(max_party)) + 1
+    div_gen = divisor_gen()
+    divisors = np.array([next(div_gen) for i in range(N + 1)])
     
-    for n in range(total_seats - num_allocated):
-        m_seat_props = []
-        maximums = []
-        for c in range(len(m_votes)):
-            m_seat_props.append([])
-            for p in range(len(m_votes[c])):
-                col_sum = sum(row[p] for row in m_allocations)
-                div = divisor_gen()
-                for k in range(m_allocations[c][p]+1):
-                    divisor = next(div)
-                votequote = m_votes[c][p]/divisor
-                print('n, c, p, votequote', n, c, p, votequote)
-                m_seat_props[c].append(votequote)
-            maximums.append(max(m_seat_props[c]))
+    # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
+    alloc= np.zeros((num_constituencies, num_parties), int)
+    temp_votes = deepcopy(votes)
+    full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
+    temp_votes[:,full] = 0
+    for c in range(num_constituencies):
+        alloc_const, _,_ = apportion1d_general(
+            v_votes = list(temp_votes[c,:]),
+            num_total_seats = desired_const[c],
+            prior_allocations = list(alloc_prior[c,:]),
+            rule = divisor_gen
+        )
+        alloc[c,:] = np.array(alloc_const)
 
-            if sum(m_allocations[c]) == v_desired_row_sums[c]:
-                m_seat_props[c] = [0]*len(m_votes[c])
-                maximums[c] = 0
 
-        maximum = max(maximums)
-        const = maximums.index(maximum)
-        party = m_seat_props[const].index(maximum)
-
-        m_allocations[const][party] += 1
-        allocation_sequence.append({
-            "constituency": const, "party": party,
-            "reason": "Max over all lists",
-            "maximum": maximum,
-        })
-
-    stepbystep = {"data": allocation_sequence, "function": print_demo_table}
-    return np.array(m_allocations), stepbystep
-
-def print_demo_table(rules, allocation_sequence):
-    headers = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "Constituency vote quote"]
-    data = []
-    seat_number = 0
-
-    for allocation in allocation_sequence:
-        seat_number += 1
-        data.append([
-            seat_number,
-            rules["constituencies"][allocation["constituency"]]["name"],
-            rules["parties"][allocation["party"]],
-            allocation["reason"],
-            allocation["maximum"]
-        ])
-
-    return headers, data, None
+    # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
+    stepbystep = {
+        "data": [],
+        "function": []
+    }
+    return alloc, stepbystep

@@ -277,26 +277,27 @@ class Election:
         self.results["adj_const_seats"] = adj_const_seats
         self.results["adj_const_total"] = adj_const_seats.sum(0)
         self.results["all_const_total"] = all_const_seats.sum(0)
-
+        print('stepbystep=', stepbystep);
         alloc_sequence = stepbystep["data"]
         self.demo_tables = []
-        format = DEMO_TABLE_FORMATS[self.system["adjustment_method"]]
-        functions = [stepbystep["function"]]
-        if "additional_function" in stepbystep:
-            functions.append(stepbystep["additional_function"])
-        else:
-            format = [format]            
-        for i, print_demo_table in enumerate(functions):
-            headers, steps, sup_header = print_demo_table(self.system, alloc_sequence)
-            demo_table = {
-                "headers":    headers,
-                "steps":      steps,
-                "sup_header": sup_header,
-                "format":     format[i],
-            }
-            demo_table = self.set_forced_reasons(demo_table)
-            self.demo_tables.append(demo_table)
-        self.fix_special_formats()
+        if alloc_sequence:
+            format = DEMO_TABLE_FORMATS[self.system["adjustment_method"]]
+            functions = [stepbystep["function"]]
+            if "additional_function" in stepbystep:
+                functions.append(stepbystep["additional_function"])
+            else:
+                format = [format]            
+            for i, print_demo_table in enumerate(functions):
+                headers, steps, sup_header = print_demo_table(self.system, alloc_sequence)
+                demo_table = {
+                    "headers":    headers,
+                    "steps":      steps,
+                    "sup_header": sup_header,
+                    "format":     format[i],
+                }
+                demo_table = self.set_forced_reasons(demo_table)
+                self.demo_tables.append(demo_table)
+            self.fix_special_formats()
 
     def add_national_adjustment_seats(self):
         self.results["adj_nat_seats"] = (self.desired_col_sums
