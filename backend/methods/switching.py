@@ -85,10 +85,11 @@ def switching(m_votes,
             if any(S) and any(W):
                 (min_score, p) = min_with_index(score, S)
                 (max_score, q) = max_with_index(score, W)
-                C.append(c)
-                P.append(p)
-                Q.append(q)
-                ratio.append(min_score/max_score)
+                if min_score >= max_score:
+                    C.append(c)
+                    P.append(p)
+                    Q.append(q)
+                    ratio.append(min_score/max_score)
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         if not C:
