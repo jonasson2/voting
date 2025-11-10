@@ -1,5 +1,6 @@
 from division_rules import dhondt_gen, sainte_lague_gen, \
-    nordic_sainte_lague_gen, danish_gen, huntington_hill_gen, \
+    sainte_lague_1_4_gen, sainte_lague_1_5_gen, \
+    danish_gen, huntington_hill_gen, \
     adams_gen
 from division_rules import droop, hare
 
@@ -32,7 +33,8 @@ CONSTANTS = {
 DIVIDER_RULES = {
     "dhondt": dhondt_gen,
     "sainte-lague": sainte_lague_gen,
-    "nordic": nordic_sainte_lague_gen,
+    "nordic-1.4": sainte_lague_1_4_gen,
+    "nordic-1.5": sainte_lague_1_5_gen,
     # "imperiali": imperiali_gen,
     "danish": danish_gen,
     "huntington-hill": huntington_hill_gen,
@@ -41,7 +43,8 @@ DIVIDER_RULES = {
 DIVIDER_RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
-    {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
+    {"value": "nordic-1.4",      "text": "Sainte-Laguë with 1st divisor 1.4"},
+    {"value": "nordic-1.5",      "text": "Sainte-Laguë with 1st divisor 1.5"},
     {"value": "danish",          "text": "Danish"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
     {"value": "adams",           "text":"Adams"}
@@ -49,7 +52,8 @@ DIVIDER_RULE_NAMES = [
 RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
-    {"value": "nordic",          "text": "Nordic Sainte-Laguë variant"},
+    {"value": "nordic-1.4",      "text": "Sainte-Laguë with 1st divisor 1.4"},
+    {"value": "nordic-1.5",      "text": "Sainte-Laguë with 1st divisor 1.5"},
     {"value": "danish",          "text": "Danish"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
     {"value": "adams",          "text": "Adams"},
