@@ -119,8 +119,8 @@
   export default {
     methods: {
       leidbeiningar: function() {
-        let url = "https://cs.hi.is/voting/leidbeiningar.pdf"
-        window.open(url, "_blank")
+        const url = new URL("leidbeiningar.pdf", window.location.href)
+        window.open(url.toString(), "_blank")
       }
     },
     data: function () {

@@ -88,7 +88,8 @@ export default {
       "initialize"
     ]),
     showHelp: function() {
-      window.open("https://cs.hi.is/voting/leidbeiningar.pdf", "_blank");
+      const url = new URL("leidbeiningar.pdf", window.location.href)
+      window.open(url.toString(), "_blank")
     },
   },
   mounted: function() {

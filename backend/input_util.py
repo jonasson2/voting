@@ -1,5 +1,5 @@
 import os
-from distutils.util import strtobool
+from util import strtobool
 from copy import deepcopy
 from util import disp
 

@@ -5,7 +5,15 @@ import io
 import os
 import configparser
 import codecs
-from distutils.util import strtobool
+
+# Simple replacement for distutils.util.strtobool (distutils was removed in Python 3.12+)
+def strtobool(val):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    raise ValueError(f"invalid truth value {val!r}")
 from traceback import format_exc
 from flask import jsonify
 

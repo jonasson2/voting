@@ -13,6 +13,8 @@ slurm*.out
 /local
 /share
 /temp
+/doc/leiðbeiningar.docx
+/leidbeiningar.pdf
 backend/*.xlsx
 pardir/
 __pycache__/
