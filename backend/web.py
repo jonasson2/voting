@@ -319,15 +319,16 @@ def get_presets_dict():
     return data
 
 if __name__ == '__main__':
-    debug = os.environ.get("FLASK_DEBUG", "") == "True"
-    host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
-    port = os.environ.get("FLASK_RUN_PORT", "5000")
-    print(f"Running on {host}:{port}")
-    app.debug = debug
+    # debug = os.environ.get("FLASK_DEBUG", "") == "True"
+    # host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
+    # port = os.environ.get("FLASK_RUN_PORT", "5000")
+    app.debug = False
     create_SIMULATIONS()
-    if os.environ.get("HTTPS", "") == "True":
-        print('Running server using HTTPS!')
-        app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
-    else:
-        print('Running server using HTTP (not secure)!')
-        app.run(host=host, port=port, debug=debug)
+    ssl_context = "adhoc" if os.environ.get("HTTPS", "") == "True" else None
+    protocol = "HTTPS" if ssl_context else "HTTP (not secure)"
+    print(f"Using protocol {protocol}")
+    try:
+        app.run(host="0.0.0.0", port=5000, debug=False, ssl_context=ssl_context)
+    except (OSError, SystemExit) as e:
+        print("Port 5000 occupied, trying port 5001...")
+        app.run(host="0.0.0.0", port=5001, debug=False, ssl_context=ssl_context)
