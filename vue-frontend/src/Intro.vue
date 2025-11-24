@@ -48,7 +48,7 @@
       The project has been developed in Iceland. The main contributers to the
       development of the simulator are (in alphabetic order): Martha Guðrún
       Bjarnadóttir, <a href="mailto:jonasson@hi.is">Kristján Jónasson</a> who
-      supervises the development of the softwar, Pétur Ólafur Aðalgeirsson,
+      supervises the development of the software, Pétur Ólafur Aðalgeirsson,
       Smári McCarthy and <a href="mailto:thorkellhelgason@gmail.com">Þorkell
       Helgason</a> who is responsible for the project.</p>
     </b-tab>
