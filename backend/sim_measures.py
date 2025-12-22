@@ -20,7 +20,7 @@ def add_vuedata(sim_result_dict, parallel):
     if not data:
         return
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
-    print('party_votes_specified:', party_votes_specified)
+    # print('party_votes_specified:', party_votes_specified)
     systems = sim_result_dict["systems"]
     qm_topleft1 =  "Seats minus reference seat shares (based on"
     qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"

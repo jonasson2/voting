@@ -9,7 +9,7 @@ def max_const_vote_percentage(*args, **_):
     return common_allocate(*args, vote_percentage, heading, reason)
 
 def max_const_seat_share(*args, **_):
-    print('in max_const_seat_share')
+    # print('in max_const_seat_share')
     heading = "Const. seat share score"
     reason = "Max over all lists"
     return common_allocate(*args, seat_share, heading, reason)

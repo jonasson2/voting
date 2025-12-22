@@ -277,7 +277,7 @@ class Election:
         self.results["adj_const_seats"] = adj_const_seats
         self.results["adj_const_total"] = adj_const_seats.sum(0)
         self.results["all_const_total"] = all_const_seats.sum(0)
-        print('stepbystep=', stepbystep);
+        # print('stepbystep=', stepbystep);
         alloc_sequence = stepbystep["data"]
         self.demo_tables = []
         if alloc_sequence:

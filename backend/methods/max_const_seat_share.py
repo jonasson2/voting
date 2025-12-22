@@ -10,7 +10,7 @@ def max_const_seat_share(
         divisor_gen,
         **kwargs):
     m_allocations = m_prior_allocations.tolist()
-    print('in max_const_seat_share')
+    # print('in max_const_seat_share')
     num_allocated = sum([sum(c) for c in m_allocations])
     total_seats = sum(v_desired_row_sums)
     allocation_sequence = []
