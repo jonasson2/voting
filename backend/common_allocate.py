@@ -7,7 +7,6 @@ from numpy import flatnonzero as find
 def common_allocate(
         votes, total_const_seats, total_party_seats, prior_alloc, div_gen,
         compute_criteria, criterion_name, reason, nolast_reason=None, last=None, **kwargs):
-    # print('in common_allocate')
 
     # PREPARE WORK ARRAYS
     nconst = len(total_const_seats)
@@ -25,6 +24,8 @@ def common_allocate(
     # ALLOCATE SEATS ONE BY ONE
     allocation_sequence = []
     last_party = [l['idx'] for l in last] if has_last else np.full(nconst, None)
+    print("IN COMMON ALLOCATE");
+    print("votes=", votes);
 
     votesum = votes.sum(1)
     while any(free_const_seats):

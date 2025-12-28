@@ -2,7 +2,7 @@
 from copy import deepcopy
 import numpy as np
 
-def max_const_seat_share(
+def seats_p_unbounded(
         m_votes,
         v_desired_row_sums,
         v_desired_col_sums,
@@ -22,14 +22,12 @@ def max_const_seat_share(
             s = sum(m_votes[c])
             for p in range(len(m_votes[c])):
                 col_sum = sum(row[p] for row in m_allocations)
-                if col_sum < v_desired_col_sums[p]:
-                    div = divisor_gen()
-                    for k in range(m_allocations[c][p]+1):
-                        divisor = next(div)
+                # derived from max_const_seat_share by removing an if-stmt here
+                div = divisor_gen()
+                for k in range(m_allocations[c][p]+1):
+                    divisor = next(div)
                     seat_share = (float(m_votes[c][p])/s)*v_desired_row_sums[c]/divisor
-                else:
-                    seat_share = 0
-                    
+                        
                 m_seat_props[c].append(seat_share)
             maximums.append(max(m_seat_props[c]))
 
