@@ -19,19 +19,25 @@ def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
     xsaved = x.copy()
     r -= forced.sum(1)
     c -= forced.sum(0)
-    for iter in range(1, 100):
+    
+    Niter = 20
+    for iter in range(1, Niter):
+        print("iter=",iter)
         for i in range(nrows):
             (x[i, :], rho) = apportion_orig(v[i, :], xsaved[i, :], r[i], div)
             v[i, :] = v[i, :]/rho
+            print(f"i: {i}, rho:{rho:.10f}")
         if iter > 1 and np.array_equal(x, y):
             break
         for j in range(ncols):
             (y[:, j], sigma) = apportion_orig(v[:, j], xsaved[:, j], c[j], div)
             v[:, j] = v[:, j]/sigma
+            print(f"i: {i}, sigma:{sigma:.10f}")
         if np.array_equal(x, y):
             break
-    if iter >= 99:
-        print('iter: 99 -> Ran through all iterations before breaking')
+    if iter >= Niter:
+        print('Ran through all iterations before breaking')
+    print('votes:', v)
     return x
 
 def alt_scaling_new(votes, const_seats, party_seats, prior_alloc, div):
@@ -189,7 +195,7 @@ def apportion_special(v, xp, max_seats, div): # líklega úrelt
         if k < len(x):
             x[k] += 1
     vdivnext = max(r_[v/div[x], 1.0])
-    return x, (vdiv[k] + vdivnext)/2
+    return x, random.uniform(vdivnext, vdiv[k]) # (vdiv[k] + vdivnext)/2
 
 def apportion_until_score_min(votes, seats_in, max_seats, div, score_min, mix_factor):
     seats = seats_in.copy()
@@ -227,6 +233,7 @@ def apportion_equalities(votes, seats_in, max_seats, div, mix_factor):
     return seats, separator
 
 def apportion_orig(v, xp, total_seats, div):
+    import random
     x = xp.copy()
     if total_seats == 0:
         return x, np.inf
@@ -235,4 +242,5 @@ def apportion_orig(v, xp, total_seats, div):
         k = vdiv.argmax()
         x[k] += 1
     vdivnext = max(v/div[x])
-    return x, (vdiv[k] + vdivnext)/2
+    return x, random.uniform(vdivnext, vdiv[k]) + 0.00001*random.uniform(0,1)
+    # return x, (vdiv[k] + vdivnext)/2

@@ -43,9 +43,6 @@ def switching(m_votes,
     temp_votes = deepcopy(votes)
     full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
     temp_votes[:,full] = 0
-    print("IN SWITCHING.PY");
-    print("votes=", votes);
-    print("temp_votes=", temp_votes);
     for c in range(num_constituencies):
         alloc_const, _,_ = apportion1d_general(
             v_votes = list(temp_votes[c,:]),
@@ -65,6 +62,11 @@ def switching(m_votes,
     # WHILE SOME PARTIES HAVE TOO MANY SEATS DO SWITCHING
     switches = []
     i = 0
+    votesum = [sum(votes[c]) for c in range(num_constituencies)]
+    seatshares = np.array([
+        [votes[c, p]/votesum[c]*desired_const[c] for p in range(num_parties)]
+        for c in range(num_constituencies)
+    ])
     while True:
         i += 1
         surplus = sum(alloc,0) > max_party
@@ -72,44 +74,44 @@ def switching(m_votes,
             break
         wanting = sum(alloc,0) < max_party
 
-        # CALCULATE MINIMUM RATIO OF ACTIVE VOTES IN EACH CONSTITUENCY
+        # CALCULATE MINIMUM SEAT SHARE OF SURPLUS PARTIES
         P = []
         Q = []
         C = []
-        ratio = []
+        mincrit = []
         for c in range(num_constituencies):
             with_seats = alloc[c,:] > alloc_prior[c,:]
             with_votes = votes[c,:] > 0
             score = np.zeros(num_parties)
             S = surplus & with_seats
-            W = wanting & with_votes
-            score[S] = votes[c, S]/divisors[alloc[c, S] - 1]
-            score[W] = votes[c, W]/divisors[alloc[c, W]]
-            if any(S) and any(W):
+            score[S] = seatshares[c, S]/divisors[alloc[c, S] - 1]
+            if any(S):
                 (min_score, p) = min_with_index(score, S)
-                (max_score, q) = max_with_index(score, W)
-                if min_score >= max_score:  # This could be deleted
-                    C.append(c)
-                    P.append(p)
-                    Q.append(q)
-                    ratio.append(min_score/max_score)
-
-        # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
-        if not C:
-            # print('No surplus/wanting pair found')
-            # print('  surplus:', find(surplus))
-            # print('  wanting:', find(wanting))
+                C.append(c)
+                P.append(p)
+                mincrit.append(min_score)
+        if not C:  # NO SURPLUS PARTIES LEFT
             break
         else:
-            cmin = np.argmin(ratio)
-            alloc[C[cmin], P[cmin]] -= 1
-            alloc[C[cmin], Q[cmin]] += 1
-            # print(f'- switching parties {P[cmin]} and {Q[cmin]} in const. {C[cmin]})')
-            switches.append({
-                "constituency": C[cmin],
-                "from": P[cmin],
-                "to": Q[cmin],
-                "ratio": ratio[cmin]
+            cmin = np.argmin(mincrit)
+            c = C[cmin]
+            with_votes = votes[c,:] > 0
+            scoreto = np.zeros(num_parties)
+            W = wanting & with_votes
+            scoreto[W] = seatshares[c, W]/divisors[alloc[c, W]]
+            if not any(W):
+                break
+            else:
+                (maxcrit, q) = max_with_index(scoreto, W)
+                alloc[c, P[cmin]] -= 1
+                alloc[c, q] += 1
+
+                switches.append({
+                    "constituency": c,
+                    "from": P[cmin],
+                    "to": q,
+                    "mincrit": mincrit[cmin],
+                    "maxcrit": maxcrit
                 })
 
     # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
@@ -140,7 +142,7 @@ def print_demo_table1(rules, steps):
 
 def print_demo_table2(rules, steps):
     sup_header = "Switching of seats"
-    headers = ["No.", "Constituency", "From", "To", "Min ratio"]
+    headers = ["No.", "Constituency", "From", "To", "Min crit", "Max crit"]
     data = []
     switch_number = 0
     for switch in steps["switches"]:
@@ -148,13 +150,15 @@ def print_demo_table2(rules, steps):
         const_name = rules["constituencies"][switch["constituency"]]["name"]
         from_party = rules["parties"][switch["from"]]
         to_party   = rules["parties"][switch["to"]]
-        ratio      = switch["ratio"]
+        mincrit    = switch["mincrit"]
+        maxcrit    = switch["maxcrit"]
         data.append([
             switch_number,
             const_name,
             from_party,
             to_party,
-            ratio,
+            mincrit,
+            maxcrit
         ])
 
     return headers, data, sup_header 

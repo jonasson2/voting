@@ -46,8 +46,11 @@ def get_arguments(args, description=None, epilog=None):
                 p.add_argument(name, type=type, help=help, nargs='?', default=arg[3])
     n, unknown = p.parse_known_args()
     arguments = vars(n)
-    arguments["combine"] = unknown;
-    if arguments['nsim'] != 0:
+    if 'nsim' in arguments:
+        arguments["combine"] = unknown
+        if arguments['nsim'] != 0:
+            assert(len(unknown) == 0)
+    else:
         assert(len(unknown) == 0)
     return arguments.values()
 

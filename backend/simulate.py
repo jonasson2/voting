@@ -517,7 +517,10 @@ class Simulation():
     def attributes(self):
         builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones
         dictionary = copy(vars(self))
-        class_keys = [k for (k,v) in dictionary.items() if type(v) not in builtins].copy()
+        class_keys = [
+            k for (k,v) in dictionary.items()
+            if not isinstance(v, tuple(builtins))
+        ].copy()
         for key in class_keys:
             del dictionary[key]
         stat = dictionary['stat']

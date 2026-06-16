@@ -24,6 +24,7 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.farthest_from_next import farthest_from_next
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
+from methods.switching_se import switching as switching_se
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
@@ -86,6 +87,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
     # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
+    {"value": "switching_se",              "text": "Swedish switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
@@ -103,6 +105,7 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
+    "switching_se":              ("sccc","clss33"),
     "alternating-scaling":       "",
     #"gurobi":                    "",
     }
@@ -177,6 +180,7 @@ ADJUSTMENT_METHODS = {
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,
+    "switching_se":              switching_se,
     "alternating-scaling":       alt_scaling,
     # "gurobi":                    gurobi_optimal,
     # "monge": monge,

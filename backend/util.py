@@ -181,6 +181,7 @@ def process_vote_table(rows, filename):
     elif len(rows) < 2:
         return 'Only one row'
     toprow = rows[0]
+    print("toprow:", toprow)
     if  toprow[1].lower() not in ["fixed", "cons"]:
         return 'Heading of second column must be "fixed" (for fixed seats)'
     if  toprow[2].lower() != "adj":

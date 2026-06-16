@@ -14,6 +14,7 @@ method_dicts_land = [
     {'short': 'land1st',  'long': 'länder-first',        'title': "Länder first"},
     #{'short': 'gurobi',   'long': 'gurobi',              'title': "Optimal w/Gurobi"},
     {'short': 'switch',   'long': 'switching',           'title': "Seat switching"},
+    {'short': 'switchse', 'long': 'switching_se',        'title': "Swedish seat switching"},
     {'short': 'relsup',   'long': 'relative-superiority','title': "Relative superiority"},
     {'short': 'relsupsmp','long': 'relative-sup-simple', 'title': "Rel. sup. simple"},
     {'short': 'relsupmed','long': 'relative-sup-medium', 'title': "Rel. sup. medium"},
