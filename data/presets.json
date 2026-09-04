@@ -70,5 +70,23 @@
     "Country": "Finland",
     "Year": "2015",
     "filename": "finland_2015.csv"
+  },
+  {
+    "Name": "Stortinget",
+    "Country": "Norway",
+    "Year": "2017",
+    "filename": "norway_2017.csv"
+  },
+  {
+    "Name": "Stortinget",
+    "Country": "Norway",
+    "Year": "2021",
+    "filename": "norway_2021.csv"
+  },
+  {
+    "Name": "Stortinget",
+    "Country": "Norway",
+    "Year": "2025",
+    "filename": "norway_2025.csv"
   }
 ]

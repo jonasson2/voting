@@ -119,7 +119,7 @@
   export default {
     methods: {
       leidbeiningar: function() {
-        let url = "https://cs.hi.is/voting/leidbeiningar.pdf"
+        let url = "/static/leidbeiningar.pdf"
         window.open(url, "_blank")
       }
     },
