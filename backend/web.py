@@ -312,10 +312,16 @@ def get_presets_dict():
         data = json.load(js)
     return data
 
+def default_port():
+    if "FLASK_RUN_PORT" in os.environ:
+        return os.environ["FLASK_RUN_PORT"]
+    hostname = os.uname().nodename.lower()
+    return "5000" if hostname.startswith("pluto") else "8080"
+
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"
     host = os.environ.get("FLASK_RUN_HOST", "0.0.0.0")
-    port = os.environ.get("FLASK_RUN_PORT", "5000")
+    port = default_port()
     print(f"Running on {host}:{port}")
     app.debug = debug
     create_SIMULATIONS()
