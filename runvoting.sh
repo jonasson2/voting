@@ -2,13 +2,14 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 dev|master" >&2
+  echo "Usage: $0 main|dev|dec25" >&2
   exit 2
 }
 
-if [ "${1:-}" != "dev" ] && [ "${1:-}" != "master" ]; then
-  usage
-fi
+case "${1:-}" in
+  main|dev|dec25) ;;
+  *) usage ;;
+esac
 
 branch="$1"
 
