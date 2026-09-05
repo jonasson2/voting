@@ -118,28 +118,6 @@
       <b-alert :show="showAlert()">
       All system names should be unique
       </b-alert>
-      <b-alert
-        v-if="sysidx==0"
-        id="reference-system-alert"
-        show
-        >
-        This is the reference system used for simulation quality measures.
-      </b-alert>
-      <b-tooltip
-        v-if="sysidx==0"
-        id="reference-system-tooltip"
-        target="reference-system-alert"
-        triggers="hover"
-        placement="bottom"
-        variant="primary"
-        custom-class="reference-system-tooltip"
-        :delay="{ show: 500, hide: 0 }"
-        >
-        This first specified system is used for reference. Its settings,
-        except for the adjustment-seat allocation method and rule, are
-        used to calculate the reference seat shares against which all
-        systems are evaluated in the simulation quality measures.
-      </b-tooltip>
       <ElectionSettings
         :systemidx="activeSystemIndex"
         :capabilities="capabilities"

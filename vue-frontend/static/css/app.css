@@ -214,15 +214,6 @@ th {
   }
 }
 
-#reference-system-tooltip.reference-system-tooltip {
-  width: min(400px, calc(100vw - 20px));
-}
-
-#reference-system-tooltip.reference-system-tooltip .tooltip-inner {
-  width: 100%;
-  max-width: none;
-}
-
 .votematrix th input, .votematrix td input {
   padding: 1px 2px;
   background: none;

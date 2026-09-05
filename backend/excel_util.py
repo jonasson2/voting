@@ -360,10 +360,8 @@ def simulation_to_xlsx(results, filename):
          "data": results["sim_settings"]["party_vote_corr"]},
         {"label": "Thresholds used",
          "data": "yes" if results["sim_settings"]["use_thresholds"] else "no"},
-        {"label": "Scaling of votes for reference seat shares",
+        {"label": "Scaling of votes for fractional reference seat shares",
          "data": SCALING_NAMES[results["sim_settings"]["scaling"]]},
-        {"label": "Reference seat shares based on settings of",
-         "data": results["systems"][0]["name"]}
     ]
 
     # COMMON SETTINGS
@@ -436,8 +434,8 @@ def simulation_to_xlsx(results, filename):
     party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
     data = results["data"]
     systems = results["systems"]
-    qm_topleft1 =  "Seats minus reference seat shares (based on"
-    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
+    qm_topleft1 = "Seats minus fractional reference seat shares"
+    qm_topleft2 = "Sum over allocations to:"
     groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     edata = {}
     edata["stats"] = EXCEL_HEADINGS.keys()
@@ -454,8 +452,6 @@ def simulation_to_xlsx(results, filename):
             edata[id].append(row)
 
     # QUALITY MEASURES
-    qm_topleft1 =  "Seats minus reference seat shares (based on"
-    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
     worksheet = workbook.add_worksheet("Quality measures")
     worksheet.freeze_panes(4,2)
     toprow = 0
@@ -524,7 +520,7 @@ def simulation_to_xlsx(results, filename):
     data_matrix = {
         "base": {
             "vp":  nat_base_vote_percentages,
-            "rss": [results["base_allocations"][0]["ref_seat_shares"][-1] for r in range(nsys)],
+            "rss": [results["base_allocations"][r]["ref_seat_shares"][-1] for r in range(nsys)],
             "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
             "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
             "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
@@ -538,7 +534,7 @@ def simulation_to_xlsx(results, filename):
     for stat in STATISTICS_HEADINGS.keys():
         data_matrix[stat] = {
             "vp":  [party_measures[r]['nat_vote_percentages'][stat] for r in range(nsys)],
-            "rss": [add_total(party_measures[0]['party_ref_seat_shares'][stat]) for r in range(nsys)],
+            "rss": [add_total(party_measures[r]['party_ref_seat_shares'][stat]) for r in range(nsys)],
             "ts":  [add_total(party_measures[r]['party_total_seats'][stat]) for r in range(nsys)],
             "ra":  [add_total(party_measures[r]['ref_seat_alloc'][stat]) for r in range(nsys)],
             "dis": [party_measures[r]['party_disparity'][stat] for r in range(nsys)],
@@ -693,7 +689,7 @@ def simulation_to_xlsx(results, filename):
             "base": {
                 "v": xtd_votes,
                 "vp": xtd_percentages,
-                "rss": results["base_allocations"][0]["ref_seat_shares"],
+                "rss": results["base_allocations"][r]["ref_seat_shares"],
                 "cs": results["base_allocations"][r]["fixed_seats"],
                 "as": results["base_allocations"][r]["adj_seats"],
                 "ts": results["base_allocations"][r]["total_seats"],
@@ -710,7 +706,7 @@ def simulation_to_xlsx(results, filename):
             data_matrix[stat] = {
                 "v": results["vote_data"][r]["sim_votes"][stat][:k_votes],
                 "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k_votes],
-                "rss": results["data"][0]["seat_measures"]["ref_seat_shares"][stat][
+                "rss": results["data"][r]["seat_measures"]["ref_seat_shares"][stat][
                        :k_seats],
                 "cs": seat_measures["fixed_seats"][stat][:k_seats],
                 "as": seat_measures["adj_seats"][stat][:k_seats],

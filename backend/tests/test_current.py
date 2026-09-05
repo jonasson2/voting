@@ -14,7 +14,7 @@ from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from input_util import check_vote_table
 from noweb import load_json, load_votes, votes_to_excel
-from simulate import SimulationSettings
+from simulate import Simulation, SimulationSettings
 from web import app
 
 
@@ -256,6 +256,106 @@ class CurrentApplicationTest(unittest.TestCase):
             filename.write_text(json.dumps(contents), encoding='utf-8')
             loaded = load_json(filename)
         self.assertEqual(loaded['vote_table']['party_vote_basis'], 'average')
+
+    def test_fractional_reference_ignores_thresholds_and_divider_rules(self):
+        table = {
+            'name': 'Fractional reference example',
+            'parties': ['A', 'B'],
+            'votes': [[60, 40], [60, 40]],
+            'pruned': [0, 0],
+            'constituencies': [
+                {'name': 'I', 'num_fixed_seats': 0, 'num_adj_seats': 3},
+                {'name': 'II', 'num_fixed_seats': 0, 'num_adj_seats': 4},
+            ],
+            'party_vote_info': {
+                'name': '-',
+                'num_fixed_seats': 0,
+                'num_adj_seats': 0,
+                'votes': [],
+                'specified': False,
+                'total': 0,
+                'pruned': 0,
+            },
+            'party_vote_basis': 'totals',
+        }
+        system = self.make_system(table, 'max-const-seat-share', threshold=50)
+        system['adj_determine_divider'] = 'dhondt'
+        election = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+        election.calculate_ref_seat_shares('both')
+
+        self.assertEqual(election.desired_col_sums.tolist(), [7, 0])
+        np.testing.assert_allclose(election.fractional_party_seats, [4.2, 2.8])
+        np.testing.assert_allclose(
+            election.ref_seat_shares.sum(axis=0), [4.2, 2.8])
+        np.testing.assert_allclose(election.ref_seat_shares.sum(axis=1), [3, 4])
+
+    def test_fractional_reference_accounts_for_national_seats(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_info'] = {
+            'name': 'National',
+            'num_fixed_seats': 0,
+            'num_adj_seats': 2,
+            'votes': [4500, 3500],
+            'specified': True,
+            'total': 8000,
+            'pruned': 0,
+        }
+        table['party_vote_basis'] = 'party_vote_info'
+        system = self.make_system(table, 'max-const-seat-share')
+        election = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+        election.calculate_ref_seat_shares('both')
+
+        np.testing.assert_allclose(
+            election.total_ref_seat_shares, [15.1875, 11.8125])
+        np.testing.assert_allclose(
+            election.ref_seat_shares.sum(axis=1), [12, 13])
+        self.assertAlmostEqual(election.total_ref_nat.sum(), 2)
+        self.assertTrue((election.total_ref_nat >= 0).all())
+
+    def test_simulation_reference_is_independent_of_system_order(self):
+        table = load_votes('../data/2-by-2-example.csv')
+
+        def systems():
+            first = self.make_system(
+                table, 'max-const-seat-share', threshold=50)
+            first['name'] = 'Threshold system'
+            first['adj_determine_divider'] = 'dhondt'
+            second = self.make_system(
+                table, 'max-const-seat-share', threshold=0)
+            second['name'] = 'No-threshold system'
+            second['adj_determine_divider'] = 'sainte-lague'
+            return first, second
+
+        settings = SimulationSettings()
+        settings['simulation_count'] = 1
+        settings['cpu_count'] = 1
+        first, second = systems()
+        simulations = [
+            Simulation(settings, [first, second], table),
+            Simulation(settings, list(reversed(systems())), table),
+        ]
+
+        references = []
+        measures = []
+        for simulation in simulations:
+            references.append({
+                election.system['name']: election.ref_seat_shares.copy()
+                for election in simulation.reference_handler.elections
+            })
+            simulation.run_and_collect_measures(table['votes'], None)
+            values = simulation.stat['sum_abs'].mean()
+            measures.append(dict(zip(
+                [system['name'] for system in simulation.systems], values)))
+
+        for name in references[0]:
+            np.testing.assert_allclose(references[0][name], references[1][name])
+        np.testing.assert_allclose(
+            references[0]['Threshold system'],
+            references[0]['No-threshold system'],
+        )
+        self.assertEqual(measures[0], measures[1])
 
     def test_representative_methods_preserve_margins(self):
         cases = [

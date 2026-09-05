@@ -221,7 +221,7 @@ SENS_MEASURES = [
 
 PARTY_MEASURES = {
     "nat_vote_percentages": "shares of votes used for apportioning adj. seats",
-    "party_ref_seat_shares": "reference seat share based on nat votes",
+    "party_ref_seat_shares": "fractional party seat totals",
     "party_total_seats": "total seats allocated to parties",
     "ref_seat_alloc": "reference seat allocation",
     "party_disparity": "disparity of allocation compared to reference",

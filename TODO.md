@@ -25,8 +25,8 @@ Other possible future work:
   running simulations.
 
 - Clarify simulation terminology.
-  Distinguish “reference seat shares,” the first reference system, and
-  selected allocation comparators.
+  Document fractional reference seat shares, scaling choices, and selected
+  allocation comparators.
 
 - Document and test the standalone Python interface.
   Cover single.py, noweb.py, method names, input paths, and expected

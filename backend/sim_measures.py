@@ -25,8 +25,8 @@ def add_vuedata(sim_result_dict, parallel):
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
     # print('party_votes_specified:', party_votes_specified)
     systems = sim_result_dict["systems"]
-    qm_topleft1 =  "Seats minus reference seat shares (based on"
-    qm_topleft2 = f"settings of {systems[0]['name']}). Sum over allocations to:"
+    qm_topleft1 = "Seats minus fractional reference seat shares"
+    qm_topleft2 = "Sum over allocations to:"
     groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
