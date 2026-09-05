@@ -87,7 +87,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
     # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching_se",              "text": "Swedish switching of seats"},
+    {"value": "switching_se",              "text": "Swedish-style switching of seats"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]

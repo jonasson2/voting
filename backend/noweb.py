@@ -1,4 +1,5 @@
 import random, os, csv, json, time, par_util, sys
+from io import StringIO
 from threading import Thread, excepthook
 from pathlib import Path
 from par_util import write_sim_settings, write_sim_stop, read_sim_dict, clean
@@ -53,9 +54,14 @@ def load_json(f):
 
 def load_votes(filename, stream=None):
     if str(filename).endswith('.csv'):
-        with open(filename,"r") as f:
-            reader = csv.reader(f, skipinitialspace=True)
+        if stream:
+            text = stream.read().decode("utf-8-sig")
+            reader = csv.reader(StringIO(text), skipinitialspace=True)
             rows = list(reader)
+        else:
+            with open(filename, "r", encoding="utf-8-sig", newline="") as f:
+                reader = csv.reader(f, skipinitialspace=True)
+                rows = list(reader)
         # flines = f.read().decode('utf-8').splitlines()
         # frows = list(csv.reader(flines, skipinitialspace=True))
     elif str(filename).endswith('xlsx'):

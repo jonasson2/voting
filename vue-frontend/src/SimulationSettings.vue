@@ -1,126 +1,97 @@
 <template>
 <!-- <b-form style = "margin-left:16px;margin-right:16px"> -->
   <b-form style="margin-left:16px;margin-right:16px" v-if="!waiting_for_data">
-    <b-row>
-      <b-col cols=4>
-        <b-form-group
-          label="Number of simulations"
-          label-cols="auto"
-          style="font-size:110%"
+    <b-row class="simulation-settings-layout">
+      <b-col class="simulation-settings-column simulation-settings-inputs">
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="How many vote tables should be generated?
-                 (How many simulations should be run?)"
-          >
-          <b-form-input
-            type="number"
+                 (How many simulations should be run?)">
+          <label for="simulation-count">Number of simulations</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-count" class="compact-entry-input" type="text"
+            v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
             v-model.number="sim_settings.simulation_count"
             min="0"/>
-        </b-form-group>
-        <b-form-group
-          label="Number of cpus"
-          label-cols="auto"
-          style="font-size:110%"
+          </span>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
-          :title="max_cpu_count_text"
-          >
-          <b-form-select
+          :title="max_cpu_count_text">
+          <label for="simulation-cpu-count">Number of cpus</label>
+          <b-form-select id="simulation-cpu-count"
+            class="compact-select simulation-cpu-select simulation-setting-control"
             v-model="sim_settings.cpu_count"
-            :options="sim_capabilities.cpu_counts"
-            />
-        </b-form-group>
-        <b-form-group
-          label="Generating distribution"
-          label-cols="auto"
-          style="font-size:110%"
+            :options="sim_capabilities.cpu_counts"/>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="Distribution used to simulate votes of each list, with the
                  specified relative SD and the source votes as 
-                 expected values"
-          >
-          <b-form-select
+                 expected values">
+          <label for="simulation-distribution">Generating distribution</label>
+          <b-form-select id="simulation-distribution"
+            class="compact-select simulation-distribution-select simulation-setting-control"
             v-model="sim_settings.gen_method"
-            :options="sim_capabilities.generating_methods"
-            />
-        </b-form-group>
-        <b-form-group
-          label="Relative standard deviation for list votes"
-          label-cols="auto"
-          style="font-size:110%"
+            :options="sim_capabilities.generating_methods"/>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="Standard deviation of simulated votes divided by their mean.
                  Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
-                 0–0.577 (uniform)."
-          >
-          <b-input-group>
-            <b-form-input
-              type="text"
+                 0–0.577 (uniform).">
+          <label for="simulation-const-rsd">Relative standard deviation for list votes</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-const-rsd" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
               v-model.number="sim_settings.const_rsd"/>
-          </b-input-group>
-        </b-form-group>
-        <b-form-group
-          label="Correlation between list votes within each party"
-          label-cols="auto"
-          style="font-size:110%"
+          </span>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="Correlation between list votes within each party,
-                 use only with log-normal distribution, else 0 is used."
-          >
-          <b-input-group>
-            <b-form-input
-              type="text"
+                 use only with log-normal distribution, else 0 is used.">
+          <label for="simulation-const-corr">Correlation between list votes within each party</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-const-corr" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
               v-model.number="sim_settings.const_corr"/>
-          </b-input-group>
-        </b-form-group>
-        <b-form-group
-          label="Relative standard deviation for national party votes"
-          label-cols="auto"
-          style="font-size:110%"
+          </span>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="Standard deviation of simulated votes divided by their mean.
                  Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
-                 0–0.577 (uniform)."
-          >
-          <b-input-group>
-            <b-form-input
-              type="text"
+                 0–0.577 (uniform).">
+          <label for="simulation-party-rsd">Relative standard deviation for national party votes</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-party-rsd" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
               v-model.number="sim_settings.party_vote_rsd"/>
-          </b-input-group>
-        </b-form-group>
-        <b-form-group
-          label="Correlation between list votes and national party votes"
-          label-cols="auto"
-          style="font-size:110%"
+          </span>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          label-for="input-horizontal"
           title="Correlation between list votes and national party votes,
-                 use only with log-normal distribution, else 0 is used."
-          >
-          <b-input-group>
-            <b-form-input
-              type="text"
+                 use only with log-normal distribution, else 0 is used.">
+          <label for="simulation-party-corr">Correlation between list votes and national party votes</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-party-corr" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
               v-model.number="sim_settings.party_vote_corr"/>
-          </b-input-group>
-        </b-form-group>
-        <b-form-group
-          label="Simulate with thresholds?"
+          </span>
+        </div>
+        <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          style="font-size:110%"
-          label-for="input-horizontal"
-          label-cols="auto"
-          title="Choose if thresholds apply"
-          >
-          <b-form-select
+          title="Choose if thresholds apply">
+          <label for="simulation-thresholds">Simulate with thresholds?</label>
+          <b-form-select id="simulation-thresholds"
+            class="compact-select simulation-threshold-select simulation-setting-control"
             v-model="sim_settings.use_thresholds"
             :options="sim_capabilities.use_thresholds"/>
-        </b-form-group>
+        </div>
       </b-col>
-      <b-col cols=4>
+      <b-col class="simulation-settings-scaling">
         <b-form-group style="font-size:110%"
                       description='Scaled seat shares are used as reference in quality 
                                    measurements; "Help" for more details'>
@@ -164,7 +135,7 @@
           </b-form-radio-group>
         </b-form-group>
       </b-col>
-      <b-col cols=4>
+      <b-col class="simulation-settings-comparison">
         <b-form-group style="font-size:110%">
           <label><b>Electoral systems used for comparison:</b></label>
           <b-form-checkbox-group

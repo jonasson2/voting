@@ -1,5 +1,5 @@
 <template>
-<div style="margin:0px 15px; overflow-x:scroll">
+<div class="table-scroll quality-measures-scroll">
   <table style="position:relative">
     <thead> 
       <tr>                                      <!-- STATISTICS HEADING -->
@@ -55,7 +55,9 @@
             </template>
           </tr>
           <tr v-if="id in footnotes">
-            {{footnotes[id]}}
+            <td class="firstcol" :colspan="1 + nsys * nstat">
+              {{footnotes[id]}}
+            </td>
           </tr>
           <tr v-if="vuedata[id].length>0">
             <td class="firstcol blank"></td>

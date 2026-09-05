@@ -55,6 +55,170 @@ th {
   width:100%;
 }
 
+.vote-table-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.vote-table-controls label {
+  margin-bottom: 0;
+}
+
+.vote-table-controls .prune-percent-label {
+  margin-left: 1em;
+}
+
+.compact-entry {
+  align-items: center;
+  display: inline-flex;
+  line-height: 24px;
+  vertical-align: middle;
+}
+
+.compact-entry-input,
+.vote-table-controls input {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  height: 24px;
+  line-height: 20px;
+  padding: 1px 4px;
+  text-align: right;
+}
+
+.vote-table-controls .table-name-input {
+  font-size: 110%;
+  font-weight: bold;
+  text-align: left;
+}
+
+.compact-entry-unit {
+  margin-left: -1pt;
+}
+
+.compact-entry-unit.fixed-seats-unit {
+  margin-left: 3pt;
+}
+
+.settings-fixed-threshold {
+  margin-left: 1em;
+}
+
+.custom-select.compact-select {
+  height: 24px;
+  line-height: 20px;
+  padding: 1px 24px 1px 4px;
+  max-width: 100%;
+}
+
+.settings-heading {
+  margin: 12px 0 4px;
+}
+
+.settings-row,
+.settings-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-row {
+  margin-bottom: 6px;
+}
+
+.settings-row label {
+  margin-bottom: 0;
+}
+
+.settings-field {
+  max-width: 100%;
+}
+
+.table-scroll,
+.settings-seat-table {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.result-demo-column {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.quality-measures-scroll {
+  margin: 0 15px;
+}
+
+/* Fixed dropdown widths, including room for the arrow. */
+.compact-select.settings-rule { width: 280px; }
+.compact-select.settings-vote-basis { width: 480px; }
+.compact-select.settings-method { width: 400px; }
+.compact-select.settings-threshold-choice { width: 62px; }
+.compact-select.settings-seat-spec {
+  width: 400px;
+  align-self: flex-start;
+}
+
+.simulation-settings-column {
+  font-size: 110%;
+}
+
+.simulation-setting-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.simulation-setting-row label {
+  margin-bottom: 0;
+}
+
+.compact-select.simulation-cpu-select,
+.compact-select.simulation-threshold-select {
+  width: 70px;
+}
+
+.compact-select.simulation-distribution-select {
+  width: 190px;
+}
+
+.simulation-settings-layout > div {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .simulation-settings-layout > .simulation-settings-inputs {
+    flex: 0 0 45%;
+    max-width: 45%;
+  }
+
+  .simulation-settings-layout > .simulation-settings-scaling {
+    flex: 0 0 30%;
+    max-width: 30%;
+  }
+
+  .simulation-settings-layout > .simulation-settings-comparison {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+}
+
+#reference-system-tooltip.reference-system-tooltip {
+  width: min(400px, calc(100vw - 20px));
+}
+
+#reference-system-tooltip.reference-system-tooltip .tooltip-inner {
+  width: 100%;
+  max-width: none;
+}
+
 .votematrix th input, .votematrix td input {
   padding: 1px 2px;
   background: none;
@@ -75,6 +239,10 @@ th {
   text-align:     right;
   background:     none;
 }  
+
+td.numerical {
+  text-align: right;
+}
 
 td.displayleft, th.displayleft {
   text-align: left;

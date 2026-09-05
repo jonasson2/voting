@@ -141,30 +141,43 @@
         Download all
       </b-button>
     </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button
+        class="mb-10"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Remove parties whose constituency vote total is below the specified percentage of all constituency votes."
+        @click="pruneSmallParties()"
+        >
+        Prune small parties
+      </b-button>
+    </b-button-group>
   </b-button-toolbar>
   <br />
-  <h6> 
-  </h6>
-  <b-row>
-    <b-col cols=auto>
-      <b-form-group
-        label-for="input-horizontal"
-        label-cols="auto"
-        label="Votes-and-seats table"
-        >
-        <b-form-input
-          class="pt-0 pb-0"
-          style="font-weight:bold; margin-top:-4px; font-size:110%;"
-          v-autowidth="{ maxWidth: '600px', minWidth: '1px' }"
-          v-model="vote_table.name"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="The votes-and-seats table consists of the Constituency 
-                 votes and seats, and the National party votes and seats
-                 (if specified)"
+  <div class="vote-table-controls">
+    <label for="vote-table-name">Votes-and-seats table</label>
+    <input
+      id="vote-table-name"
+      class="table-name-input"
+      type="text"
+      v-autowidth="{ maxWidth: '600px', minWidth: '25px' }"
+      v-model="vote_table.name"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="The votes-and-seats table consists of the Constituency
+             votes and seats, and the National party votes and seats
+             (if specified)"
       />
-  </b-form-group>
-    </b-col>
-  </b-row>
+    <label class="prune-percent-label" for="prune-small-parties-percent">Small party cutoff</label>
+    <input
+      id="prune-small-parties-percent"
+      class="compact-entry-input prune-percent-input"
+      type="text"
+      v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+      v-model.number="prune_percent"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Parties with less than this percentage of all constituency votes are removed from the table."
+      />
+    <span class="compact-entry-unit">%</span>
+  </div>
   <b-row>
     <b-col cols="auto">
       <legend
@@ -179,6 +192,7 @@
       </legend>    
     </b-col>
   </b-row>
+    <div class="table-scroll">
     <table class="votematrix">
       <tr>
         <th class="topleft">
@@ -212,7 +226,7 @@
           <input
             type="text"
             style="text-align: center"
-            v-autowidth="{ maxWidth: '300px', minWidth: '60px' }"
+            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
             v-model="vote_table.parties[partyidx]"
             />
         </th>
@@ -242,7 +256,7 @@
           </b-button>
           <input
             type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '285px' }"
+            v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
             v-model="constituency['name']"
             />
         </th>
@@ -250,7 +264,7 @@
           <input
             type="text"
             style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
+            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
             v-model.number="constituency['num_fixed_seats']"
             />
         </td>
@@ -258,14 +272,15 @@
           <input
             type="text"
             style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
+            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
             v-model.number="constituency['num_adj_seats']"
             />
         </td>
         <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
           <input
             type="text"
-            v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
             v-model.number="vote_table.votes[conidx][partyidx]"
             />
         </td>
@@ -301,7 +316,7 @@
         </th>
       </tr>
     </table>
-  </b-row>
+    </div>
   <b-alert :show="checkVoteSeats()==false">
     Some seats are not in numerical format
   </b-alert>
@@ -322,6 +337,7 @@
     </b-col>
   </b-row>
   
+    <div class="table-scroll">
     <table class="votematrix">
       <tr v-if="vote_table.party_vote_info.specified" size="sm">
         <th class="topleft">
@@ -364,7 +380,7 @@
           </b-button>
           <input
             type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '285px' }"
+            v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
             v-model="vote_table.party_vote_info.name"
             />
         </th>
@@ -372,7 +388,7 @@
           <input
             type="text"
             style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '65px' }"
+            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
             v-model.number="vote_table.party_vote_info['num_fixed_seats']"
             />
         </td>
@@ -380,14 +396,15 @@
           <input
             type="text"
             style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '50px' }"
+            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
             v-model.number="vote_table.party_vote_info['num_adj_seats']"
             />
         </td>
         <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
           <input
             type="text"
-            v-autowidth="{ maxWidth: '300px', minWidth: '120px' }"
+            style="text-align: right"
+            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
             v-model.number="vote_table.party_vote_info.votes[partyidx]"
             />
         </td>
@@ -408,7 +425,7 @@
         </th>
       </tr>
     </table>
-  </b-row>
+    </div>
   <b-alert :show="checkPartyInput()==false">
     National: Some seats or votes are not in numerical format
   </b-alert>
@@ -439,6 +456,7 @@ export default {
         { key: "Year", sortable: true },
       ],
       uploadfile: null,
+      prune_percent: 1,
       paste: {
         csv: "",
         has_name: false,
@@ -508,6 +526,41 @@ export default {
       });
       this.vote_table.votes.push(
         Array(this.vote_table.parties.length).fill(1));
+    },
+    pruneSmallParties: function () {
+      let threshold = Number(this.prune_percent)
+      if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
+        this.serverError("Small party cutoff must be a number from 0 to 100")
+        return
+      }
+      if (this.vote_table.parties.length == 0 || this.vote_table.votes.length == 0) {
+        return
+      }
+      let party_totals = this.vote_table.parties.map((_, partyidx) =>
+        this.vote_table.votes.reduce((total, row) => total + row[partyidx], 0)
+      )
+      let total_votes = party_totals.reduce((a, b) => a + b, 0)
+      if (total_votes <= 0) {
+        return
+      }
+      let keep = party_totals.map(total => total/total_votes*100 >= threshold)
+      if (!keep.some(Boolean)) {
+        this.serverError("Small party cutoff would remove all parties")
+        return
+      }
+      if (keep.every(Boolean)) {
+        return
+      }
+      this.vote_table.parties = this.vote_table.parties.filter((_, partyidx) => keep[partyidx])
+      this.vote_table.votes = this.vote_table.votes.map(row =>
+        row.filter((_, partyidx) => keep[partyidx])
+      )
+      if (this.vote_table.party_vote_info.specified) {
+        this.vote_table.party_vote_info.votes =
+          this.vote_table.party_vote_info.votes.filter((_, partyidx) => keep[partyidx])
+      }
+      this.updateVoteSums()
+      this.addBeforeunload()
     },
     clearAll: function () {
       this.vote_table.name = ""

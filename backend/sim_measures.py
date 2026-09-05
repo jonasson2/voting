@@ -15,6 +15,9 @@ def combine_titles(titles, last_column1):
     title = column1 + (": " + column2 if column2 else "")
     return title, column1
 
+def normalize_negative_zero(value):
+    return 0 if -1e-8 < value < 0 else value
+
 def add_vuedata(sim_result_dict, parallel):
     data = sim_result_dict["data"]
     if not data:
@@ -53,7 +56,8 @@ def add_vuedata(sim_result_dict, parallel):
                 row[stat] = []
                 for s in range(len(systems)):
                     #print('stat:', stat, ', measures:', data[s]["measures"].keys())
-                    entry = data[s]["measures"][measure][stat]
+                    entry = normalize_negative_zero(
+                        data[s]["measures"][measure][stat])
                     ndig = 0 if entry == 0 else fractional_digits(id, stat)
                     row[stat].append(f"{entry:.{ndig}f}")
                     if stat == "avg" and entry != 0:

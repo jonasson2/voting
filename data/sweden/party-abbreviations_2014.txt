@@ -1,0 +1,34 @@
+M        Moderaterna
+C        Centerpartiet
+L        Folkpartiet liberalerna
+KD       Kristdemokraterna
+S        Arbetarepartiet-Socialdemokraterna
+V        Vänsterpartiet
+MP       Miljöpartiet de gröna
+SD       Sverigedemokraterna
+FI       Feministiskt initiativ
+0020     Republikanerna
+0675     Sverige ut ur EU / Frihetliga Rättvisepartiet (FRP)
+1146     Framstegspartiet
+1170     Direktdemokraterna
+1177     Fredsdemokraterna
+1195     Nya Partiet
+1270     Hälsopartiet
+DPNS     De Nya Svenskarna D.P.N.S
+DjuP     Djurens parti
+Däp      Djurägarpartiet
+EAP      Europeiska Arbetarpartiet-EAP
+ENH      Enhet
+Gup      Gula Partiet
+HumDe    Humandemokraterna
+KLP      Klassiskt liberala partiet
+KrVP     Kristna Värdepartiet
+LBPO     Landsbygdspartiet Oberoende
+PP       Piratpartiet
+RNP      Reformist Neutral Partiet
+RS       Rättvisepartiet Socialisterna
+SKP      Sveriges Kommunistiska Parti (SKP)
+SKÅ      Skånepartiet
+SPI      SPI Välfärden
+SVP      Svenskarnas parti
+VägV     Vägvalet

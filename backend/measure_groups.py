@@ -197,6 +197,7 @@ class MeasureGroups(dict):
         no_comparison_systems = not sysGroup
         if no_comparison_systems:
             del self["cmpSys"]
+            del self["compTitle"]
             return
 
     def get_measures(self, group): # get measures from one group

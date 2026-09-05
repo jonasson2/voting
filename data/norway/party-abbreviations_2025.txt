@@ -1,0 +1,22 @@
+AP       Arbeiderpartiet
+DEM      Demokratene i Norge
+DNI      Partiet DNI
+ENSOMH   Ensomhetspartiet
+FOR      Fred og Rettferdighet (FOR)
+FRP      Fremskrittspartiet
+GENERA   Generasjonspartiet
+H        Høyre
+INP      Industri- og Næringspartiet
+KONS     Konservativt
+KRF      Kristelig Folkeparti
+MDG      Miljøpartiet de Grønne
+NKP      Norges Kommunistiske Parti
+PARTIE   Partiet Sentrum
+PASIEN   Pasientfokus
+PP       Pensjonistpartiet
+R        Rødt
+REDDUL   Redd Ullevål sykehus
+SP       Senterpartiet
+SV       Sosialistisk Venstreparti
+V        Venstre
+VELFER   Velferd og innovasjonspartiet

@@ -1,0 +1,25 @@
+ALLIAN   Alliansen - Alternativ for Norge
+AP       Arbeiderpartiet
+DEM      Demokratene i Norge
+FEMINI   Feministisk Initiativ
+FOLKET   Folkets parti
+FRP      Fremskrittspartiet
+GENERA   Generasjonspartiet
+H        Høyre
+INP      Industri- og Næringspartiet
+KONS     Konservativt
+KRF      Kristelig Folkeparti
+KYSTPA   Kystpartiet
+LIBERA   Liberalistene
+MDG      Miljøpartiet de Grønne
+NKP      Norges Kommunistiske Parti
+PARTIE   Partiet Sentrum
+PASIEN   Pasientfokus
+PIRATP   Piratpartiet
+PP       Pensjonistpartiet
+R        Rødt
+REDDNA   Redd Naturen
+SP       Senterpartiet
+SV       Sosialistisk Venstreparti
+V        Venstre
+VELFER   Velferd og innovasjonspartiet

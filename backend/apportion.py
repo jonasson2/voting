@@ -225,13 +225,13 @@ def seat_generator_quota(
 def threshold_drop(v_votes, threshold):
     shares = find_shares_1d(v_votes)
     if threshold[3] is None or threshold[2] == 0:
-        cutoff = [v_votes[p] if shares[p]*100 > threshold[1] else 0
+        cutoff = [v_votes[p] if shares[p]*100 >= threshold[1] else 0
                 for p in range(len(shares))]
     elif threshold[1]==0:
         cutoff = [v_votes[p] if threshold[3][p] >= threshold[2] else 0
                   for p in range(len(threshold[3]))]
     else:
-        cutoff_p = [v_votes[p] if shares[p]*100 > threshold[1] else 0
+        cutoff_p = [v_votes[p] if shares[p]*100 >= threshold[1] else 0
                     for p in range(len(shares))]
         cutoff_s = [v_votes[p] if threshold[3][p] >= threshold[2] else 0
                     for p in range(len(threshold[3]))]

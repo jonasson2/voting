@@ -187,7 +187,7 @@ class Election:
             votes = self.party_votes
         else:
             assert (opt == "average")
-            votes = (self.votes_sums + self.party_votes)/2
+            votes = (self.votesums + self.party_votes)/2
         self.nat_votes = votes
 
         if self.party_vote_info["specified"]:

@@ -1,9 +1,10 @@
 <template>
   <b-container fluid>
+    <div class="table-scroll">
     <table class="resultmatrix" style="margin-bottom:0px; font-size:90%">
       <tr v-if="title">
         <th class="topleft"></th>
-        <th :colspan="stddev?2*parties.length:parties.length"
+        <th :colspan="stddev ? 2 * parties.length + 1 : parties.length + 1"
             class="displaycenter">
           {{title}}
         </th>
@@ -33,7 +34,7 @@
           {{ constituency["name"] }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <Td v-if="voteless && voteless[conidx][partyidx]" class="red displayright">
+          <td v-if="voteless && voteless[conidx][partyidx]" class="red displayright">
             {{ values[conidx][partyidx].toFixed(round) }}
           </td>
           <td v-else class="displayright">
@@ -66,7 +67,7 @@
           {{ party_votes_name }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td class="displaycenter">
+          <td class="displayright">
             {{ values[constituencies.length + 1][partyidx].toFixed(round) }}
           </td>
           <td v-if="stddev" class="displayright">
@@ -82,7 +83,7 @@
           Grand total
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td class="displaycenter">
+          <td class="displayright">
             {{ values[constituencies.length + 2][partyidx].toFixed(round) }}
           </td>
           <td v-if="stddev" class="displayright">
@@ -94,6 +95,7 @@
         </td>
       </tr>
     </table>
+    </div>
     <br>
     <b-alert :show="some_red" >
       The electoral system was forced to allocate some seats to lists without votes (shown in red)

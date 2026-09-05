@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 import argparse
+import csv
 import io
+import json
 from pathlib import Path
 import re
-import requests
-import pandas as pd
+import ssl
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
 TABLE = "08092"
 BASE = f"https://data.ssb.no/api/pxwebapi/v2/tables/{TABLE}"
@@ -139,9 +144,28 @@ PARTY_NAMES = {
 
 
 def get_json(url, **params):
-    r = requests.get(url, params=params, timeout=60)
-    r.raise_for_status()
-    return r.json()
+    data = download(url, params, 60)
+    return json.loads(data.decode("utf-8"))
+
+
+def download(url, params, timeout):
+    query = urllib.parse.urlencode(params)
+    full_url = f"{url}?{query}" if query else url
+    try:
+        with urllib.request.urlopen(full_url, timeout=timeout) as response:
+            return response.read()
+    except urllib.error.URLError as err:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(err):
+            raise
+        print(f"TLS certificate verification failed for {url}", file=sys.stderr)
+        print("Retrying without verification", file=sys.stderr)
+        context = ssl._create_unverified_context()
+        with urllib.request.urlopen(
+            full_url,
+            timeout=timeout,
+            context=context,
+        ) as response:
+            return response.read()
 
 
 def find_dimension(meta, words):
@@ -180,8 +204,10 @@ def current_electoral_district_codes(meta, region_var):
     ]
 
 
-def numeric_votes(series):
-    return pd.to_numeric(series.replace({".": "0", "..": "0"}), errors="coerce").fillna(0)
+def numeric_votes(value):
+    if value in (".", "..", "", None):
+        return 0
+    return int(float(str(value).replace(",", ".")))
 
 
 def short_party_name(code, labels):
@@ -196,11 +222,23 @@ def short_party_name(code, labels):
     return (letters[:6] or code).upper()
 
 
+def write_party_abbreviations(path, parties, labels):
+    abbreviations = {}
+    for party_code in parties:
+        short = short_party_name(party_code, labels)
+        abbreviations.setdefault(short, []).append(labels.get(party_code, party_code))
+    with open(path, "w", encoding="utf-8") as fd:
+        for short in sorted(abbreviations):
+            names = " / ".join(abbreviations[short])
+            print(f"{short:<8} {names}", file=fd)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("positional_year", nargs="?")
     ap.add_argument("--year", default=None)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--abbr-out", default=None)
     args = ap.parse_args()
     year = args.year or args.positional_year or "2025"
     if year not in TOTAL_SEATS:
@@ -208,6 +246,9 @@ def main():
         raise ValueError(f"Seat counts are only configured for: {supported_years}")
 
     out = args.out or Path(__file__).resolve().parent.parent / f"norway_{year}.csv"
+    abbr_out = args.abbr_out
+    if not abbr_out:
+        abbr_out = Path(__file__).resolve().parent / f"party-abbreviations_{year}.txt"
 
     meta = get_json(f"{BASE}/metadata", lang=LANG)
 
@@ -230,28 +271,22 @@ def main():
         "outputFormatParams": "SeparatorSemicolon",
     }
 
-    r = requests.get(f"{BASE}/data", params=params, timeout=120)
-    r.raise_for_status()
-    r.encoding = r.encoding or "iso-8859-1"
+    data = download(f"{BASE}/data", params, 120)
+    text = data.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+    vote_col = reader.fieldnames[-1]
+    wide = {district_code: {} for district_code in district_codes}
+    for row in reader:
+        votes = numeric_votes(row[vote_col])
+        if votes <= 0:
+            continue
+        wide[row[region_var]][row[party_var]] = votes
 
-    df = pd.read_csv(io.StringIO(r.text), sep=";")
-
-    vote_col = df.columns[-1]
-    df[vote_col] = numeric_votes(df[vote_col]).astype(int)
-    df = df[df[vote_col] > 0].copy()
-
-    parties = [code for code in party_order if code in set(df[party_var])]
-    wide = df.pivot_table(
-        index=region_var,
-        columns=party_var,
-        values=vote_col,
-        aggfunc="sum",
-        fill_value=0,
-    )
-    wide = wide.reindex(index=district_codes, columns=parties, fill_value=0).astype(int)
+    used_parties = {party for row in wide.values() for party in row}
+    parties = [code for code in party_order if code in used_parties]
 
     rows = []
-    for district_code, party_votes in wide.iterrows():
+    for district_code, party_votes in wide.items():
         total_seats = TOTAL_SEATS[year][district_code]
         row = {
             "Kjördæmi": district_labels[district_code],
@@ -259,12 +294,21 @@ def main():
             "adj": 1,
         }
         for party_code in parties:
-            row[short_party_name(party_code, party_labels)] = party_votes[party_code]
+            row[short_party_name(party_code, party_labels)] = party_votes.get(
+                party_code,
+                0,
+            )
         rows.append(row)
 
-    out_df = pd.DataFrame(rows)
-    out_df.to_csv(out, index=False)
-    print(f"Wrote {len(out_df)} districts and {len(parties)} parties to {out}")
+    fieldnames = ["Kjördæmi", "fixed", "adj"]
+    fieldnames.extend(short_party_name(code, party_labels) for code in parties)
+    with open(out, "w", encoding="utf-8", newline="") as fd:
+        writer = csv.DictWriter(fd, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"Wrote {len(rows)} districts and {len(parties)} parties to {out}")
+    write_party_abbreviations(abbr_out, parties, party_labels)
+    print(f"Wrote party abbreviations to {abbr_out}")
 
 if __name__ == "__main__":
     main()

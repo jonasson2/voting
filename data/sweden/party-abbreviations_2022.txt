@@ -1,0 +1,88 @@
+M        Moderaterna
+C        Centerpartiet
+L        Liberalerna (tidigare Folkpartiet)
+KD       Kristdemokraterna
+S        Arbetarepartiet-Socialdemokraterna
+V        Vänsterpartiet
+MP       Miljöpartiet de gröna
+SD       Sverigedemokraterna
+FI       Feministiskt initiativ
+AFS      Alternativ för Sverige
+ANARKIST ANARKISTERNA
+ANDOPART ANDOPARTIET
+BASINKOM Basinkomstpartiet
+BJORNPAR Bjornpartiet
+CSIS     Common sense in Sweden
+DIREKTDE Direktdemokraterna
+DMDP     Det minst dåliga partiet
+EAE      Europeiska Arbetarpartiet-EAP
+ENHET    Enhet
+EP       Enad Politik
+ERRAEDPE Eropean radical reflektion a european dream party ERR
+EVAA     En Vis Avskaffar Asylrätten!
+FDP      Förenade Demokratiska Partiet
+FF       FAMILJENS FRIHET
+FP       Fattigmans parti
+FPA2     FN Parti art.27
+FRAMTIDS FramtidsTro
+FREDSPAR Fredspartiet
+FRIHETSR Frihetsrörelsen
+FS       Företaget Sverige
+FV       Fritt val
+FW       Fria Wermland
+GD       GRÖNA DEMOKRATER
+GV       Gula västarna
+HDH      Humanistisk demokrati (HD)
+INVANDRA Invandrarpartiet
+JM       John Mikkonen
+KA       Kalle ankapartiet
+KLIMATAL Klimatalliansen
+KLP      Klassiskt liberala partiet
+KNAPPTRY Knapptryckarna
+KSP      KSP
+KV       Kristna Värdepartiet
+KÄRLEK   Kärlek
+LO       Landsbygdspartiet Oberoende
+MAJSPART Majspartiet
+MOD      MoD
+MONISTER Monisterna
+MR       Min röst
+MS       Medborgerlig Samling
+MS2      MITT SVERIGE
+NATURFIL NaturFilosoferna
+NATURIST Naturistpartiet
+ND       Ny Demokrati
+NEOTEKNO Neoteknokraterna
+NFDFVN   Nu får det fan vara nog
+NM       Nordiska motståndsrörelsen
+NRN      NY REFORM (NR)
+NRP      Nationalsocialistiska reformistiska Partiet
+NS       Nya Samhällspartiet
+NTTS     Nix to the Six
+OK       OK
+OKP      Ond Kyckling Partiet
+PAX      Pax
+PF       Partiet Frihet
+PF2      Partiet Folkomröstning
+PIRATPAR Piratpartiet
+PN       Partiet Nyans
+PS       Politiskt Skifte
+PSP      Positivt Samhällsinitiativ (PSI)
+PV       Partiet Vändpunkt
+REFORMPA Reformpartiet
+SKP      SKP
+SKS      Stram Kurs Sverige
+SKÅNEPAR SKÅNEPARTIET
+SNOF     Stora Norrlands oberoende Frihetsparti
+SOCIALLI Sociallibertarianerna
+SR       Svenska Rikslagen
+SUUEFRF  Sverige ut ur EU/Frihetliga Rättvisepartiet (FRP)
+SV       Socialisterna-Välfärdspartiet
+SVENSKAR SVENSKARNA
+SVERIGEP Sverigepartiet
+SWEXITPA Swexitpartiet
+TRYGGHET TRYGGHETSPARTIET
+VALSAMVE Valsamverkanspartiet
+VS       Volt Sverige
+YGGDRASI Yggdrasil
+ÄPR      Ändrings partiet revolution

@@ -1,28 +1,29 @@
 <template>
-<table v-if="table.steps.length > 0">
-  <tr class="sup-headers" v-if="table.sup_header">
-    <th v-bind:colspan="table.headers.length">
-      {{table.sup_header}}
-    </th>
-  </tr>
-  <tr>
-    <th v-for="header in table.headers">
-      {{ header }}
-    </th>
-  </tr>
-  <tr v-for="(step, stepidx) in table.steps">
-    <template v-for="(col, colidx) in step">
-      <td :style="alignment(table.format[colidx])">
-        <span style="white-space: pre-wrap;">{{format(col,colidx)}}</span>
-      </td>
-    </template>
-  </tr>
-</table>
-<table v-else>
-  <p>Table demonstrating the step-by-step allocation of adjustment seats
+<div class="table-scroll">
+  <table v-if="table.steps.length > 0">
+    <tr class="sup-headers" v-if="table.sup_header">
+      <th v-bind:colspan="table.headers.length">
+        {{table.sup_header}}
+      </th>
+    </tr>
+    <tr>
+      <th v-for="header in table.headers">
+        {{ header }}
+      </th>
+    </tr>
+    <tr v-for="(step, stepidx) in table.steps">
+      <template v-for="(col, colidx) in step">
+        <td :style="alignment(table.format[colidx])">
+          <span style="white-space: pre-wrap;">{{format(col,colidx)}}</span>
+        </td>
+      </template>
+    </tr>
+  </table>
+  <p v-else>
+    Table demonstrating the step-by-step allocation of adjustment seats
     is not applicable as there are no steps to show.
   </p>
-</table>
+</div>
 </template>
 <script>
 
@@ -36,11 +37,14 @@ export default {
     },
     format: function(value, colidx) {
       var fmt = this.table.format[colidx]
-      if (fmt == "%")
-        return parseFloat(value*100).toFixed(3)+"%"
+      if (fmt == "%") {
+        let number = parseFloat(value)
+        return isNaN(number) ? "–" : (number*100).toFixed(3)+"%"
+      }
       let n = parseInt(fmt)
       if (isNaN(n)) return value
-      return parseFloat(value).toFixed(n)
+      let number = parseFloat(value)
+      return isNaN(number) ? "–" : number.toFixed(n)
     }
   }
 }

@@ -1,0 +1,24 @@
+ALLIAN   Alliansen
+AP       Arbeiderpartiet
+DEM      Demokratene i Norge
+FEMINI   Feministisk Initiativ
+FRP      Fremskrittspartiet
+H        Høyre
+KONS     Konservativt
+KRF      Kristelig Folkeparti
+KYSTPA   Kystpartiet
+LIBERA   Liberalistene
+MDG      Miljøpartiet de Grønne
+NKP      Norges Kommunistiske Parti
+NORDMØ   Nordmørslista
+NORDTI   Nordting
+NORGES   Norgespartiet
+PIRATP   Piratpartiet
+PP       Pensjonistpartiet
+R        Rødt
+SAMFUN   Samfunnspartiet
+SP       Senterpartiet
+SV       Sosialistisk Venstreparti
+V        Venstre
+VELFER   Velferd og innovasjonspartiet
+VERDIP   Verdipartiet
