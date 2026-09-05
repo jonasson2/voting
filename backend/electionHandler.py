@@ -39,7 +39,9 @@ class ElectionHandler:
             election = Election(electionSystem,
                                 self.votes,
                                 party_vote_info=deepcopy(self.party_vote_info),
-                                vote_table_name=vote_table["name"])
+                                vote_table_name=vote_table["name"],
+                                pruned_votes=vote_table.get(
+                                    "pruned", [0] * len(self.votes)))
             self.elections.append(election)
 
     def to_xlsx(self, filename):

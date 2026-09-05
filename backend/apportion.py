@@ -73,7 +73,8 @@ def apportion1d_general(
     type_of_rule='Division',
     threshold_percent=0,
     threshold_choice=0,
-    threshold_seats=0
+    threshold_seats=0,
+    threshold_total=None,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -89,6 +90,8 @@ def apportion1d_general(
         - threshold_choice: marker for if both or either of threshold_percent
                             and threshold_seats (0 for both, 1 for either)
         - threshold_seats: A cutoff threshold in range of 0 to 10
+        - threshold_total: Optional complete vote total used as the denominator
+                           for threshold_percent.
     Outputs:
         - allocations vector (list of int)
         - a generator that generates a sequence of seat allocations,
@@ -110,7 +113,9 @@ def apportion1d_general(
                 threshold_percent,
                 threshold_seats,
                 prior_allocations if len(prior_allocations) else None
-            ]),
+            ],
+            threshold_total=threshold_total,
+        ),
         num_total_seats = num_total_seats,
         prior_allocations = deepcopy(allocations),
         rule = rule,
@@ -222,8 +227,16 @@ def seat_generator_quota(
 
     return seat_gen
 
-def threshold_drop(v_votes, threshold):
-    shares = find_shares_1d(v_votes)
+def threshold_drop(v_votes, threshold, threshold_total=None):
+    if threshold_total is None:
+        shares = find_shares_1d(v_votes)
+    else:
+        vote_total = sum(v_votes)
+        tolerance = 1e-12 * max(1, vote_total)
+        if threshold_total + tolerance < vote_total:
+            raise ValueError("Threshold total may not be less than allocated votes.")
+        shares = ([float(v)/threshold_total for v in v_votes]
+                  if threshold_total else v_votes)
     if threshold[3] is None or threshold[2] == 0:
         cutoff = [v_votes[p] if shares[p]*100 >= threshold[1] else 0
                 for p in range(len(shares))]

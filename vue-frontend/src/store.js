@@ -13,6 +13,7 @@ const store = new Vuex.Store({
         [1500, 2000],
         [2500, 1700],
       ],
+      pruned: [0, 0],
       constituencies: [
         { name: "I", num_fixed_seats: 10, num_adj_seats: 2 },
         { name: "II", num_fixed_seats: 10, num_adj_seats: 3 },
@@ -24,6 +25,7 @@ const store = new Vuex.Store({
         votes: [],
         specified: false,
         total: 0,
+        pruned: 0,
       },
     },
     vote_sums: {
@@ -32,6 +34,7 @@ const store = new Vuex.Store({
       row: {},
       col: [],
       tot: 0,
+      pruned: 0,
     },
     systems: [],
     system_numbering: [],
@@ -51,6 +54,7 @@ const store = new Vuex.Store({
   mutations : {
     updateVoteTable(state, table) { // TODO: laga þetta
       console.log("table=", table)
+      normalizePrunedVotes(table)
       state.vote_table = table
       setVoteSums(state)
       state.vote_table.name = table.name
@@ -443,20 +447,18 @@ function parse_headers(headers) {
 
 function setVoteSums(state) {
   let vt = state.vote_table
+  normalizePrunedVotes(vt)
   let vs = state.vote_sums
   let vc = vt.constituencies
-  if (vt.parties.length > 0) {
-    vs.row = vt.votes.map(y => y.reduce((a, b) => a+b))
-    vs.tot = vs.row.reduce((a, b) => a + b, 0)
-  }
-  else {
-    vs.row = 0
-    vs.tot = 0
-  }
+  vs.row = vt.votes.map(
+    (row, index) => row.reduce((a, b) => a+b, 0) + vt.pruned[index]
+  )
+  vs.tot = vs.row.reduce((a, b) => a + b, 0)
   if (vt.constituencies.length > 0)
     vs.col = vt.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
   else
     vs.col = 0
+  vs.pruned = vt.pruned.reduce((a, b) => a + b, 0)
   vs.cseats = 0
   vs.aseats = 0
   for (var i=0; i<vc.length; i++) {
@@ -465,10 +467,20 @@ function setVoteSums(state) {
   }
   let pv = state.vote_table.party_vote_info
   if (pv.specified) {
-    pv.total = pv.votes.reduce((a,b) => a + b, 0)
+    pv.total = pv.votes.reduce((a,b) => a + b, 0) + pv.pruned
   }
   else
     pv.total = 0
+}
+
+function normalizePrunedVotes(voteTable) {
+  if (!Array.isArray(voteTable.pruned)
+      || voteTable.pruned.length != voteTable.constituencies.length) {
+    Vue.set(voteTable, "pruned", Array(voteTable.constituencies.length).fill(0))
+  }
+  if (!("pruned" in voteTable.party_vote_info)) {
+    Vue.set(voteTable.party_vote_info, "pruned", 0)
+  }
 }
 
 function findNumbering(state, asi) {

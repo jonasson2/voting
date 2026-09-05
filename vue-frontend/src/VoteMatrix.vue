@@ -230,6 +230,14 @@
             v-model="vote_table.parties[partyidx]"
             />
         </th>
+        <th
+          v-if="hasPrunedVotes"
+          class="displaycenter"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Votes removed by pruning. Included only in percentage-threshold totals."
+          >
+          Pruned
+        </th>
         <th class="displaycenter">Total</th>
         <th class="growtable">
           <b-button
@@ -284,6 +292,9 @@
             v-model.number="vote_table.votes[conidx][partyidx]"
             />
         </td>
+        <td v-if="hasPrunedVotes" class="displayright">
+          {{ vote_table.pruned[conidx] }}
+        </td>
         <td class="displayright">
           {{ vote_sums.row[conidx] }}
         </td>
@@ -299,9 +310,24 @@
         <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
           {{ vote_sums.col[partyidx] }}
         </td>
+        <td v-if="hasPrunedVotes" class="displayright">
+          {{ vote_sums.pruned }}
+        </td>
         <td class="displayright">
           {{ vote_sums.tot }}
         </td>
+      </tr>
+      <tr>
+        <th class="displayleft">Vote share</th>
+        <td></td>
+        <td></td>
+        <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
+          {{ votePercentage(vote_sums.col[partyidx]) }}
+        </td>
+        <td v-if="hasPrunedVotes" class="displayright">
+          {{ votePercentage(vote_sums.pruned) }}
+        </td>
+        <td class="displayright">{{ votePercentage(vote_sums.tot) }}</td>
       </tr>
       <tr>
         <th class="growtable">
@@ -364,6 +390,14 @@
         <th v-for="(party, partyidx) in vote_table.parties" class="displaycenter">
           {{vote_table.parties[partyidx]}}
         </th>
+        <th
+          v-if="hasPrunedVotes"
+          class="displaycenter"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Votes removed by pruning. Included only in percentage-threshold totals."
+          >
+          Pruned
+        </th>
         <th class="displaycenter">Total</th>
       </tr>
       <tr v-if="vote_table.party_vote_info.specified" size="sm">
@@ -408,6 +442,9 @@
             v-model.number="vote_table.party_vote_info.votes[partyidx]"
             />
         </td>
+        <td v-if="hasPrunedVotes" class="displayright">
+          {{ vote_table.party_vote_info.pruned }}
+        </td>
         <td class="displayright">
           {{vote_table.party_vote_info.total}}
         </td>
@@ -446,6 +483,10 @@ export default {
       'vote_sums',
       'waiting_for_data',
     ]),
+    hasPrunedVotes() {
+      return this.vote_table.pruned.some(value => value > 0)
+        || this.vote_table.party_vote_info.pruned > 0
+    },
   },
   data: function () {
     return {
@@ -483,6 +524,11 @@ export default {
     console.log("Created VoteMatrix");
   },
   methods: {
+    votePercentage(votes) {
+      const total = this.vote_sums.tot;
+      if (!Number.isFinite(votes) || !Number.isFinite(total) || total <= 0) return "–";
+      return (100 * votes / total).toFixed(1) + "%";
+    },
     ...mapMutations([
       "updateVoteSums",
       "updateVoteTable",
@@ -509,6 +555,7 @@ export default {
     deleteConstituency: function (index) {
       this.vote_table.constituencies.splice(index, 1);
       this.vote_table.votes.splice(index, 1)
+      this.vote_table.pruned.splice(index, 1)
     },
     addParty: function () {
       this.vote_table.parties.push("");
@@ -526,6 +573,7 @@ export default {
       });
       this.vote_table.votes.push(
         Array(this.vote_table.parties.length).fill(1));
+      this.vote_table.pruned.push(0)
     },
     pruneSmallParties: function () {
       let threshold = Number(this.prune_percent)
@@ -540,6 +588,7 @@ export default {
         this.vote_table.votes.reduce((total, row) => total + row[partyidx], 0)
       )
       let total_votes = party_totals.reduce((a, b) => a + b, 0)
+        + this.vote_table.pruned.reduce((a, b) => a + b, 0)
       if (total_votes <= 0) {
         return
       }
@@ -551,11 +600,23 @@ export default {
       if (keep.every(Boolean)) {
         return
       }
+      this.vote_table.pruned = this.vote_table.votes.map(
+        (row, conidx) => this.vote_table.pruned[conidx]
+          + row.reduce(
+            (total, votes, partyidx) => total + (keep[partyidx] ? 0 : votes),
+            0
+          )
+      )
       this.vote_table.parties = this.vote_table.parties.filter((_, partyidx) => keep[partyidx])
       this.vote_table.votes = this.vote_table.votes.map(row =>
         row.filter((_, partyidx) => keep[partyidx])
       )
       if (this.vote_table.party_vote_info.specified) {
+        this.vote_table.party_vote_info.pruned +=
+          this.vote_table.party_vote_info.votes.reduce(
+            (total, votes, partyidx) => total + (keep[partyidx] ? 0 : votes),
+            0
+          )
         this.vote_table.party_vote_info.votes =
           this.vote_table.party_vote_info.votes.filter((_, partyidx) => keep[partyidx])
       }
@@ -567,7 +628,9 @@ export default {
       this.vote_table.constituencies = []
       this.vote_table.parties = []
       this.vote_table.votes = []
+      this.vote_table.pruned = []
       this.vote_table.party_vote_info.specified = false
+      this.vote_table.party_vote_info.pruned = 0
       this.updateVoteSums()
     },
     deletePartyVotes: function () {
@@ -582,6 +645,7 @@ export default {
         votes: Array(n).fill(1),
         specified: true,
         total: n,
+        pruned: 0,
       }
     },
     save: function () {
@@ -658,7 +722,6 @@ export default {
           console.log("watching vote_table")
           this.addBeforeunload()
           this.updateVoteSums()
-          this.vote_table.name.$forceUpdate()
         }
       },
       deep: true

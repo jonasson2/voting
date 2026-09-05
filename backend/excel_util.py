@@ -375,7 +375,10 @@ def simulation_to_xlsx(results, filename):
     worksheet.set_column(c2, c2, 43)
     worksheet.write(row, c1, "Date:", fmt["h"])
     worksheet.write(row, c2, datetime.now(), fmt["time"])
-    total_votes = sum(sum(row) for row in results["vote_table"]["votes"])
+    total_votes = (
+        sum(sum(row) for row in results["vote_table"]["votes"])
+        + sum(results["vote_table"].get("pruned", []))
+    )
     total_party_votes = results["vote_table"]["party_vote_info"]["total"]
     fixed_seats = sum(
         c["num_fixed_seats"] for c in results["vote_table"]["constituencies"])

@@ -1,4 +1,5 @@
 import os
+import math
 from distutils.util import strtobool
 from copy import deepcopy
 from util import disp
@@ -24,6 +25,16 @@ def check_vote_table(vote_table):
     num_parties = len(table["parties"])
     num_constituencies = len(table["constituencies"])
 
+    table.setdefault("pruned", [0] * num_constituencies)
+    if len(table["pruned"]) != num_constituencies:
+        raise ValueError("The pruned vote totals do not match the constituency list.")
+    for value in table["pruned"]:
+        if (not isinstance(value, (int, float)) or isinstance(value, bool)
+                or not math.isfinite(value)):
+            raise TypeError("Pruned vote totals must be numbers.")
+        if value < 0:
+            raise ValueError("Pruned vote totals may not be negative.")
+
     if not len(table["votes"]) == num_constituencies:
         raise ValueError("The vote table does not match the constituency list.")
     for row in table["votes"]:
@@ -37,9 +48,21 @@ def check_vote_table(vote_table):
         table["party_vote_info"] = table["party_votes"]
         del table["party_votes"]
     if "party_vote_info" in table:
+        table["party_vote_info"].setdefault("pruned", 0)
+        party_pruned = table["party_vote_info"]["pruned"]
+        if (not isinstance(party_pruned, (int, float))
+                or isinstance(party_pruned, bool)
+                or not math.isfinite(party_pruned)):
+            raise TypeError("The national pruned vote total must be a number.")
+        if party_pruned < 0:
+            raise ValueError("The national pruned vote total may not be negative.")
         for i, v in enumerate(table['party_vote_info']['votes']):
             if not isinstance(v, int):
                 table['party_vote_info']['votes'][i] = 0
+        if table["party_vote_info"].get("specified", False):
+            table["party_vote_info"]["total"] = (
+                sum(table["party_vote_info"]["votes"]) + party_pruned
+            )
 
     for const in table["constituencies"]:
         if "name" not in const:  # or not const["name"]:

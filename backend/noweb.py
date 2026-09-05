@@ -211,14 +211,15 @@ def simulation_to_excel(simid, file):
     simulation_to_xlsx(sim_result_dict, file)
 
 def votes_to_excel(vote_table, file):
+    pruned = vote_table.get("pruned", [0] * len(vote_table["constituencies"]))
     file_matrix = [
-        [vote_table["name"], "cons", "adj"] + vote_table["parties"],
+        [vote_table["name"], "cons", "adj"] + vote_table["parties"] + ["Pruned"],
     ] + [
         [
             vote_table["constituencies"][c]["name"],
             vote_table["constituencies"][c]["num_fixed_seats"],
             vote_table["constituencies"][c]["num_adj_seats"],
-        ] + vote_table["votes"][c]
+        ] + vote_table["votes"][c] + [pruned[c]]
             for c in range(len(vote_table["constituencies"]))
     ]
     if vote_table["party_vote_info"]["specified"]:
@@ -226,7 +227,9 @@ def votes_to_excel(vote_table, file):
             vote_table["party_vote_info"]["name"],
             vote_table["party_vote_info"]["num_fixed_seats"],
             vote_table["party_vote_info"]["num_adj_seats"],
-        ] + vote_table["party_vote_info"]["votes"] ]
+        ] + vote_table["party_vote_info"]["votes"] + [
+            vote_table["party_vote_info"].get("pruned", 0)
+        ] ]
     else:
         party_votes_matrix = None
     votes_to_xlsx(file_matrix, party_votes_matrix, file)    

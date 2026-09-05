@@ -14,15 +14,23 @@ import numpy as np
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, party_vote_info=None, vote_table_name=''):
+    def __init__(self, system, votes, party_vote_info=None, vote_table_name='',
+                 pruned_votes=None):
         if party_vote_info is None:
             party_vote_info = {'name':'-', 'num_fixed_seats':0, 'num_adj_seats':0,
-                               'votes':[],'specified':False, 'total':0}
+                               'votes':[],'specified':False, 'total':0, 'pruned':0}
         self.nconst = len(system["constituencies"])
         self.nparty = len(system["parties"])
         self.system = system
         self.party_vote_info = party_vote_info
         self.party_votes = np.array(party_vote_info["votes"])
+        pruned_votes = pruned_votes if pruned_votes is not None else [0] * len(votes)
+        self.pruned_votes = np.array(pruned_votes)
+        if self.nconst == 1:
+            self.pruned_votes = np.array([self.pruned_votes.sum()])
+        else:
+            assert len(self.pruned_votes) == self.nconst
+        self.party_pruned_votes = party_vote_info.get("pruned", 0)
         self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
@@ -40,7 +48,7 @@ class Election:
     def set_votes(self, votes, party_votes=None):
         # votesums: column sums of m_votes
         self.votes = np.array(votes)
-        if party_votes:
+        if party_votes is not None:
             self.party_votes = np.array(party_votes)
         if self.nconst == 1:
             self.votes = self.votes.sum(0)[None,:]
@@ -48,6 +56,7 @@ class Election:
             assert len(self.votes) == self.nconst
         assert all(len(row) == self.nparty for row in self.votes)
         self.votesums = self.votes.sum(0)
+        self.const_threshold_totals = self.votes.sum(1) + self.pruned_votes
 
     @staticmethod
     def display_seats(allSeats, adjSeats):
@@ -168,7 +177,8 @@ class Election:
                     prior_allocations=[],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = threshold
+                    threshold_percent = threshold,
+                    threshold_total = self.const_threshold_totals[i],
                 )
                 assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -183,12 +193,16 @@ class Election:
         opt = self.system["seat_spec_options"]["party"]
         if opt == "totals":
             votes = self.votesums
+            pruned_votes = self.pruned_votes.sum()
         elif opt == "party_vote_info":
             votes = self.party_votes
+            pruned_votes = self.party_pruned_votes
         else:
             assert (opt == "average")
             votes = (self.votesums + self.party_votes)/2
+            pruned_votes = (self.pruned_votes.sum() + self.party_pruned_votes)/2
         self.nat_votes = votes
+        self.nat_threshold_total = self.nat_votes.sum() + pruned_votes
 
         if self.party_vote_info["specified"]:
             if self.system["nat_seats"]["num_fixed_seats"] > 0:
@@ -198,7 +212,8 @@ class Election:
                     prior_allocations = [],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = threshold
+                    threshold_percent = threshold,
+                    threshold_total = self.nat_threshold_total,
                 )
                 v_allocations += nat_fixed_alloc
             else:
@@ -227,7 +242,8 @@ class Election:
                 type_of_rule = self.system.get_type("adj_determine_divider"),
                 threshold_percent = threshold,
                 threshold_choice = choice,
-                threshold_seats = seats
+                threshold_seats = seats,
+                threshold_total = self.nat_threshold_total,
             )
 
         self.ref_seat_alloc, _, _ \
