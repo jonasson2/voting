@@ -1,6 +1,7 @@
 from contextlib import redirect_stdout
 from copy import deepcopy
 from io import BytesIO, StringIO
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -12,7 +13,8 @@ from dictionaries import DIVIDER_RULES
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from input_util import check_vote_table
-from noweb import load_votes, votes_to_excel
+from noweb import load_json, load_votes, votes_to_excel
+from simulate import SimulationSettings
 from web import app
 
 
@@ -131,8 +133,8 @@ class CurrentApplicationTest(unittest.TestCase):
         }
         for basis, expected in expected_totals.items():
             with self.subTest(basis=basis):
+                table['party_vote_basis'] = basis
                 system = self.make_system(table, 'max-const-seat-share')
-                system['seat_spec_options']['party'] = basis
                 handler = ElectionHandler(
                     table, [system], use_thresholds=True)
                 self.assertEqual(
@@ -159,8 +161,8 @@ class CurrentApplicationTest(unittest.TestCase):
                 'pruned': 25,
             },
         }
+        table['party_vote_basis'] = 'party_vote_info'
         system = self.make_system(table, 'max-const-seat-share', threshold=4)
-        system['seat_spec_options']['party'] = 'party_vote_info'
         handler = ElectionHandler(table, [system], use_thresholds=True)
         self.assertEqual(
             handler.elections[0].desired_col_sums.tolist(), [0, 100])
@@ -184,6 +186,13 @@ class CurrentApplicationTest(unittest.TestCase):
         checked = check_vote_table(table)
         self.assertEqual(checked['pruned'], [0, 0])
         self.assertEqual(checked['party_vote_info']['pruned'], 0)
+        self.assertEqual(checked['party_vote_basis'], 'totals')
+
+    def test_party_vote_basis_defaults_to_totals_without_party_votes(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_basis'] = 'party_vote_info'
+        checked = check_vote_table(table)
+        self.assertEqual(checked['party_vote_basis'], 'totals')
 
     def test_average_national_vote_basis(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -195,10 +204,58 @@ class CurrentApplicationTest(unittest.TestCase):
             'specified': True,
             'total': 8000,
         }
+        table['party_vote_basis'] = 'average'
         system = self.make_system(table, 'max-const-seat-share')
-        system['seat_spec_options']['party'] = 'average'
         handler = ElectionHandler(table, [system], use_thresholds=True)
         self.assertEqual(handler.elections[0].nat_votes.tolist(), [4000, 3850])
+
+    def test_party_vote_basis_applies_to_all_systems(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_info'] = {
+            'name': 'National',
+            'num_fixed_seats': 0,
+            'num_adj_seats': 0,
+            'votes': [4200, 3800],
+            'specified': True,
+            'total': 8000,
+            'pruned': 0,
+        }
+        table['party_vote_basis'] = 'party_vote_info'
+        first = self.make_system(table, 'max-const-seat-share')
+        second = self.make_system(table, 'max-const-seat-share')
+        second['seat_spec_options']['party'] = 'average'
+        handler = ElectionHandler(table, [first, second], use_thresholds=True)
+        for election in handler.elections:
+            self.assertEqual(election.nat_votes.tolist(), [4200, 3800])
+            self.assertEqual(
+                election.system['seat_spec_options']['party'],
+                'party_vote_info',
+            )
+
+    def test_old_json_uses_first_system_party_vote_basis(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_info'] = {
+            'name': 'National',
+            'num_fixed_seats': 0,
+            'num_adj_seats': 0,
+            'votes': [4000, 4000],
+            'specified': True,
+            'total': 8000,
+            'pruned': 0,
+        }
+        table.pop('party_vote_basis')
+        system = self.make_system(table, 'max-const-seat-share')
+        system['seat_spec_options']['party'] = 'average'
+        contents = {
+            'vote_table': table,
+            'systems': [system],
+            'sim_settings': SimulationSettings(),
+        }
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'download-all.json'
+            filename.write_text(json.dumps(contents), encoding='utf-8')
+            loaded = load_json(filename)
+        self.assertEqual(loaded['vote_table']['party_vote_basis'], 'average')
 
     def test_representative_methods_preserve_margins(self):
         cases = [

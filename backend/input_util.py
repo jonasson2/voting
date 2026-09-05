@@ -64,6 +64,14 @@ def check_vote_table(vote_table):
                 sum(table["party_vote_info"]["votes"]) + party_pruned
             )
 
+    valid_party_vote_bases = {"totals", "party_vote_info", "average"}
+    party_vote_basis = table.get("party_vote_basis", "totals")
+    if party_vote_basis not in valid_party_vote_bases:
+        raise ValueError(f"Unknown party vote basis: {party_vote_basis}")
+    if not table.get("party_vote_info", {}).get("specified", False):
+        party_vote_basis = "totals"
+    table["party_vote_basis"] = party_vote_basis
+
     for const in table["constituencies"]:
         if "name" not in const:  # or not const["name"]:
             raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")

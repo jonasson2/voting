@@ -362,6 +362,16 @@
     </legend>
     </b-col>
   </b-row>
+  <div v-if="vote_table.party_vote_info.specified" class="settings-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="The total number of seats for each party is computed using the votes selected here.">
+      <span>Votes used as basis</span>
+      <b-form-select class="compact-select settings-vote-basis"
+        v-model="vote_table.party_vote_basis"
+        :options="partyVoteBasisOptions"/>
+    </label>
+  </div>
   
     <div class="table-scroll">
     <table class="votematrix">
@@ -482,7 +492,13 @@ export default {
       'vote_table',
       'vote_sums',
       'waiting_for_data',
+      'sim_capabilities',
     ]),
+    partyVoteBasisOptions() {
+      return this.sim_capabilities.seat_spec_options
+        ? this.sim_capabilities.seat_spec_options.party
+        : []
+    },
     hasPrunedVotes() {
       return this.vote_table.pruned.some(value => value > 0)
         || this.vote_table.party_vote_info.pruned > 0
@@ -631,10 +647,12 @@ export default {
       this.vote_table.pruned = []
       this.vote_table.party_vote_info.specified = false
       this.vote_table.party_vote_info.pruned = 0
+      this.vote_table.party_vote_basis = "totals"
       this.updateVoteSums()
     },
     deletePartyVotes: function () {
       this.vote_table.party_vote_info.specified = false
+      this.vote_table.party_vote_basis = "totals"
     },
     addPartyVotes: function() {
       let n = this.vote_table.parties.length

@@ -41,6 +41,9 @@ def load_json(f):
             del sys["seat_spec_option"]
     if "vote_table" in file_content:
         vote_table = file_content["vote_table"]
+        if "party_vote_basis" not in vote_table and file_content["systems"]:
+            vote_table["party_vote_basis"] = file_content["systems"][0].get(
+                "seat_spec_options", {}).get("party", "totals")
         vote_table = check_vote_table(vote_table)
         if "party_vote_info" not in vote_table:
             vote_table = add_empty_party_votes(vote_table)

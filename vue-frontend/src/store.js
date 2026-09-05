@@ -27,6 +27,7 @@ const store = new Vuex.Store({
         total: 0,
         pruned: 0,
       },
+      party_vote_basis: "totals",
     },
     vote_sums: {
       cseats: 0,
@@ -134,10 +135,6 @@ const store = new Vuex.Store({
 
     setConstSpecOption(state, payload) {
       state.systems[payload.idx].seat_spec_options.const = payload.opt
-    },
-
-    setPartySpecOption(state, payload) {
-      state.systems[payload.idx].seat_spec_options.party = payload.opt
     },
 
     newNumbering(state, idx) {
@@ -301,16 +298,10 @@ const store = new Vuex.Store({
           response => {
             console.log('response from /api/election =', response)
             if (error(response)) {
-              let seat_spec_options = context.state.systems.map(({seat_spec_options}) => seat_spec_options)
-              let party_spec_option = seat_spec_options.map(({party}) => party)
-              let use_pv = ['party_vote_info', 'average'].some(element => party_spec_option.includes(element))
+              let use_pv = ['party_vote_info', 'average'].includes(
+                context.state.vote_table.party_vote_basis)
               let pv = context.state.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-              if (context.state.vote_table.party_vote_info.specified == false && use_pv) {
-                //if party votes are not specified and chosen in election system
-                let message = "The total number of seats for each party cannot be computed using national party votes when none are specified"
-                console.log("SERVER ERROR: ", message)
-                context.state.results = []
-              } else if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
+              if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
                 //if party votes are specified, they are used and not all votes are numbers
                 let message = "The national party votes contain values that are not numbers"
                 console.log("SERVER ERROR: ", message)
@@ -341,23 +332,7 @@ const store = new Vuex.Store({
           systems:        context.state.systems
         }).then(response => {
           if (error(response)) {
-            let seat_spec_options = context.state.systems.map(({seat_spec_options}) => seat_spec_options)
-            let party_spec_option = seat_spec_options.map(({party}) => party)
-            let use_pv = ['party_vote_info', 'average'].some(element => party_spec_option.includes(element))
-            let pv = context.state.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-            if (context.state.vote_table.party_vote_info.specified == false && use_pv) {
-              //if party votes are not specified and chosen in election system
-              let message = "The total number of seats for each party cannot be computed using national party votes when none are specified"
-              console.log("SERVER ERROR: ", message)
-              context.state.results.data = []
-            } else if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
-              //if party votes are specified, they are used and not all votes are numbers
-              let message = "The national party votes contain values that are not numbers"
-              console.log("SERVER ERROR: ", message)
-              context.state.results.data = []
-            } else {
             context.commit("serverError", response.body)
-            }
           } else {
             console.log("response.body", response.body)
             response.body.constituencies.forEach(
@@ -480,6 +455,11 @@ function normalizePrunedVotes(voteTable) {
   }
   if (!("pruned" in voteTable.party_vote_info)) {
     Vue.set(voteTable.party_vote_info, "pruned", 0)
+  }
+  const validPartyVoteBases = ["totals", "party_vote_info", "average"]
+  if (!validPartyVoteBases.includes(voteTable.party_vote_basis)
+      || !voteTable.party_vote_info.specified) {
+    Vue.set(voteTable, "party_vote_basis", "totals")
   }
 }
 
