@@ -39,7 +39,7 @@ def danish_gen():
         n += 3.0
 
 def huntington_hill_gen():
-    """Generate Hill-Huntington divider sequence; modified for hh(0) -> \inf"""
+    """Generate Hill-Huntington dividers with a near-zero first divisor."""
     n = 0
     yield 0.00000000001
     while True:
@@ -47,7 +47,7 @@ def huntington_hill_gen():
         yield math.sqrt(n*(n+1))
 
 def adams_gen():
-    """Generate Hill-Huntington divider sequence; modified for hh(0) -> \inf"""
+    """Generate Adams dividers with a near-zero first divisor."""
     n = 0
     yield 0.00000000001
     while True:

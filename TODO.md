@@ -1,15 +1,12 @@
 # TODO
 
-1. Clean up the README file(s) and setup/installation instructions to make it easier to set the package up after a fresh clone.
-2. Clean junk from the repository.
-3. Use uv rather than conda.
-4. Translate to Icelandic.
-5. Allow Swedish allocation.
-6. Work on the optimal method to make it work and prevent cycling in some cases.
-7. Allow displaying party abbreviations.
-8. Improve input validation and error messages.
-9. Remove debugging output, dead code, and obsolete commented-out blocks.
-10. Consolidate repeated frontend table and form styling.
+1. Translate to Icelandic after the interface and terminology have stabilized.
+2. Allow Swedish allocation.
+3. Work on the optimal method to make it work and prevent cycling in some cases.
+4. Allow displaying party abbreviations.
+5. Improve input validation and error messages.
+6. Remove debugging output, dead code, and obsolete commented-out blocks.
+7. Consolidate repeated frontend table and form styling.
 
 ---
 Other possible future work:

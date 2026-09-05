@@ -1,8 +1,14 @@
-import os
 import math
-from distutils.util import strtobool
 from copy import deepcopy
 from util import disp
+
+def parse_bool(value):
+    value = value.lower()
+    if value in {"y", "yes", "t", "true", "on", "1"}:
+        return True
+    if value in {"n", "no", "f", "false", "off", "0"}:
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
 
 def check_input(data, sections):
     for section in sections:
@@ -143,7 +149,7 @@ def check_simul_settings(sim_settings):
     """
     if "row_constraints" in sim_settings and "col_constraints" in sim_settings:
         for key in ["row_constraints", "col_constraints"]:
-            sim_settings[key] = bool(strtobool(str(sim_settings[key])))
+            sim_settings[key] = parse_bool(str(sim_settings[key]))
         if sim_settings["row_constraints"]:
             sim_settings["scaling"] = "both" if sim_settings[
                 "col_constraints"] else "const"
@@ -182,8 +188,4 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] in ["gamma", "log-normal"]:
         if variance_coefficient >= 1:
             raise ValueError("Relative standard deviation must be less than 1")
-    sim_count = sim_settings["simulation_count"]
-    digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    if sim_count > 2000 and digoce:
-        raise ValueError("Maximum iterations in the online version is 2000 (see Help)")
     return sim_settings

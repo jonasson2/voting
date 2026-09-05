@@ -21,9 +21,9 @@ if screen -ls | grep -q "[.]$branch[[:space:]]"; then
   screen -wipe >/dev/null 2>&1 || true
 fi
 
-# Update repository
-if ! git pull; then
-  echo "ERROR: git pull failed; aborting." >&2
+# Update remote branch information
+if ! git fetch origin; then
+  echo "ERROR: git fetch failed; aborting." >&2
   exit 1
 fi
 
@@ -33,18 +33,30 @@ if ! git checkout "$branch"; then
   exit 1
 fi
 
+if ! git pull --ff-only origin "$branch"; then
+  echo "ERROR: could not update $branch; aborting." >&2
+  exit 1
+fi
+
+lock_file="vue-frontend/package-lock.json"
+if [[ -f "$lock_file" ]]; then
+  installed_lock="vue-frontend/node_modules/.package-lock.json"
+  if [[ ! -f "$installed_lock" ]] || [[ "$lock_file" -nt "$installed_lock" ]]; then
+    (cd vue-frontend && npm ci)
+  fi
+else
+  # Historical branches do not track a lockfile.
+  (cd vue-frontend && npm install)
+fi
+
 # Start a detached screen session that keeps running
 if ! screen -dmS "$branch" bash -lc "
   set -e
-  # make conda available in non-interactive shell
-  source \"\$(conda info --base)/etc/profile.d/conda.sh\"
-  conda activate voting
-
   cd vue-frontend
   npm run build
 
   cd ../backend
-  python web.py
+  uv run --locked python web.py
 "; then
   echo "ERROR: failed to start screen session '$branch'." >&2
   exit 1

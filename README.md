@@ -1,246 +1,125 @@
 # Voting system simulator
 
-This is a voting system simulator intended to simulate various methods used in
-proportional voting systems, in particular those that use a biproportional
-apportionment method for allocation of adjustment seats based on national
-outcomes. Such systems are common, such as in Iceland, Sweden, and Norway.
+The Voting system simulator is a web application and Python calculation engine
+for studying proportional electoral systems. It allocates constituency and
+adjustment seats, calculates a single election under one or more electoral
+systems, and compares systems over simulated elections.
 
-[M.L. Balinski and G. Demange][1] have shown that only one method, the
-Alternating-Scaling method, exists that upholds the five axioms for
-proportionality in matrices. All other methods are heuristic simplifications
-that approach the optimal solution to varying degrees. This software implements
-the Alternating-Scaling method, and various other methods for comparison, and
-provides mechanisms to compare them.
+The simulator is intended for statutory, comparative, and hypothetical work.
+It includes allocation methods used in Iceland and Norway, biproportional
+methods such as alternating scaling, configurable thresholds and divisor rules,
+and Excel export of election and simulation results.
 
-Biproportional allocation on matrices is a common issue that arises when you
-have multiple parties in multiple constituencies vying for a set number of seats
-which are pinned to different constituencies. The goal is to determine which
-parties get which seats in which constituencies.
+The browser interface is built with Vue and the HTTP API with Flask. The
+allocation and simulation code is under `backend/` and can also be run without
+the browser.
 
-More generally this approach could be used to allocate limited resources to
-factories depending on their relative importance or needs, or to solve a number
-of other biproportional optimization problems.
+## Run locally
 
-## Installation for use with browser interface. These instructions assume conda (or mamba).
+Requirements:
 
-1. Make sure Python ≥ 3.9, mamba and npm are available
-    for example for npm:
-      brew install node
-2. Clone this repository
-      git clone https://github.com/jonasson2/voting
-      cd voting
-3. Install required packages, create and enter voting environment:
-      mamba env create -f environment.yml
-      (cd vue-frontend && npm install && npm run build)
-4. To run the simulator locally:
-      (cd vue-frontend && npm run build) # If any changes to the vue/javascript programs
-      (cd backend && python web.py)
-      Direct a browser to `http://localhost:5000`
+- Git
+- [uv](https://docs.astral.sh/uv/)
+- Node.js and npm
 
+Clone the repository and install the locked dependencies:
 
-## Command Line Interface [as of 2023 this is probably completely outdated]
-
-This is the basic interaction mode. To set it up follow steps 1–5a above. You feed it some data files, it feeds you some results.
-
-For help, try:
-```
-python cli.py --help
+```sh
+git clone https://github.com/jonasson2/voting.git
+cd voting
+uv sync --locked
+cd vue-frontend
+npm ci
+npm run build
+cd ../backend
+uv run --locked python web.py
 ```
 
-A few usage examples follow below.
+On the `dev` branch, open <http://localhost:8080>. Set `FLASK_RUN_PORT` to
+override the branch default:
 
-### Apportionment
-
-Basic apportioning is done through the `apportion` command. For help with that command, do:
-```
-python cli.py apportion --help
-```
-The `apportion` command takes several flags, including:
-
- * *constituencies*: path to a CSV or XLSX file describing constituencies.
- * *votes*: path to a CSV or XLSX file containing votes.
- * *divider*: the name of a supported divider method.
- * *adjustment-divider*: a supported divider method to use for adjustment seats; defaults to the same as the selected divider method.
- * *adjustment-method*: a supported adjustment method to use for resolving adjustment seat apportionment. Use multiple times to compare outputs.
- * *output*: the output format to use.
- * *show-entropy*: show the calculated entropy of each method.
-
-Example using the 2013 elections in Iceland and d'Hondt method:
-```
-python cli.py apportion \
-	--constituencies=../data/constituencies/constituencies_iceland_2013.csv \
-	--votes=../data/elections/iceland_landskjorstjorn_2013.csv \
-	--divider=dhondt \
-	--adjustment-method=alternating-scaling \
-	--show-entropy
+```sh
+FLASK_RUN_PORT=5000 uv run --locked python web.py
 ```
 
-You can get HTML, LaTeX, MediaWiki or various other types of table output and swap out the divider methods as you please:
-```
-python cli.py apportion \
-	--constituencies=../data/constituencies/constituencies_iceland_2013.csv \
-	--votes=../data/elections/iceland_landskjorstjorn_2013.csv \
-	--divider=sainte-lague \
-    --adjustment-method=monge \
-	--output=html
-```
+After the first installation, rebuild the frontend only when its source has
+changed.
 
-### Simulation
+## Run without the browser
 
-Simulation is done through the `simulate` command. For help with that command, do:
-```
-python cli.py simulate --help
-```
-The `simulate` command takes several flags, including:
+`single.py` runs one election directly from the command line. Run it from
+`backend/`; give paths outside `backend/data/` explicitly:
 
- * *constituencies*: path to a CSV or XLSX file describing constituencies.
- * *votes*: path to a CSV or XLSX file containing votes to use as reference for the simulation.
- * *test_method*: the method to be tested.
- * *num_sim*: number of simulations to run.
- * *gen_method*: a supported method to generate votes.
-
- Example using the 2013 elections in Iceland:
-```
-python cli.py simulate \
-	--constituencies=../data/constituencies/constituencies_iceland_2013.csv \
-	--votes=../data/elections/iceland_landskjorstjorn_2013.csv \
-	--test_method=ice_law_dhondt
+```sh
+cd backend
+uv run --locked python single.py switch -v ../data/iceland-2021.csv
+uv run --locked python single.py --help
 ```
 
-### Script mode
+The command writes `single.xlsx` and `votes.xlsx` in `backend/`.
 
-Because all the parameters can be confusing and sometimes you just want
-to be able to work with a particular set of settings again and again,
-there is a "script mode" (for lack of a better term) which allows you to
-specify a set of rules which then execute:
+## Run on a server
 
+The repository includes `runvoting.sh` for a persistent deployment using GNU
+Screen. A server needs Git, uv, Node.js, npm, and Screen. For example, on Pluto:
+
+```sh
+ssh pluto
+cd ~/voting
+./runvoting.sh dev
 ```
-python cli.py script ../data/presets/iceland2013.json
+
+The script updates and checks out the requested branch, installs frontend
+packages when its lockfile has changed, builds the frontend, and starts Flask in
+a detached Screen session. Running the same command again restarts that branch.
+
+```sh
+screen -ls
+screen -r dev
 ```
 
-A script or preset is simply a JSON file that specifies what should
-happen, see examples in `data/presets/`.
+Detach from Screen with `Ctrl-A`, then `D`.
 
+The configured branch ports are:
 
-### Design
+| Branch | Local | Pluto |
+| --- | ---: | ---: |
+| `main` | 5001 | 5000 |
+| `dev` | 8080 | 8080 |
 
-The web interface involves a Javascript Single Page App (SPA) which acts as a
-visual editor for data that is then passed to the backend for calculations. As
-such, the SPA is the source of truth, and the backend is "dumb", merely reacting
-to the frontend. The backend is made with Flask.
+The included launcher uses Flask's built-in server. A public deployment should
+place it behind the server's usual firewall or reverse proxy.
 
-The SPA's data model should be the same as the backend's script-mode input model.
+## Tests
 
-The SPA is built using vue.js.
+Run the backend regression suite through the locked environment:
 
-## Features
+```sh
+cd backend
+uv run --locked python test.py
+```
 
-### Basic functionality
+Verify the frontend build with:
 
-* [x] Read constituency data files
-* [x] Read vote data files
-* [x] Basic click UI
-* [x] Per ruleset click UI options
-* [x] Simulation click UI options
-* [x] Web server
+```sh
+cd vue-frontend
+npm ci
+npm run build
+```
 
-### Apportionment methods
+## Repository layout
 
- * [x] One dimensional greedy apportionment
-   * [x] d'Hondt method
-   * [x] Sainte-Lague method
-   * [x] Nordic Sainte-Lague method
- * [x] Constituency seat allocation
- * [x] Threshold elimination (on matrices and vectors)
- * [ ] Optimization and heuristic methods
-   * [ ] Linear programming
-   * [x] Greedy Alternating-Scaling algorithm (AS)
-   * [x] Alternating-Scaling algorithm (AS)
-   * [x] Relative Superiority algorithm (RS)
-   * [ ] Relative Inferiority algorithm (RI)
-   * [x] Nearest neighbor algorithm
-   * [x] Monge algorithm
-   * [x] Icelandic voting law algorithm
-   * [ ] Swedish voting law algorithm
-   * [x] Norwegian voting law algorithm
-   * [x] Norwegian voting law algorithm adjusted for Icelandic conditions
-   * [x] Kristinn Lund method
-   * [x] Pure vote ratios method
+- `backend/`: allocation methods, simulations, Flask API, and tests
+- `vue-frontend/`: Vue application and static assets
+- `data/`: example election data, presets, and data-source scripts
+- `doc/`: technical and user documentation
 
-### Simulation
+## License and authors
 
-* [x] Generate random initial votes
-	* Draw percentages for each party in each district from a beta distribution with historical mean and variance. Then normalize the percentages to add up to 100\%.
-* [ ] Fuzz votes
-	* Add votes, one-by-one, in support of a party list in a district
-		* If a new vote doesn't gain that party list a seat, report any change in results.
-		* Even if a new vote does gain that party list a seat, do report if the result change is greater than just moving a seat in the relevant constituency between parties and moving one seat in the opposite direction in another constituency.
-* [x] Compare different apportionment methods
+Released under the GNU Affero General Public License version 3.
 
-### Evaluation of methods
+The authors and contributors are Smári McCarthy, Þorkell Helgason, Martha Guðrún
+Bjarnadóttir, Pétur Ólafur Aðalgeirsson, Helgi Hrafn Gunnarsson, Bjartur
+Thorlacius, Lilja Steinunn Jónsdóttir, and Kristján Jónasson.
 
- * [x] Apportionment entropy
- * [x] Entropy relative to optimal entropy
- * [x] Seat deviation from optimal solution
- * [x] Seat deviation from Icelandic law
- * [x] Seat deviation from independent constituencies
- * [x] Seat deviation from single constituency country
- * [x] Seat deviation from all seats apportioned with adjustment method
- * [x] Loosemore-Hanby index
- * [x] Sainte-Lague minsum index
- * [x] d'Hondt maxmin index
- * [x] d'Hondt minsum index
- * [ ] _Monotonicity violation_: A party list losing a seat by receiving an additional vote
- * [ ] _Significant irrelevant alternative_: A new vote having side effects without without affecting the number of seats won by the party list voted for.
-
-### Output formats
-
-- [x] Simple text result table (Total seats) output
-- [x] HTML, LaTeX, CSV, result table (Total seats) output
-- [x] Excel file detailed result output
-  - [x] Votes
-  - [x] Vote shares
-  - [x] Constituency seats
-  - [x] Adjustment seats
-  - [x] Total seats
-  - [ ] Evaluation metrics
-
-### Web interface
-
- * [x] Simple web server
- * [ ] Javascript SPA
-    * [x] Configurable running of single elections
-    * [x] Configurable running of simulations
-    * [ ] Display results
-       * [x] Votes
-       * [ ] Vote shares
-       * [x] Constituency seats
-       * [x] Adjustment seats
-       * [x] Total seats
-       * [x] Evaluation metrics
-    * [ ] Visualizations
-       * [ ] "Election TV" result animations
-       * [ ] Simulation errors
-       * [ ] 3D bar chart of cumulative violations in the constituency/party matrix
- * [x] Configurable host/port/etc
-
-### Tickets
-
-See [our issue tracker on Github](https://github.com/smari/voting/issues).
-
-
-## Authors
-
- * Smári McCarthy
- * Þorkell Helgason
- * Martha Guðrún Bjarnadóttir
- * Pétur Ólafur Aðalgeirsson
- * Helgi Hrafn Gunnarsson
- * Bjartur Thorlacius.
-
-## Licence
-
-Released under the terms of the Affero GNU General Public License version 3.
-
-
-[1]: https://hal.archives-ouvertes.fr/hal-00686748/document
+Current maintainer: **Kristján Jónasson**.
