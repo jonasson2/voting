@@ -124,12 +124,9 @@ SEAT_SPECIFICATION_OPTIONS = {
     ],
     "party":
     [
-        {"value": "totals",      "text": ('constituency vote totals in '
-                                          '"Source votes and seats" tab')},
-        {"value": "party_vote_info", "text": ('national party votes in '
-                                          '"Source votes and seats" tab')},
-        {"value": "average",     "text": ('average of constituency vote '
-                                          'totals and national party votes')},
+        {"value": "totals", "text": "Constituency vote totals"},
+        {"value": "party_vote_info", "text": "National party votes"},
+        {"value": "average", "text": "Average of both"},
     ]
 }
 

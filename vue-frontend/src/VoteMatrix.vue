@@ -362,17 +362,6 @@
     </legend>
     </b-col>
   </b-row>
-  <div v-if="vote_table.party_vote_info.specified" class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="The total number of seats for each party is computed using the votes selected here.">
-      <span>Votes used as basis</span>
-      <b-form-select class="compact-select settings-vote-basis"
-        v-model="vote_table.party_vote_basis"
-        :options="partyVoteBasisOptions"/>
-    </label>
-  </div>
-  
     <div class="table-scroll">
     <table class="votematrix">
       <tr v-if="vote_table.party_vote_info.specified" size="sm">
@@ -464,7 +453,7 @@
           <b-button
             size="sm"
             @click="addPartyVotes()"
-            v-b-tooltip.hover.bottom.v-primary.ds500
+            v-b-tooltip.hover.right.v-primary.ds500
             title="Add party votes"
             >
             <b>+</b>
@@ -473,6 +462,19 @@
       </tr>
     </table>
     </div>
+  <div
+    v-if="vote_table.party_vote_info.specified"
+    class="settings-row party-vote-basis-row"
+    >
+    <label class="settings-field">
+      <span>Votes used as basis for party totals</span>
+      <b-form-select class="compact-select settings-vote-basis"
+        v-model="vote_table.party_vote_basis"
+        :options="partyVoteBasisOptions"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="The total number of seats for each party is computed using the votes selected here."/>
+    </label>
+  </div>
   <b-alert :show="checkPartyInput()==false">
     National: Some seats or votes are not in numerical format
   </b-alert>
