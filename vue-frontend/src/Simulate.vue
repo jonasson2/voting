@@ -52,13 +52,7 @@
     Run simulation to get results.
   </b-alert>
   <div v-if="results.data.length == 0">
-    <div v-if="showAlert()==false && showAlert1()">
-    <b-alert :show="true">
-      <h4 class="alert-heading">Simulations cannot be conducted.</h4>
-      The total number of seats for each party cannot be computed using national party votes when they are not specified
-    </b-alert>
-    </div>
-    <div v-else-if="showAlert() && showAlert1() && showAlert2()==false">
+    <div v-if="usesPartyVotes() && !partyVotesValid()">
       <b-alert :show="true">
         <h4 class="alert-heading">Simulations cannot be conducted.</h4>
         All votes in National party votes and seats must be numbers if they are to be used to compute the total number of seats for each party
@@ -79,10 +73,8 @@
     <p></p>
     <h4 style="..."
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Reference seat shares are calculated based only on the first system,
-        thus seat minus reference seat shares quality measures
-        should not be used when comparing considerably different systems.
-        Such as systems with different division rules."
+        title="Reference seat shares are fractional benchmarks calculated from
+        the simulated votes using the selected scaling."
         >Quality measures</h4>
     <QualityMeasures
       :vuedata="vuedata"
@@ -205,7 +197,7 @@ export default {
     },
     checkstatus: function(stop) {
       console.log("checking simulation:", this.simid, timeStamp())
-      this.$http.post('/api/simulate/check/', {
+      this.$http.post('api/simulate/check/', {
         simid: this.simid,
         stop: stop
       }).then(response => {
@@ -240,7 +232,7 @@ export default {
       this.results = { measures: [], methods: [], data: [] }
       this.simid = "";
       console.log("Simulate (recalculate): this.sim_settings = ", this.sim_settings)
-      this.$http.post('/api/simulate/', {
+      this.$http.post('api/simulate/', {
         vote_table:     this.vote_table,
         systems:        this.systems,
         sim_settings:   this.sim_settings,
@@ -262,21 +254,17 @@ export default {
     saveSimulationResults: function() {
       let promise = axios({
         method: "post",
-        url: "/api/simdownload/",
+        url: "api/simdownload/",
         data: { simid: this.simid },
         responseType: "arraybuffer",
       });
       this.downloadFile(promise)
     },
-    showAlert: function() {
+    usesPartyVotes: function() {
       return this.vote_table.party_vote_info.specified
+        && ['party_vote_info', 'average'].includes(this.vote_table.party_vote_basis)
     },
-    showAlert1: function() {
-      let seat_spec_options = this.systems.map(({seat_spec_options}) => seat_spec_options)
-      let party = seat_spec_options.map(({party}) => party)
-      return ['party_vote_info', 'average'].some(element => party.includes(element))
-    },
-    showAlert2: function() {
+    partyVotesValid: function() {
       return this.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
     },
   },

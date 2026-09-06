@@ -1,8 +1,6 @@
 import Vue from "vue"
 import Vuex from "vuex"
 
-Vue.use(Vuex)
-
 const store = new Vuex.Store({
 
   state : {
@@ -13,6 +11,7 @@ const store = new Vuex.Store({
         [1500, 2000],
         [2500, 1700],
       ],
+      pruned: [0, 0],
       constituencies: [
         { name: "I", num_fixed_seats: 10, num_adj_seats: 2 },
         { name: "II", num_fixed_seats: 10, num_adj_seats: 3 },
@@ -24,7 +23,9 @@ const store = new Vuex.Store({
         votes: [],
         specified: false,
         total: 0,
+        pruned: 0,
       },
+      party_vote_basis: "totals",
     },
     vote_sums: {
       cseats: 0,
@@ -32,6 +33,7 @@ const store = new Vuex.Store({
       row: {},
       col: [],
       tot: 0,
+      pruned: 0,
     },
     systems: [],
     system_numbering: [],
@@ -51,6 +53,7 @@ const store = new Vuex.Store({
   mutations : {
     updateVoteTable(state, table) { // TODO: laga þetta
       console.log("table=", table)
+      normalizePrunedVotes(table)
       state.vote_table = table
       setVoteSums(state)
       state.vote_table.name = table.name
@@ -132,10 +135,6 @@ const store = new Vuex.Store({
       state.systems[payload.idx].seat_spec_options.const = payload.opt
     },
 
-    setPartySpecOption(state, payload) {
-      state.systems[payload.idx].seat_spec_options.party = payload.opt
-    },
-
     newNumbering(state, idx) {
       findNumbering(state, idx)
     },
@@ -193,7 +192,7 @@ const store = new Vuex.Store({
     
     initialize(context) {
       console.log("initialize")
-      Vue.http.post('/api/capabilities', {}).then(response => {
+      Vue.http.post('api/capabilities/', {}).then(response => {
         if (error(response)) {
           context.commit("serverError", response.body)
         } else {
@@ -228,7 +227,7 @@ const store = new Vuex.Store({
     
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
-      Vue.http.post('/api/settings/upload/', payload.formData).then(
+      Vue.http.post('api/settings/upload/', payload.formData).then(
         response => {
           if (error(response)) {
             context.commit("serverError", response.body)
@@ -255,7 +254,7 @@ const store = new Vuex.Store({
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
       context.commit("deleteAllSystems")
-      Vue.http.post("/api/uploadall/", formData).then(
+      Vue.http.post("api/uploadall/", formData).then(
         (response) => {
           if (error(response)) {
             context.commit("serverError", response.body)
@@ -273,7 +272,7 @@ const store = new Vuex.Store({
       let promise;
       promise = axios({
         method: "post",
-        url: "/api/saveall/",
+        url: "api/saveall/",
         data: {
           vote_table: context.state.vote_table,
           systems: context.state.systems,
@@ -289,7 +288,7 @@ const store = new Vuex.Store({
       context.commit("setWaitingForData")
       console.log("In calculate_results")
       Vue.http.post(
-        '/api/election/',
+        'api/election/',
         {
           vote_table:     context.state.vote_table,
           systems:        context.state.systems,
@@ -297,16 +296,10 @@ const store = new Vuex.Store({
           response => {
             console.log('response from /api/election =', response)
             if (error(response)) {
-              let seat_spec_options = context.state.systems.map(({seat_spec_options}) => seat_spec_options)
-              let party_spec_option = seat_spec_options.map(({party}) => party)
-              let use_pv = ['party_vote_info', 'average'].some(element => party_spec_option.includes(element))
+              let use_pv = ['party_vote_info', 'average'].includes(
+                context.state.vote_table.party_vote_basis)
               let pv = context.state.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-              if (context.state.vote_table.party_vote_info.specified == false && use_pv) {
-                //if party votes are not specified and chosen in election system
-                let message = "The total number of seats for each party cannot be computed using national party votes when none are specified"
-                console.log("SERVER ERROR: ", message)
-                context.state.results = []
-              } else if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
+              if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
                 //if party votes are specified, they are used and not all votes are numbers
                 let message = "The national party votes contain values that are not numbers"
                 console.log("SERVER ERROR: ", message)
@@ -331,29 +324,13 @@ const store = new Vuex.Store({
       context.commit("setWaitingForData")
       console.log('systems', context.state.systems)
       Vue.http.post(
-        '/api/settings/update_constituencies/',
+        'api/settings/update_constituencies/',
         {
           vote_table:     context.state.vote_table,
           systems:        context.state.systems
         }).then(response => {
           if (error(response)) {
-            let seat_spec_options = context.state.systems.map(({seat_spec_options}) => seat_spec_options)
-            let party_spec_option = seat_spec_options.map(({party}) => party)
-            let use_pv = ['party_vote_info', 'average'].some(element => party_spec_option.includes(element))
-            let pv = context.state.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-            if (context.state.vote_table.party_vote_info.specified == false && use_pv) {
-              //if party votes are not specified and chosen in election system
-              let message = "The total number of seats for each party cannot be computed using national party votes when none are specified"
-              console.log("SERVER ERROR: ", message)
-              context.state.results.data = []
-            } else if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
-              //if party votes are specified, they are used and not all votes are numbers
-              let message = "The national party votes contain values that are not numbers"
-              console.log("SERVER ERROR: ", message)
-              context.state.results.data = []
-            } else {
             context.commit("serverError", response.body)
-            }
           } else {
             console.log("response.body", response.body)
             response.body.constituencies.forEach(
@@ -443,20 +420,18 @@ function parse_headers(headers) {
 
 function setVoteSums(state) {
   let vt = state.vote_table
+  normalizePrunedVotes(vt)
   let vs = state.vote_sums
   let vc = vt.constituencies
-  if (vt.parties.length > 0) {
-    vs.row = vt.votes.map(y => y.reduce((a, b) => a+b))
-    vs.tot = vs.row.reduce((a, b) => a + b, 0)
-  }
-  else {
-    vs.row = 0
-    vs.tot = 0
-  }
+  vs.row = vt.votes.map(
+    (row, index) => row.reduce((a, b) => a+b, 0) + vt.pruned[index]
+  )
+  vs.tot = vs.row.reduce((a, b) => a + b, 0)
   if (vt.constituencies.length > 0)
     vs.col = vt.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
   else
     vs.col = 0
+  vs.pruned = vt.pruned.reduce((a, b) => a + b, 0)
   vs.cseats = 0
   vs.aseats = 0
   for (var i=0; i<vc.length; i++) {
@@ -465,10 +440,25 @@ function setVoteSums(state) {
   }
   let pv = state.vote_table.party_vote_info
   if (pv.specified) {
-    pv.total = pv.votes.reduce((a,b) => a + b, 0)
+    pv.total = pv.votes.reduce((a,b) => a + b, 0) + pv.pruned
   }
   else
     pv.total = 0
+}
+
+function normalizePrunedVotes(voteTable) {
+  if (!Array.isArray(voteTable.pruned)
+      || voteTable.pruned.length != voteTable.constituencies.length) {
+    Vue.set(voteTable, "pruned", Array(voteTable.constituencies.length).fill(0))
+  }
+  if (!("pruned" in voteTable.party_vote_info)) {
+    Vue.set(voteTable.party_vote_info, "pruned", 0)
+  }
+  const validPartyVoteBases = ["totals", "party_vote_info", "average"]
+  if (!validPartyVoteBases.includes(voteTable.party_vote_basis)
+      || !voteTable.party_vote_info.specified) {
+    Vue.set(voteTable, "party_vote_basis", "totals")
+  }
 }
 
 function findNumbering(state, asi) {

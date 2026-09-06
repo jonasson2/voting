@@ -19,6 +19,10 @@ from noweb import load_votes, load_json, single_election
 from noweb import new_simulation, check_simulation
 from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
 
+# Initialize process-local simulation state when imported by a WSGI server as
+# well as when this module is run directly.
+create_SIMULATIONS()
+
 def errormsg(message = None):
     if not message:
         message = short_traceback(format_exc())
@@ -47,10 +51,7 @@ CORS(app)
 
 @app.route('/')
 def serve_index():
-    digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    indexfile = "index-digital-ocean.html" if digoce else "index.html"
-    #indexfile = "index.html"
-    return render_template(indexfile)
+    return render_template("index.html")
 
 def save_file(tmpfilename, download_name):
     import mimetypes
@@ -324,7 +325,6 @@ if __name__ == '__main__':
     port = default_port()
     print(f"Running on {host}:{port}")
     app.debug = debug
-    create_SIMULATIONS()
     if os.environ.get("HTTPS", "") == "True":
         print('Running server using HTTPS!')
         app.run(host=host, port=port, debug=debug, ssl_context="adhoc")

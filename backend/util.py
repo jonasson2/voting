@@ -5,7 +5,6 @@ import io
 import os
 import configparser
 import codecs
-from distutils.util import strtobool
 from traceback import format_exc
 #from flask import jsonify
 
@@ -166,7 +165,8 @@ def add_empty_party_votes(vote_table):
         "num_adj_seats": 0,
         "votes": [],
         "specified": False,
-        "total": 0
+        "total": 0,
+        "pruned": 0
     }
     return vote_table;
 
@@ -186,7 +186,9 @@ def process_vote_table(rows, filename):
         return 'Heading of second column must be "fixed" (for fixed seats)'
     if  toprow[2].lower() != "adj":
         return 'Heading of third column must be "adj" (for adjustment seats)'
-    if not all(toprow[3:]):
+    has_pruned = str(toprow[-1]).strip().lower() == "pruned"
+    party_end = -1 if has_pruned else len(toprow)
+    if not all(toprow[3:party_end]):
         return 'Some party names are blank'
 
     second_last_blank = all(x is None for x in rows[-2])
@@ -209,8 +211,13 @@ def process_vote_table(rows, filename):
     # BUILD A DICTIONARY RES WITH ALL VOTING INFORMATION
     res = {}
     num_const = len(rows) - (3 if second_last_blank else 1)    
-    res["votes"] = [[parsint(v) for v in row[3:]] for row in rows[1:num_const+1]]
-    res["parties"] = rows[0][3:]
+    res["votes"] = [
+        [parsint(v) for v in row[3:party_end]]
+        for row in rows[1:num_const+1]
+    ]
+    res["parties"] = rows[0][3:party_end]
+    res["pruned"] = ([parsint(row[-1]) for row in rows[1:num_const+1]]
+                     if has_pruned else [0] * num_const)
 
     res["constituencies"] = [{
         "name": row[0],
@@ -221,14 +228,17 @@ def process_vote_table(rows, filename):
     res["name"] = determine_table_name(rows[0][0], filename)
     
     if second_last_blank:
-        party_vote_info = rows[-1][3:]
+        party_vote_info = rows[-1][3:party_end]
+        party_pruned = parsint(rows[-1][-1]) if has_pruned else 0
         res["party_vote_info"] = {
             "name": rows[-1][0],
             "num_fixed_seats": rows[-1][1],
             "num_adj_seats": rows[-1][2],
             "votes": party_vote_info if any(party_vote_info) else [""]*len(party_vote_info),
             "specified": True,
-            "total": sum(party_vote_info) if any(party_vote_info) else ""
+            "total": (sum(party_vote_info) + party_pruned
+                      if any(party_vote_info) or party_pruned else ""),
+            "pruned": party_pruned
         }
         if res["party_vote_info"]["num_fixed_seats"] is None:
             res["party_vote_info"]["num_fixed_seats"] = 0

@@ -14,15 +14,23 @@ import numpy as np
 class Election:
     """A single election."""
 
-    def __init__(self, system, votes, party_vote_info=None, vote_table_name=''):
+    def __init__(self, system, votes, party_vote_info=None, vote_table_name='',
+                 pruned_votes=None):
         if party_vote_info is None:
             party_vote_info = {'name':'-', 'num_fixed_seats':0, 'num_adj_seats':0,
-                               'votes':[],'specified':False, 'total':0}
+                               'votes':[],'specified':False, 'total':0, 'pruned':0}
         self.nconst = len(system["constituencies"])
         self.nparty = len(system["parties"])
         self.system = system
         self.party_vote_info = party_vote_info
         self.party_votes = np.array(party_vote_info["votes"])
+        pruned_votes = pruned_votes if pruned_votes is not None else [0] * len(votes)
+        self.pruned_votes = np.array(pruned_votes)
+        if self.nconst == 1:
+            self.pruned_votes = np.array([self.pruned_votes.sum()])
+        else:
+            assert len(self.pruned_votes) == self.nconst
+        self.party_pruned_votes = party_vote_info.get("pruned", 0)
         self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
@@ -40,7 +48,7 @@ class Election:
     def set_votes(self, votes, party_votes=None):
         # votesums: column sums of m_votes
         self.votes = np.array(votes)
-        if party_votes:
+        if party_votes is not None:
             self.party_votes = np.array(party_votes)
         if self.nconst == 1:
             self.votes = self.votes.sum(0)[None,:]
@@ -48,6 +56,7 @@ class Election:
             assert len(self.votes) == self.nconst
         assert all(len(row) == self.nparty for row in self.votes)
         self.votesums = self.votes.sum(0)
+        self.const_threshold_totals = self.votes.sum(1) + self.pruned_votes
 
     @staticmethod
     def display_seats(allSeats, adjSeats):
@@ -168,7 +177,8 @@ class Election:
                     prior_allocations=[],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = threshold
+                    threshold_percent = threshold,
+                    threshold_total = self.const_threshold_totals[i],
                 )
                 assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -183,12 +193,16 @@ class Election:
         opt = self.system["seat_spec_options"]["party"]
         if opt == "totals":
             votes = self.votesums
+            pruned_votes = self.pruned_votes.sum()
         elif opt == "party_vote_info":
             votes = self.party_votes
+            pruned_votes = self.party_pruned_votes
         else:
             assert (opt == "average")
             votes = (self.votesums + self.party_votes)/2
+            pruned_votes = (self.pruned_votes.sum() + self.party_pruned_votes)/2
         self.nat_votes = votes
+        self.nat_threshold_total = self.nat_votes.sum() + pruned_votes
 
         if self.party_vote_info["specified"]:
             if self.system["nat_seats"]["num_fixed_seats"] > 0:
@@ -198,7 +212,8 @@ class Election:
                     prior_allocations = [],
                     rule = self.system.get_generator("primary_divider"),
                     type_of_rule = self.system.get_type("primary_divider"),
-                    threshold_percent = threshold
+                    threshold_percent = threshold,
+                    threshold_total = self.nat_threshold_total,
                 )
                 v_allocations += nat_fixed_alloc
             else:
@@ -227,17 +242,23 @@ class Election:
                 type_of_rule = self.system.get_type("adj_determine_divider"),
                 threshold_percent = threshold,
                 threshold_choice = choice,
-                threshold_seats = seats
+                threshold_seats = seats,
+                threshold_total = self.nat_threshold_total,
             )
 
-        self.ref_seat_alloc, _, _ \
-            = apportion1d_general(
-                v_votes = self.nat_votes,
-                num_total_seats = self.total_const_seats + nat_seats,
-                prior_allocations = [0]*len(self.nat_votes),
-                rule = self.system.get_generator('adj_determine_divider'),
-                type_of_rule = self.system.get_type('adj_determine_divider')
-                )
+        self.ref_seat_alloc, _, _ = apportion1d_general(
+            v_votes=self.nat_votes,
+            num_total_seats=self.total_const_seats + nat_seats,
+            prior_allocations=[0] * len(self.nat_votes),
+            rule=self.system.get_generator('adj_determine_divider'),
+            type_of_rule=self.system.get_type('adj_determine_divider'),
+        )
+        total_votes = self.nat_votes.sum()
+        self.fractional_party_seats = (
+            self.nat_votes.astype(float) * (self.total_const_seats + nat_seats)
+            / total_votes
+            if total_votes else np.zeros(self.nparty)
+        )
 
     def set_forced_reasons(self, demoTable):
         if "Criteria" in demoTable["headers"]:
@@ -321,93 +342,55 @@ class Election:
 
 
     def calculate_ref_seat_shares(self, scaling, id=None):
-        import numpy as np, numpy.linalg as la, math as m
-        nrows = self.nconst
-        ncols = self.nparty
-        col_sums = np.array(self.desired_col_sums)
+        """Calculate threshold-free fractional seat shares for quality measures."""
+        col_sums = np.array(self.fractional_party_seats)
         row_sums = np.array(self.desired_row_sums)
-        ref_seat_shares = np.copy(self.votes).astype(float)*self.total_const_seats/sum(self.votesums)
+        total_votes = self.votes.sum()
+        ref_seat_shares = (
+            self.votes.astype(float) * self.total_const_seats / total_votes
+            if total_votes else np.zeros_like(self.votes, dtype=float)
+        )
         row_constraints = scaling in {"both", "const"}
         col_constraints = scaling in {"both", "party"}
         error = 1e-8
-        if ncols > 1 and nrows > 1:
-            iter = 0
-            if row_constraints and col_constraints:
-                '''
-                if sum(col_sums) != sum(row_sums): # förum í einfaldari gerð ef það eru jöfnur TODO: laga
-                    error = 1
-                    while round(error, 7) != 0.0:
-                        error = 0
-                        for c in range(nrows):
-                            row_sum = self.desired_row_sums[c]
-                            s = sum(ref_seat_shares[c, :])
-                            eta = row_sum / s if s > 0 else 1
-                            ref_seat_shares[c, :] *= eta
-                            error = max(error, abs(1 - eta))
-                        for p in range(ncols):
-                            col_sum = col_sums[p]
-                            s = sum(ref_seat_shares[:, p])
-                            tau = col_sum / s if s > 0 else 1
-                            ref_seat_shares[:, p] *= tau
-                            error = max(error, abs(1 - tau))
-                else:
-                '''
-                while True:
-                    iter+=1
-                    # constituency step
-                    for c in range(nrows):
-                        s = sum(ref_seat_shares[c, :])
-                        eta = s/row_sums[c] if row_sums[c] > 0 else 0
-                        if eta == 0:
-                            ref_seat_shares[c, :] *= 0
-                        else:
-                            ref_seat_shares[c, :] /= eta
-                    # party step
-                    iii = 0
-                    over = list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p] + error, range(ncols)))
-                    while over:
-                        iii +=1
-                        H = list(filter(lambda p:
-                                        sum(ref_seat_shares[:, p]) >= col_sums[p] + error,
-                                        range(ncols)))
-                        not_H = list(set(range(ncols)) - set(H))
-                        for p in H:
-                            s = sum(ref_seat_shares[:, p])
-                            tau = s / col_sums[p] if col_sums[p] > 0 else 0
-                            if tau == 0:
-                                ref_seat_shares[:, p] *= 0
-                            else:
-                                ref_seat_shares[:, p] /= tau
-                        if not_H:
-                            s = sum(sum(ref_seat_shares[:, p]) for p in not_H)
-                            tau = s/(self.total_const_seats-sum(col_sums[p] for p in H))
-                            for p in not_H:
-                                if tau == 0:
-                                    ref_seat_shares[:, p] *= 0
-                                else:
-                                    ref_seat_shares[:, p] /= tau
-                        over = list(filter(lambda p: sum(ref_seat_shares[:, p]) > col_sums[p] + error, range(ncols)))
-                # exit condition
-                    if np.all([m.isclose(abs(sum(ref_seat_shares[c, :]) - row_sums[c]), 0.0, abs_tol=error)
-                                     for c in range(nrows)]):
-                            #and m.isclose(sum(max(sum(ref_seat_shares[:, p])-col_sums[p], 0.0)
-                            #          for p in range(ncols)), 0.0, abs_tol=1e-8):
-                        break
-            elif row_constraints:
-                for c in range(nrows):
-                    row_sum = row_sums[c]
-                    s = sum(ref_seat_shares[c, :])
-                    eta = row_sum / s if s > 0 else 1
-                    ref_seat_shares[c, :] *= eta
-            elif col_constraints:
-                for p in range(ncols):
-                    col_sum = col_sums[p]
-                    s = sum(ref_seat_shares[:, p])
-                    tau = col_sum / s if s > 0 else 1
-                    ref_seat_shares[:, p] *= tau
+        if row_constraints and col_constraints:
+            for _ in range(10000):
+                for c, row_sum in enumerate(row_sums):
+                    current = ref_seat_shares[c, :].sum()
+                    if current:
+                        ref_seat_shares[c, :] *= row_sum / current
+
+                current_cols = ref_seat_shares.sum(axis=0)
+                over = current_cols > col_sums + error
+                if not over.any():
+                    break
+
+                for p in np.flatnonzero(over):
+                    ref_seat_shares[:, p] *= col_sums[p] / current_cols[p]
+
+                under = ~over
+                available = self.total_const_seats - col_sums[over].sum()
+                current = ref_seat_shares[:, under].sum()
+                if current:
+                    ref_seat_shares[:, under] *= available / current
+            else:
+                raise RuntimeError("Reference seat share scaling did not converge.")
+        elif row_constraints:
+            for c, row_sum in enumerate(row_sums):
+                current = ref_seat_shares[c, :].sum()
+                if current:
+                    ref_seat_shares[c, :] *= row_sum / current
+        elif col_constraints:
+            for p, col_sum in enumerate(col_sums):
+                current = ref_seat_shares[:, p].sum()
+                if current:
+                    ref_seat_shares[:, p] *= col_sum / current
+
         self.ref_seat_shares = ref_seat_shares
-        self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
+        self.total_ref_const = self.ref_seat_shares.sum(0)
+        self.total_ref_seat_shares = self.fractional_party_seats.copy()
         if self.party_vote_info['specified']:
-            self.total_ref_nat = self.desired_col_sums - self.total_ref_seat_shares
+            self.total_ref_nat = self.total_ref_seat_shares - self.total_ref_const
+            self.total_ref_nat[np.abs(self.total_ref_nat) < error] = 0
         else:
-            self.total_ref_seat_shares = self.ref_seat_shares.sum(0)
+            self.total_ref_nat = np.zeros(self.nparty)

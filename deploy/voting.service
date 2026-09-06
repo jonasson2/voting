@@ -1,0 +1,35 @@
+[Unit]
+Description=Voting simulator web service
+After=network.target
+
+[Service]
+Type=simple
+User=voting
+Group=voting
+WorkingDirectory=/opt/voting/backend
+Environment=PYTHONUNBUFFERED=1
+Environment=VOTING_STATE_DIR=/var/lib/voting
+ExecStart=/opt/voting/.venv/bin/waitress-serve --host=127.0.0.1 --port=5000 --threads=4 web:app
+Restart=on-failure
+RestartSec=5s
+
+# Give the application one private, writable state directory while making the
+# installed application and the rest of the operating system read-only.
+StateDirectory=voting
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

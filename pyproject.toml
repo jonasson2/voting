@@ -1,0 +1,19 @@
+[project]
+name = "voting-simulator"
+version = "0.1.1.dev0"
+description = "Voting system simulator"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask",
+    "flask-cors",
+    "numpy",
+    "openpyxl",
+    "psutil",
+    "waitress>=3.0.2",
+    "werkzeug",
+    "xlsxwriter",
+]
+
+[tool.uv]
+package = false

@@ -1,6 +1,7 @@
 <template>
 <div class="table-scroll">
   <table v-if="table.steps.length > 0">
+    <tbody>
     <tr class="sup-headers" v-if="table.sup_header">
       <th v-bind:colspan="table.headers.length">
         {{table.sup_header}}
@@ -18,6 +19,7 @@
         </td>
       </template>
     </tr>
+    </tbody>
   </table>
   <p v-else>
     Table demonstrating the step-by-step allocation of adjustment seats

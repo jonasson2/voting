@@ -1,7 +1,14 @@
-import os
-from distutils.util import strtobool
+import math
 from copy import deepcopy
 from util import disp
+
+def parse_bool(value):
+    value = value.lower()
+    if value in {"y", "yes", "t", "true", "on", "1"}:
+        return True
+    if value in {"n", "no", "f", "false", "off", "0"}:
+        return False
+    raise ValueError(f"invalid truth value {value!r}")
 
 def check_input(data, sections):
     for section in sections:
@@ -24,6 +31,16 @@ def check_vote_table(vote_table):
     num_parties = len(table["parties"])
     num_constituencies = len(table["constituencies"])
 
+    table.setdefault("pruned", [0] * num_constituencies)
+    if len(table["pruned"]) != num_constituencies:
+        raise ValueError("The pruned vote totals do not match the constituency list.")
+    for value in table["pruned"]:
+        if (not isinstance(value, (int, float)) or isinstance(value, bool)
+                or not math.isfinite(value)):
+            raise TypeError("Pruned vote totals must be numbers.")
+        if value < 0:
+            raise ValueError("Pruned vote totals may not be negative.")
+
     if not len(table["votes"]) == num_constituencies:
         raise ValueError("The vote table does not match the constituency list.")
     for row in table["votes"]:
@@ -37,9 +54,29 @@ def check_vote_table(vote_table):
         table["party_vote_info"] = table["party_votes"]
         del table["party_votes"]
     if "party_vote_info" in table:
+        table["party_vote_info"].setdefault("pruned", 0)
+        party_pruned = table["party_vote_info"]["pruned"]
+        if (not isinstance(party_pruned, (int, float))
+                or isinstance(party_pruned, bool)
+                or not math.isfinite(party_pruned)):
+            raise TypeError("The national pruned vote total must be a number.")
+        if party_pruned < 0:
+            raise ValueError("The national pruned vote total may not be negative.")
         for i, v in enumerate(table['party_vote_info']['votes']):
             if not isinstance(v, int):
                 table['party_vote_info']['votes'][i] = 0
+        if table["party_vote_info"].get("specified", False):
+            table["party_vote_info"]["total"] = (
+                sum(table["party_vote_info"]["votes"]) + party_pruned
+            )
+
+    valid_party_vote_bases = {"totals", "party_vote_info", "average"}
+    party_vote_basis = table.get("party_vote_basis", "totals")
+    if party_vote_basis not in valid_party_vote_bases:
+        raise ValueError(f"Unknown party vote basis: {party_vote_basis}")
+    if not table.get("party_vote_info", {}).get("specified", False):
+        party_vote_basis = "totals"
+    table["party_vote_basis"] = party_vote_basis
 
     for const in table["constituencies"]:
         if "name" not in const:  # or not const["name"]:
@@ -112,7 +149,7 @@ def check_simul_settings(sim_settings):
     """
     if "row_constraints" in sim_settings and "col_constraints" in sim_settings:
         for key in ["row_constraints", "col_constraints"]:
-            sim_settings[key] = bool(strtobool(str(sim_settings[key])))
+            sim_settings[key] = parse_bool(str(sim_settings[key]))
         if sim_settings["row_constraints"]:
             sim_settings["scaling"] = "both" if sim_settings[
                 "col_constraints"] else "const"
@@ -151,8 +188,4 @@ def check_simul_settings(sim_settings):
     elif sim_settings["gen_method"] in ["gamma", "log-normal"]:
         if variance_coefficient >= 1:
             raise ValueError("Relative standard deviation must be less than 1")
-    sim_count = sim_settings["simulation_count"]
-    digoce = os.environ.get("FLASK_DIGITAL_OCEAN", "") == "True"
-    if sim_count > 2000 and digoce:
-        raise ValueError("Maximum iterations in the online version is 2000 (see Help)")
     return sim_settings

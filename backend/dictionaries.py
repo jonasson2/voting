@@ -124,12 +124,9 @@ SEAT_SPECIFICATION_OPTIONS = {
     ],
     "party":
     [
-        {"value": "totals",      "text": ('constituency vote totals in '
-                                          '"Source votes and seats" tab')},
-        {"value": "party_vote_info", "text": ('national party votes in '
-                                          '"Source votes and seats" tab')},
-        {"value": "average",     "text": ('average of constituency vote '
-                                          'totals and national party votes')},
+        {"value": "totals", "text": "Constituency vote totals"},
+        {"value": "party_vote_info", "text": "National party votes"},
+        {"value": "average", "text": "Average of both"},
     ]
 }
 
@@ -224,7 +221,7 @@ SENS_MEASURES = [
 
 PARTY_MEASURES = {
     "nat_vote_percentages": "shares of votes used for apportioning adj. seats",
-    "party_ref_seat_shares": "reference seat share based on nat votes",
+    "party_ref_seat_shares": "fractional party seat totals",
     "party_total_seats": "total seats allocated to parties",
     "ref_seat_alloc": "reference seat allocation",
     "party_disparity": "disparity of allocation compared to reference",

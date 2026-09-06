@@ -12,17 +12,30 @@ module.exports = {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'static/js/')
   },
+  resolve: {
+    alias: {
+      vue: '@vue/compat'
+    }
+  },
   module: {
     rules: [
       {
         test: /\.vue$/,
-        use: 'vue-loader'
+        loader: 'vue-loader',
+        options: {
+          compilerOptions: {
+            compatConfig: { MODE: 2 }
+          }
+        }
       },
       {
         test: /\.css$/,
         use: [
           'style-loader',
-          'css-loader',
+          {
+            loader: 'css-loader',
+            options: { esModule: false }
+          },
         ]
       }
     ]

@@ -37,22 +37,6 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="The total number of seats for each party is computed using the votes specified here and the rule specified below">
-      <span>Votes used as basis</span>
-      <b-form-select class="compact-select settings-vote-basis"
-        v-model="party_spec_option"
-        :options="capabilities.seat_spec_options.party"/>
-    </label>
-  </div>
-  <b-alert :show="party_spec_option == 'party_vote_info' && vote_table.party_vote_info.specified == false ">
-    The total number of seats for each party cannot be computed using national party votes when none are given
-  </b-alert>
-  <b-alert :show="party_spec_option == 'average' && vote_table.party_vote_info.specified == false ">
-    The total number of seats for each party cannot be computed using national party votes when none are given
-  </b-alert>
-  <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
       title="Formula used to apportion adjustment seats between parties based on chosen votes.">
       <span>Rule</span>
       <b-form-select class="compact-select settings-rule"
@@ -128,6 +112,7 @@
       :options="capabilities.seat_spec_options.const"/>
     <div v-if='const_spec_option!="refer"' class="settings-seat-table">
       <table v-if="!adding_system && !waiting_for_data" class="votematrix">
+        <tbody>
         <tr>
           <th class="topleft"></th>
           <th class="displaycenter"
@@ -211,6 +196,7 @@
             </span>
           </td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>
@@ -238,20 +224,12 @@ export default {
         this.recalc_sys_const()
       }
     },
-    party_spec_option: {
-      get() { return this.systems[this.systemidx].seat_spec_options.party },
-      set(val) {
-        this.setPartySpecOption({"opt": val, "idx": this.systemidx})
-        this.recalc_sys_const()
-      }
-    },
   },
   methods: {
     ...mapMutations([
       "setWaitingForData",
       "clearWaitingForData",
       "setConstSpecOption",
-      "setPartySpecOption",
       "threshold_method",
     ]),
     ...mapActions([

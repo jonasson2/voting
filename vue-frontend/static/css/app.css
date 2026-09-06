@@ -129,6 +129,10 @@ th {
   margin-bottom: 6px;
 }
 
+.party-vote-basis-row {
+  margin-top: 0.5em;
+}
+
 .settings-row label {
   margin-bottom: 0;
 }
@@ -155,7 +159,7 @@ th {
 
 /* Fixed dropdown widths, including room for the arrow. */
 .compact-select.settings-rule { width: 280px; }
-.compact-select.settings-vote-basis { width: 480px; }
+.compact-select.settings-vote-basis { width: 220px; }
 .compact-select.settings-method { width: 400px; }
 .compact-select.settings-threshold-choice { width: 62px; }
 .compact-select.settings-seat-spec {
@@ -208,15 +212,6 @@ th {
     flex: 0 0 25%;
     max-width: 25%;
   }
-}
-
-#reference-system-tooltip.reference-system-tooltip {
-  width: min(400px, calc(100vw - 20px));
-}
-
-#reference-system-tooltip.reference-system-tooltip .tooltip-inner {
-  width: 100%;
-  max-width: none;
 }
 
 .votematrix th input, .votematrix td input {

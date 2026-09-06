@@ -22,6 +22,14 @@
       </b-button>
     </b-button-group>
   </b-button-toolbar>
+  <p>
+    Source code is available on
+    <a href="https://github.com/jonasson2/voting"
+       target="_blank" rel="noopener noreferrer">GitHub</a>
+    under the
+    <a href="https://www.gnu.org/licenses/agpl-3.0.html"
+       target="_blank" rel="noopener noreferrer">GNU AGPLv3</a>.
+  </p>
   <b-tabs
     active-nav-item-class="font-weight-bold"
     no-key-nav card
@@ -69,6 +77,7 @@
       lýsingu á kosningakerfum þeim sem hann setur saman til síðari notkunar.
       Herminn má enn fremur nota við könnun á einfaldari kerfum, svo sem við
       kosningar til sveitarstjórna.
+      </p>
 
       <h4>Aðferðafræði</h4>
 
@@ -119,7 +128,7 @@
   export default {
     methods: {
       leidbeiningar: function() {
-        let url = "/static/leidbeiningar.pdf"
+        let url = "static/leidbeiningar.pdf"
         window.open(url, "_blank")
       }
     },
