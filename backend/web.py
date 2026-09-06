@@ -316,7 +316,8 @@ def get_presets_dict():
 def default_port():
     if "FLASK_RUN_PORT" in os.environ:
         return os.environ["FLASK_RUN_PORT"]
-    return "8080"
+    hostname = os.uname().nodename.lower()
+    return "5000" if hostname.startswith("pluto") else "5001"
 
 if __name__ == '__main__':
     debug = os.environ.get("FLASK_DEBUG", "") == "True"

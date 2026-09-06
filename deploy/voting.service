@@ -9,7 +9,7 @@ Group=voting
 WorkingDirectory=/opt/voting/backend
 Environment=PYTHONUNBUFFERED=1
 Environment=VOTING_STATE_DIR=/var/lib/voting
-ExecStart=/opt/voting/.venv/bin/waitress-serve --host=127.0.0.1 --port=8080 --threads=4 web:app
+ExecStart=/opt/voting/.venv/bin/waitress-serve --host=127.0.0.1 --port=5000 --threads=4 web:app
 Restart=on-failure
 RestartSec=5s
 

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -19,6 +20,7 @@ from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
+import web
 from web import app
 
 
@@ -32,6 +34,19 @@ class CurrentApplicationTest(unittest.TestCase):
 
     def test_wsgi_import_initializes_simulation_state(self):
         self.assertIsInstance(noweb.SIMULATIONS, dict)
+
+    def test_default_web_ports(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with patch.object(
+                    web.os, 'uname',
+                    return_value=SimpleNamespace(nodename='pluto.cs.hi.is')):
+                self.assertEqual(web.default_port(), '5000')
+            with patch.object(
+                    web.os, 'uname',
+                    return_value=SimpleNamespace(nodename='workstation')):
+                self.assertEqual(web.default_port(), '5001')
+        with patch.dict(os.environ, {'FLASK_RUN_PORT': '5050'}):
+            self.assertEqual(web.default_port(), '5050')
 
     def test_parallel_files_can_use_service_state_directory(self):
         with TemporaryDirectory() as directory:

@@ -36,21 +36,21 @@ cd ../backend
 uv run --locked python web.py
 ```
 
-By default, open <http://localhost:8080>. Set `FLASK_RUN_PORT` to use a
+By default, open <http://localhost:5001>. Set `FLASK_RUN_PORT` to use a
 different local port:
 
 ```sh
-FLASK_RUN_PORT=5000 uv run --locked python web.py
+FLASK_RUN_PORT=5050 uv run --locked python web.py
 ```
 
 Confirm that the service is available with:
 
 ```sh
-curl -I http://localhost:8080
+curl -I http://localhost:5001
 ```
 
 Stop the local server with `Ctrl-C` in the terminal where `web.py` is running.
-If port 8080 is already in use, either stop the process using it or choose a
+If port 5001 is already in use, either stop the process using it or choose a
 different port with `FLASK_RUN_PORT` as shown above.
 
 After the first installation, rebuild the frontend only when its source has
@@ -103,7 +103,7 @@ and named Screen-session restarts. Use it only from a clean checkout because it
 checks out and pulls the requested branch:
 
 ```sh
-FLASK_RUN_HOST=127.0.0.1 ./runvoting.sh dev
+FLASK_RUN_HOST=127.0.0.1 ./runvoting.sh main
 ```
 
 Binding to `127.0.0.1` prevents direct network access. Use an SSH tunnel to

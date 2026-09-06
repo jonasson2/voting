@@ -3,7 +3,7 @@
 This guide runs the simulator as a durable Linux service:
 
 ```text
-HTTPS reverse proxy → Waitress on 127.0.0.1:8080 → Flask application
+HTTPS reverse proxy → Waitress on 127.0.0.1:5000 → Flask application
 ```
 
 systemd starts the service at boot and restarts it after failures. Waitress is
@@ -43,7 +43,7 @@ sudo install -o root -g root -m 0644 deploy/voting.service \
   /etc/systemd/system/voting.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now voting
-curl -I http://127.0.0.1:8080
+curl -I http://127.0.0.1:5000
 ```
 
 The unit creates `/var/lib/voting` for writable simulation state. The deployed
@@ -59,8 +59,8 @@ requests while a simulation runs.
 
 ## Publish with HTTPS
 
-Choose one reverse-proxy configuration. Keep port 8080 closed externally and
-allow public traffic only to the proxy.
+Choose one reverse-proxy configuration. Keep Waitress bound to loopback and
+allow public application traffic only through the proxy.
 
 ### Dedicated hostname with Caddy
 
@@ -166,13 +166,13 @@ Always run the proxy's configuration test before reloading it. Confirm that
 Waitress listens only on loopback with:
 
 ```sh
-sudo ss -ltnp | grep ':8080'
+sudo ss -ltnp | grep ':5000'
 ```
 
 ## Security
 
 - Serve the public application only through HTTPS.
-- Keep Waitress on `127.0.0.1` and do not expose port 8080.
+- Keep Waitress on `127.0.0.1`; do not expose it directly.
 - Keep the service unprivileged and its source tree read-only.
 - Apply operating-system and dependency security updates.
 - Add authentication, rate limiting, and suitable resource limits if the
