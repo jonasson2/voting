@@ -1,4 +1,4 @@
-import json, tempfile
+import json, os, tempfile
 from secrets import token_urlsafe
 from pathlib import Path
 from time import time
@@ -21,7 +21,11 @@ def get_id():
     return token
 
 def parallel_dir():
-    pardir = Path(__file__).parents[1]/"pardir"
+    state_dir = os.environ.get("VOTING_STATE_DIR")
+    if state_dir:
+        pardir = Path(state_dir)/"pardir"
+    else:
+        pardir = Path(__file__).parents[1]/"pardir"
     pardir.mkdir(parents=True, exist_ok=True)
     return pardir
 

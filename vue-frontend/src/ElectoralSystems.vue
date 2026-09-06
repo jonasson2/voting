@@ -254,7 +254,7 @@ export default {
       let promise;
       promise = axios({
         method: "post",
-        url: "/api/settings/save",
+        url: "api/settings/save/",
         data: {
           systems:        this.systems,
           sim_settings:   this.sim_settings,
@@ -277,7 +277,7 @@ export default {
       let nsys = this.systems.length
       this.activeSystemIndex = nsys
       this.$http.post(
-        '/api/capabilities',
+        'api/capabilities/',
         this.vote_table.constituencies,
       ).then(response => {
         let r = response.body

@@ -2,6 +2,7 @@
 <b-container fluid>
   <div class="table-scroll">
     <table class="resultmatrix" style="margin-bottom:0px">
+      <tbody>
       <tr>
         <th class="topleft"></th>
         <th v-for="(party, partyidx) in parties" class="displaycenter">
@@ -51,6 +52,7 @@
           </td>
         </template>
       </tr>
+      </tbody>
     </table>
   </div>
   <p style="margin:5px 0px 0px; font-size:90%">

@@ -2,9 +2,11 @@ from contextlib import redirect_stdout
 from copy import deepcopy
 from io import BytesIO, StringIO
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -14,6 +16,8 @@ from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from input_util import check_vote_table
 from noweb import load_json, load_votes, votes_to_excel
+import noweb
+from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
 from web import app
 
@@ -25,6 +29,38 @@ class CurrentApplicationTest(unittest.TestCase):
         system['adjustment_method'] = method
         system['adjustment_threshold'] = threshold
         return system
+
+    def test_wsgi_import_initializes_simulation_state(self):
+        self.assertIsInstance(noweb.SIMULATIONS, dict)
+
+    def test_parallel_files_can_use_service_state_directory(self):
+        with TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"VOTING_STATE_DIR": directory}):
+                self.assertEqual(parallel_dir(), Path(directory) / "pardir")
+
+    def test_single_cpu_simulation_runs_in_background_thread(self):
+        class FakeThread:
+            def __init__(self, target, args):
+                self.target = target
+                self.args = args
+                self.started = False
+
+            def start(self):
+                self.started = True
+
+        noweb.create_SIMULATIONS()
+        with patch.object(noweb, 'Thread', FakeThread), \
+             patch.object(noweb, 'Simulation', return_value=object()), \
+             patch.object(noweb.par_util, 'get_id', return_value='single-cpu'), \
+             patch.object(noweb, 'terminate_old_simulations'):
+            simid = noweb.new_simulation(
+                votes={}, systems=[],
+                sim_settings={'cpu_count': 1},
+            )
+
+        simulation = noweb.SIMULATIONS[simid]
+        self.assertEqual(simulation['kind'], 'threaded')
+        self.assertTrue(simulation['thread'].started)
 
     def test_csv_upload_uses_uploaded_stream(self):
         app.config.update(TESTING=True)

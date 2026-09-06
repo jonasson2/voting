@@ -48,7 +48,6 @@
       </Intro>
     </b-tab>
   </b-tabs>
-</b-card>
 </div>
 </template>
 
@@ -88,7 +87,7 @@ export default {
       "initialize"
     ]),
     showHelp: function() {
-      window.open("/static/leidbeiningar.pdf", "_blank");
+      window.open("static/leidbeiningar.pdf", "_blank");
     },
   },
   mounted: function() {

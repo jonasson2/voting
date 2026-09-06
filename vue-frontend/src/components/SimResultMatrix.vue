@@ -2,6 +2,7 @@
   <b-container fluid>
     <div class="table-scroll">
     <table class="resultmatrix" style="margin-bottom:0px; font-size:90%">
+      <tbody>
       <tr v-if="title">
         <th class="topleft"></th>
         <th :colspan="stddev ? 2 * parties.length + 1 : parties.length + 1"
@@ -94,6 +95,7 @@
           {{ values[constituencies.length + 2][parties.length].toFixed(round) }}
         </td>
       </tr>
+      </tbody>
     </table>
     </div>
     <br>

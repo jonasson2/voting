@@ -4,15 +4,15 @@
     <thead> 
       <tr>                                      <!-- STATISTICS HEADING -->
         <th class="firstcol top"> {{group_titles["topLeft"]}} </th>
-        <template v-for="stat in stats">
-          <th :colspan="nsys" :key="stat" class="top">
+        <template v-for="stat in stats" :key="stat">
+          <th :colspan="nsys" class="top">
             {{stat_headings[stat]}}
           </th>
         </template>
       </tr>
     </thead>
     <tbody>
-      <template v-for="(id, index) in group_ids">
+      <template v-for="(id, index) in group_ids" :key="id">
         <template v-if="show[id]">
           <tr v-if="headingType[id]=='stats'">
             <td class="firstcol blank"></td>
@@ -22,8 +22,8 @@
               {{group_titles[id]}}                     <!-- GROUP TITLE -->
             </th>
             <template v-if="headingType[id]=='systems'">
-              <template v-for="idx in nstat">
-                <template v-for="(sysname, s) in system_names"> <!-- SYS HEADING -->
+              <template v-for="idx in nstat" :key="idx">
+                <template v-for="(sysname, s) in system_names" :key="s"> <!-- SYS HEADING -->
                   <th :class="sysclass(s)">
                     {{sysname}}
                   </th>
@@ -31,8 +31,8 @@
               </template>
             </template>
             <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
-              <template v-for="stat in stats">
-                <th :colspan="nsys" :key="stat" class="top">
+              <template v-for="stat in stats" :key="stat">
+                <th :colspan="nsys" class="top">
                   {{stat_headings[stat]}}
                 </th>
               </template>
@@ -46,8 +46,8 @@
             <td class="firstcol">
               {{row["rowtitle"]}}
             </td>
-            <template v-for="stat in stats">
-              <template v-for="s in nsys">
+            <template v-for="stat in stats" :key="stat">
+              <template v-for="s in nsys" :key="s">
                 <td :class="sysclass(s-1)">
                   {{row[stat][s - 1]}}
                 </td>

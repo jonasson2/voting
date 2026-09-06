@@ -16,3 +16,4 @@ __pycache__/
 /.venv/
 /vue-frontend/node_modules
 /vue-frontend/static/js/bundle.js
+/vue-frontend/static/js/*.LICENSE.txt

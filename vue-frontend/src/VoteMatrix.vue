@@ -10,7 +10,7 @@
       The file provided must be a CSV or an Excel XLSX file formatted with
       parties on the first row and constituency names on the first column.
     </p>
-    <b-img rounded fluid src="/static/img/parties_xlsx.png" />
+    <b-img rounded fluid src="static/img/parties_xlsx.png" />
     <p>
       Optionally, if the second and  third columns  are named 'fixed'  or 'adj',
       they will be understood to be  information about the number of fixed seats
@@ -194,6 +194,7 @@
   </b-row>
     <div class="table-scroll">
     <table class="votematrix">
+      <tbody>
       <tr>
         <th class="topleft">
         </th>
@@ -341,6 +342,7 @@
           </b-button>
         </th>
       </tr>
+      </tbody>
     </table>
     </div>
   <b-alert :show="checkVoteSeats()==false">
@@ -364,6 +366,7 @@
   </b-row>
     <div class="table-scroll">
     <table class="votematrix">
+      <tbody>
       <tr v-if="vote_table.party_vote_info.specified" size="sm">
         <th class="topleft">
         </th>
@@ -460,6 +463,7 @@
           </b-button>
         </th>
       </tr>
+      </tbody>
     </table>
     </div>
   <div
@@ -528,7 +532,7 @@ export default {
   },
   created: function () {
     console.log("Creating VoteMatrix")
-    this.$http.get("/api/presets").then(
+    this.$http.get("api/presets/").then(
       (response) => {
         if (!response.body || response.body.error) {
           this.serverError(response.body) 
@@ -673,7 +677,7 @@ export default {
       var table = {...this.vote_table, name: filename}
       let promise = axios({
         method: "post",
-        url: "/api/votes/save",
+        url: "api/votes/save/",
         data: { vote_table: table },
         responseType: "arraybuffer",
       });
@@ -683,7 +687,7 @@ export default {
       this.$refs.modalpresetref.hide();
       this.setWaitingForData()
       console.log('election_id', election_id)
-      this.$http.post("/api/presets/load/", {election_id: election_id }).then(
+      this.$http.post("api/presets/load/", {election_id: election_id }).then(
         (response) => {
           if (!response.body || response.body.error) {
             this.serverError(response.body) 
@@ -699,7 +703,7 @@ export default {
       this.setWaitingForData()
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.$http.post("/api/votes/upload/", formData).then(
+      this.$http.post("api/votes/upload/", formData).then(
         (response) => {
           if (!response.body || response.body.error) {
             this.serverError(response.body) 

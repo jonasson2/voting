@@ -20,7 +20,8 @@ Requirements:
 
 - Git
 - [uv](https://docs.astral.sh/uv/)
-- Node.js and npm
+- Python 3.9 or later (selected by `uv`)
+- Node.js and npm; use a maintained LTS release
 
 Clone the repository and install the locked dependencies:
 
@@ -35,15 +36,27 @@ cd ../backend
 uv run --locked python web.py
 ```
 
-On the `dev` branch, open <http://localhost:8080>. Set `FLASK_RUN_PORT` to
-override the branch default:
+By default, open <http://localhost:8080>. Set `FLASK_RUN_PORT` to use a
+different local port:
 
 ```sh
 FLASK_RUN_PORT=5000 uv run --locked python web.py
 ```
 
+Confirm that the service is available with:
+
+```sh
+curl -I http://localhost:8080
+```
+
+Stop the local server with `Ctrl-C` in the terminal where `web.py` is running.
+If port 8080 is already in use, either stop the process using it or choose a
+different port with `FLASK_RUN_PORT` as shown above.
+
 After the first installation, rebuild the frontend only when its source has
-changed.
+changed. `npm ci` may report dependency deprecation or audit warnings; these do
+not prevent the documented frontend build from completing. Review and update
+dependencies separately before deploying a public service.
 
 ## Run without the browser
 
@@ -58,37 +71,51 @@ uv run --locked python single.py --help
 
 The command writes `single.xlsx` and `votes.xlsx` in `backend/`.
 
-## Run on a server
+## Quick persistent testing with GNU Screen
 
-The repository includes `runvoting.sh` for a persistent deployment using GNU
-Screen. A server needs Git, uv, Node.js, npm, and Screen. For example, on Pluto:
+GNU Screen is a convenient intermediate option when a test server needs to
+survive a disconnected SSH session, but does not need production supervision.
+Start a named session from the repository:
 
 ```sh
-ssh pluto
-cd ~/voting
-./runvoting.sh dev
+screen -S voting
+cd backend
+FLASK_RUN_HOST=127.0.0.1 uv run --locked python web.py
 ```
 
-The script updates and checks out the requested branch, installs frontend
-packages when its lockfile has changed, builds the frontend, and starts Flask in
-a detached Screen session. Running the same command again restarts that branch.
+Detach without stopping Flask by pressing `Ctrl-A`, then `D`. The shell can then
+be closed. List or reconnect to the session later with:
 
 ```sh
 screen -ls
-screen -r dev
+screen -r voting
 ```
 
-Detach from Screen with `Ctrl-A`, then `D`.
+To stop the server cleanly, reconnect, press `Ctrl-C`, and run `exit`. To discard
+the entire session from outside it, use:
 
-The configured branch ports are:
+```sh
+screen -S voting -X quit
+```
 
-| Branch | Local | Pluto |
-| --- | ---: | ---: |
-| `main` | 5001 | 5000 |
-| `dev` | 8080 | 8080 |
+The included `runvoting.sh` script automates branch updates, frontend builds,
+and named Screen-session restarts. Use it only from a clean checkout because it
+checks out and pulls the requested branch:
 
-The included launcher uses Flask's built-in server. A public deployment should
-place it behind the server's usual firewall or reverse proxy.
+```sh
+FLASK_RUN_HOST=127.0.0.1 ./runvoting.sh dev
+```
+
+Binding to `127.0.0.1` prevents direct network access. Use an SSH tunnel to
+reach a remote test server. Screen does not restart the application after a
+crash or reboot, and this method still uses Flask's development server; use the
+systemd procedure in [the deployment guide](doc/deployment.md) for a durable
+HTTPS deployment.
+
+## Deploy publicly
+
+The complete systemd, HTTPS reverse-proxy, operations, and troubleshooting
+guide is in [doc/deployment.md](doc/deployment.md).
 
 ## Tests
 
@@ -105,6 +132,7 @@ Verify the frontend build with:
 cd vue-frontend
 npm ci
 npm run build
+npm run build-production
 ```
 
 ## Repository layout
@@ -112,14 +140,21 @@ npm run build
 - `backend/`: allocation methods, simulations, Flask API, and tests
 - `vue-frontend/`: Vue application and static assets
 - `data/`: example election data, presets, and data-source scripts
+- `deploy/`: systemd and reverse-proxy production-service examples
 - `doc/`: technical and user documentation
 
 ## License and authors
 
-Released under the GNU Affero General Public License version 3.
+Released under the [GNU Affero General Public License version 3](LICENSE).
 
-The authors and contributors are Smári McCarthy, Þorkell Helgason, Martha Guðrún
-Bjarnadóttir, Pétur Ólafur Aðalgeirsson, Helgi Hrafn Gunnarsson, Bjartur
-Thorlacius, Lilja Steinunn Jónsdóttir, and Kristján Jónasson.
+Authors and contributors:
+Smári McCarthy
+Þorkell Helgason
+Martha Guðrún Bjarnadóttir
+Pétur Ólafur Aðalgeirsson
+Helgi Hrafn Gunnarsson
+Bjartur Thorlacius
+Lilja Steinunn Jónsdóttir
+Kristján Jónasson
 
 Current maintainer: **Kristján Jónasson**.

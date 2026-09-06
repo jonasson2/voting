@@ -1,8 +1,6 @@
 import Vue from "vue"
 import Vuex from "vuex"
 
-Vue.use(Vuex)
-
 const store = new Vuex.Store({
 
   state : {
@@ -194,7 +192,7 @@ const store = new Vuex.Store({
     
     initialize(context) {
       console.log("initialize")
-      Vue.http.post('/api/capabilities', {}).then(response => {
+      Vue.http.post('api/capabilities/', {}).then(response => {
         if (error(response)) {
           context.commit("serverError", response.body)
         } else {
@@ -229,7 +227,7 @@ const store = new Vuex.Store({
     
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
-      Vue.http.post('/api/settings/upload/', payload.formData).then(
+      Vue.http.post('api/settings/upload/', payload.formData).then(
         response => {
           if (error(response)) {
             context.commit("serverError", response.body)
@@ -256,7 +254,7 @@ const store = new Vuex.Store({
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
       context.commit("deleteAllSystems")
-      Vue.http.post("/api/uploadall/", formData).then(
+      Vue.http.post("api/uploadall/", formData).then(
         (response) => {
           if (error(response)) {
             context.commit("serverError", response.body)
@@ -274,7 +272,7 @@ const store = new Vuex.Store({
       let promise;
       promise = axios({
         method: "post",
-        url: "/api/saveall/",
+        url: "api/saveall/",
         data: {
           vote_table: context.state.vote_table,
           systems: context.state.systems,
@@ -290,7 +288,7 @@ const store = new Vuex.Store({
       context.commit("setWaitingForData")
       console.log("In calculate_results")
       Vue.http.post(
-        '/api/election/',
+        'api/election/',
         {
           vote_table:     context.state.vote_table,
           systems:        context.state.systems,
@@ -326,7 +324,7 @@ const store = new Vuex.Store({
       context.commit("setWaitingForData")
       console.log('systems', context.state.systems)
       Vue.http.post(
-        '/api/settings/update_constituencies/',
+        'api/settings/update_constituencies/',
         {
           vote_table:     context.state.vote_table,
           systems:        context.state.systems

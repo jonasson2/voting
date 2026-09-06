@@ -8,27 +8,25 @@
     "build-production": "NODE_ENV=production webpack --config webpack.config.prod.js"
   },
   "author": "",
-  "license": "AGPL",
+  "license": "AGPL-3.0-only",
   "devDependencies": {
-    "css-loader": "^1.0.0",
-    "style-loader": "^0.21.0",
-    "vue-loader": "^15.2.6",
-    "vue-pdf": "^4.3.0",
-    "vue-pdf-worker-fix": "^4.2.2",
+    "@vue/compiler-sfc": "^3.5.42",
+    "css-loader": "^7.1.5",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.6.1",
+    "vue-loader": "^17.4.2",
     "vue-style-loader": "^4.1.1",
-    "vue-template-compiler": "^2.6.10",
-    "webpack": "^4.16.2",
-    "webpack-cli": "^3.1.0"
+    "webpack": "^5.110.3",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@vue/compat": "^3.5.42",
     "bootstrap-vue": "^2.0.3",
     "chart.js": "^2.7.2",
-    "copyfiles": "^2.4.1",
-    "node-git-current-branch": "^2.0.1",
-    "vue": "^2.6.10",
+    "vue": "^3.5.42",
     "vue-chartjs": "^3.3.2",
     "vue-input-autowidth": "^1.0.11",
     "vue-resource": "^1.5.1",
-    "vuex": "^3.6.2"
+    "vuex": "^4.1.0"
   }
 }

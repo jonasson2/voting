@@ -112,6 +112,7 @@
       :options="capabilities.seat_spec_options.const"/>
     <div v-if='const_spec_option!="refer"' class="settings-seat-table">
       <table v-if="!adding_system && !waiting_for_data" class="votematrix">
+        <tbody>
         <tr>
           <th class="topleft"></th>
           <th class="displaycenter"
@@ -195,6 +196,7 @@
             </span>
           </td>
         </tr>
+        </tbody>
       </table>
     </div>
   </div>

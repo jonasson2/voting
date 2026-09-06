@@ -197,7 +197,7 @@ export default {
     },
     checkstatus: function(stop) {
       console.log("checking simulation:", this.simid, timeStamp())
-      this.$http.post('/api/simulate/check/', {
+      this.$http.post('api/simulate/check/', {
         simid: this.simid,
         stop: stop
       }).then(response => {
@@ -232,7 +232,7 @@ export default {
       this.results = { measures: [], methods: [], data: [] }
       this.simid = "";
       console.log("Simulate (recalculate): this.sim_settings = ", this.sim_settings)
-      this.$http.post('/api/simulate/', {
+      this.$http.post('api/simulate/', {
         vote_table:     this.vote_table,
         systems:        this.systems,
         sim_settings:   this.sim_settings,
@@ -254,7 +254,7 @@ export default {
     saveSimulationResults: function() {
       let promise = axios({
         method: "post",
-        url: "/api/simdownload/",
+        url: "api/simdownload/",
         data: { simid: this.simid },
         responseType: "arraybuffer",
       });

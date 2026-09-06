@@ -110,7 +110,6 @@ def new_simulation(votes, systems, sim_settings):
     simid = par_util.get_id()
     starttime = time.time()
     SIMULATIONS[simid] = {'time':starttime, 'exception':None}
-    threaded = False
     if threaded:
         sim = Simulation(sim_settings, systems, votes)
         thread = Thread(target=run_thread_simulation, args=(simid,))

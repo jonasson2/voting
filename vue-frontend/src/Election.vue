@@ -108,7 +108,7 @@ export default {
     saveResults: function() {
       let promise = axios({
         method: "post",
-        url: "/api/election/save",
+        url: "api/election/save/",
         data: {
           vote_table:     this.vote_table,
           systems:        this.systems,
