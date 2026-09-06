@@ -18,6 +18,7 @@ class ElectionHandler:
         systems = check_systems(systems)
         self.votes = vote_table["votes"]
         self.party_vote_info = vote_table["party_vote_info"]
+        self.party_names = vote_table.get("party_names")
         default_basis = systems[0]["seat_spec_options"].get("party", "totals")
         self.party_vote_basis = vote_table.get("party_vote_basis", default_basis)
         if not self.party_vote_info["specified"]:
@@ -50,7 +51,7 @@ class ElectionHandler:
             self.elections.append(election)
 
     def to_xlsx(self, filename):
-        elections_to_xlsx(self.elections, filename)
+        elections_to_xlsx(self.elections, filename, self.party_names)
 
 def update_constituencies(vote_table, systems):
     constituencies = []

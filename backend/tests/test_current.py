@@ -101,6 +101,194 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertEqual(vote_table['votes'], [[10, 20]])
         self.assertEqual(vote_table['pruned'], [3])
 
+    def test_csv_upload_reads_party_names(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        upload = BytesIO(
+            b'Example,fixed,adj,A,B\n'
+            b'Party names,,,Alpha Party,Beta Party\n'
+            b'I,1,0,10,20\n'
+        )
+        response = client.post('/api/votes/upload/',
+                               data={'file': (upload, 'votes.csv')})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()['party_names'],
+                         ['Alpha Party', 'Beta Party'])
+
+    def test_csv_upload_reads_adjustment_seat_maxima(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        upload = BytesIO(
+            b'Example,fixed,min_adj,max_adj,A,B\n'
+            b'Max adj seats,,,5,,\n'
+            b'I,1,2,4,10,20\n'
+            b'II,1,1,,30,40\n'
+        )
+        response = client.post('/api/votes/upload/',
+                               data={'file': (upload, 'votes.csv')})
+        self.assertEqual(response.status_code, 200)
+        vote_table = response.get_json()
+        self.assertEqual(vote_table['max_total_adj_seats'], 5)
+        self.assertEqual(
+            [constituency['max_adj_seats']
+             for constituency in vote_table['constituencies']],
+            [4, None],
+        )
+
+    def test_csv_upload_reads_national_votes_after_blank_row(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        upload = BytesIO(
+            b'Example,fixed,adj,A,B\n'
+            b'I,1,0,10,20\n'
+            b'\n'
+            b'National,0,1,30,40\n'
+        )
+        response = client.post('/api/votes/upload/',
+                               data={'file': (upload, 'votes.csv')})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json()['party_vote_info']['votes'], [30, 40])
+
+    def test_csv_upload_normalizes_blank_national_votes_to_zero(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        upload = BytesIO(
+            b'Example,fixed,adj,A,B\n'
+            b'I,1,0,10,20\n'
+            b'\n'
+            b'National,0,1,,\n'
+        )
+        response = client.post('/api/votes/upload/',
+                               data={'file': (upload, 'votes.csv')})
+        self.assertEqual(response.status_code, 200)
+        info = response.get_json()['party_vote_info']
+        self.assertEqual(info['votes'], [0, 0])
+        self.assertEqual(info['total'], 0)
+
+    def test_short_vote_file_returns_a_format_error(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        upload = BytesIO(b'Example,fixed\nI,1\n')
+        response = client.post('/api/votes/upload/',
+                               data={'file': (upload, 'votes.csv')})
+        self.assertIn('seat columns', response.get_json()['error'])
+
+    def test_vote_table_validation_rejects_invalid_numbers(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        cases = [
+            ('fractional votes', ('votes', 1.5)),
+            ('non-finite votes', ('votes', float('nan'))),
+            ('negative seats', ('seats', -1)),
+        ]
+        for description, (kind, value) in cases:
+            with self.subTest(description):
+                invalid = deepcopy(table)
+                if kind == 'votes':
+                    invalid['votes'][0][0] = value
+                else:
+                    invalid['constituencies'][0]['num_fixed_seats'] = value
+                with self.assertRaises((TypeError, ValueError)):
+                    check_vote_table(invalid)
+
+    def test_specified_national_vote_name_must_be_nonblank(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_info'] = {
+            'name': ' ',
+            'num_fixed_seats': 0,
+            'num_adj_seats': 0,
+            'votes': [10, 20],
+            'specified': True,
+            'pruned': 0,
+        }
+        with self.assertRaisesRegex(ValueError, 'non-blank'):
+            check_vote_table(table)
+
+    def test_vote_table_api_validates_edited_tables(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        table = load_votes('../data/2-by-2-example.csv')
+        table['constituencies'][0]['num_fixed_seats'] = -1
+        response = client.post('/api/votes/save/', json={'vote_table': table})
+        self.assertIn('may not be negative', response.get_json()['error'])
+
+    def test_swedish_vote_table_uses_adjustment_seat_bounds(self):
+        table = load_votes('../data/sweden_2022.csv')
+        self.assertEqual(table['max_total_adj_seats'], 39)
+        self.assertTrue(all(
+            constituency['num_adj_seats'] == 0
+            and constituency['max_adj_seats'] is None
+            for constituency in table['constituencies']
+        ))
+
+    def test_generated_party_names_are_included(self):
+        cases = [
+            ('../data/norway_2017.csv', 'AP', 'Arbeiderpartiet'),
+            ('../data/norway_2021.csv', 'AP', 'Arbeiderpartiet'),
+            ('../data/norway_2025.csv', 'AP', 'Arbeiderpartiet'),
+            ('../data/sweden_2018.csv', 'M', 'Moderaterna'),
+        ]
+        for filename, abbreviation, name in cases:
+            with self.subTest(filename=filename):
+                table = load_votes(filename)
+                party_index = table['parties'].index(abbreviation)
+                self.assertEqual(table['party_names'][party_index], name)
+
+    def test_blank_party_names_are_omitted(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_names'] = ['', '  ']
+        self.assertNotIn('party_names', check_vote_table(table))
+
+    def test_party_names_must_match_the_party_list(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_names'] = ['Only one']
+        with self.assertRaisesRegex(ValueError, 'Party names'):
+            check_vote_table(table)
+
+    def test_single_election_xlsx_includes_party_names(self):
+        import openpyxl
+
+        table = load_votes('../data/iceland-2021.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        handler = ElectionHandler(table, [system], use_thresholds=True)
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'election.xlsx'
+            handler.to_xlsx(filename)
+            workbook = openpyxl.load_workbook(filename, read_only=True)
+        worksheet = workbook['Party names']
+        self.assertEqual(
+            [worksheet['A1'].value, worksheet['B1'].value],
+            ['Abbreviation', 'Name'],
+        )
+        self.assertEqual(
+            [worksheet['A2'].value, worksheet['B2'].value],
+            ['B', 'Framsóknarflokkur'],
+        )
+
+    def test_vote_table_xlsx_round_trip_preserves_party_names(self):
+        table = load_votes('../data/iceland-2021.csv')
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'votes.xlsx'
+            votes_to_excel(table, filename)
+            loaded = load_votes(filename)
+        self.assertEqual(loaded['party_names'], table['party_names'])
+
+    def test_vote_table_xlsx_round_trip_preserves_adjustment_seat_maxima(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['max_total_adj_seats'] = 6
+        table['constituencies'][0]['max_adj_seats'] = 2
+        table['constituencies'][1]['max_adj_seats'] = None
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'votes.xlsx'
+            votes_to_excel(table, filename)
+            loaded = load_votes(filename)
+        self.assertEqual(loaded['max_total_adj_seats'], 6)
+        self.assertEqual(
+            [constituency['max_adj_seats']
+             for constituency in loaded['constituencies']],
+            [2, None],
+        )
+
     def test_excel_round_trip_preserves_pruned_votes(self):
         table = load_votes('../data/2-by-2-example.csv')
         table['pruned'] = [3, 4]

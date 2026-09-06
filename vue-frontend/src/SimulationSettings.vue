@@ -10,7 +10,7 @@
           <label for="simulation-count">Number of simulations</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-count" class="compact-entry-input" type="text"
-            v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+            v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
             v-model.number="sim_settings.simulation_count"
             min="0"/>
           </span>
@@ -38,46 +38,46 @@
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Standard deviation of simulated votes divided by their mean.
-                 Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
+                 Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
                  0–0.577 (uniform).">
           <label for="simulation-const-rsd">Relative standard deviation for list votes</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-const-rsd" class="compact-entry-input" type="text"
-              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.const_rsd"/>
           </span>
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Correlation between list votes within each party,
-                 use only with log-normal distribution, else 0 is used.">
+                 use only with lognormal distribution, else 0 is used.">
           <label for="simulation-const-corr">Correlation between list votes within each party</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-const-corr" class="compact-entry-input" type="text"
-              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.const_corr"/>
           </span>
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Standard deviation of simulated votes divided by their mean.
-                 Valid range 0-1 (log-normal), 0–0.75 (beta), 0–1 (gamma),
+                 Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
                  0–0.577 (uniform).">
           <label for="simulation-party-rsd">Relative standard deviation for national party votes</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-party-rsd" class="compact-entry-input" type="text"
-              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.party_vote_rsd"/>
           </span>
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Correlation between list votes and national party votes,
-                 use only with log-normal distribution, else 0 is used.">
+                 use only with lognormal distribution, else 0 is used.">
           <label for="simulation-party-corr">Correlation between list votes and national party votes</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-party-corr" class="compact-entry-input" type="text"
-              v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.party_vote_corr"/>
           </span>
         </div>
@@ -95,7 +95,7 @@
         <b-form-group style="font-size:110%"
                       description='Scaled seat shares are used as reference in quality 
                                    measurements; "Help" for more details'>
-          <label> <b>Scaling of votes for fractional reference seat shares:</b> </label>
+          <label> <b>Scaling of votes for reference seat shares:</b> </label>
           <b-form-radio-group
             id="A"
             v-model="sim_settings.scaling"

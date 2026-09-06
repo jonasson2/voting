@@ -18,6 +18,7 @@ from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election
 from noweb import new_simulation, check_simulation
 from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
+from vote_table import check_vote_table
 
 # Initialize process-local simulation state when imported by a WSGI server as
 # well as when this module is run directly.
@@ -77,6 +78,7 @@ def getfileparam():
 def api_election():
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
+        vote_table = check_vote_table(vote_table)
         [constituencies, nat_seats] = update_constituencies(vote_table, systems)
         for (c,n,s) in zip(constituencies, nat_seats, systems):
             s["constituencies"] = c
@@ -90,6 +92,7 @@ def api_election():
 def api_election_save():
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
+        vote_table = check_vote_table(vote_table)
         handler = ElectionHandler(vote_table, systems, use_thresholds=True)
         tmpfilename = tempfile.mktemp(prefix='election-')
         handler.to_xlsx(tmpfilename)
@@ -105,6 +108,7 @@ def api_update_constituencies():
     # the current vote table and systems[:]["seat_spec_options"]
     try:
         (vote_table, systems) = getparam('vote_table', 'systems')
+        vote_table = check_vote_table(vote_table)
         [constituencies, nat_seats] = update_constituencies(vote_table, systems)
         return jsonify({"constituencies": constituencies, "nat_seats":nat_seats})
     except Exception:
@@ -167,6 +171,7 @@ def api_votes_save_all():
         param_list = ("vote_table", "systems", "sim_settings")
         param = getparam(*param_list)
         contents = dict(zip(param_list, param))
+        contents["vote_table"] = check_vote_table(contents["vote_table"])
         tmpfilename = tempfile.mktemp(prefix='simulator-')
         with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
             json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
@@ -194,7 +199,7 @@ def api_votes_uploadall():
 @app.route('/api/votes/save/', methods=['POST'])
 def api_votes_save():
     try:
-        vote_table = getparam("vote_table")
+        vote_table = check_vote_table(getparam("vote_table"))
         tmpfilename = tempfile.mktemp(prefix='vote_table-')
         votes_to_excel(vote_table, tmpfilename)
         download_name = secure_filename(vote_table['name']) + ".xlsx"
@@ -239,6 +244,7 @@ def api_simulate():
     try:
         (votes, systems, sim_settings) = getparam("vote_table", "systems",
                                                   "sim_settings")
+        votes = check_vote_table(votes)
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)

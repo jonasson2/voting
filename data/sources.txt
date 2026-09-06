@@ -4,6 +4,7 @@ https://www.val.se/download/18.162047b519a91d0533118f4b/1764336897948/Roster-per
 
 Sweden 2018 Riksdag detailed votes
 https://historik.val.se/val/val2018/statistik/2018_R_per_valdistrikt.xlsx
+https://historik.val.se/val/val2018/slutresultat/R/rike/index.html
 
 Sweden raw data page
 https://val.se/valresultat-och-statistik/statistik-och-data/radata-fran-val-2002-2022

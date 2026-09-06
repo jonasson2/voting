@@ -43,6 +43,34 @@ PARTY_NAMES = {
     "Vänsterpartiet": "V",
 }
 PARTY_LABELS = {value: key for key, value in PARTY_NAMES.items()}
+PARTY_LABELS_2018 = {
+    **PARTY_LABELS,
+    "FI": "Feministiskt initiativ",
+    "AFS": "Alternativ för Sverige",
+    "BASIP": "Basinkomstpartiet",
+    "CSIS": "Common sense in Sweden",
+    "DD": "Direktdemokraterna",
+    "DJUP": "Djurens parti",
+    "EAP": "Europeiska Arbetarpartiet-EAP",
+    "ENH": "Enhet",
+    "FHS": "Folkhemmet Sverige",
+    "GUP": "Gula Partiet",
+    "INI": "Initiativet",
+    "KLP": "Klassiskt liberala partiet",
+    "KRVP": "Kristna Värdepartiet",
+    "LPO": "Landsbygdspartiet Oberoende",
+    "MED": "Medborgerlig Samling",
+    "NMR": "Nordiska motståndsrörelsen",
+    "NORRP": "Norrlandspartiet",
+    "NYREF": "NY REFORM",
+    "PP": "Piratpartiet",
+    "RNP": "Reformist Neutral Partiet",
+    "S-FRP": "Sverige ut ur EU/Frihetliga Rättvisepartiet (FRP)",
+    "SKP": "Sveriges Kommunistiska Parti (SKP)",
+    "SKÅ": "SKÅNEPARTIET",
+    "TRP": "TRYGGHETSPARTIET",
+    "VL-S": "Vårt land - Sverige",
+}
 XML_PARTY_NAMES = {
     "FP": "L",
 }
@@ -204,7 +232,7 @@ def parse_2018_votes(fixed, total_seats):
     columns = []
     for col, party in party_columns(header):
         code = short_party_name(party, used)
-        labels[code] = party
+        labels[code] = PARTY_LABELS_2018.get(party.upper(), party)
         columns.append((col, code))
     for row in rows[1:]:
         district = row.get("G", "")
@@ -298,10 +326,23 @@ def write_votes(year, out):
         parties, rows, labels = parse_2014_votes()
     else:
         parties, rows, labels = parse_recent_votes(year, fixed_seats_by_year())
-    fieldnames = ["Kjördæmi", "fixed", "adj", *parties]
+    max_total_adj_seats = sum(row["adj"] for row in rows)
+    for row in rows:
+        row["min_adj"] = 0
+        row["max_adj"] = ""
+        del row["adj"]
+    fieldnames = ["Kjördæmi", "fixed", "min_adj", "max_adj", *parties]
     with open(out, "w", encoding="utf-8", newline="") as fd:
-        writer = csv.DictWriter(fd, fieldnames=fieldnames)
+        writer = csv.DictWriter(fd, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
+        writer.writerow({
+            "Kjördæmi": "Party names",
+            **{party: labels.get(party, party) for party in parties},
+        })
+        writer.writerow({
+            "Kjördæmi": "Max adj seats",
+            "max_adj": max_total_adj_seats,
+        })
         writer.writerows(rows)
     print(f"Wrote {len(rows)} districts and {len(parties)} parties to {out}")
     abbr_out = Path(__file__).resolve().parent / f"party-abbreviations_{year}.txt"

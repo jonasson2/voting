@@ -7,9 +7,10 @@ from par_util import read_sim_status, read_sim_error, parallel_dir
 from datetime import datetime, timedelta
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from util import disp, process_vote_table, load_votes_from_excel, add_empty_party_votes
+from util import disp, load_votes_from_excel
 from util import remove_blank_rows, correct_deprecated
-from input_util import check_input, check_systems, check_simul_settings, check_vote_table
+from input_util import check_input, check_systems, check_simul_settings
+from vote_table import check_vote_table, process_vote_table
 from simulate import Simulation, Sim_result
 from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
@@ -45,8 +46,6 @@ def load_json(f):
             vote_table["party_vote_basis"] = file_content["systems"][0].get(
                 "seat_spec_options", {}).get("party", "totals")
         vote_table = check_vote_table(vote_table)
-        if "party_vote_info" not in vote_table:
-            vote_table = add_empty_party_votes(vote_table)
         file_content["vote_table"] = vote_table
     assert "sim_settings" in file_content
     assert "systems" in file_content
@@ -214,13 +213,26 @@ def simulation_to_excel(simid, file):
 
 def votes_to_excel(vote_table, file):
     pruned = vote_table.get("pruned", [0] * len(vote_table["constituencies"]))
+    has_max_adj_seats = "max_total_adj_seats" in vote_table
+    seat_headers = ["cons", "min_adj", "max_adj"] if has_max_adj_seats else ["cons", "adj"]
     file_matrix = [
-        [vote_table["name"], "cons", "adj"] + vote_table["parties"] + ["Pruned"],
-    ] + [
+        [vote_table["name"], *seat_headers] + vote_table["parties"] + ["Pruned"],
+    ]
+    party_names = vote_table.get("party_names")
+    if party_names and any(party_names):
+        file_matrix.append(["Party names"] + [""] * len(seat_headers)
+                           + party_names + [""])
+    if has_max_adj_seats:
+        file_matrix.append(["Max adj seats", "", "",
+                            vote_table["max_total_adj_seats"]]
+                           + [""] * (len(vote_table["parties"]) + 1))
+    file_matrix += [
         [
             vote_table["constituencies"][c]["name"],
             vote_table["constituencies"][c]["num_fixed_seats"],
             vote_table["constituencies"][c]["num_adj_seats"],
+            *([vote_table["constituencies"][c]["max_adj_seats"]]
+              if has_max_adj_seats else []),
         ] + vote_table["votes"][c] + [pruned[c]]
             for c in range(len(vote_table["constituencies"]))
     ]
@@ -229,6 +241,7 @@ def votes_to_excel(vote_table, file):
             vote_table["party_vote_info"]["name"],
             vote_table["party_vote_info"]["num_fixed_seats"],
             vote_table["party_vote_info"]["num_adj_seats"],
+            *([""] if has_max_adj_seats else []),
         ] + vote_table["party_vote_info"]["votes"] + [
             vote_table["party_vote_info"].get("pruned", 0)
         ] ]

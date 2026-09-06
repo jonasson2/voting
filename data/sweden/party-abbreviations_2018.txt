@@ -1,33 +1,33 @@
-M        M
-C        C
-L        L
-KD       KD
-S        S
-V        V
-MP       MP
-SD       SD
-FI       FI
-AFS      AfS
-BASIP    BASIP
-CSIS     CSIS
-DD       DD
-DJUP     DjuP
-EAP      EAP
-ENH      ENH
-FHS      FHS
-GUP      Gup
-INI      INI
-KLP      KLP
-KRVP     KrVP
-LPO      LPo
-MED      MED
-NMR      NMR
-NORRP    NORRP
-NYREF    NYREF
-PP       PP
-RNP      RNP
-SF       S-FRP
-SKP      SKP
-SKÅ      SKÅ
-TRP      TRP
-VS       VL-S
+M        Moderaterna
+C        Centerpartiet
+L        Liberalerna (tidigare Folkpartiet)
+KD       Kristdemokraterna
+S        Arbetarepartiet-Socialdemokraterna
+V        Vänsterpartiet
+MP       Miljöpartiet de gröna
+SD       Sverigedemokraterna
+FI       Feministiskt initiativ
+AFS      Alternativ för Sverige
+BASIP    Basinkomstpartiet
+CSIS     Common sense in Sweden
+DD       Direktdemokraterna
+DJUP     Djurens parti
+EAP      Europeiska Arbetarpartiet-EAP
+ENH      Enhet
+FHS      Folkhemmet Sverige
+GUP      Gula Partiet
+INI      Initiativet
+KLP      Klassiskt liberala partiet
+KRVP     Kristna Värdepartiet
+LPO      Landsbygdspartiet Oberoende
+MED      Medborgerlig Samling
+NMR      Nordiska motståndsrörelsen
+NORRP    Norrlandspartiet
+NYREF    NY REFORM
+PP       Piratpartiet
+RNP      Reformist Neutral Partiet
+SF       Sverige ut ur EU/Frihetliga Rättvisepartiet (FRP)
+SKP      Sveriges Kommunistiska Parti (SKP)
+SKÅ      SKÅNEPARTIET
+TRP      TRYGGHETSPARTIET
+VS       Vårt land - Sverige

@@ -1,6 +1,5 @@
-import math
-from copy import deepcopy
 from util import disp
+from vote_table import check_vote_table
 
 def parse_bool(value):
     value = value.lower()
@@ -16,90 +15,6 @@ def check_input(data, sections):
             print("raising error")
             raise KeyError(f"Missing data ('{section}')")
     return data
-
-def check_vote_table(vote_table):
-    table = deepcopy(vote_table)
-    for info in [
-        "name",
-        "votes",
-        "parties",
-        "constituencies",
-    ]:
-        if info not in table or not table[info]:
-            raise KeyError(f"Missing data ('vote_table.{info}')")
-
-    num_parties = len(table["parties"])
-    num_constituencies = len(table["constituencies"])
-
-    table.setdefault("pruned", [0] * num_constituencies)
-    if len(table["pruned"]) != num_constituencies:
-        raise ValueError("The pruned vote totals do not match the constituency list.")
-    for value in table["pruned"]:
-        if (not isinstance(value, (int, float)) or isinstance(value, bool)
-                or not math.isfinite(value)):
-            raise TypeError("Pruned vote totals must be numbers.")
-        if value < 0:
-            raise ValueError("Pruned vote totals may not be negative.")
-
-    if not len(table["votes"]) == num_constituencies:
-        raise ValueError("The vote table does not match the constituency list.")
-    for row in table["votes"]:
-        if not len(row) == num_parties:
-            raise ValueError("The vote table does not match the party list.")
-        for p in range(len(row)):
-            if not row[p]: row[p] = 0
-            if row[p] < 0:
-                raise ValueError("Votes may not be negative.")
-    if "party_votes" in table:
-        table["party_vote_info"] = table["party_votes"]
-        del table["party_votes"]
-    if "party_vote_info" in table:
-        table["party_vote_info"].setdefault("pruned", 0)
-        party_pruned = table["party_vote_info"]["pruned"]
-        if (not isinstance(party_pruned, (int, float))
-                or isinstance(party_pruned, bool)
-                or not math.isfinite(party_pruned)):
-            raise TypeError("The national pruned vote total must be a number.")
-        if party_pruned < 0:
-            raise ValueError("The national pruned vote total may not be negative.")
-        for i, v in enumerate(table['party_vote_info']['votes']):
-            if not isinstance(v, int):
-                table['party_vote_info']['votes'][i] = 0
-        if table["party_vote_info"].get("specified", False):
-            table["party_vote_info"]["total"] = (
-                sum(table["party_vote_info"]["votes"]) + party_pruned
-            )
-
-    valid_party_vote_bases = {"totals", "party_vote_info", "average"}
-    party_vote_basis = table.get("party_vote_basis", "totals")
-    if party_vote_basis not in valid_party_vote_bases:
-        raise ValueError(f"Unknown party vote basis: {party_vote_basis}")
-    if not table.get("party_vote_info", {}).get("specified", False):
-        party_vote_basis = "totals"
-    table["party_vote_basis"] = party_vote_basis
-
-    for const in table["constituencies"]:
-        if "name" not in const:  # or not const["name"]:
-            raise KeyError(f"Missing data ('vote_table.constituencies[x].name')")
-        if "num_fixed_seats" not in const:
-            const["num_fixed_seats"] = const["num_const_seats"]
-            del const["num_const_seats"]
-        name = const["name"]
-        for info in ["num_fixed_seats", "num_adj_seats"]:
-            if info not in const:
-                raise KeyError(f"Missing data ('{info}' for {name})")
-            if not const[info]: const[info] = 0
-            if type(const[info]) != int:
-                raise TypeError("Seat specifications must be numbers.")
-
-    seen = set()
-    for const in table["constituencies"]:
-        if False:  # const["name"] in seen:
-            raise ValueError("Constituency names must be unique. "
-                             f"{const['name']} is not.")
-        seen.add(const["name"])
-
-    return table
 
 def check_systems(electoral_systems):
     """Checks election systems constituency input, and translates empty cells to 0

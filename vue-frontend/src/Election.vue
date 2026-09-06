@@ -35,12 +35,6 @@
               :party_votes_specified="vote_table.party_vote_info.specified"
               >
             </ResultMatrix>
-          <!-- <b-row> -->
-            <!--   <ResultChart -->
-            <!--     :parties="vote_table.parties" -->
-            <!--     :seats="results[activeTabIndex].seat_allocations"> -->
-              <!--   </ResultChart> -->
-            <!-- </b-row> -->
           <b-row>
             <br>
             <h4>Allocation of adjustment seats step-by-step</h4>
@@ -78,7 +72,6 @@
 
 <script>
 import ResultMatrix from './components/ResultMatrix.vue'
-import ResultChart from './components/ResultChart.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
 import { mapState, mapActions } from 'vuex';
 
@@ -97,7 +90,6 @@ export default {
   },
   components: {
     ResultMatrix,
-    ResultChart,
     ResultDemonstration,
   },
   

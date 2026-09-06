@@ -1,5 +1,6 @@
 import Vue from "vue"
 import Vuex from "vuex"
+import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 
 const store = new Vuex.Store({
 
@@ -51,15 +52,13 @@ const store = new Vuex.Store({
 
   // MUTATIONS
   mutations : {
-    updateVoteTable(state, table) { // TODO: laga þetta
-      console.log("table=", table)
-      normalizePrunedVotes(table)
+    updateVoteTable(state, table) {
+      normalizeVoteTable(table)
       state.vote_table = table
       setVoteSums(state)
       state.vote_table.name = table.name
     },
     updateVoteSums(state) {
-      console.log('updateVoteSums')
       setVoteSums(state)
     },
     threshold_method(state, systemidx) {
@@ -115,13 +114,11 @@ const store = new Vuex.Store({
 
     updateSimSettings(state, sim_settings) {
       state.sim_settings = sim_settings
-      console.log("Updating sim_settings, new settings = ", sim_settings)
     },
 
     setWaitingForData(state) { state.waiting_for_data = true },
     
     clearWaitingForData(state) {
-      console.log('clearWaitingForData')
       Vue.nextTick(()=>{state.waiting_for_data=false})
     },
 
@@ -146,7 +143,7 @@ const store = new Vuex.Store({
     },
 
     serverError(state, message) {
-      console.log(message)
+      state.waiting_for_data = false
       if (!message)
         message = "Error: Unknown error with null message (perhaps jasonify with illegal"
          + " arguments such as numpy data)"
@@ -164,10 +161,7 @@ const store = new Vuex.Store({
         else
           message = "Error: Unknown error with non-string message"
       }
-      console.log("SERVER ERROR: ", message)
       state.server_error = message.split(/\n/g);
-      console.log("lengths", message.length, state.server_error.length)
-      //Vue.nextTick(()=>{state.waiting_for_data=false})
     },
     
     clearServerError(state) { state.server_error = '' },
@@ -175,14 +169,12 @@ const store = new Vuex.Store({
     addBeforeunload(state) {
       if (state.listening) return
       state.listening = true
-      console.log("adding event listener")
       window.addEventListener('beforeunload', eventListener)
     },
 
     removeBeforeunload(state) {
       if (!state.listening) return
       state.listening = false
-      console.log("removing event listener")
       window.removeEventListener("beforeunload", eventListener)
     }
   },
@@ -191,20 +183,20 @@ const store = new Vuex.Store({
   actions : {
     
     initialize(context) {
-      console.log("initialize")
-      Vue.http.post('api/capabilities/', {}).then(response => {
-        if (error(response)) {
-          context.commit("serverError", response.body)
-        } else {
-          context.state.sim_capabilities = response.body.capabilities;
-          context.state.sim_settings = response.body.sim_settings
-          console.log("Created SimulationSettings")
-        }
-      })
+      Vue.http.post('api/capabilities/', {}).then(
+        response => {
+          if (error(response)) {
+            context.commit("serverError", response.body)
+          } else {
+            context.state.sim_capabilities = response.body.capabilities;
+            context.state.sim_settings = response.body.sim_settings
+          }
+        },
+        response => context.commit("serverError", response.status)
+      )
     },
 
     showElectoralSystems(context) {
-      console.log("showElectoralSystems")
       context.state.results = []
       context.state.show_systems = true
       context.state.show_simulate = false
@@ -222,7 +214,6 @@ const store = new Vuex.Store({
       context.state.show_systems = false
       context.state.show_simulate = true
       context.dispatch("recalc_sys_const")
-      console.log("showSimulate")
     },
     
     uploadElectoralSystems(context, payload) {
@@ -253,20 +244,21 @@ const store = new Vuex.Store({
     },
     uploadAll: function (context, formData) {
       context.commit("setWaitingForData")
-      context.commit("deleteAllSystems")
       Vue.http.post("api/uploadall/", formData).then(
         (response) => {
           if (error(response)) {
             context.commit("serverError", response.body)
           } else {
-            console.log("response", response)
+            context.commit("deleteAllSystems")
             context.commit("updateVoteTable", response.data.vote_table)
             context.commit("updateSystems", response.data.systems)
             context.commit("updateSimSettings", response.data.sim_settings)
             findNumbering(context.state, 0)
             context.commit("clearWaitingForData")
           }
-        })
+        },
+        response => context.commit("serverError", response.status)
+      )
     },
     saveAll(context) {
       let promise;
@@ -286,7 +278,6 @@ const store = new Vuex.Store({
     
     calculate_results(context) {
       context.commit("setWaitingForData")
-      console.log("In calculate_results")
       Vue.http.post(
         'api/election/',
         {
@@ -294,25 +285,15 @@ const store = new Vuex.Store({
           systems:        context.state.systems,
         }).then(
           response => {
-            console.log('response from /api/election =', response)
             if (error(response)) {
-              let use_pv = ['party_vote_info', 'average'].includes(
-                context.state.vote_table.party_vote_basis)
-              let pv = context.state.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-              if (context.state.vote_table.party_vote_info.specified && pv==false && use_pv) {
-                //if party votes are specified, they are used and not all votes are numbers
-                let message = "The national party votes contain values that are not numbers"
-                console.log("SERVER ERROR: ", message)
-                context.state.results = []
-              } else {
-                context.commit("serverError", response.body)
-              }
+              context.commit("serverError", response.body)
             } else {
               context.state.results = response.body.results
               context.state.systems = response.body.systems
             }
             context.commit("clearWaitingForData")
-          }
+          },
+          response => context.commit("serverError", response.status)
         )
     },
     recalc_sys_const(context) {
@@ -322,7 +303,6 @@ const store = new Vuex.Store({
       // vote_table, otherwise use use values from vote_table, possibly modified
       // according to the seat_spec_options.const.
       context.commit("setWaitingForData")
-      console.log('systems', context.state.systems)
       Vue.http.post(
         'api/settings/update_constituencies/',
         {
@@ -332,19 +312,15 @@ const store = new Vuex.Store({
           if (error(response)) {
             context.commit("serverError", response.body)
           } else {
-            console.log("response.body", response.body)
             response.body.constituencies.forEach(
               (c,i) => context.state.systems[i].constituencies = c
             )
             response.body.nat_seats.forEach(
               (n,i) => context.state.systems[i].nat_seats = n
             )
-            console.log("sys_const[0]=", context.state.systems[0].constituencies)
           }
-          console.log("recalc_sys_const")
-          console.log("& sys_const[0]=", context.state.systems[0].constituencies)
           context.commit("clearWaitingForData")
-        })
+        }, response => context.commit("serverError", response.status))
     },
     // Thanks to Pétur Helgi Einarsson for the next two functions
     downloadFile: function (context, promise) {
@@ -352,25 +328,20 @@ const store = new Vuex.Store({
         (response) => {
           const status = response.status;
           if (status != 200) {
-            console.log("Server error", response.body.error)
             context.commit("serverError", response.body)
           }
           else {
-            console.log("Inside status==200")
-            console.log("response=", response)
-            console.log("headers=", response.headers)
-            console.log("content-type", response.headers["content-type"])
-            console.log("data", response.data)
-            if (response.headers["content-type"] == "application/json") {
-              let s,x
-              s = String.fromCharCode.apply(null, new Uint8Array(response.data))
-              eval("x = " + s)
-              if ("error" in x) {
+            if (response.headers["content-type"].startsWith("application/json")) {
+              let payload
+              try {
+                payload = JSON.parse(new TextDecoder().decode(response.data))
+              } catch (error) {
+                context.commit("serverError", "The server returned invalid JSON")
+                return
+              }
+              if ("error" in payload) {
                 // API returned error instead of actual blob
-                console.log("Error, not blob")
-                console.log('x=', x)
-                console.log('x["error"]=', x["error"])
-                context.commit("serverError", x["error"])
+                context.commit("serverError", payload["error"])
                 return
               }
             }
@@ -383,7 +354,7 @@ const store = new Vuex.Store({
             document.body.appendChild(link);
             // Dispatch click event on the link (this is necessary
             // as link.click() does not work in the latest Firefox
-            let result = link.dispatchEvent(
+            link.dispatchEvent(
               new MouseEvent("click", {
                 bubbles: true,
                 cancelable: true,
@@ -391,10 +362,11 @@ const store = new Vuex.Store({
               })
             );
             link.remove();
+            URL.revokeObjectURL(blobUrl);
           }
         },
         (response) => {
-          console.log("Error:", response);
+          context.commit("serverError", response.status || response.message)
         }
       )
     }
@@ -420,45 +392,11 @@ function parse_headers(headers) {
 
 function setVoteSums(state) {
   let vt = state.vote_table
-  normalizePrunedVotes(vt)
-  let vs = state.vote_sums
-  let vc = vt.constituencies
-  vs.row = vt.votes.map(
-    (row, index) => row.reduce((a, b) => a+b, 0) + vt.pruned[index]
-  )
-  vs.tot = vs.row.reduce((a, b) => a + b, 0)
-  if (vt.constituencies.length > 0)
-    vs.col = vt.votes.reduce((a, b) => a.map((v,i) => v+b[i]))
-  else
-    vs.col = 0
-  vs.pruned = vt.pruned.reduce((a, b) => a + b, 0)
-  vs.cseats = 0
-  vs.aseats = 0
-  for (var i=0; i<vc.length; i++) {
-    vs.cseats += vc[i].num_fixed_seats
-    vs.aseats += vc[i].num_adj_seats
-  }
-  let pv = state.vote_table.party_vote_info
-  if (pv.specified) {
-    pv.total = pv.votes.reduce((a,b) => a + b, 0) + pv.pruned
-  }
-  else
-    pv.total = 0
-}
-
-function normalizePrunedVotes(voteTable) {
-  if (!Array.isArray(voteTable.pruned)
-      || voteTable.pruned.length != voteTable.constituencies.length) {
-    Vue.set(voteTable, "pruned", Array(voteTable.constituencies.length).fill(0))
-  }
-  if (!("pruned" in voteTable.party_vote_info)) {
-    Vue.set(voteTable.party_vote_info, "pruned", 0)
-  }
-  const validPartyVoteBases = ["totals", "party_vote_info", "average"]
-  if (!validPartyVoteBases.includes(voteTable.party_vote_basis)
-      || !voteTable.party_vote_info.specified) {
-    Vue.set(voteTable, "party_vote_basis", "totals")
-  }
+  normalizeVoteTable(vt)
+  const sums = calculateVoteSums(vt)
+  vt.party_vote_info.total = sums.partyVoteTotal
+  delete sums.partyVoteTotal
+  Object.assign(state.vote_sums, sums)
 }
 
 function findNumbering(state, asi) {

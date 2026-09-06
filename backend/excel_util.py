@@ -185,7 +185,18 @@ def demo_table_to_xlsx(
     col += len(headers) + 1
     return col
 
-def elections_to_xlsx(elections, filename):
+def party_names_to_xlsx(workbook, fmt, parties, party_names):
+    if not party_names or not any(party_names):
+        return
+    worksheet = workbook.add_worksheet("Party names")
+    worksheet.set_column(0, 0, 15)
+    worksheet.set_column(1, 1, max(20, max(len(name) for name in party_names)))
+    worksheet.write_row(0, 0, ["Abbreviation", "Name"], fmt["h"])
+    for row, (party, name) in enumerate(zip(parties, party_names), start=1):
+        worksheet.write_row(row, 0, [party, name], fmt["basic"])
+
+
+def elections_to_xlsx(elections, filename, party_names=None):
     """Write detailed information about an election with a single vote table
     but multiple electoral systems, to an xlsx file.
     """
@@ -318,6 +329,7 @@ def elections_to_xlsx(elections, filename):
         for demo_table in result["demo_tables"]:
            col = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
 
+    party_names_to_xlsx(workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
 
 def simulation_to_xlsx(results, filename):
@@ -819,6 +831,12 @@ def simulation_to_xlsx(results, filename):
                 if table["total"]:
                     col += 1
             toprow += len(base_const_names) + 1
+    party_names_to_xlsx(
+        workbook,
+        fmt,
+        results["vote_table"]["parties"],
+        results["vote_table"].get("party_names"),
+    )
     workbook.close()
 
 def votes_to_xlsx(votes, party_vote_info, filename):

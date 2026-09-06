@@ -6,6 +6,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import Main from './Main.vue'
 import store from './store.js'
+import autowidth from './autowidth.js'
 
 const app = createApp(Main)
 app.config.compatConfig = { MODE: 2 }
@@ -15,4 +16,5 @@ app.use(VueResource)
 // compatibility app, while legacy store code accesses it through Vue.http.
 Vue.http = app.http
 app.use(BootstrapVue)
+app.directive('autowidth', autowidth)
 app.mount('#app')

@@ -7,15 +7,15 @@
     title="Upload CSV or XLSX file"
     >
     <p>
-      The file provided must be a CSV or an Excel XLSX file formatted with
-      parties on the first row and constituency names on the first column.
+      The first row contains the table name, seat-column headings, and party
+      abbreviations. Constituency names appear in the first column.
     </p>
     <b-img rounded fluid src="static/img/parties_xlsx.png" />
     <p>
-      Optionally, if the second and  third columns  are named 'fixed'  or 'adj',
-      they will be understood to be  information about the number of fixed seats
-      and adjustment seats, respectively, in each  constituency. If  you leave
-      them out, you can specify the number of seats manually.
+      Use <code>fixed,adj</code> for exact adjustment-seat counts, or
+      <code>fixed,min_adj,max_adj</code> with a <code>Max adj seats</code> row
+      for bounds. Optional <code>Party names</code> and <code>Pruned</code>
+      fields are preserved.
     </p>
     <b-form-file
       v-model="uploadfile"
@@ -192,307 +192,75 @@
       </legend>    
     </b-col>
   </b-row>
-    <div class="table-scroll">
-    <table class="votematrix">
-      <tbody>
-      <tr>
-        <th class="topleft">
-        </th>
-        <th
-          class="seatnumberheading"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Fixed seats"
-          >
-          # Fixed
-        </th>
-        <th
-          class="seatnumberheading"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Adjustment seats"
-          >
-          # Adj.
-        </th>
-        <th v-for="(party, partyidx) in vote_table.parties" class="partyname">
-          <b-button
-            class="xbutton"
-            style="padding: 0"
-            size="sm"
-            variant="link"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Remove Party"
-            @click="deleteParty(partyidx)"
-            >
-            X
-          </b-button>
-          <input
-            type="text"
-            style="text-align: center"
-            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
-            v-model="vote_table.parties[partyidx]"
-            />
-        </th>
-        <th
-          v-if="hasPrunedVotes"
-          class="displaycenter"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Votes removed by pruning. Included only in percentage-threshold totals."
-          >
-          Pruned
-        </th>
-        <th class="displaycenter">Total</th>
-        <th class="growtable">
-          <b-button
-            size="sm"
-            @click="addParty()"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Add party"
-            >
-            <b>+</b>
-          </b-button>
-        </th>
-      </tr>
-      <tr v-for="(constituency, conidx) in vote_table.constituencies" size="sm">
-        <th class="constname">
-          <b-button
-            style="padding: 0"
-            size="sm"
-            variant="link"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Remove constituency"
-            @click="deleteConstituency(conidx)"
-            >
-            X
-          </b-button>
-          <input
-            type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
-            v-model="constituency['name']"
-            />
-        </th>
-        <td class="numerical" size="sm">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-            v-model.number="constituency['num_fixed_seats']"
-            />
-        </td>
-        <td class="numerical" size="sm">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-            v-model.number="constituency['num_adj_seats']"
-            />
-        </td>
-        <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
-            v-model.number="vote_table.votes[conidx][partyidx]"
-            />
-        </td>
-        <td v-if="hasPrunedVotes" class="displayright">
-          {{ vote_table.pruned[conidx] }}
-        </td>
-        <td class="displayright">
-          {{ vote_sums.row[conidx] }}
-        </td>
-      </tr>
-      <tr>
-        <th class="displayleft">Total</th>
-        <td class="displayright">
-          {{ vote_sums.cseats }}
-        </td>
-        <td class="displayright">
-          {{ vote_sums.aseats }}
-        </td>
-        <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
-          {{ vote_sums.col[partyidx] }}
-        </td>
-        <td v-if="hasPrunedVotes" class="displayright">
-          {{ vote_sums.pruned }}
-        </td>
-        <td class="displayright">
-          {{ vote_sums.tot }}
-        </td>
-      </tr>
-      <tr>
-        <th class="displayleft">Vote share</th>
-        <td></td>
-        <td></td>
-        <td v-for="(party, partyidx) in vote_table.parties" class="displayright">
-          {{ votePercentage(vote_sums.col[partyidx]) }}
-        </td>
-        <td v-if="hasPrunedVotes" class="displayright">
-          {{ votePercentage(vote_sums.pruned) }}
-        </td>
-        <td class="displayright">{{ votePercentage(vote_sums.tot) }}</td>
-      </tr>
-      <tr>
-        <th class="growtable">
-          <b-button
-            size="sm"
-            @click="addConstituency()"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Add constituency"
-            >
-            <b>+</b>
-          </b-button>
-        </th>
-      </tr>
-      </tbody>
-    </table>
-    </div>
+  <constituency-vote-table
+    :vote-table="vote_table"
+    :vote-sums="vote_sums"
+    :has-maximums="hasMaxAdjustmentSeats"
+    :has-pruned-votes="hasPrunedVotes"
+    @add-constituency="addConstituency"
+    @add-maximums="addMaximumAdjustmentSeats"
+    @add-party="addParty"
+    @remove-constituency="deleteConstituency"
+    @remove-maximums="removeMaximumAdjustmentSeats"
+    @remove-party="deleteParty"
+    />
   <b-alert :show="checkVoteSeats()==false">
     Some seats are not in numerical format
   </b-alert>
   <b-alert :show="checkVoteInput()==false">
     Some votes are not in numerical format
   </b-alert>
-  
-  
-  <b-row>
-    <b-col cols="auto">
-    <legend style = "margin-left:0px; margin-top:12px"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title='Seat numbers and votes for the national list (German
-                   "zveitstimmen", New Zealand "party votes").'
-            >
-      National party votes and seats
-    </legend>
-    </b-col>
-  </b-row>
-    <div class="table-scroll">
-    <table class="votematrix">
-      <tbody>
-      <tr v-if="vote_table.party_vote_info.specified" size="sm">
-        <th class="topleft">
-        </th>
-        <th
-          class="seatnumberheading" 
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title='National fixed seats, allocated according to the national party votes
-                 using the fixed seat allocation rules set in the "Electoral systems" tab. 
-                 Normally there are no national fixed seats, but if specified then the 
-                 national party votes must not be left blank.'
-          >
-          # Fixed
-        </th>
-        <th
-          class="seatnumberheading"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="National adjustment seats. These are allocated last, by filling
-                 each party's remaining seats after the allocation of all other 
-                 seats (no votes are used for this allocation)"
-          >
-          # Adj.
-        </th>
-        <th v-for="(party, partyidx) in vote_table.parties" class="displaycenter">
-          {{vote_table.parties[partyidx]}}
-        </th>
-        <th
-          v-if="hasPrunedVotes"
-          class="displaycenter"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Votes removed by pruning. Included only in percentage-threshold totals."
-          >
-          Pruned
-        </th>
-        <th class="displaycenter">Total</th>
-      </tr>
-      <tr v-if="vote_table.party_vote_info.specified" size="sm">
-        <th class="constname">
-          <b-button
-            style="padding: 0"
-            size="sm"
-            variant="link"
-            v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Remove party votes"
-            @click="deletePartyVotes()"
-            >
-            X
-          </b-button>
-          <input
-            type="text"
-            v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
-            v-model="vote_table.party_vote_info.name"
-            />
-        </th>
-        <td class="numerical" size="sm">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-            v-model.number="vote_table.party_vote_info['num_fixed_seats']"
-            />
-        </td>
-        <td class="numerical" size="sm">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-            v-model.number="vote_table.party_vote_info['num_adj_seats']"
-            />
-        </td>
-        <td v-for="(party, partyidx) in vote_table.parties" class="numerical">
-          <input
-            type="text"
-            style="text-align: right"
-            v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
-            v-model.number="vote_table.party_vote_info.votes[partyidx]"
-            />
-        </td>
-        <td v-if="hasPrunedVotes" class="displayright">
-          {{ vote_table.party_vote_info.pruned }}
-        </td>
-        <td class="displayright">
-          {{vote_table.party_vote_info.total}}
-        </td>
-      </tr>
-      <tr v-if="!vote_table.party_vote_info.specified">
-        <th class="growtable">
-          <b-button
-            size="sm"
-            @click="addPartyVotes()"
-            v-b-tooltip.hover.right.v-primary.ds500
-            title="Add party votes"
-            >
-            <b>+</b>
-          </b-button>
-        </th>
-      </tr>
-      </tbody>
-    </table>
-    </div>
-  <div
-    v-if="vote_table.party_vote_info.specified"
-    class="settings-row party-vote-basis-row"
-    >
-    <label class="settings-field">
-      <span>Votes used as basis for party totals</span>
-      <b-form-select class="compact-select settings-vote-basis"
-        v-model="vote_table.party_vote_basis"
-        :options="partyVoteBasisOptions"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="The total number of seats for each party is computed using the votes selected here."/>
-    </label>
-  </div>
-  <b-alert :show="checkPartyInput()==false">
-    National: Some seats or votes are not in numerical format
+  <b-alert :show="checkVoteLabels()==false">
+    Table, party, and constituency names must not be blank
   </b-alert>
+  
+  
+  <national-party-votes
+    :vote-table="vote_table"
+    :basis-options="partyVoteBasisOptions"
+    :has-pruned-votes="hasPrunedVotes"
+    @add="addPartyVotes"
+    @remove="deletePartyVotes"
+    />
+  <b-alert :show="checkPartyInput()==false">
+    The national name, seats, and votes must be valid
+  </b-alert>
+
+  <party-names-table
+    :vote-table="vote_table"
+    :show-table="showPartyNameTable"
+    @add="addPartyNames"
+    />
   
 </b-container>
 </template>
 
 <script>
-import Vue from "vue";
 import { mapState,mapMutations,mapActions } from 'vuex';
-import VueInputAutowidth from "vue-input-autowidth";
-Vue.use(VueInputAutowidth);
+import ConstituencyVoteTable from "./components/ConstituencyVoteTable.vue";
+import NationalPartyVotes from "./components/NationalPartyVotes.vue";
+import PartyNamesTable from "./components/PartyNamesTable.vue";
+import {
+  addAdjustmentSeatMaximums,
+  addConstituency,
+  addParty,
+  clearVoteTable,
+  pruneSmallParties,
+  removeAdjustmentSeatMaximums,
+  removeConstituency,
+  removeParty,
+  validConstituencySeats,
+  validNationalVotes,
+  validVoteTableLabels,
+  validVotes,
+} from "./voteTable.js";
 
 export default {
+  components: {
+    ConstituencyVoteTable,
+    NationalPartyVotes,
+    PartyNamesTable,
+  },
   computed: {
     ...mapState([
       'vote_table',
@@ -509,6 +277,17 @@ export default {
       return this.vote_table.pruned.some(value => value > 0)
         || this.vote_table.party_vote_info.pruned > 0
     },
+    hasPartyNames() {
+      return Array.isArray(this.vote_table.party_names)
+        && this.vote_table.party_names.some(name => name.trim())
+    },
+    hasMaxAdjustmentSeats() {
+      return this.show_max_adj_seats
+    },
+    showPartyNameTable() {
+      return this.hasPartyNames || (this.show_party_names
+        && Array.isArray(this.vote_table.party_names))
+    },
   },
   data: function () {
     return {
@@ -520,18 +299,11 @@ export default {
       ],
       uploadfile: null,
       prune_percent: 1,
-      paste: {
-        csv: "",
-        has_name: false,
-        has_parties: false,
-        has_constituencies: false,
-        has_constituency_seats: false,
-        has_constituency_adjustment_seats: false,
-      },
+      show_party_names: false,
+      show_max_adj_seats: false,
     };
   },
   created: function () {
-    console.log("Creating VoteMatrix")
     this.$http.get("api/presets/").then(
       (response) => {
         if (!response.body || response.body.error) {
@@ -542,20 +314,11 @@ export default {
         }
       }
     )
-    console.log(Vue.version)
-    console.log("Created VoteMatrix");
   },
   methods: {
-    votePercentage(votes) {
-      const total = this.vote_sums.tot;
-      if (!Number.isFinite(votes) || !Number.isFinite(total) || total <= 0) return "–";
-      return (100 * votes / total).toFixed(1) + "%";
-    },
     ...mapMutations([
       "updateVoteSums",
       "updateVoteTable",
-      "updateSystems",
-      "updateSimSettings",
       "serverError",
       "setWaitingForData",
       "clearWaitingForData",
@@ -567,93 +330,29 @@ export default {
       "uploadAll",
     ]),
     deleteParty: function (index) {
-      this.vote_table.parties.splice(index, 1)
-      for (let con in this.vote_table.votes) {
-        this.vote_table.votes[con].splice(index, 1)
-      }
-      if (this.vote_table.party_vote_info.specified)
-        this.vote_table.party_vote_info.votes.splice(index, 1)
+      removeParty(this.vote_table, index)
     },
     deleteConstituency: function (index) {
-      this.vote_table.constituencies.splice(index, 1);
-      this.vote_table.votes.splice(index, 1)
-      this.vote_table.pruned.splice(index, 1)
+      removeConstituency(this.vote_table, index)
     },
     addParty: function () {
-      this.vote_table.parties.push("");
-      for (let con in this.vote_table.votes) {
-        this.vote_table.votes[con].push(1);
-      }
-      if (this.vote_table.party_vote_info.specified)
-        this.vote_table.party_vote_info.votes.push(1)
+      addParty(this.vote_table)
     },
     addConstituency: function () {
-      this.vote_table.constituencies.push({
-        name: "–",
-        num_fixed_seats: 1,
-        num_adj_seats: 1,
-      });
-      this.vote_table.votes.push(
-        Array(this.vote_table.parties.length).fill(1));
-      this.vote_table.pruned.push(0)
+      addConstituency(this.vote_table)
     },
     pruneSmallParties: function () {
-      let threshold = Number(this.prune_percent)
-      if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
-        this.serverError("Small party cutoff must be a number from 0 to 100")
-        return
+      const result = pruneSmallParties(this.vote_table, this.prune_percent)
+      if (result.error) this.serverError(result.error)
+      if (result.changed) {
+        this.updateVoteSums()
+        this.addBeforeunload()
       }
-      if (this.vote_table.parties.length == 0 || this.vote_table.votes.length == 0) {
-        return
-      }
-      let party_totals = this.vote_table.parties.map((_, partyidx) =>
-        this.vote_table.votes.reduce((total, row) => total + row[partyidx], 0)
-      )
-      let total_votes = party_totals.reduce((a, b) => a + b, 0)
-        + this.vote_table.pruned.reduce((a, b) => a + b, 0)
-      if (total_votes <= 0) {
-        return
-      }
-      let keep = party_totals.map(total => total/total_votes*100 >= threshold)
-      if (!keep.some(Boolean)) {
-        this.serverError("Small party cutoff would remove all parties")
-        return
-      }
-      if (keep.every(Boolean)) {
-        return
-      }
-      this.vote_table.pruned = this.vote_table.votes.map(
-        (row, conidx) => this.vote_table.pruned[conidx]
-          + row.reduce(
-            (total, votes, partyidx) => total + (keep[partyidx] ? 0 : votes),
-            0
-          )
-      )
-      this.vote_table.parties = this.vote_table.parties.filter((_, partyidx) => keep[partyidx])
-      this.vote_table.votes = this.vote_table.votes.map(row =>
-        row.filter((_, partyidx) => keep[partyidx])
-      )
-      if (this.vote_table.party_vote_info.specified) {
-        this.vote_table.party_vote_info.pruned +=
-          this.vote_table.party_vote_info.votes.reduce(
-            (total, votes, partyidx) => total + (keep[partyidx] ? 0 : votes),
-            0
-          )
-        this.vote_table.party_vote_info.votes =
-          this.vote_table.party_vote_info.votes.filter((_, partyidx) => keep[partyidx])
-      }
-      this.updateVoteSums()
-      this.addBeforeunload()
     },
     clearAll: function () {
-      this.vote_table.name = ""
-      this.vote_table.constituencies = []
-      this.vote_table.parties = []
-      this.vote_table.votes = []
-      this.vote_table.pruned = []
-      this.vote_table.party_vote_info.specified = false
-      this.vote_table.party_vote_info.pruned = 0
-      this.vote_table.party_vote_basis = "totals"
+      clearVoteTable(this.vote_table)
+      this.show_party_names = false
+      this.show_max_adj_seats = false
       this.updateVoteSums()
     },
     deletePartyVotes: function () {
@@ -672,6 +371,22 @@ export default {
         pruned: 0,
       }
     },
+    addMaximumAdjustmentSeats: function () {
+      addAdjustmentSeatMaximums(this.vote_table)
+      this.show_max_adj_seats = true
+    },
+    removeMaximumAdjustmentSeats: function () {
+      removeAdjustmentSeatMaximums(this.vote_table)
+      this.show_max_adj_seats = false
+    },
+    addPartyNames: function() {
+      this.$set(
+        this.vote_table,
+        "party_names",
+        Array(this.vote_table.parties.length).fill("")
+      )
+      this.show_party_names = true
+    },
     save: function () {
       var filename = this.vote_table.name.replace('þ', 'th')
       var table = {...this.vote_table, name: filename}
@@ -686,18 +401,21 @@ export default {
     loadPreset: function (_, election_id) {
       this.$refs.modalpresetref.hide();
       this.setWaitingForData()
-      console.log('election_id', election_id)
       this.$http.post("api/presets/load/", {election_id: election_id }).then(
         (response) => {
           if (!response.body || response.body.error) {
             this.serverError(response.body) 
           } else {
-            console.log("body=", response.body)
-            console.log("data=", response.data)
             this.updateVoteTable(response.data)
-            this.clearWaitingForData()
+            this.show_party_names = false
           }
-        })
+          this.clearWaitingForData()
+        },
+        (response) => {
+          this.serverError(response.status)
+          this.clearWaitingForData()
+        }
+      )
     },
     loadVotes: function() {
       this.setWaitingForData()
@@ -709,9 +427,15 @@ export default {
             this.serverError(response.body) 
           } else {
             this.updateVoteTable(response.data)
-            this.clearWaitingForData()
+            this.show_party_names = false
           }
-        })
+          this.clearWaitingForData()
+        },
+        (response) => {
+          this.serverError(response.status)
+          this.clearWaitingForData()
+        }
+      )
     },
     loadAll: function() {
       var formData = new FormData();
@@ -719,31 +443,25 @@ export default {
       this.uploadAll(formData)
     },
     checkVoteSeats: function() {
-      return this.vote_table.constituencies.map(({ num_fixed_seats }) => num_fixed_seats).every(function(element) {return typeof element == 'number';})
-          && this.vote_table.constituencies.map(({ num_adj_seats }) => num_adj_seats).every(function(element) {return typeof element == 'number';})
+      return validConstituencySeats(this.vote_table)
     },
     checkVoteInput: function() {
-      for (let element of this.vote_table.votes){
-        let numbers = element.every(function(el) {return typeof el == 'number';})
-        if (numbers == false){
-          return numbers
-        }
-      }
-      return true
+      return validVotes(this.vote_table)
+    },
+    checkVoteLabels: function() {
+      return validVoteTableLabels(this.vote_table)
     },
     checkPartyInput: function() {
-      return this.vote_table.party_vote_info.votes.every(function(element) {return typeof element == 'number';})
-          && typeof this.vote_table.party_vote_info.num_adj_seats == 'number'
-          && typeof this.vote_table.party_vote_info.num_fixed_seats == 'number'
+      return validNationalVotes(this.vote_table)
     }
 },
   watch: {
     vote_table: {
       handler: function () {
-        console.log('vote_table changed')
-        console.log(this.vote_table.name)
+        this.show_max_adj_seats = Object.prototype.hasOwnProperty.call(
+          this.vote_table, "max_total_adj_seats"
+        )
         if (!this.waiting_for_data) {
-          console.log("watching vote_table")
           this.addBeforeunload()
           this.updateVoteSums()
         }

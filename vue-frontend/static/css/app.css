@@ -189,7 +189,17 @@ th {
 }
 
 .compact-select.simulation-distribution-select {
-  width: 190px;
+  width: 247px;
+}
+
+.party-names-table th,
+.party-names-table td {
+  vertical-align: middle;
+}
+
+.party-names-table td input {
+  border: 0;
+  background: none;
 }
 
 .simulation-settings-layout > div {
@@ -393,4 +403,7 @@ measures {
 
 .noborder {
   border: 0
+}
+.split-adjustment-button {
+  font-size: 1.15em;
 }

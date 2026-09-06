@@ -300,11 +300,15 @@ def main():
             )
         rows.append(row)
 
-    fieldnames = ["Kjördæmi", "fixed", "adj"]
-    fieldnames.extend(short_party_name(code, party_labels) for code in parties)
+    party_columns = [short_party_name(code, party_labels) for code in parties]
+    fieldnames = ["Kjördæmi", "fixed", "adj", *party_columns]
     with open(out, "w", encoding="utf-8", newline="") as fd:
-        writer = csv.DictWriter(fd, fieldnames=fieldnames)
+        writer = csv.DictWriter(fd, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
+        writer.writerow({
+            "Kjördæmi": "Party names",
+            **dict(zip(party_columns, (party_labels.get(code, code) for code in parties))),
+        })
         writer.writerows(rows)
     print(f"Wrote {len(rows)} districts and {len(parties)} parties to {out}")
     write_party_abbreviations(abbr_out, parties, party_labels)

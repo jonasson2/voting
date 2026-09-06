@@ -6,6 +6,7 @@ import os
 import configparser
 import codecs
 from traceback import format_exc
+from vote_table import add_empty_party_votes, process_vote_table
 #from flask import jsonify
 
 class infeasible_error(ValueError):
@@ -157,103 +158,6 @@ def correct_deprecated(L):
             if sys["adjustment_method"] == old:
                 sys["adjustment_method"] = new
     return L
-
-def add_empty_party_votes(vote_table):
-    vote_table["party_vote_info"] = {
-        "name": "–",
-        "num_fixed_seats": 0,
-        "num_adj_seats": 0,
-        "votes": [],
-        "specified": False,
-        "total": 0,
-        "pruned": 0
-    }
-    return vote_table;
-
-def process_vote_table(rows, filename):
-
-    # ERROR CHECKING
-    row_lengths = [len(row) for row in rows]
-    if min(row_lengths) < max(row_lengths):
-        return 'Not all rows have equal length'
-    if row_lengths[0] < 2:
-        return 'Fewer than two columns'
-    elif len(rows) < 2:
-        return 'Only one row'
-    toprow = rows[0]
-    print("toprow:", toprow)
-    if  toprow[1].lower() not in ["fixed", "cons"]:
-        return 'Heading of second column must be "fixed" (for fixed seats)'
-    if  toprow[2].lower() != "adj":
-        return 'Heading of third column must be "adj" (for adjustment seats)'
-    has_pruned = str(toprow[-1]).strip().lower() == "pruned"
-    party_end = -1 if has_pruned else len(toprow)
-    if not all(toprow[3:party_end]):
-        return 'Some party names are blank'
-
-    second_last_blank = all(x is None for x in rows[-2])
-    num_const = len(rows) - (3 if second_last_blank else 1)
-        
-    if not all(l[0] for l in rows[1:num_const+1]):
-        return 'Some constituency names are blank'
-    if second_last_blank and rows[-1][0] is None:
-        return 'The party vote name is blank'
-    
-    for row in rows[1:]:
-        for i in range(3,len(row)):
-            if row[i] is None:
-                row[i] = 0
-            elif isPosInt(row[i]):
-                row[i] = int(row[i])
-            else:
-                return 'All votes must be non-negative integer numbers, e.g. no values obtained by formulas'
-
-    # BUILD A DICTIONARY RES WITH ALL VOTING INFORMATION
-    res = {}
-    num_const = len(rows) - (3 if second_last_blank else 1)    
-    res["votes"] = [
-        [parsint(v) for v in row[3:party_end]]
-        for row in rows[1:num_const+1]
-    ]
-    res["parties"] = rows[0][3:party_end]
-    res["pruned"] = ([parsint(row[-1]) for row in rows[1:num_const+1]]
-                     if has_pruned else [0] * num_const)
-
-    res["constituencies"] = [{
-        "name": row[0],
-        "num_fixed_seats": parsint(row[1]),
-        "num_adj_seats": parsint(row[2])
-    } for row in rows[1:num_const+1]]
-
-    res["name"] = determine_table_name(rows[0][0], filename)
-    
-    if second_last_blank:
-        party_vote_info = rows[-1][3:party_end]
-        party_pruned = parsint(rows[-1][-1]) if has_pruned else 0
-        res["party_vote_info"] = {
-            "name": rows[-1][0],
-            "num_fixed_seats": rows[-1][1],
-            "num_adj_seats": rows[-1][2],
-            "votes": party_vote_info if any(party_vote_info) else [""]*len(party_vote_info),
-            "specified": True,
-            "total": (sum(party_vote_info) + party_pruned
-                      if any(party_vote_info) or party_pruned else ""),
-            "pruned": party_pruned
-        }
-        if res["party_vote_info"]["num_fixed_seats"] is None:
-            res["party_vote_info"]["num_fixed_seats"] = 0
-        if res["party_vote_info"]["num_adj_seats"] is None:
-            res["party_vote_info"]["num_adj_seats"] = 0
-    else:
-        res = add_empty_party_votes(res)
-    return res
-
-def parsint(value):
-    #print(value)
-    return int(value) if value else 0
-
-def determine_table_name(first,filename):
-    return first if first is not None else os.path.basename(os.path.splitext(filename)[0])
 
 def hms(sec):
     # Turn seconds into xxx days hh:mm:ss

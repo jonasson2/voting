@@ -131,7 +131,7 @@ SEAT_SPECIFICATION_OPTIONS = {
 }
 
 GENERATING_METHOD_NAMES = [
-    {"value": "log-normal", "text": "Log-normal distribution"},
+    {"value": "log-normal", "text": "Lognormal distribution"},
     {"value": "gamma",   "text": "Gamma distribution"},
     {"value": "beta",    "text": "Symmetric beta distribution"},
     {"value": "uniform", "text": "Uniform distribution"},
