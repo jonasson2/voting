@@ -2,12 +2,12 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 main|dev|dec25" >&2
+  echo "Usage: $0 main|dec25" >&2
   exit 2
 }
 
 case "${1:-}" in
-  main|dev|dec25) ;;
+  main|dec25) ;;
   *) usage ;;
 esac
 
