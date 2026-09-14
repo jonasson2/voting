@@ -1,0 +1,136 @@
+Danish allocation discussion
+============================
+
+This note preserves the design discussion for a future Danish-law
+implementation. No Danish implementation has been started yet.
+
+Basic structure
+---------------
+
+The Danish part of the Folketing has 175 seats: 135 constituency seats and
+40 compensatory seats. The four seats elected in the Faroe Islands and
+Greenland are outside this allocation.
+
+Denmark has three regions (landsdele) containing ten constituencies
+(storkredse). A lower geographical level is the nomination district
+(opstillingskreds). The simulator should use the English labels "region",
+"constituency", and "nomination district"; "multi-member" is unnecessary in
+the constituency label.
+
+The three regions are:
+
+* Hovedstaden
+* Sjælland-Syddanmark
+* Midtjylland-Nordjylland
+
+Input-table direction
+---------------------
+
+The vote table remains two-dimensional: one row per constituency and one
+column per party. Add a region identifier to each constituency rather than
+introducing separate vote-table panels. A small region table below the main
+table can map identifiers to names and hold the number of compensatory seats
+assigned to each region.
+
+Use the flexible adjustment-seat representation already introduced for
+Sweden:
+
+* minimum adjustment seats in every constituency: 0
+* maximum adjustment seats in every constituency: blank/infinity
+* exact national adjustment-seat total: 40
+
+Region-level totals add an intermediate constraint: the 40 compensatory
+seats are first divided among the three regions and subsequently among the
+constituencies in each region.
+
+National party votes should be disallowed when region data are present. The
+regional and national calculations should use sums of constituency votes.
+
+Independent candidates need an explicit representation in real-election
+input because they do not participate like nationwide parties. They should
+be excluded from generated simulations. The exact file marker and
+single-election handling remain to be designed.
+
+Electoral-system pipeline
+-------------------------
+
+The agreed general pipeline has five stages:
+
+1. Allocate fixed seats in constituencies.
+2. Apportion total seats to parties.
+3. Apply any required overhang rule while determining feasible party totals.
+4. Prepare for adjustment-seat allocation.
+5. Allocate adjustment seats to constituency lists.
+
+The fourth tab-2 heading is "Prepare for adjustment-seat allocation" and the
+fifth is "Allocation of adjustment seats to lists".
+
+For ordinary existing systems, stage 4 is "Not applicable". For Sweden,
+stage 4 performs Swedish switching. For Denmark, stage 4 will allocate each
+party's compensatory-seat entitlement among the three regions. Stage 5 will
+then place those seats in the constituencies while observing the region
+totals.
+
+There must be only one adjustment-seat allocator. The former secondary or
+"additional" allocator is being removed. The primary allocator must either
+handle flexible constituency bounds itself or reject them before allocation.
+This is the right foundation for the future Danish stage 5.
+
+National party totals and overhang
+----------------------------------
+
+After constituency seats and compensation eligibility have been determined,
+the eligible parties' national seat totals are calculated by the Hare quota,
+equivalently the largest-remainder method: allocate the integer parts of the
+quotas and allocate the remaining seats in descending order of fractional
+remainders.
+
+At that point f[p] is party p's constituency-seat count and t[p] is its
+calculated national total. If f[p] > t[p], the party keeps its constituency
+seats, is fixed at f[p], and is removed from the next calculation. Recompute
+the national totals for the remaining parties and remaining seats. Repeat
+until every remaining party satisfies f[p] <= t[p]. An iteration can expose a
+new overhang, so this is genuinely iterative.
+
+The simulator normally describes party-total allocation as starting from
+zero. That wording need not be added to the UI for Denmark; it is already the
+normal interpretation of this stage.
+
+The legal allocation after national party totals
+-------------------------------------------------
+
+The remaining statutory formulas still need to be transcribed and tested
+carefully before implementation:
+
+* allocation of each party's compensatory seats among the three regions;
+* allocation from each region to its constituencies;
+* the precise eligibility tests for compensatory seats;
+* treatment of independent candidates and votes not participating in the
+  compensatory allocation;
+* statutory tie handling;
+* the special advance-allocation provision in section 78 when a party's
+  absence from a region would otherwise prevent filling its entitlement.
+
+The section 78 rule resembles the simulator's historical forced-allocation
+idea but has not been established as equivalent. The initial implementation
+should report a clear single-election error if this exceptional provision is
+needed. Generated simulations may assume that every simulated party has
+positive votes in every constituency.
+
+Implementation sequence
+-----------------------
+
+1. Finalize the region metadata and independent-candidate file format.
+2. Add parsing, validation, editing, download, and round-trip tests for region
+   data without changing election calculations.
+3. Implement Danish fixed-seat allocation and compensation eligibility with
+   small legal examples.
+4. Implement iterative national Hare/largest-remainder totals and overhang
+   handling as a separately tested operation.
+5. Implement region allocation as a preparation method.
+6. Extend the sole adjustment-seat allocator to enforce region totals and
+   flexible constituency bounds.
+7. Add official-election regression fixtures and simulation tests.
+
+Before coding stages 3-6, verify every formula and the exceptional cases
+against the current Danish election law or an authoritative official manual.

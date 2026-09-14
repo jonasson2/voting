@@ -1,8 +1,6 @@
 # import logging
 from datetime import datetime
 from measure_groups import MeasureGroups, function_dict, function_dict_party
-import dictionaries as dicts
-import random
 from voting import Election
 from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
 from dictionaries import HISTOGRAM_MEASURES, PARTY_MEASURES
@@ -11,11 +9,11 @@ from electionHandler import ElectionHandler
 from generate_votes import generate_votes, generate_corr_votes
 from running_stats import Running_stats
 #from system import System
-from table_util import add_totals, find_percentages, m_subtract, find_bias, add_total
+from table_util import add_totals, find_percentages, find_bias
 from table_util import np_add_total, np_add_totals
-from util import hms, shape, average, count
-from copy import deepcopy, copy
-from util import disp, dispv, remove_prefix, sum_abs_diff
+from util import hms, count
+from copy import copy
+from util import remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
 import numpy as np
@@ -370,10 +368,10 @@ class Simulation():
     def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:
             option = remove_prefix(measure, "dev_")
-            if (system["additional_adjustment_method"] != "none"
-                    and option != "all_adj"):
-                # These counterfactual layouts do not define where the
-                # additional national seat pool belongs.
+            preparation = system.get("adjustment_preparation_method", "none")
+            if preparation != "none" or election.has_flexible_adj_seats:
+                # These counterfactual layouts do not define how a preparation
+                # stage or constituency seat ranges should be changed.
                 self.add_deviation(
                     election, election, measure, deviations)
                 continue
@@ -381,12 +379,7 @@ class Simulation():
             comparison_election = Election(comparison_system,
                                            election.votes,
                                            election.party_vote_info,
-                                           pruned_votes=election.pruned_votes,
-                                           adjustment_seat_info={
-                                               "total": election.additional_total_seats,
-                                               "max_per_const":
-                                                   election.additional_max_per_const,
-                                           })
+                                           pruned_votes=election.pruned_votes)
             comparison_election.assign_seats()
             self.add_deviation(election, comparison_election, measure, deviations)
 
@@ -645,7 +638,6 @@ class Sim_result:
         # bara við að skrifa eitt vote_data.
 
     def find_datadict(self, statentry, stat_list):
-        from math import sqrt
         stat_function = {
             "avg": statentry.mean,
             "std": statentry.std,
@@ -657,7 +649,6 @@ class Sim_result:
             "max": statentry.maximum
         }
         datadict = {}
-        nsim = self.iteration
         for stat in stat_list:
             datadict[stat] = stat_function[stat]()
         return datadict

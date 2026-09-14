@@ -1,7 +1,5 @@
 import numpy as np
 
-from apportion import apportion1d_general
-
 
 def _divisors(divisor_gen, count):
     generator = divisor_gen()
@@ -15,12 +13,14 @@ def _eligible(shares, threshold):
 def switching(
         m_votes, v_desired_row_sums, v_desired_col_sums,
         m_prior_allocations, divisor_gen, **kwargs):
-    """Allocate and reconcile Swedish constituency seats."""
+    """Return overhang seats and reassign them within their constituencies."""
     votes = np.asarray(m_votes, dtype=float)
     row_totals = np.asarray(v_desired_row_sums, dtype=int)
+    party_totals = np.asarray(v_desired_col_sums, dtype=int)
     prior = np.asarray(m_prior_allocations, dtype=int)
-    if prior.any():
-        raise ValueError("Swedish switching requires zero prior allocations.")
+    if not np.array_equal(prior.sum(axis=1), row_totals):
+        raise ValueError(
+            "Swedish switching requires a complete constituency-seat allocation.")
 
     nat_votes = np.asarray(kwargs.get("nat_votes", votes.sum(axis=0)), dtype=float)
     nat_threshold_total = kwargs.get("nat_threshold_total", nat_votes.sum())
@@ -28,8 +28,7 @@ def switching(
         kwargs.get("const_threshold_totals", votes.sum(axis=1)), dtype=float)
     national_threshold = kwargs.get("national_threshold", 0)
     local_threshold = kwargs.get("local_threshold", 0)
-    party_divisor_gen = kwargs.get("party_divisor_gen", divisor_gen)
-    total_seats = kwargs.get("total_seats", int(np.sum(v_desired_col_sums)))
+    total_seats = kwargs.get("total_seats", int(party_totals.sum()))
 
     national_shares = (
         nat_votes / nat_threshold_total
@@ -45,36 +44,8 @@ def switching(
     list_eligible = nationally_eligible[None, :] | _eligible(
         local_shares, local_threshold)
 
-    allocation = np.zeros_like(prior)
-    for c, seats in enumerate(row_totals):
-        eligible_votes = np.where(list_eligible[c], votes[c], 0)
-        if seats and not eligible_votes.any():
-            raise ValueError(
-                f"No party qualifies for constituency seat allocation in row {c}.")
-        allocation[c], _, _ = apportion1d_general(
-            v_votes=eligible_votes,
-            num_total_seats=int(seats),
-            prior_allocations=[],
-            rule=divisor_gen,
-        )
-
+    allocation = prior.copy()
     initial = allocation.copy()
-    local_only = ~nationally_eligible
-    protected_totals = np.where(local_only, initial.sum(axis=0), 0)
-    nationally_apportioned = total_seats - int(protected_totals.sum())
-    if nationally_apportioned < 0:
-        raise ValueError("Locally qualified seats exceed the total seat count.")
-    if nationally_apportioned and not nationally_eligible.any():
-        raise ValueError("No party qualifies for national seat apportionment.")
-
-    national_allocation, _, _ = apportion1d_general(
-        v_votes=np.where(nationally_eligible, nat_votes, 0),
-        num_total_seats=nationally_apportioned,
-        prior_allocations=[],
-        rule=party_divisor_gen,
-    )
-    party_totals = np.asarray(national_allocation, dtype=int) + protected_totals
-
     divisors = _divisors(divisor_gen, max(total_seats, int(row_totals.max())))
     vacancies = []
     for p in np.flatnonzero(allocation.sum(axis=0) > party_totals):

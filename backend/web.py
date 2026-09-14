@@ -1,19 +1,15 @@
-import os, tempfile, json, csv
+import os, tempfile, json
 from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
-from io import StringIO
+from datetime import datetime
 from traceback import format_exc
-from multiprocessing import Pool
 
 import dictionaries, simulate
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from input_util import check_input, check_systems
 from input_util import check_simul_settings
-from util import disp, get_cpu_counts
-from util import timestamp, timestampmsg
+from util import get_cpu_counts
 from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election
 from noweb import new_simulation, check_simulation
@@ -123,8 +119,8 @@ def api_settings_save():
             "compare_with",
             "constituency_threshold", #"constituency_allocation_rule",
             "adjustment_threshold", #"adjustment_division_rule",
+            "adjustment_preparation_method",
             "adjustment_method", #"adjustment_allocation_rule",
-            "additional_adjustment_method",
             "nat_seats"
         ]
         names = []
@@ -134,9 +130,9 @@ def api_settings_save():
             item = {key: system[key] for key in keys}
             item["constituency_allocation_rule"] = system["primary_divider"]
             item["adjustment_division_rule"] = system["adj_determine_divider"]
+            item["adjustment_preparation_rule"] = \
+                system["adj_preparation_divider"]
             item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
-            item["additional_adjustment_allocation_rule"] = \
-                system["additional_adj_alloc_divider"]
             item["nat_seats"] = system["nat_seats"]
             electoral_system_list.append(item)
         file_content = {
@@ -195,7 +191,7 @@ def api_votes_uploadall():
         elif set(content) == {"systems", "sim_settings", "vote_table"}:
             return jsonify(content)
         else:
-            return errormsg(f'Not a legal json-file for "Load all"')
+            return errormsg('Not a legal json-file for "Load all"')
     except Exception:
         return errormsg()
 
@@ -221,7 +217,6 @@ def api_presets_load():
         idx = election_id
         preset = presets_dict[idx]
         name = f'{preset["Country"]}-{preset["Name"]}-{preset["Year"]}'
-        #print('name=', name)
         filename = "../data/" + presets_dict[idx]['filename']
         result = load_votes(filename)
         result["name"] = name
@@ -251,7 +246,6 @@ def api_simulate():
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)
-        #print(f"{timestamp()}: started simulation {simid}")
         return jsonify({"started": True, "simid": simid})
     except ValueError as e:
         return errormsg(f"Error: {e}")
@@ -262,14 +256,11 @@ def api_simulate():
 def api_simulate_check():
     try:
         (simid,stop) = getparam("simid", "stop")
-        #print(f"{timestamp()}: checking simulation {simid[:5]}")
         (status, results) = check_simulation(simid, stop)
         if status['done'] and not results:
             raise RuntimeError('Results unavailable')
-        #print(f"{timestamp()}: checked simulation {simid[:5]}, status: {status}")
         return jsonify({"status": status, "results": results})
     except Exception:
-        print('CAUGHT EXCEPTION')
         return errormsg()
 
 @app.route('/api/capabilities/', methods=["POST"])
@@ -286,8 +277,8 @@ def api_capabilities():
                 "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
                 "cpu_counts": get_cpu_counts(),
                 "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
-                "additional_adjustment_methods":
-                    dictionaries.ADDITIONAL_ADJUSTMENT_METHOD_NAMES,
+                "adjustment_preparation_methods":
+                    dictionaries.ADJUSTMENT_PREPARATION_METHOD_NAMES,
                 "election_law_presets": dictionaries.ELECTION_LAW_PRESETS,
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,

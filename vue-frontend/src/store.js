@@ -3,11 +3,11 @@ import Vuex from "vuex"
 import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 
 function normalizeSystem(system) {
-  if (system.additional_adjustment_method === undefined) {
-    system.additional_adjustment_method = 'none'
+  if (system.adjustment_preparation_method === undefined) {
+    system.adjustment_preparation_method = 'none'
   }
-  if (system.additional_adj_alloc_divider === undefined) {
-    system.additional_adj_alloc_divider = 'sainte-lague'
+  if (system.adj_preparation_divider === undefined) {
+    system.adj_preparation_divider = 'sainte-lague'
   }
   return system
 }
@@ -89,16 +89,16 @@ const store = new Vuex.Store({
       if (idx > 0) {
         system.primary_divider = state.systems[idx-1].primary_divider
         system.adj_determine_divider = state.systems[idx-1].adj_determine_divider
+        system.adjustment_preparation_method =
+          state.systems[idx-1].adjustment_preparation_method
+        system.adj_preparation_divider =
+          state.systems[idx-1].adj_preparation_divider
         system.adj_alloc_divider = state.systems[idx-1].adj_alloc_divider
-        system.additional_adj_alloc_divider =
-          state.systems[idx-1].additional_adj_alloc_divider
         system.adjustment_threshold = state.systems[idx-1].adjustment_threshold
         system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
         system.adjustment_method = state.systems[idx-1].adjustment_method
-        system.additional_adjustment_method =
-          state.systems[idx-1].additional_adjustment_method
         system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
         system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
         system.compare_with = state.systems[idx-1].compare_with

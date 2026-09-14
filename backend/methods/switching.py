@@ -1,6 +1,5 @@
 from apportion import apportion1d_general
 import numpy as np
-from numpy import argmin, flatnonzero as find
 from copy import deepcopy
 
 def min_with_index(x, I=None):
@@ -32,7 +31,9 @@ def switching(m_votes,
     max_party = np.array(v_desired_col_sums)
     num_constituencies = len(v_desired_row_sums)
     num_parties        = len(v_desired_col_sums)
-    assert(sum(max_party) >= sum(desired_const))
+    if sum(max_party) < sum(desired_const):
+        raise ValueError(
+            "Party-seat totals are below the constituency-seat total.")
 
     # CALCULATE DIVISORS
     N = max(max(desired_const), max(max_party)) + 1
@@ -44,9 +45,6 @@ def switching(m_votes,
     temp_votes = deepcopy(votes)
     full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
     temp_votes[:,full] = 0
-    print("IN SWITCHING.PY");
-    print("votes=", votes);
-    print("temp_votes=", temp_votes);
     for c in range(num_constituencies):
         alloc_const, _,_ = apportion1d_general(
             v_votes = list(temp_votes[c,:]),
@@ -122,7 +120,7 @@ def switching(m_votes,
     stepbystep = {
         "data": steps,
         "function": print_demo_table1,
-        "additional_function": print_demo_table2
+        "functions": [print_demo_table1, print_demo_table2],
     }
     return alloc, stepbystep
 

@@ -12,7 +12,7 @@ from methods.common_methods import max_const_seat_share
 from methods.common_methods import max_absolute_margin
 from methods.common_methods import max_relative_margin
 
-from methods.alternating_scaling import alt_scaling, alt_scaling_old
+from methods.alternating_scaling import alt_scaling
 from methods.icelandic_law import icelandic_apportionment
 from methods.seats_p_unbounded import seats_p_unbounded
 from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
@@ -94,10 +94,10 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 0,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "adjustment_preparation_method": "none",
+            "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "adjustment-as-fixed",
             "adj_alloc_divider": "dhondt",
-            "additional_adjustment_method": "none",
-            "additional_adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
         },
     },
@@ -111,10 +111,10 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 5,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "adjustment_preparation_method": "none",
+            "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "icelandic-law",
             "adj_alloc_divider": "dhondt",
-            "additional_adjustment_method": "none",
-            "additional_adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
         },
     },
@@ -128,10 +128,10 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "adjustment_preparation_method": "none",
+            "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "norwegian-law",
             "adj_alloc_divider": "sainte-lague",
-            "additional_adjustment_method": "none",
-            "additional_adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
         },
     },
@@ -145,11 +145,11 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "adjustment_method": "switching_se",
-            "adj_alloc_divider": "nordic-1.4",
-            "additional_adjustment_method": "max-const-votes",
-            "additional_adj_alloc_divider": "sainte-lague",
-            "constituency_seat_specification": "make_const_adj",
+            "adjustment_preparation_method": "switching_se",
+            "adj_preparation_divider": "nordic-1.4",
+            "adjustment_method": "max-const-votes",
+            "adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "refer",
         },
     },
     {
@@ -162,11 +162,11 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "adjustment_method": "switching_se",
-            "adj_alloc_divider": "nordic-1.2",
-            "additional_adjustment_method": "max-const-votes",
-            "additional_adj_alloc_divider": "sainte-lague",
-            "constituency_seat_specification": "make_const_adj",
+            "adjustment_preparation_method": "switching_se",
+            "adj_preparation_divider": "nordic-1.2",
+            "adjustment_method": "max-const-votes",
+            "adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "refer",
         },
     },
 ]
@@ -186,14 +186,14 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
     # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching_se",              "text": "Swedish switching"},
+    {"value": "max-const-votes",           "text": "Maximum constituency votes"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 
-ADDITIONAL_ADJUSTMENT_METHOD_NAMES = [
-    {"value": "none", "text": "None"},
-    {"value": "max-const-votes", "text": "Maximum constituency votes"},
+ADJUSTMENT_PREPARATION_METHOD_NAMES = [
+    {"value": "none", "text": "Not applicable"},
+    {"value": "switching_se", "text": "Swedish switching"},
 ]
 
 DEMO_TABLE_FORMATS = {
@@ -210,7 +210,7 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
-    "switching_se":              "clss33",
+    "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     #"gurobi":                    "",
     }
@@ -235,12 +235,12 @@ SEAT_SPECIFICATION_OPTIONS = {
     ]
 }
 
-ADDITIONAL_ADJUSTMENT_METHODS = {
-    "max-const-votes": max_const_votes,
+ADJUSTMENT_PREPARATION_METHODS = {
+    "switching_se": switching_se,
 }
 
-ADDITIONAL_DEMO_TABLE_FORMATS = {
-    "max-const-votes": "clsl3",
+ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS = {
+    "switching_se": "clss33",
 }
 
 GENERATING_METHOD_NAMES = [
@@ -290,11 +290,13 @@ ADJUSTMENT_METHODS = {
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,
-    "switching_se":              switching_se,
+    "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     # "gurobi":                    gurobi_optimal,
     # "monge": monge,
 }
+
+FLEXIBLE_ADJUSTMENT_METHODS = {"max-const-votes"}
 
 GENERATING_METHODS = {
     "log-normal": log_normal_distribution,

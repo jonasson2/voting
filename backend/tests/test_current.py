@@ -12,16 +12,16 @@ from unittest.mock import patch
 import numpy as np
 
 from apportion import apportion1d_general, threshold_drop
-from dictionaries import DIVIDER_RULES, ELECTION_LAW_PRESETS
+from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
-from input_util import check_vote_table
 from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
+from vote_table import check_vote_table
 import web
 from web import app
 
@@ -35,13 +35,13 @@ class CurrentApplicationTest(unittest.TestCase):
         return system
 
     def make_swedish_system(self, table, divider='nordic-1.2'):
-        system = self.make_system(table, 'switching_se', threshold=4)
-        system['seat_spec_options']['const'] = 'make_const_adj'
+        system = self.make_system(table, 'max-const-votes', threshold=4)
+        system['primary_divider'] = divider
         system['adj_determine_divider'] = divider
-        system['adj_alloc_divider'] = divider
+        system['adjustment_preparation_method'] = 'switching_se'
+        system['adj_preparation_divider'] = divider
+        system['adj_alloc_divider'] = 'sainte-lague'
         system['constituency_threshold'] = 12
-        system['additional_adjustment_method'] = 'max-const-votes'
-        system['additional_adj_alloc_divider'] = 'sainte-lague'
         return system
 
     def test_wsgi_import_initializes_simulation_state(self):
@@ -78,8 +78,7 @@ class CurrentApplicationTest(unittest.TestCase):
         noweb.create_SIMULATIONS()
         with patch.object(noweb, 'Thread', FakeThread), \
              patch.object(noweb, 'Simulation', return_value=object()), \
-             patch.object(noweb.par_util, 'get_id', return_value='single-cpu'), \
-             patch.object(noweb, 'terminate_old_simulations'):
+             patch.object(noweb.par_util, 'get_id', return_value='single-cpu'):
             simid = noweb.new_simulation(
                 votes={}, systems=[],
                 sim_settings={'cpu_count': 1},
@@ -285,17 +284,22 @@ class CurrentApplicationTest(unittest.TestCase):
         )
         self.assertEqual(
             (presets['sweden-2014']['constituency_threshold'],
-             presets['sweden-2014']['adj_alloc_divider']),
-            (12, 'nordic-1.4'),
+             presets['sweden-2014']['adj_preparation_divider'],
+             presets['sweden-2014']['adjustment_method'],
+             presets['sweden-2014']['constituency_seat_specification']),
+            (12, 'nordic-1.4', 'max-const-votes', 'refer'),
         )
         self.assertEqual(
             (presets['sweden-2018']['constituency_threshold'],
-             presets['sweden-2018']['adj_alloc_divider']),
-            (12, 'nordic-1.2'),
+             presets['sweden-2018']['adj_preparation_divider'],
+             presets['sweden-2018']['adjustment_method'],
+             presets['sweden-2018']['constituency_seat_specification']),
+            (12, 'nordic-1.2', 'max-const-votes', 'refer'),
         )
         forbidden = {
             'constituencies', 'num_fixed_seats', 'num_adj_seats',
             'max_adj_seats', 'max_total_adj_seats',
+            'additional_adjustment_method', 'additional_adj_alloc_divider',
         }
         for settings in presets.values():
             self.assertTrue(forbidden.isdisjoint(settings))
@@ -479,7 +483,7 @@ class CurrentApplicationTest(unittest.TestCase):
         unchanged = np.argwhere(
             (np.asarray(election.results['all_const_seats']) > 0)
             & (election.switching_seat_changes == 0)
-            & (election.additional_seat_allocations == 0)
+            & (election.adjustment_seat_allocations == 0)
         )[0]
         c, p = map(int, unchanged)
         self.assertEqual(
@@ -504,43 +508,82 @@ class CurrentApplicationTest(unittest.TestCase):
         allocation, steps = swedish_switching(
             [[1, 1], [24, 1]],
             [3, 3],
-            [4, 4],
-            np.zeros((2, 2), dtype=int),
+            [3, 3],
+            np.array([[1, 2], [3, 0]], dtype=int),
             DIVIDER_RULES['nordic-1.2'],
             nat_votes=np.array([25, 2]),
-            total_seats=8,
-            party_divisor_gen=DIVIDER_RULES['nordic-1.2'],
+            total_seats=6,
         )
-        np.testing.assert_array_equal(allocation, [[3, 0], [3, 0]])
-        np.testing.assert_array_equal(steps['party_totals'], [8, 0])
+        np.testing.assert_array_equal(allocation, [[0, 3], [3, 0]])
+        np.testing.assert_array_equal(steps['party_totals'], [3, 3])
         self.assertEqual(len(steps['data']['switches']), 1)
 
     def test_max_const_votes_respects_constituency_capacity(self):
         allocation, _ = max_const_votes(
-            votes=[[100, 10], [90, 9]],
-            target_party_seats=[2, 2],
-            prior_allocations=[[1, 0], [1, 0]],
-            divisor_gen=DIVIDER_RULES['sainte-lague'],
-            total_seats=2,
-            max_per_const=[0, 2],
+            [[100, 10], [90, 9]],
+            [1, 3],
+            [2, 2],
+            np.array([[1, 0], [1, 0]]),
+            DIVIDER_RULES['sainte-lague'],
+            num_adjustment_seats=2,
+            min_adj_seats=[0, 2],
+            max_adj_seats=[0, 2],
         )
         np.testing.assert_array_equal(allocation, [[1, 0], [1, 2]])
 
-    def test_additional_seats_are_separated_in_standard_display(self):
+    def test_max_const_votes_respects_constituency_minimums(self):
+        allocation, _ = max_const_votes(
+            [[1, 1], [100, 100]],
+            [2, 0],
+            [2, 2],
+            np.zeros((2, 2), dtype=int),
+            DIVIDER_RULES['sainte-lague'],
+            num_adjustment_seats=4,
+            min_adj_seats=[2, 0],
+            max_adj_seats=[None, None],
+        )
+        np.testing.assert_array_equal(allocation.sum(axis=1), [2, 2])
+        np.testing.assert_array_equal(allocation.sum(axis=0), [2, 2])
+
+    def test_max_const_votes_handles_flexible_adjustment_seat_bounds(self):
         table = load_votes('../data/2-by-2-example.csv')
         table['constituencies'][0]['max_adj_seats'] = 3
         table['constituencies'][1]['max_adj_seats'] = 4
         table['max_total_adj_seats'] = 7
+        system = self.make_system(table, 'max-const-votes')
+
+        election = ElectionHandler(table, [system], True).elections[0]
+        adjustment = (
+            np.asarray(election.results['all_const_seats'])
+            - np.asarray(election.results['fixed_const_seats']))
+
+        np.testing.assert_array_equal(adjustment.sum(axis=1), [3, 4])
+        self.assertEqual(int(adjustment.sum()), 7)
+
+    def test_ordinary_method_rejects_flexible_adjustment_seat_bounds(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['constituencies'][0]['max_adj_seats'] = 3
+        table['constituencies'][1]['max_adj_seats'] = None
+        table['max_total_adj_seats'] = 6
+        for method in ADJUSTMENT_METHODS:
+            if method == 'max-const-votes':
+                continue
+            with self.subTest(method=method):
+                system = self.make_system(table, method)
+                with self.assertRaisesRegex(
+                        ValueError, 'does not support constituency ranges'):
+                    ElectionHandler(table, [system], True)
+
+    def test_ordinary_method_accepts_explicit_exact_adjustment_seats(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['constituencies'][0]['max_adj_seats'] = 2
+        table['constituencies'][1]['max_adj_seats'] = 3
+        table['max_total_adj_seats'] = 5
         system = self.make_system(table, 'max-const-seat-share')
-        system['additional_adjustment_method'] = 'max-const-votes'
-        system['additional_adj_alloc_divider'] = 'sainte-lague'
 
         election = ElectionHandler(table, [system], True).elections[0]
 
-        self.assertEqual(
-            election.get_result_web()['display_results'][-1],
-            ['14 (3+1)', '13 (2+1)', '27 (5+2)'],
-        )
+        np.testing.assert_array_equal(election.final_row_sums, [12, 13])
 
     def test_generated_party_names_are_included(self):
         cases = [
@@ -861,6 +904,16 @@ class CurrentApplicationTest(unittest.TestCase):
             [3100, 7200],
         )
 
+    def test_run_elections_accepts_numpy_vote_matrix(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        handler = ElectionHandler(table, [system], use_thresholds=True)
+
+        handler.run_elections(True, votes=np.asarray(table['votes']))
+
+        self.assertEqual(
+            sum(handler.elections[0].results['all_const_total']), 25)
+
     def test_old_vote_tables_default_to_no_pruned_votes(self):
         table = load_votes('../data/2-by-2-example.csv')
         table.pop('pruned')
@@ -938,6 +991,29 @@ class CurrentApplicationTest(unittest.TestCase):
             filename.write_text(json.dumps(contents), encoding='utf-8')
             loaded = load_json(filename)
         self.assertEqual(loaded['vote_table']['party_vote_basis'], 'average')
+
+    def test_settings_download_preserves_adjustment_preparation(self):
+        table = load_votes('../data/sweden_2018.csv')
+        system = self.make_swedish_system(table)
+        system['compare_with'] = False
+        system['nat_seats'] = {
+            'specified': False,
+            'num_fixed_seats': 0,
+            'num_adj_seats': 0,
+        }
+        app.config.update(TESTING=True)
+        response = app.test_client().post('/api/settings/save/', json={
+            'systems': [system],
+            'sim_settings': SimulationSettings(),
+        })
+        saved = json.loads(response.data)
+        saved_system = saved['e_settings'][0]
+        self.assertEqual(
+            saved_system['adjustment_preparation_method'], 'switching_se')
+        self.assertEqual(
+            saved_system['adjustment_preparation_rule'], 'nordic-1.2')
+        self.assertNotIn('additional_adjustment_method', saved_system)
+        self.assertNotIn('additional_adjustment_allocation_rule', saved_system)
 
     def test_fractional_reference_ignores_thresholds_and_divider_rules(self):
         table = {

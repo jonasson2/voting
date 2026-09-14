@@ -5,7 +5,7 @@ from electionSystem import set_custom, set_copy
 from voting import Election
 from input_util import check_systems
 from excel_util import elections_to_xlsx
-from util import disp, remove_prefix
+from util import remove_prefix
 from copy import deepcopy
 
 class ElectionHandler:
@@ -29,7 +29,7 @@ class ElectionHandler:
 
     def run_elections(self, use_thresholds, votes=None, party_votes=None):
         for election in self.elections:
-            if votes:
+            if votes is not None:
                 election.set_votes(votes, party_votes)
             election.assign_seats(use_thresholds)
             
@@ -49,7 +49,7 @@ class ElectionHandler:
                                 pruned_votes=vote_table.get(
                                     "pruned", [0] * len(self.votes)),
                                 adjustment_seat_info=adjustment_seat_info(
-                                    vote_table))
+                                    vote_table, constituencies))
             self.elections.append(election)
 
     def to_xlsx(self, filename):
@@ -84,22 +84,37 @@ def update_constituencies(vote_table, systems):
     return (constituencies, nat_seats)
 
 
-def adjustment_seat_info(vote_table):
+def adjustment_seat_info(vote_table, constituencies):
+    """Return the exact total and constituency bounds for adjustment seats."""
+    minimums = [constituency["num_adj_seats"] for constituency in constituencies]
     if "max_total_adj_seats" not in vote_table:
-        return {"total": 0, "max_per_const": None}
-    minimums = [
-        constituency["num_adj_seats"]
-        for constituency in vote_table["constituencies"]
+        return {
+            "total": sum(minimums),
+            "min_per_const": minimums,
+            "max_per_const": minimums.copy(),
+        }
+
+    source_constituencies = vote_table["constituencies"]
+    source_seats = [
+        (constituency["name"], constituency["num_fixed_seats"],
+         constituency["num_adj_seats"])
+        for constituency in source_constituencies
     ]
-    maxima = [
-        constituency.get("max_adj_seats")
-        for constituency in vote_table["constituencies"]
+    effective_seats = [
+        (constituency["name"], constituency["num_fixed_seats"],
+         constituency["num_adj_seats"])
+        for constituency in constituencies
     ]
-    capacities = [
-        None if maximum is None else maximum - minimum
-        for minimum, maximum in zip(minimums, maxima)
-    ]
+    if source_seats != effective_seats:
+        raise ValueError(
+            "Constituency adjustment-seat ranges cannot be combined with an "
+            "alternative constituency seat specification.")
+
     return {
-        "total": vote_table["max_total_adj_seats"] - sum(minimums),
-        "max_per_const": capacities,
+        "total": vote_table["max_total_adj_seats"],
+        "min_per_const": minimums,
+        "max_per_const": [
+            constituency.get("max_adj_seats")
+            for constituency in source_constituencies
+        ],
     }

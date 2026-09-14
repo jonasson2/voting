@@ -1,9 +1,8 @@
-import json
 from copy import copy, deepcopy
 #from system import System
 #from util import load_constituencies
-from util import disp, remove_prefix
-from dictionaries import DIVIDER_RULES, QUOTA_RULES, ADJUSTMENT_METHODS
+from util import remove_prefix
+from dictionaries import DIVIDER_RULES, QUOTA_RULES
 class ElectionSystem(dict):
     """A set of rules for an election to follow."""
 
@@ -18,9 +17,9 @@ class ElectionSystem(dict):
         self["adjustment_threshold_seats"] = 0
         self["adj_threshold_choice"] = 1
         self["constituency_threshold"] = 0
+        self["adjustment_preparation_method"] = "none"
+        self["adj_preparation_divider"] = "sainte-lague"
         self["adjustment_method"] = "max-const-seat-share"
-        self["additional_adjustment_method"] = "none"
-        self["additional_adj_alloc_divider"] = "sainte-lague"
         self["seat_spec_options"] = {"const": "refer", "party": "totals"}
         self["compare_with"] = False
         self["parties"] = []

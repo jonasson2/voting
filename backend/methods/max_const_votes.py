@@ -2,27 +2,50 @@ import numpy as np
 
 
 def max_const_votes(
-        votes, target_party_seats, prior_allocations, divisor_gen,
-        total_seats, max_per_const=None):
-    """Allocate an unassigned seat pool by maximum absolute list quotient."""
-    votes = np.asarray(votes, dtype=float)
-    allocation = np.asarray(prior_allocations, dtype=int).copy()
-    targets = np.asarray(target_party_seats, dtype=int)
-    deficits = targets - allocation.sum(axis=0)
+        m_votes, v_desired_row_sums, v_desired_col_sums,
+        m_prior_allocations, divisor_gen, **kwargs):
+    """Allocate a bounded adjustment-seat pool by maximum list quotient."""
+    votes = np.asarray(m_votes, dtype=float)
+    allocation = np.asarray(m_prior_allocations, dtype=int).copy()
+    targets = np.asarray(v_desired_col_sums, dtype=int)
+    national_fixed = kwargs.get("nat_prior_allocations")
+    if national_fixed is None:
+        national_fixed = np.zeros(len(targets), dtype=int)
+    else:
+        national_fixed = np.asarray(national_fixed, dtype=int)
+    deficits = targets - allocation.sum(axis=0) - national_fixed
     if (deficits < 0).any():
-        raise ValueError("Additional seats cannot resolve a party overhang.")
-    if int(deficits.sum()) != int(total_seats):
+        raise ValueError("Adjustment seats cannot resolve a party overhang.")
+
+    total_seats = int(kwargs.get(
+        "num_adjustment_seats",
+        sum(v_desired_row_sums) - int(allocation.sum()),
+    ))
+    if int(deficits.sum()) < total_seats:
         raise ValueError(
-            "Party deficits do not equal the additional adjustment-seat total.")
+            "Party deficits are smaller than the adjustment-seat total.")
 
     nconst, nparty = votes.shape
-    if max_per_const is None:
-        capacity = np.full(nconst, total_seats, dtype=int)
-    else:
-        capacity = np.array([
-            total_seats if maximum is None else maximum
-            for maximum in max_per_const
-        ], dtype=int)
+    minimums = np.asarray(
+        kwargs.get("min_adj_seats", [0] * nconst), dtype=int)
+    maxima = kwargs.get("max_adj_seats", minimums)
+    if len(minimums) != nconst or len(maxima) != nconst:
+        raise ValueError("Adjustment-seat bounds do not match the constituencies.")
+    if (minimums < 0).any():
+        raise ValueError("Adjustment-seat minimums must be non-negative.")
+    if int(minimums.sum()) > total_seats:
+        raise ValueError(
+            "Constituency minimums exceed the adjustment-seat total.")
+    capacity = np.array([
+        total_seats if maximum is None else int(maximum)
+        for maximum in maxima
+    ], dtype=int)
+    if (capacity < minimums).any():
+        raise ValueError(
+            "An adjustment-seat maximum is below its constituency minimum.")
+    if int(capacity.sum()) < total_seats:
+        raise ValueError(
+            "Constituency maxima prevent allocation of all adjustment seats.")
 
     generator = divisor_gen()
     divisors = np.array([
@@ -30,8 +53,13 @@ def max_const_votes(
     ])
     added = np.zeros(nconst, dtype=int)
     steps = []
-    while deficits.any():
-        open_const = added < capacity
+    for _ in range(total_seats):
+        minimum_needed = np.maximum(minimums - added, 0)
+        remaining = total_seats - int(added.sum())
+        if remaining == int(minimum_needed.sum()):
+            open_const = minimum_needed > 0
+        else:
+            open_const = added < capacity
         open_party = deficits > 0
         scores = np.full((nconst, nparty), -np.inf)
         scores[np.ix_(open_const, open_party)] = (
@@ -51,12 +79,15 @@ def max_const_votes(
             "quotient": quotient,
         })
 
+    if (added < minimums).any():
+        raise RuntimeError("Adjustment-seat allocation did not meet its minimums.")
+
     return allocation, {"data": steps, "function": print_demo_table}
 
 
 def print_demo_table(rules, steps):
     headers = [
-        "Additional seat #", "Constituency", "Party", "Criteria", "Vote score",
+        "Adjustment seat #", "Constituency", "Party", "Criteria", "Vote score",
     ]
     data = [[
         number,
@@ -65,4 +96,4 @@ def print_demo_table(rules, steps):
         "Maximum over all eligible lists",
         step["quotient"],
     ] for number, step in enumerate(steps, start=1)]
-    return headers, data, "Allocation of additional adjustment seats"
+    return headers, data, "Allocation of adjustment seats"

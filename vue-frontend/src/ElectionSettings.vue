@@ -84,16 +84,44 @@
     </label>
   </div>
 
+  <!-- PREPARATION FOR ADJUSTMENT SEAT ALLOCATION -->
+  <legend class="settings-heading"
+    v-b-tooltip.hover.top.v-primary.ds500
+    title="Optional operation performed before adjustment seats are allocated to lists">
+    Prepare for adjustment-seat allocation
+  </legend>
+  <div class="settings-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Method used to prepare the fixed-seat allocation and party totals for adjustment-seat allocation.">
+      <span>Preparation method</span>
+      <b-form-select class="compact-select settings-method"
+        v-model="systems[systemidx].adjustment_preparation_method"
+        :options="capabilities.adjustment_preparation_methods"/>
+    </label>
+  </div>
+  <div class="settings-row"
+       v-if="systems[systemidx].adjustment_preparation_method != 'none'">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Formula used by the preparation method.">
+      <span>Rule</span>
+      <b-form-select class="compact-select settings-rule"
+        v-model="systems[systemidx].adj_preparation_divider"
+        :options="capabilities.divider_rules"/>
+    </label>
+  </div>
+
   <!-- ADJUSTMENT SEAT ALLOCATION -->
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
-    title="Information on how to allocate adjustment seats to individual lists in each constituency">
+    title="Allocation of adjustment seats to individual party lists in constituencies">
     Allocation of adjustment seats to lists
   </legend>
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Method to allocate adjustment seats to party lists based on the rule chosen below.">
+      title="Method used to allocate adjustment seats to party lists.">
       <span>Allocation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_method"
@@ -103,37 +131,10 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used to allocate adjustment seats to individual party lists.">
+      title="Formula used to allocate adjustment seats to constituency lists.">
       <span>Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_alloc_divider"
-        :options="capabilities.divider_rules"/>
-    </label>
-  </div>
-  <!-- ADDITIONAL ADJUSTMENT SEAT ALLOCATION -->
-  <legend class="settings-heading"
-    v-b-tooltip.hover.top.v-primary.ds500
-    title="Allocation of an additional pool of adjustment seats whose constituency totals are not fixed in advance.">
-    Allocation of additional adjustment seats
-  </legend>
-  <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Method used to place additional adjustment seats in constituencies.">
-      <span>Allocation method</span>
-      <b-form-select class="compact-select settings-method"
-        v-model="systems[systemidx].additional_adjustment_method"
-        :options="capabilities.additional_adjustment_methods"/>
-    </label>
-  </div>
-  <div class="settings-row"
-       v-if="systems[systemidx].additional_adjustment_method != 'none'">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used to allocate additional adjustment seats to constituency lists.">
-      <span>Rule</span>
-      <b-form-select class="compact-select settings-rule"
-        v-model="systems[systemidx].additional_adj_alloc_divider"
         :options="capabilities.divider_rules"/>
     </label>
   </div>

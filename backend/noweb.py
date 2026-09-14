@@ -1,20 +1,16 @@
-import random, os, csv, json, time, par_util, sys
+import os, csv, json, time, par_util
 from io import StringIO
-from threading import Thread, excepthook
+from threading import Thread
 from pathlib import Path
-from par_util import write_sim_settings, write_sim_stop, read_sim_dict, clean
-from par_util import read_sim_status, read_sim_error, parallel_dir
-from datetime import datetime, timedelta
-from electionSystem import ElectionSystem
-from electionHandler import ElectionHandler, update_constituencies
-from util import disp, load_votes_from_excel
+from par_util import write_sim_settings, write_sim_stop, read_sim_dict
+from par_util import read_sim_status, read_sim_error
+from electionHandler import ElectionHandler
+from util import load_votes_from_excel
 from util import remove_blank_rows, correct_deprecated
-from input_util import check_input, check_systems, check_simul_settings
+from input_util import check_simul_settings, normalize_system
 from vote_table import check_vote_table, process_vote_table
 from simulate import Simulation, Sim_result
-from dictionaries import CONSTANTS
 from excel_util import simulation_to_xlsx, votes_to_xlsx
-import psutil
 
 def create_SIMULATIONS():
     global SIMULATIONS
@@ -30,21 +26,20 @@ def load_json(f):
     if "e_settings" in file_content:
         file_content["systems"] = file_content["e_settings"]
         del file_content["e_settings"]
-    for sys in file_content["systems"]:
-        sys.setdefault("additional_adjustment_method", "none")
-        if "additional_adjustment_allocation_rule" in sys:
-            sys["additional_adj_alloc_divider"] = sys.pop(
-                "additional_adjustment_allocation_rule")
-        sys.setdefault("additional_adj_alloc_divider", "sainte-lague")
-        if "adj_threshold_choice" not in sys:
-            sys["adj_threshold_choice"] = 0
-            sys["adjustment_threshold_seats"] = 0
-        if "seat_spec_option" in sys:
-            sys["seat_spec_options"] = {
-                "const": sys["seat_spec_option"],
+    for system in file_content["systems"]:
+        if "adjustment_preparation_rule" in system:
+            system["adj_preparation_divider"] = system.pop(
+                "adjustment_preparation_rule")
+        if "adj_threshold_choice" not in system:
+            system["adj_threshold_choice"] = 0
+            system["adjustment_threshold_seats"] = 0
+        if "seat_spec_option" in system:
+            system["seat_spec_options"] = {
+                "const": system["seat_spec_option"],
                 "party": "totals"
             }
-            del sys["seat_spec_option"]
+            del system["seat_spec_option"]
+        normalize_system(system)
     if "vote_table" in file_content:
         vote_table = file_content["vote_table"]
         if "party_vote_basis" not in vote_table and file_content["systems"]:
@@ -82,7 +77,6 @@ def load_votes(filename, stream=None):
     return vote_table
 
 def single_election(votes, systems):
-    print('in single_election')
     '''obtain results from single election for specific votes and a
     list of electoral systems'''
     if isinstance(votes, str):
@@ -94,7 +88,6 @@ def single_election(votes, systems):
 
 def run_thread_simulation(simid):
     try:
-        global SIMULATIONS
         SIM = SIMULATIONS[simid]
         sim = SIM['sim']
         thread = SIM['thread']
@@ -102,13 +95,10 @@ def run_thread_simulation(simid):
         sim.simulate()
         thread.done = True
     except Exception as e:
-        print('[zer] caught exception')
         SIM['exception'] = e
-        raise Exception(e)
+        raise
 
 def new_simulation(votes, systems, sim_settings):
-    global SIMULATIONS
-    terminate_old_simulations(maxminutes = 0.5)
     parallel = sim_settings["cpu_count"] > 1
     threaded = sim_settings["cpu_count"] == 1
     simid = par_util.get_id()
@@ -149,8 +139,6 @@ def fix_str_keys(dictionary_list):
     return new_dictionary_list
 
 def check_simulation(simid, stop=False):
-    global SIMULATIONS
-    import os, time
     if not simid in SIMULATIONS:
         raise KeyError('Simulation has stopped running')
     SIM = SIMULATIONS[simid]
@@ -192,7 +180,6 @@ def check_simulation(simid, stop=False):
             sim_result = Sim_result(sim_dict)
             process = SIM['process']
             process.wait()
-            #delete_tempfiles(simid)
         else:
             sim_result = None
             # raise RuntimeError('Results not available')
@@ -253,39 +240,5 @@ def votes_to_excel(vote_table, file):
     else:
         party_votes_matrix = None
     votes_to_xlsx(file_matrix, party_votes_matrix, file)    
-    
-def delete_tempfiles(simid):
-    pardir = parallel_dir()
-    for p in pardir.glob(f"{simid}*.*"):
-        p.unlink()
-    
-def terminate_old_simulations(maxminutes):
-    return # TODO: Fix this
-    for (simid,sim) in SIMULATIONS.items():
-        if time.time() - sim["time"] > maxminutes*60:
-            print(f'simid:{simid}')
-            if sim["kind"] == 'parallel':                
-                process = sim["process"]
-                try:
-                    print(f'Stopping children of process {process.pid}...')
-
-                    parent = psutil.Process(process.pid)
-                    for child in parent.children(recursive=True):
-                        child.kill()
-                    parent.kill()
-                    print('Wait for parent process...')
-                    try:
-                        process.wait()
-                    except Exception as e:
-                        print(f'Exception: {e}')
-                    pardir = parallel_dir()
-                    print(f'Removing temporary files {simid}...')
-                    #delete_tempfiles(simid)
-                except psutil.NoSuchProcess:
-                    pass
-            elif sim["kind"] == 'threaded':
-                print('Terminate threaded simulation')
-                sim.terminate = True
-                sim['thread'].join()
     
 #SIMULATIONS = {}

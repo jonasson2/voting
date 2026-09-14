@@ -1,6 +1,15 @@
-from util import disp
-from vote_table import check_vote_table
-from dictionaries import ADDITIONAL_ADJUSTMENT_METHODS, DIVIDER_RULES
+from dictionaries import (
+    ADJUSTMENT_METHODS,
+    ADJUSTMENT_PREPARATION_METHODS,
+    DIVIDER_RULES,
+)
+
+
+def normalize_system(system):
+    """Add defaults for settings saved before preparation was introduced."""
+    system.setdefault("adjustment_preparation_method", "none")
+    system.setdefault("adj_preparation_divider", "sainte-lague")
+    return system
 
 def parse_bool(value):
     value = value.lower()
@@ -13,7 +22,6 @@ def parse_bool(value):
 def check_input(data, sections):
     for section in sections:
         if section not in data or not data[section]:
-            print("raising error")
             raise KeyError(f"Missing data ('{section}')")
     return data
 
@@ -30,18 +38,20 @@ def check_systems(electoral_systems):
     electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
-        electoral_system.setdefault("additional_adjustment_method", "none")
-        electoral_system.setdefault(
-            "additional_adj_alloc_divider", "sainte-lague")
-        additional_method = electoral_system["additional_adjustment_method"]
-        if (additional_method != "none"
-                and additional_method not in ADDITIONAL_ADJUSTMENT_METHODS):
+        normalize_system(electoral_system)
+        preparation_method = electoral_system["adjustment_preparation_method"]
+        if (preparation_method != "none"
+                and preparation_method not in ADJUSTMENT_PREPARATION_METHODS):
             raise ValueError(
-                f"Unknown additional adjustment-seat method: {additional_method}")
-        additional_divider = electoral_system["additional_adj_alloc_divider"]
-        if additional_divider not in DIVIDER_RULES:
+                f"Unknown adjustment-seat preparation method: {preparation_method}")
+        preparation_divider = electoral_system["adj_preparation_divider"]
+        if preparation_divider not in DIVIDER_RULES:
             raise ValueError(
-                f"Unknown additional adjustment-seat rule: {additional_divider}")
+                f"Unknown adjustment-seat preparation rule: {preparation_divider}")
+        adjustment_method = electoral_system["adjustment_method"]
+        if adjustment_method not in ADJUSTMENT_METHODS:
+            raise ValueError(
+                f"Unknown adjustment-seat method: {adjustment_method}")
         if "compare_with" not in electoral_system:
             electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:
