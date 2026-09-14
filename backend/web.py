@@ -124,6 +124,7 @@ def api_settings_save():
             "constituency_threshold", #"constituency_allocation_rule",
             "adjustment_threshold", #"adjustment_division_rule",
             "adjustment_method", #"adjustment_allocation_rule",
+            "additional_adjustment_method",
             "nat_seats"
         ]
         names = []
@@ -134,6 +135,8 @@ def api_settings_save():
             item["constituency_allocation_rule"] = system["primary_divider"]
             item["adjustment_division_rule"] = system["adj_determine_divider"]
             item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
+            item["additional_adjustment_allocation_rule"] = \
+                system["additional_adj_alloc_divider"]
             item["nat_seats"] = system["nat_seats"]
             electoral_system_list.append(item)
         file_content = {
@@ -283,6 +286,9 @@ def api_capabilities():
                 "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
                 "cpu_counts": get_cpu_counts(),
                 "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
+                "additional_adjustment_methods":
+                    dictionaries.ADDITIONAL_ADJUSTMENT_METHOD_NAMES,
+                "election_law_presets": dictionaries.ELECTION_LAW_PRESETS,
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,
                 "scaling_names": dictionaries.SCALING_NAMES,

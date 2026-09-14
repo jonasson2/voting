@@ -12,7 +12,7 @@ from unittest.mock import patch
 import numpy as np
 
 from apportion import apportion1d_general, threshold_drop
-from dictionaries import DIVIDER_RULES
+from dictionaries import DIVIDER_RULES, ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from input_util import check_vote_table
@@ -20,6 +20,8 @@ from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
+from methods.max_const_votes import max_const_votes
+from methods.switching_se import switching as swedish_switching
 import web
 from web import app
 
@@ -30,6 +32,16 @@ class CurrentApplicationTest(unittest.TestCase):
         system.copy_info_from_votes(table)
         system['adjustment_method'] = method
         system['adjustment_threshold'] = threshold
+        return system
+
+    def make_swedish_system(self, table, divider='nordic-1.2'):
+        system = self.make_system(table, 'switching_se', threshold=4)
+        system['seat_spec_options']['const'] = 'make_const_adj'
+        system['adj_determine_divider'] = divider
+        system['adj_alloc_divider'] = divider
+        system['constituency_threshold'] = 12
+        system['additional_adjustment_method'] = 'max-const-votes'
+        system['additional_adj_alloc_divider'] = 'sainte-lague'
         return system
 
     def test_wsgi_import_initializes_simulation_state(self):
@@ -221,6 +233,315 @@ class CurrentApplicationTest(unittest.TestCase):
             for constituency in table['constituencies']
         ))
 
+    def test_swedish_elections_are_available_as_presets(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        presets = client.get('/api/presets/').get_json()
+        swedish = [preset for preset in presets
+                   if preset['Country'] == 'Sweden']
+        self.assertEqual(
+            [preset['Year'] for preset in swedish],
+            ['2014', '2018', '2022'],
+        )
+        for preset in swedish:
+            response = client.post(
+                '/api/presets/load/',
+                json={'election_id': presets.index(preset)},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.get_json()['name'],
+                f"Sweden-Riksdagen-{preset['Year']}",
+            )
+
+    def test_election_law_presets_contain_rules_but_no_seat_counts(self):
+        presets = {
+            preset['value']: preset['settings']
+            for preset in ELECTION_LAW_PRESETS if preset['settings']
+        }
+        self.assertEqual(
+            list(presets),
+            ['finland', 'iceland', 'norway', 'sweden-2014', 'sweden-2018'],
+        )
+        self.assertEqual(
+            (presets['finland']['primary_divider'],
+             presets['finland']['constituency_threshold'],
+             presets['finland']['adjustment_method'],
+             presets['finland']['constituency_seat_specification']),
+            ('dhondt', 0, 'adjustment-as-fixed', 'refer'),
+        )
+        self.assertEqual(
+            (presets['iceland']['adjustment_method'],
+             presets['iceland']['adjustment_threshold'],
+             presets['iceland']['primary_divider']),
+            ('icelandic-law', 5, 'dhondt'),
+        )
+        self.assertEqual(
+            (presets['norway']['adjustment_method'],
+             presets['norway']['adjustment_threshold'],
+             presets['norway']['primary_divider'],
+             presets['norway']['adj_alloc_divider']),
+            ('norwegian-law', 4, 'nordic-1.4', 'sainte-lague'),
+        )
+        self.assertEqual(
+            (presets['sweden-2014']['constituency_threshold'],
+             presets['sweden-2014']['adj_alloc_divider']),
+            (12, 'nordic-1.4'),
+        )
+        self.assertEqual(
+            (presets['sweden-2018']['constituency_threshold'],
+             presets['sweden-2018']['adj_alloc_divider']),
+            (12, 'nordic-1.2'),
+        )
+        forbidden = {
+            'constituencies', 'num_fixed_seats', 'num_adj_seats',
+            'max_adj_seats', 'max_total_adj_seats',
+        }
+        for settings in presets.values():
+            self.assertTrue(forbidden.isdisjoint(settings))
+
+        client = app.test_client()
+        response = client.post('/api/capabilities/', json={})
+        self.assertEqual(
+            response.get_json()['capabilities']['election_law_presets'],
+            ELECTION_LAW_PRESETS,
+        )
+
+    def test_swedish_divisor_starts_at_1_2(self):
+        generator = DIVIDER_RULES['nordic-1.2']()
+        self.assertEqual([next(generator) for _ in range(4)], [1.2, 3, 5, 7])
+
+    def test_finnish_2015_matches_official_party_seat_totals(self):
+        table = load_votes('../data/finland_2015.csv')
+        settings = next(
+            preset['settings'] for preset in ELECTION_LAW_PRESETS
+            if preset['value'] == 'finland'
+        )
+        system = self.make_system(table, settings['adjustment_method'])
+        system.update(deepcopy(settings))
+        election = ElectionHandler(table, [system], True).elections[0]
+
+        self.assertEqual(
+            dict(zip(table['parties'], election.results['all_const_total'])),
+            {
+                'CENT': 49, 'SAML': 37, 'SAF': 38, 'SDP': 34,
+                'GRÖNA': 15, 'VÄNST': 12, 'SFP': 9, 'KD': 5,
+                'Piratp': 0, 'IP': 0, 'FKP': 0, 'Åland': 1,
+            },
+        )
+        self.assertEqual(sum(election.results['all_const_total']), 200)
+
+    def test_recent_finnish_elections_are_available_as_presets(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        presets = client.get('/api/presets/').get_json()
+        finnish = [preset for preset in presets
+                   if preset['Country'] == 'Finland']
+        self.assertEqual(
+            [preset['Year'] for preset in finnish],
+            ['2015', '2019', '2023'],
+        )
+        for preset in finnish:
+            response = client.post(
+                '/api/presets/load/',
+                json={'election_id': presets.index(preset)},
+            )
+            self.assertEqual(response.status_code, 200)
+
+    def test_recent_finnish_elections_match_official_party_seat_totals(self):
+        expected = {
+            '2019': {
+                'SDP': 40, 'PS': 39, 'KOK': 38, 'KESK': 31,
+                'VIHR': 20, 'VAS': 16, 'RKP': 9, 'KD': 5,
+                'LIIKE': 1, '05-FÅ': 1,
+            },
+            '2023': {
+                'KOK': 48, 'PS': 46, 'SDP': 43, 'KESK': 23,
+                'VIHR': 13, 'VAS': 11, 'RKP': 9, 'KD': 5,
+                'LIIKE': 1, '05-FÅ': 1,
+            },
+        }
+        settings = next(
+            preset['settings'] for preset in ELECTION_LAW_PRESETS
+            if preset['value'] == 'finland'
+        )
+
+        for year, official in expected.items():
+            with self.subTest(year=year):
+                table = load_votes(f'../data/finland_{year}.csv')
+                system = self.make_system(table, settings['adjustment_method'])
+                system.update(deepcopy(settings))
+                election = ElectionHandler(table, [system], True).elections[0]
+                totals = dict(zip(
+                    table['parties'],
+                    election.results['all_const_total'],
+                ))
+                self.assertEqual(
+                    {party: seats for party, seats in totals.items() if seats},
+                    official,
+                )
+                self.assertEqual(sum(totals.values()), 200)
+
+    def test_swedish_2018_matches_official_seat_margins(self):
+        table = load_votes('../data/sweden_2018.csv')
+        election = ElectionHandler(
+            table, [self.make_swedish_system(table)], True).elections[0]
+        allocation = np.asarray(election.results['all_const_seats'])
+        expected_additional = [
+            4, 3, 2, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 1, 3,
+            2, 2, 1, 1, 2, 2, 3, 1, 1, 0, 0, 1, 0, 0,
+        ]
+        expected_party_totals = {
+            'M': 70, 'C': 31, 'L': 20, 'KD': 22,
+            'S': 100, 'V': 28, 'MP': 16, 'SD': 62,
+        }
+        self.assertEqual(
+            (allocation.sum(axis=1) - election.desired_row_sums).tolist(),
+            expected_additional,
+        )
+        self.assertEqual(
+            {party: int(seats) for party, seats in
+             zip(table['parties'], allocation.sum(axis=0)) if seats},
+            expected_party_totals,
+        )
+        self.assertEqual(
+            election.demo_tables[0]['steps'][0][2],
+            'No switching required',
+        )
+
+    def test_swedish_2014_switches_three_overhang_seats(self):
+        table = load_votes('../data/sweden_2014.csv')
+        election = ElectionHandler(
+            table,
+            [self.make_swedish_system(table, 'nordic-1.4')],
+            True,
+        ).elections[0]
+        switches = election.demo_tables[0]['steps']
+        self.assertEqual(len(switches), 3)
+        self.assertCountEqual(
+            [(row[2], row[3]) for row in switches],
+            [('S', 'M'), ('SD', 'KD'), ('SD', 'L')],
+        )
+        display = election.get_result_web()['display_results']
+        constituency = [
+            item['name'] for item in election.system['constituencies']
+        ].index('Malmö kommun')
+        self.assertEqual(
+            display[constituency][table['parties'].index('SD')],
+            '1 (-1+0)',
+        )
+        self.assertEqual(
+            display[constituency][table['parties'].index('L')],
+            '1 (+1+0)',
+        )
+
+    def test_swedish_2022_matches_official_seat_margins(self):
+        table = load_votes('../data/sweden_2022.csv')
+        election = ElectionHandler(
+            table, [self.make_swedish_system(table)], True).elections[0]
+        allocation = np.asarray(election.results['all_const_seats'])
+        expected_additional = [
+            5, 3, 1, 2, 3, 2, 0, 0, 0, 0, 1, 1, 2, 0, 2,
+            1, 3, 0, 1, 1, 2, 3, 0, 2, 2, 1, 0, 1, 0,
+        ]
+        expected_party_totals = {
+            'M': 68, 'C': 24, 'L': 16, 'KD': 19,
+            'S': 107, 'V': 24, 'MP': 18, 'SD': 73,
+        }
+        self.assertEqual(
+            (allocation.sum(axis=1) - election.desired_row_sums).tolist(),
+            expected_additional,
+        )
+        self.assertEqual(
+            {party: int(seats) for party, seats in
+            zip(table['parties'], allocation.sum(axis=0)) if seats},
+            expected_party_totals,
+        )
+        self.assertEqual(len(election.demo_tables), 2)
+        self.assertEqual(
+            election.demo_tables[0]['headers'],
+            [
+                'Step', 'Constituency', 'From', 'To',
+                'Returned quotient', 'Recipient quotient',
+            ],
+        )
+        self.assertEqual(
+            election.demo_tables[0]['steps'][0][2],
+            'No switching required',
+        )
+        self.assertEqual(len(election.demo_tables[1]['steps']), 39)
+        display = election.get_result_web()['display_results']
+        self.assertEqual(
+            display[-1][table['parties'].index('M')],
+            '68 (+0+1)',
+        )
+        self.assertEqual(display[-1][-1], '349 (+0+39)')
+        unchanged = np.argwhere(
+            (np.asarray(election.results['all_const_seats']) > 0)
+            & (election.switching_seat_changes == 0)
+            & (election.additional_seat_allocations == 0)
+        )[0]
+        c, p = map(int, unchanged)
+        self.assertEqual(
+            display[c][p], str(election.results['all_const_seats'][c][p]))
+
+    def test_swedish_system_runs_through_simulation_measures(self):
+        table = load_votes('../data/sweden_2022.csv')
+        settings = SimulationSettings()
+        settings['simulation_count'] = 1
+        settings['cpu_count'] = 1
+        with redirect_stdout(StringIO()):
+            simulation = Simulation(
+                settings, [self.make_swedish_system(table)], table)
+            simulation.run_and_collect_measures(table['votes'], None)
+        self.assertEqual(
+            sum(simulation.election_handler.elections[0]
+                .results['all_const_total']),
+            349,
+        )
+
+    def test_swedish_switching_returns_an_overhang(self):
+        allocation, steps = swedish_switching(
+            [[1, 1], [24, 1]],
+            [3, 3],
+            [4, 4],
+            np.zeros((2, 2), dtype=int),
+            DIVIDER_RULES['nordic-1.2'],
+            nat_votes=np.array([25, 2]),
+            total_seats=8,
+            party_divisor_gen=DIVIDER_RULES['nordic-1.2'],
+        )
+        np.testing.assert_array_equal(allocation, [[3, 0], [3, 0]])
+        np.testing.assert_array_equal(steps['party_totals'], [8, 0])
+        self.assertEqual(len(steps['data']['switches']), 1)
+
+    def test_max_const_votes_respects_constituency_capacity(self):
+        allocation, _ = max_const_votes(
+            votes=[[100, 10], [90, 9]],
+            target_party_seats=[2, 2],
+            prior_allocations=[[1, 0], [1, 0]],
+            divisor_gen=DIVIDER_RULES['sainte-lague'],
+            total_seats=2,
+            max_per_const=[0, 2],
+        )
+        np.testing.assert_array_equal(allocation, [[1, 0], [1, 2]])
+
+    def test_additional_seats_are_separated_in_standard_display(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['constituencies'][0]['max_adj_seats'] = 3
+        table['constituencies'][1]['max_adj_seats'] = 4
+        table['max_total_adj_seats'] = 7
+        system = self.make_system(table, 'max-const-seat-share')
+        system['additional_adjustment_method'] = 'max-const-votes'
+        system['additional_adj_alloc_divider'] = 'sainte-lague'
+
+        election = ElectionHandler(table, [system], True).elections[0]
+
+        self.assertEqual(
+            election.get_result_web()['display_results'][-1],
+            ['14 (3+1)', '13 (2+1)', '27 (5+2)'],
+        )
+
     def test_generated_party_names_are_included(self):
         cases = [
             ('../data/norway_2017.csv', 'AP', 'Arbeiderpartiet'),
@@ -352,6 +673,128 @@ class CurrentApplicationTest(unittest.TestCase):
         handler = ElectionHandler(table, [system], use_thresholds=True)
         allocation = handler.elections[0].results['fixed_const_seats'][0]
         self.assertEqual(allocation, [0, 100])
+
+    def test_zero_list_votes_are_preserved_in_election_calculations(self):
+        table = {
+            'name': 'Zero-list example',
+            'parties': ['A', 'B'],
+            'votes': [[0, 100], [100, 0]],
+            'constituencies': [
+                {'name': 'I', 'num_fixed_seats': 1, 'num_adj_seats': 0},
+                {'name': 'II', 'num_fixed_seats': 1, 'num_adj_seats': 0},
+            ],
+            'party_vote_info': {
+                'name': '-',
+                'num_fixed_seats': 0,
+                'num_adj_seats': 0,
+                'votes': [],
+                'specified': False,
+                'total': 0,
+                'pruned': 0,
+            },
+        }
+        system = self.make_system(table, 'max-const-seat-share')
+        election = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+
+        np.testing.assert_array_equal(
+            election.votes, [[0, 100], [100, 0]])
+        np.testing.assert_array_equal(election.votesums, [100, 100])
+        np.testing.assert_array_equal(
+            election.const_threshold_totals, [100, 100])
+
+    def test_common_allocation_does_not_add_forced_steps(self):
+        table = {
+            'name': 'Adjustment example',
+            'parties': ['A', 'B'],
+            'votes': [[100, 0], [0, 100]],
+            'constituencies': [
+                {'name': 'I', 'num_fixed_seats': 0, 'num_adj_seats': 1},
+                {'name': 'II', 'num_fixed_seats': 0, 'num_adj_seats': 1},
+            ],
+            'party_vote_info': {
+                'name': '-',
+                'num_fixed_seats': 0,
+                'num_adj_seats': 0,
+                'votes': [],
+                'specified': False,
+                'total': 0,
+                'pruned': 0,
+            },
+        }
+        system = self.make_system(table, 'max-const-seat-share')
+        election = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+
+        criteria_column = election.demo_tables[0]['headers'].index('Criteria')
+        self.assertEqual(
+            [row[criteria_column] for row in election.demo_tables[0]['steps']],
+            ['Max over all lists', 'Max over all lists'],
+        )
+
+    def test_common_allocation_uses_logical_votes_without_changing_totals(self):
+        table = {
+            'name': 'Logical-vote example',
+            'parties': ['A', 'B'],
+            'votes': [[100, 0], [100, 0]],
+            'constituencies': [
+                {'name': 'I', 'num_fixed_seats': 0, 'num_adj_seats': 1},
+                {'name': 'II', 'num_fixed_seats': 0, 'num_adj_seats': 1},
+            ],
+            'party_vote_basis': 'party_vote_info',
+            'party_vote_info': {
+                'name': 'National',
+                'num_fixed_seats': 0,
+                'num_adj_seats': 0,
+                'votes': [100, 100],
+                'specified': True,
+                'total': 200,
+                'pruned': 0,
+            },
+        }
+        system = self.make_system(table, 'max-const-seat-share')
+        election = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+
+        np.testing.assert_array_equal(election.votes, table['votes'])
+        np.testing.assert_array_equal(election.votesums, [200, 0])
+        np.testing.assert_array_equal(
+            election.results['all_const_seats'], [[1, 0], [0, 1]])
+
+    def test_norwegian_parties_must_have_votes_in_every_constituency(self):
+        table = {
+            'name': 'Norwegian standing example',
+            'parties': ['A', 'B'],
+            'votes': [[60, 100], [60, 0]],
+            'constituencies': [
+                {'name': 'I', 'num_fixed_seats': 1, 'num_adj_seats': 1},
+                {'name': 'II', 'num_fixed_seats': 1, 'num_adj_seats': 1},
+            ],
+            'party_vote_info': {
+                'name': '-',
+                'num_fixed_seats': 0,
+                'num_adj_seats': 0,
+                'votes': [],
+                'specified': False,
+                'total': 0,
+                'pruned': 0,
+            },
+        }
+        system = self.make_system(table, 'norwegian-law', threshold=4)
+        system['primary_divider'] = 'nordic-1.4'
+        system['adj_determine_divider'] = 'nordic-1.4'
+        system['adj_alloc_divider'] = 'sainte-lague'
+        handler = ElectionHandler(table, [system], use_thresholds=True)
+        election = handler.elections[0]
+
+        np.testing.assert_array_equal(election.party_stands_everywhere, [True, False])
+        np.testing.assert_array_equal(election.desired_col_sums, [3, 1])
+        np.testing.assert_array_equal(election.results['all_const_total'], [3, 1])
+
+        # Candidacy comes from the source table and does not change when a
+        # simulated vote gives B positive votes in the second constituency.
+        handler.run_elections(True, [[60, 100], [60, 50]])
+        np.testing.assert_array_equal(election.desired_col_sums, [3, 1])
 
     def test_national_threshold_totals_include_matching_pruned_votes(self):
         table = load_votes('../data/2-by-2-example.csv')

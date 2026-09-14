@@ -1,12 +1,11 @@
 # TODO
 
 1. Translate to Icelandic after the interface and terminology have stabilized.
-2. Allow Swedish allocation.
-3. Work on the optimal method to make it work and prevent cycling in some cases.
-4. Allow displaying party abbreviations.
-5. Improve input validation and error messages.
-6. Remove debugging output, dead code, and obsolete commented-out blocks.
-7. Consolidate repeated frontend table and form styling.
+2. Work on the optimal method to make it work and prevent cycling in some cases.
+3. Allow displaying party abbreviations.
+4. Improve input validation and error messages.
+5. Remove debugging output, dead code, and obsolete commented-out blocks.
+6. Consolidate repeated frontend table and form styling.
 
 ---
 Other possible future work:

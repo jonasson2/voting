@@ -31,6 +31,11 @@ def load_json(f):
         file_content["systems"] = file_content["e_settings"]
         del file_content["e_settings"]
     for sys in file_content["systems"]:
+        sys.setdefault("additional_adjustment_method", "none")
+        if "additional_adjustment_allocation_rule" in sys:
+            sys["additional_adj_alloc_divider"] = sys.pop(
+                "additional_adjustment_allocation_rule")
+        sys.setdefault("additional_adj_alloc_divider", "sainte-lague")
         if "adj_threshold_choice" not in sys:
             sys["adj_threshold_choice"] = 0
             sys["adjustment_threshold_seats"] = 0

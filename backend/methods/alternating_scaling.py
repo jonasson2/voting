@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import r_
 np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200)
-from apportion import apportion, compute_forced
+from apportion import apportion
 from copy import deepcopy
 global total_iter, total_step
 total_iter = 0
@@ -13,12 +13,8 @@ def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
     r = const_seats - np.sum(x, 1)
     c = party_seats - np.sum(x, 0)
     (nrows, ncols) = v.shape
-    forced, forced_party = compute_forced(v, r, c)
-    x += forced
     y = x.copy()
     xsaved = x.copy()
-    r -= forced.sum(1)
-    c -= forced.sum(0)
     
     Niter = 20
     for iter in range(1, Niter):
@@ -100,7 +96,8 @@ def alt_scaling(m_votes,
 
     # COPY PARAMETERS TO NUMPY ARRAYS
     const_seats = np.array(v_desired_row_sums, int)
-    votes = np.array(m_votes, float)
+    # This generic method treats every constituency-party cell as available.
+    votes = np.maximum(np.asarray(m_votes, dtype=float), 1)
     (nrows, ncols) = np.shape(votes)
     prior_alloc = np.array(m_prior_allocations, int)
     nat_prior_alloc = (np.zeros(ncols, int) if nat_prior_allocations is None

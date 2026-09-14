@@ -35,10 +35,7 @@
           {{ constituency["name"] }}
         </th>
         <template v-for="(party, partyidx) in parties">
-          <td v-if="voteless && voteless[conidx][partyidx]" class="red displayright">
-            {{ values[conidx][partyidx].toFixed(round) }}
-          </td>
-          <td v-else class="displayright">
+          <td class="displayright">
             {{ values[conidx][partyidx].toFixed(round) }}
           </td>
           <td v-if="stddev" class="displayright">
@@ -98,36 +95,20 @@
       </tbody>
     </table>
     </div>
-    <br>
-    <b-alert :show="some_red" >
-      The electoral system was forced to allocate some seats to lists without votes (shown in red)
-    </b-alert>
   </b-container>
 </template>
 <script>
 
-import { mapState } from 'vuex'  
 export default {
   props: {
     "constituencies": { default: [] },
     "parties": { default: [] },
     "values": { default: [] },
-    "voteless": { default: null },
     "round": { default: 0 },
     "stddev": { default: false },
     "title": { default: "" },
     "party_votes_specified": false,
     "party_votes_name": "",
   },
-  computed: {
-    some_red: {
-      get() { 
-        for (let i=0; i<this.constituencies.length; i++)
-          for (let j=0; j<this.parties.length; j++) 
-            if (this.voteless && this.voteless[i][j]) return true
-        return false
-      }
-    }
-  }
 }
 </script>

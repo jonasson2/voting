@@ -39,6 +39,9 @@ def norwegian_apportionment(m_votes,
                 maximums[c] = 0
 
         maximum = max(maximums)
+        if maximum <= 0:
+            raise ValueError(
+                f"No valid recipient of adjustment seat nr. {n + 1}")
         const = maximums.index(maximum)
         party = m_seat_props[const].index(maximum)
 

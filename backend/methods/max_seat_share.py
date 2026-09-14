@@ -2,7 +2,6 @@
 from copy import deepcopy
 import numpy as np
 from numpy import flatnonzero as find
-from apportion import compute_forced, forced_stepbystep_entries
 
 def super_explain(c, p, super):
     return {'constituency': c, 'party': p, 'superiority': super, 'reason': super_reason}
@@ -29,17 +28,6 @@ def max_const_seat_share(
 
     allocation_sequence = []
     while any(const_seats):
-        # FORCED ALLOCATION
-        forced = compute_forced(votes, const_seats, party_seats)
-        alloc_list += forced
-        const_seats -= forced.sum(1)
-        party_seats -= forced.sum(0)
-
-        # Eftirfarandi þarf auðvitað ekki í simúleringu...
-        allocation_sequence.extend(forced_stepbystep_entries(forced))
-        if not any(const_seats):
-            break
-
         # ALLOCATE WITH MAXIMUM RELATIVE SUPERIORITY
         openC = find(const_seats > 0)
         openP = find(party_seats > 0)

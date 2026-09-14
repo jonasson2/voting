@@ -1,8 +1,7 @@
 from copy import copy, deepcopy
 from table_util import find_shares_1d
 import numpy as np
-from numpy import flatnonzero as find
-from util import dispv, infeasible_error
+from util import dispv
 
 def apportion(v, xp, total_seats, inverse_divisors, col_with_party_votes=False):
     x = xp.copy()
@@ -253,50 +252,6 @@ def threshold_drop(v_votes, threshold, threshold_total=None):
         else:
             cutoff = [max(x,y) for (x,y) in zip(cutoff_p,cutoff_s)]
     return cutoff
-
-def compute_forced(votes, free_const_seats, free_party_seats):
-    # See "sætaskorður.pdf" in the doc folder
-    from numpy import where, maximum
-    n = free_party_seats.sum()
-    const_zero_sum = where(votes == 0, free_party_seats[None, :], 0).sum(axis=1)
-    if n == free_const_seats.sum():
-        party_zero_sum = where(votes == 0, free_const_seats[:, None], 0).sum(axis=0)
-        zero_sum = maximum(const_zero_sum[:,None], party_zero_sum[None,:])
-    else:
-        zero_sum = const_zero_sum[:,None]
-    lower_bounds = free_party_seats[None,:] + free_const_seats[:,None] - n + zero_sum
-    forced = where(votes > 0, np.maximum(0, lower_bounds), 0)
-    parties = np.array([find(f)[0] if any(f) else -1 for f in forced], int)
-    free_party = free_party_seats - forced.sum(0)
-    free_const = free_const_seats - forced.sum(1)
-    if any(free_party < 0):
-        p = find(free_party < 0)[0]
-        msg = (f"Forced to allocate {forced.sum(0)[p]} seats to party {p}"
-               f" but only {free_party_seats[p]} seats available")
-        raise infeasible_error(msg)
-    if any(free_const < 0):
-        c = find(free_const < 0)[0]
-        msg = (f"Forced to allocate {forced.sum(1)[c]} seats in constituency {c}"
-               f" but only {free_const_seats[c]} seats available")
-        raise infeasible_error(msg)
-    same = sum(free_const) == sum(free_party)
-    if same and sum(free_party > 0) == 1:
-        p = np.argmax(free_party > 0)
-        forced[:, p] += free_const
-    elif same and sum(free_const >0) == 1:
-        c = np.argmax(free_const > 0)
-        forced[c, :] += free_party
-    return forced, parties
-
-def forced_stepbystep_entries(forced, has_last_party):
-    entries = []
-    for (c, p) in zip(*forced.nonzero()):
-        for _ in range(forced[c, p]):
-            entry = {'const': c, 'party': p, 'reason': "Only list available"}
-            if has_last_party:
-                entry['last_party'] = -1
-            entries.append(entry)
-    return entries
 
 def extend_div(div, div_gen):
     N = len(div)

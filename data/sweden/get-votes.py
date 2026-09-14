@@ -10,6 +10,7 @@ import urllib.error
 import zipfile
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from html.parser import HTMLParser
 from pathlib import Path
 
 VOTES_2022_2018_URL = (
@@ -28,8 +29,12 @@ FIXED_SEATS_URL = (
     "https://www.val.se/download/18.4005a7d19dee20a8ea544/1778074856144/"
     "valkretsmandat-riksdag-1988-2026.xlsx"
 )
-RESULTS_2014_URL = (
-    "https://historik.val.se/val/val2014/slutresultat/slutresultat.zip"
+RESULTS_2014_INDEX_URL = (
+    "https://historik.val.se/val/val2014/slutresultat/R/rike/index.html"
+)
+RESULTS_2014_DISTRICT_URL = (
+    "https://historik.val.se/val/val2014/slutresultat/R/rvalkrets/{code}/"
+    "index.html"
 )
 
 PARTY_NAMES = {
@@ -75,6 +80,22 @@ XML_PARTY_NAMES = {
     "FP": "L",
 }
 PARTY_ORDER = ["M", "C", "L", "KD", "S", "V", "MP", "SD", "FI"]
+# Preserve the constituency order of the discontinued 2014 XML source.
+DISTRICT_ORDER_2014 = [
+    "10", "24", "09", "25", "15", "27", "06", "08", "07", "29",
+    "11", "14", "13", "12", "01", "02", "04", "03", "21", "28",
+    "26", "23", "16", "18", "19", "17", "20", "22", "05",
+]
+# The 2014 HTML tables omit abbreviations for these registered parties.
+PARTY_CODES_2014 = {
+    "Republikanerna": "0020",
+    "Sverige ut ur EU / Frihetliga Rättvisepartiet (FRP)": "0675",
+    "Framstegspartiet": "1146",
+    "Direktdemokraterna": "1170",
+    "Fredsdemokraterna": "1177",
+    "Nya Partiet": "1195",
+    "Hälsopartiet": "1270",
+}
 EXCLUDED_PARTIES = {
     "Summa giltiga röster",
     "Valdeltagande",
@@ -83,6 +104,55 @@ EXCLUDED_PARTIES = {
     "övriga anmälda partier",
     "övriga ogiltiga",
 }
+
+
+class HtmlTableParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.tables = []
+        self.table = None
+        self.row = None
+        self.cell = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "table":
+            self.table = []
+        elif tag == "tr" and self.table is not None:
+            self.row = []
+        elif tag in ("td", "th") and self.row is not None:
+            self.cell = []
+
+    def handle_data(self, data):
+        if self.cell is not None:
+            self.cell.append(data)
+
+    def handle_endtag(self, tag):
+        if tag in ("td", "th") and self.cell is not None:
+            self.row.append(" ".join("".join(self.cell).split()))
+            self.cell = None
+        elif tag == "tr" and self.row is not None:
+            self.table.append(self.row)
+            self.row = None
+        elif tag == "table" and self.table is not None:
+            self.tables.append(self.table)
+            self.table = None
+
+
+class DistrictLinkParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.districts = OrderedDict()
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a":
+            return
+        attributes = dict(attrs)
+        title = attributes.get("title", "")
+        href = attributes.get("href", "")
+        match = re.search(r"/rvalkrets/(\d+)/index\.html$", href)
+        prefix = "Riksdagsvalkrets "
+        if match and title.startswith(prefix):
+            self.districts.setdefault(match.group(1), title[len(prefix):])
 
 
 def download(url):
@@ -265,39 +335,38 @@ def parse_2022_votes(fixed, total_seats):
 
 
 def parse_2014_votes():
-    archive = zipfile.ZipFile(io.BytesIO(download(RESULTS_2014_URL)))
-    xml = archive.read("slutresultat_00R.xml")
-    root = ET.fromstring(xml)
-    votes = OrderedDict()
-    fixed = {}
-    total_seats = {}
-    labels = {}
-    for party in root.iter("PARTI"):
-        code = XML_PARTY_NAMES.get(
-            party.attrib["FÖRKORTNING"],
-            party.attrib["FÖRKORTNING"],
+    index = download(RESULTS_2014_INDEX_URL).decode("iso-8859-1")
+    link_parser = DistrictLinkParser()
+    link_parser.feed(index)
+    if len(link_parser.districts) != 29:
+        raise RuntimeError(
+            f"Expected 29 constituencies, found {len(link_parser.districts)}"
         )
-        labels[code] = party.attrib["BETECKNING"]
-    for district in root.iter("KRETS_RIKSDAG"):
-        name = district.attrib["NAMN"]
-        fixed[name] = int_value(district.attrib["MANDAT_VALKRETS"])
-        total_seats[name] = fixed[name]
+
+    votes = OrderedDict()
+    labels = {}
+    for district_code in DISTRICT_ORDER_2014:
+        name = link_parser.districts[district_code]
+        url = RESULTS_2014_DISTRICT_URL.format(code=district_code)
+        page = download(url).decode("iso-8859-1")
+        table_parser = HtmlTableParser()
+        table_parser.feed(page)
         votes[name] = {}
-        for child in district:
-            if child.tag == "GILTIGA":
-                code = XML_PARTY_NAMES.get(child.attrib["PARTI"], child.attrib["PARTI"])
-                votes[name][code] = int_value(child.attrib["RÖSTER"])
-                total_seats[name] += int_value(child.attrib.get("VARAV_UTJÄMNING", "0"))
-            elif child.tag == "ÖVRIGA_GILTIGA":
-                for party in child:
-                    if party.tag != "GILTIGA":
-                        continue
-                    code = XML_PARTY_NAMES.get(
-                        party.attrib["PARTI"],
-                        party.attrib["PARTI"],
-                    )
-                    votes[name][code] = int_value(party.attrib["RÖSTER"])
-    parties, result_rows = build_rows(votes, fixed, total_seats)
+        for table in table_parser.tables:
+            if not table or table[0][:2] != ["Förk.", "Parti"]:
+                continue
+            for row in table[1:]:
+                if len(row) < 3 or not row[2].isdigit():
+                    continue
+                code = row[0] or PARTY_CODES_2014.get(row[1])
+                if code in {None, "ÖVR", "BLANK", "OG", "VDT"}:
+                    continue
+                code = XML_PARTY_NAMES.get(code, code)
+                labels[code] = row[1]
+                votes[name][code] = int(row[2])
+
+    fixed = fixed_seats_by_year()["2014"]
+    parties, result_rows = build_rows(votes, fixed, fixed)
     return parties, result_rows, labels
 
 
@@ -324,9 +393,10 @@ def build_rows(votes, fixed, total_seats):
 def write_votes(year, out):
     if year == "2014":
         parties, rows, labels = parse_2014_votes()
+        max_total_adj_seats = 39
     else:
         parties, rows, labels = parse_recent_votes(year, fixed_seats_by_year())
-    max_total_adj_seats = sum(row["adj"] for row in rows)
+        max_total_adj_seats = sum(row["adj"] for row in rows)
     for row in rows:
         row["min_adj"] = 0
         row["max_adj"] = ""

@@ -2,6 +2,16 @@ import Vue from "vue"
 import Vuex from "vuex"
 import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 
+function normalizeSystem(system) {
+  if (system.additional_adjustment_method === undefined) {
+    system.additional_adjustment_method = 'none'
+  }
+  if (system.additional_adj_alloc_divider === undefined) {
+    system.additional_adj_alloc_divider = 'sainte-lague'
+  }
+  return system
+}
+
 const store = new Vuex.Store({
 
   state : {
@@ -61,30 +71,34 @@ const store = new Vuex.Store({
     updateVoteSums(state) {
       setVoteSums(state)
     },
-    threshold_method(state, systemidx) {
-      let method = state.systems[systemidx].adjustment_method
-      if (method == 'icelandic-law' || method == 'ice-shares'){
-        state.systems[systemidx].adjustment_threshold = 5
-      }
-      else if (method == 'norwegian-law') {
-        state.systems[systemidx].adjustment_threshold = 4
-      }
-      else{
-        state.systems[systemidx].adjustment_threshold = 0
+    applyElectionLawPreset(state, payload) {
+      let system = state.systems[payload.idx]
+      system.name = payload.name
+      for (let [key, value] of Object.entries(payload.settings)) {
+        if (key == 'constituency_seat_specification') {
+          system.seat_spec_options.const = value
+        } else {
+          system[key] = value
+        }
       }
     },
     addSystem(state, system) {
+      normalizeSystem(system)
       let idx = state.systems.length
       if (system.name == "System") system.name += "-" + (idx+1).toString();
       if (idx > 0) {
         system.primary_divider = state.systems[idx-1].primary_divider
         system.adj_determine_divider = state.systems[idx-1].adj_determine_divider
         system.adj_alloc_divider = state.systems[idx-1].adj_alloc_divider
+        system.additional_adj_alloc_divider =
+          state.systems[idx-1].additional_adj_alloc_divider
         system.adjustment_threshold = state.systems[idx-1].adjustment_threshold
         system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
         system.adjustment_method = state.systems[idx-1].adjustment_method
+        system.additional_adjustment_method =
+          state.systems[idx-1].additional_adjustment_method
         system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
         system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
         system.compare_with = state.systems[idx-1].compare_with
@@ -106,11 +120,13 @@ const store = new Vuex.Store({
     
     deleteAllSystems(state) {
       state.systems.splice(0, state.systems.length)
-      state.numbering = []
+      state.system_numbering = []
       state.activeSystemIndex = -1
     },
     
-    updateSystems(state, systems) {state.systems = systems},
+    updateSystems(state, systems) {
+      state.systems = systems.map(normalizeSystem)
+    },
 
     updateSimSettings(state, sim_settings) {
       state.sim_settings = sim_settings

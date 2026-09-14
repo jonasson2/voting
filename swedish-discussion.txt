@@ -1,0 +1,255 @@
+Swedish allocation discussion
+=============================
+
+This note records the design discussion that led to the initial Swedish
+allocation implementation.
+
+The present simulator has three conceptual stages:
+
+1. Allocation of fixed seats
+   Fixed seats are allocated to constituency-party lists.
+
+2. Apportionment of total seats to parties
+   A national rule determines each party's intended total number of seats.
+   At present, the simulator starts this apportionment with the fixed seats as
+   prior allocations. Fixed seats are therefore irrevocable: a party can never
+   receive fewer total seats than its fixed-seat total. The divisor sequence
+   also starts after those fixed seats.
+
+3. Allocation of adjustment seats to lists
+   Current methods add seats to the fixed-seat matrix while satisfying both
+   exact party totals and exact constituency totals.
+
+Swedish sequence
+----------------
+
+For Sweden, stages 1 and 2 must be separated differently:
+
+1. Allocate fixed constituency seats by modified Sainte-Lague (divisors
+   1.2, 3, 5, ...), subject to the Swedish thresholds.
+
+2. Independently apportion all seats nationally among parties, from zero,
+   with the same modified Sainte-Lague rule. This is each party's national
+   entitlement. It is not initially constrained to be at least the party's
+   fixed-seat total.
+
+3. Reconcile excess fixed seats before any adjustment seats are allocated.
+   If a party has more fixed seats than its national entitlement, return its
+   weakest fixed seat(s): the seat(s) won with the lowest quotient. Reallocate
+   each returned seat in the same constituency to a party still below its
+   national entitlement, using the fixed-seat rule. This is a separate
+   Swedish statutory phase, and is rare.
+
+4. Allocate adjustment seats. A nationally eligible party receives exactly
+   its remaining shortfall:
+
+       national entitlement - current seats after reconciliation
+
+   For a party p, repeatedly select the constituency c with the largest
+
+       votes[c,p] / (2 * seats[c,p] + 1)
+
+   and give p a seat in c. Here seats[c,p] includes all seats the list
+   already has, including fixed seats and previous adjustment seats. The
+   divisors are ordinary Sainte-Lague: 1, 3, 5, 7, ... . Ties are decided by
+   lot under Swedish law.
+
+   Parties can be processed in any order. Giving a seat to party p changes
+   only p's future constituency quotients; it consumes no constituency
+   capacity and does not affect another party.
+
+   A party below Sweden's national 4 percent threshold receives no adjustment
+   seats, although the 12 percent constituency exception can permit a fixed
+   seat.
+
+The important structural difference is that Swedish adjustment seats have no
+prescribed constituency totals. The number of adjustment seats in a
+constituency is an output. For the Riksdag this corresponds to adjustment-seat
+bounds of 0 through infinity in every constituency, with a fixed national
+total of 39 adjustment seats.
+
+Possible simulator design
+-------------------------
+
+Stage 2 could offer two modes:
+
+* Treat fixed seats as prior allocations (the current behavior).
+* Allocate party totals independently, then reconcile excess fixed seats.
+
+The second mode is not complete without a reconciliation rule. Sweden's rule
+is: return the lowest-quotient fixed seat, then reallocate it in the same
+constituency to an underrepresented party by the fixed-seat rule.
+
+More generally, a list allocation could operate with constituency adjustment
+seat bounds:
+
+    adj_min[c] <= adjustment seats in constituency c <= adj_max[c]
+
+and exact party totals. Existing methods generally assume exact constituency
+totals, so minimum bounds also need explicit handling. Swedish allocation is
+the simple special case adj_min = 0 and adj_max = infinity for every
+constituency.
+
+Existing allocation-method comparison
+-------------------------------------
+
+The current "Party seats unbounded" method is not the Swedish method. It
+holds constituency totals fixed and ignores party totals, the reverse of the
+Swedish constraint structure.
+
+The current Icelandic-law methods have a superficially similar two-level
+shape: select a party, then select that party's best constituency. They are
+not Swedish because they determine party order through a national divisor
+sequence, use constituency-normalized scores, and impose constituency caps.
+
+The current maximum-score and Norwegian methods select globally among
+constituency-party pairs while enforcing exact row and column totals. They
+could mechanically be extended to finite constituency bounds, but their
+scores generally differ from the Swedish score.
+
+A useful new general allocation method would be named:
+
+    Maximum constituency votes
+
+with internal identifier:
+
+    max-const-votes
+
+Given a chosen divisor rule, its score is:
+
+    votes[c,p] / divisor(seats[c,p])
+
+It would allocate the largest eligible quotient while respecting exact party
+targets and constituency adjustment-seat bounds. With Swedish bounds 0 through
+infinity and ordinary Sainte-Lague as its rule, it is exactly the Swedish
+adjustment-seat placement procedure.
+
+Relation to current scores
+--------------------------
+
+"Maximum constituency vote percentage" uses:
+
+    votes[c,p] / constituency_votes[c] / divisor
+
+"Maximum constituency seat share" uses:
+
+    votes[c,p] / constituency_votes[c] * constituency_seats[c] / divisor
+
+If the relevant constituency seat counts are proportional to constituency
+votes, the latter score is a common constant times votes[c,p] / divisor and
+therefore ranks lists exactly as the Swedish score. The analogous statement
+holds for the Icelandic method based on constituency seat shares. Norwegian
+law also has this equivalence if its fixed constituency seat counts are
+proportional to constituency votes.
+
+Implementation plan
+-------------------
+
+Implement Sweden as an explicit pipeline rather than as a variation hidden
+inside an existing adjustment-seat method. The relevant current sequence in
+Election.assign_seats() is:
+
+    #1 apportion_fixed_seats()
+    #2 apportion_total_party_seats()
+    #3 allocate_adjustment_seats()
+
+The Swedish version should become:
+
+1. Swedish fixed-seat allocation (#1)
+
+   Add a Swedish fixed-seat eligibility calculation. A party which reaches
+   the national 4 percent threshold participates in every constituency; a
+   party below that threshold participates only in constituencies where it
+   reaches 12 percent. Allocate each constituency's fixed seats with modified
+   Sainte-Lague (1.2, 3, 5, ...).
+
+   Preserve, for every fixed seat, its constituency, party, and winning
+   quotient. The present code records only the final fixed-seat winner in each
+   constituency. Swedish reconciliation needs all fixed-seat quotients in
+   order to identify the weakest seat(s) of an overrepresented party.
+
+2. Independent national entitlement (#2)
+
+   Add a party-total mode, for example "independent" alongside the present
+   "fixed seats as prior allocations" mode. In independent mode, call the
+   one-dimensional national apportionment with zero prior allocations. The
+   result is the national entitlement vector; it must not be altered merely
+   because a party already has more fixed seats.
+
+3. Reconcile excess fixed seats (new step after #2, before #3)
+
+   Compare each party's fixed-seat total with its national entitlement. For
+   every excess seat, choose that party's fixed seat with the smallest winning
+   quotient. A seat may not be returned from a constituency with fewer than
+   three fixed seats. Remove it.
+
+   Reallocate the returned seat in the same constituency to an eligible party
+   still below its national entitlement, using the next modified
+   Sainte-Lague quotient for that constituency. If returned seats occur in
+   more than one constituency, process their replacements in descending
+   quotient order, as required by Swedish law. Repeat until no nationally
+   eligible party has more fixed seats than its entitlement.
+
+   This step changes the fixed-seat matrix while preserving every constituency
+   fixed-seat total. It should have its own step-by-step demonstration table.
+
+4. Swedish adjustment-seat placement (#3)
+
+   Add the new "Maximum constituency votes" method. Its inputs are the
+   reconciled fixed-seat matrix and the national entitlement vector. For each
+   nationally eligible party, allocate its remaining shortfall by the largest
+   ordinary Sainte-Lague quotient votes[c,p] / (2 * seats[c,p] + 1). There
+   are no constituency adjustment-seat maxima in the Swedish configuration.
+
+   This method should not use the current desired constituency row sums. It
+   ends when every eligible party reaches its entitlement. The resulting
+   constituency adjustment-seat totals, and therefore final constituency
+   totals, are outputs.
+
+5. Input and results integration
+
+   The Swedish vote-table configuration uses adj_min = 0 and adj_max = None
+   for every constituency, plus the total number of adjustment seats. The
+   existing min/max input representation is suitable for this, but the
+   election pipeline must pass bounds rather than only exact final row sums.
+
+   Display the three Swedish phases distinctly: fixed seats before and after
+   reconciliation, national party entitlements, and the adjustment-seat
+   placements. Add official 2014, 2018, and 2022 Swedish result regression
+   tests, including a constructed case that exercises returned fixed seats.
+
+Suggested implementation order:
+
+1. Add the independent party-total mode and tests without changing the
+   default current behavior.
+2. Add fixed-seat quotient history and a standalone reconciliation function
+   with small hand-checkable tests.
+3. Add Maximum constituency votes with unbounded constituency adjustment
+   seats and test its direct Swedish quotient sequence.
+4. Connect the Swedish configuration, eligibility thresholds, result display,
+   and official-data regression tests.
+
+Related Norwegian eligibility rule
+----------------------------------
+
+Norwegian parliamentary leveling seats are available only to a party that
+stands in every electoral district as well as reaching the national 4 percent
+threshold. The Norwegian-law implementation has no separate candidacy data. It
+therefore treats a party as standing everywhere when it has positive votes in
+every constituency.
+
+For ordinary real-election vote tables, requiring a party to have positive
+votes in every district is a reasonable practical proxy for standing in every
+district. It is not legally exact: a party can stand in a district and receive
+zero votes. Exact modelling would require party-list participation data, for
+example a constituency-party candidacy matrix. This eligibility condition
+applies only to Norwegian leveling seats, not district seats.
+
+Source material
+---------------
+
+Swedish Election Authority, Manual for distribution of seats:
+https://www.val.se/download/18.162047b519a91d05331183a9/1761747515752/manual-mandatfordelning-val-v785-05.pdf
+
+In particular, the manual describes national total allocation, return of
+excess fixed seats, and party-by-party allocation of adjustment seats.

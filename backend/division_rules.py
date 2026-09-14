@@ -15,6 +15,14 @@ def sainte_lague_gen():
         yield n
         n += 2.0
 
+def sainte_lague_1_2_gen():
+    """Generate the Swedish modified Sainte-Lague sequence: 1.2, 3, 5..."""
+    yield 1.2
+    n = 3.0
+    while True:
+        yield n
+        n += 2.0
+
 def sainte_lague_1_4_gen():
     """Generate a Nordic Sainte-Lague divide sequence: 1.4, 3, 5..."""
     yield 1.4

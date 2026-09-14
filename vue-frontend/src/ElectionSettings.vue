@@ -1,8 +1,20 @@
 <template>
 <b-form>
+  <div class="settings-row settings-preset-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Sets the rules below to match the selected election law. Seat numbers and vote data are not changed.">
+      <span>Election-law preset</span>
+      <b-form-select class="compact-select settings-preset"
+        v-model="election_law_preset"
+        :options="capabilities.election_law_presets"/>
+    </label>
+  </div>
+  <hr class="settings-preset-separator">
+
   <!-- FIXED SEAT ALLOCATION -->
   <legend class="settings-heading"
-    v-b-tooltip.hover.bottom.v-primary.ds500
+    v-b-tooltip.hover.top.v-primary.ds500
     title="Information on how to allocate fixed seats to lists in each constituency, and national fixed seats if present">
     Allocation of fixed seats
   </legend>
@@ -18,7 +30,7 @@
     <label class="settings-field settings-fixed-threshold"
       v-b-tooltip.hover.bottom.v-primary.ds500
       title="Threshold as percentage of valid votes in a constituency required by a list to qualify for fixed seats in that constituency, also applies to national fixed seats.">
-      <span>Threshold</span>
+      <span>Local threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -30,7 +42,7 @@
 
   <!-- APPORTIONMENT -->
   <legend class="settings-heading"
-    v-b-tooltip.hover.bottom.v-primary.ds500
+    v-b-tooltip.hover.top.v-primary.ds500
     title="Information on how to calculate the total number of seats which each party receives">
     Apportionment of total seats to parties
   </legend>
@@ -74,7 +86,7 @@
 
   <!-- ADJUSTMENT SEAT ALLOCATION -->
   <legend class="settings-heading"
-    v-b-tooltip.hover.bottom.v-primary.ds500
+    v-b-tooltip.hover.top.v-primary.ds500
     title="Information on how to allocate adjustment seats to individual lists in each constituency">
     Allocation of adjustment seats to lists
   </legend>
@@ -85,7 +97,6 @@
       <span>Allocation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_method"
-        @change="threshold_method(systemidx)"
         :options="capabilities.adjustment_methods"/>
     </label>
   </div>
@@ -96,6 +107,33 @@
       <span>Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_alloc_divider"
+        :options="capabilities.divider_rules"/>
+    </label>
+  </div>
+  <!-- ADDITIONAL ADJUSTMENT SEAT ALLOCATION -->
+  <legend class="settings-heading"
+    v-b-tooltip.hover.top.v-primary.ds500
+    title="Allocation of an additional pool of adjustment seats whose constituency totals are not fixed in advance.">
+    Allocation of additional adjustment seats
+  </legend>
+  <div class="settings-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Method used to place additional adjustment seats in constituencies.">
+      <span>Allocation method</span>
+      <b-form-select class="compact-select settings-method"
+        v-model="systems[systemidx].additional_adjustment_method"
+        :options="capabilities.additional_adjustment_methods"/>
+    </label>
+  </div>
+  <div class="settings-row"
+       v-if="systems[systemidx].additional_adjustment_method != 'none'">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Formula used to allocate additional adjustment seats to constituency lists.">
+      <span>Rule</span>
+      <b-form-select class="compact-select settings-rule"
+        v-model="systems[systemidx].additional_adj_alloc_divider"
         :options="capabilities.divider_rules"/>
     </label>
   </div>
@@ -224,13 +262,41 @@ export default {
         this.recalc_sys_const()
       }
     },
+    election_law_preset: {
+      get() {
+        let presets = this.capabilities.election_law_presets || []
+        let system = this.systems[this.systemidx]
+        let preset = presets.find(item =>
+          item.settings && this.matchesPreset(system, item.settings))
+        return preset ? preset.value : 'custom'
+      },
+      set(value) {
+        let preset = this.capabilities.election_law_presets.find(
+          item => item.value == value)
+        if (!preset || !preset.settings) return
+        this.applyElectionLawPreset({
+          idx: this.systemidx,
+          name: preset.text,
+          settings: preset.settings,
+        })
+        this.recalc_sys_const()
+      }
+    },
   },
   methods: {
+    matchesPreset: function(system, settings) {
+      return Object.entries(settings).every(([key, value]) => {
+        if (key == 'constituency_seat_specification') {
+          return system.seat_spec_options.const == value
+        }
+        return system[key] == value
+      })
+    },
     ...mapMutations([
       "setWaitingForData",
       "clearWaitingForData",
       "setConstSpecOption",
-      "threshold_method",
+      "applyElectionLawPreset",
     ]),
     ...mapActions([
       'recalc_sys_const',

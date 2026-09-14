@@ -72,6 +72,18 @@
     "filename": "finland_2015.csv"
   },
   {
+    "Name": "Eduskunta",
+    "Country": "Finland",
+    "Year": "2019",
+    "filename": "finland_2019.csv"
+  },
+  {
+    "Name": "Eduskunta",
+    "Country": "Finland",
+    "Year": "2023",
+    "filename": "finland_2023.csv"
+  },
+  {
     "Name": "Stortinget",
     "Country": "Norway",
     "Year": "2017",
@@ -88,5 +100,23 @@
     "Country": "Norway",
     "Year": "2025",
     "filename": "norway_2025.csv"
+  },
+  {
+    "Name": "Riksdagen",
+    "Country": "Sweden",
+    "Year": "2014",
+    "filename": "sweden_2014.csv"
+  },
+  {
+    "Name": "Riksdagen",
+    "Country": "Sweden",
+    "Year": "2018",
+    "filename": "sweden_2018.csv"
+  },
+  {
+    "Name": "Riksdagen",
+    "Country": "Sweden",
+    "Year": "2022",
+    "filename": "sweden_2022.csv"
   }
 ]

@@ -4,9 +4,10 @@ This module contains the core voting system logic.
 """
 
 from table_util import entropy, add_total_column
-from apportion import apportion1d_general
+from apportion import apportion1d_general, threshold_drop
 from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, QUOTA_RULES
-from dictionaries import DEMO_TABLE_FORMATS
+from dictionaries import ADDITIONAL_ADJUSTMENT_METHODS
+from dictionaries import DEMO_TABLE_FORMATS, ADDITIONAL_DEMO_TABLE_FORMATS
 from util import disp, subtract_m
 from copy import deepcopy
 import numpy as np
@@ -15,7 +16,7 @@ class Election:
     """A single election."""
 
     def __init__(self, system, votes, party_vote_info=None, vote_table_name='',
-                 pruned_votes=None):
+                 pruned_votes=None, adjustment_seat_info=None):
         if party_vote_info is None:
             party_vote_info = {'name':'-', 'num_fixed_seats':0, 'num_adj_seats':0,
                                'votes':[],'specified':False, 'total':0, 'pruned':0}
@@ -24,6 +25,8 @@ class Election:
         self.system = system
         self.party_vote_info = party_vote_info
         self.party_votes = np.array(party_vote_info["votes"])
+        source_votes = np.asarray(votes)
+        self.party_stands_everywhere = np.all(source_votes > 0, axis=0)
         pruned_votes = pruned_votes if pruned_votes is not None else [0] * len(votes)
         self.pruned_votes = np.array(pruned_votes)
         if self.nconst == 1:
@@ -31,6 +34,10 @@ class Election:
         else:
             assert len(self.pruned_votes) == self.nconst
         self.party_pruned_votes = party_vote_info.get("pruned", 0)
+        adjustment_seat_info = adjustment_seat_info or {
+            "total": 0, "max_per_const": None}
+        self.additional_total_seats = adjustment_seat_info["total"]
+        self.additional_max_per_const = adjustment_seat_info["max_per_const"]
         self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
@@ -66,6 +73,23 @@ class Election:
             return f"{allSeats}"
         else:
             return ""
+
+    @staticmethod
+    def display_decomposed_seats(
+            all_seats, first_stage, additional, signed_first=False):
+        if all_seats or first_stage or additional:
+            if not first_stage and not additional:
+                return str(all_seats)
+            first = f"{first_stage:+d}" if signed_first else str(first_stage)
+            return f"{all_seats} ({first}+{additional})"
+        return ""
+
+    def component_table(self, matrix):
+        party_totals = matrix.sum(axis=0).tolist()
+        rows = matrix.tolist() + [party_totals]
+        if self.party_vote_info["specified"]:
+            rows.extend([[0] * self.nparty, party_totals])
+        return add_total_column(rows)
 
     def prepare_results(self):
         results = self.results
@@ -121,12 +145,30 @@ class Election:
 
     def get_result_web(self):
         dispResult = []
-        for (allrow, adjrow) in zip(self.results["all"], self.results["adj"]):
-            dispRow = [self.display_seats(x,y) for (x,y) in zip(allrow, adjrow)]
-            dispResult.append(dispRow)
+        additional_method = self.system["additional_adjustment_method"]
+        if additional_method != "none":
+            swedish = self.system["adjustment_method"] == "switching_se"
+            first_stage = self.component_table(
+                self.switching_seat_changes if swedish
+                else self.base_adjustment_seat_allocations)
+            additional = self.component_table(self.additional_seat_allocations)
+            for allrow, firstrow, additionalrow in zip(
+                    self.results["all"], first_stage, additional):
+                dispResult.append([
+                    self.display_decomposed_seats(
+                        total, first, added, signed_first=swedish)
+                    for total, first, added in zip(
+                        allrow, firstrow, additionalrow)
+                ])
+        else:
+            for allrow, adjrow in zip(
+                    self.results["all"], self.results["adj"]):
+                dispResult.append([
+                    self.display_seats(total, adjustment)
+                    for total, adjustment in zip(allrow, adjrow)
+                ])
         
         return {
-            "voteless_seats":   self.voteless_seats(),
             "demo_tables":      self.demo_tables,
             "display_results":  dispResult
         }
@@ -139,7 +181,11 @@ class Election:
             for const in self.system["constituencies"]
         ])
         party_vote_info = self.party_vote_info
-        self.total_const_seats = sum(self.desired_row_sums)
+        self.use_thresholds = use_thresholds
+        additional_method = self.system["additional_adjustment_method"]
+        additional_seats = (
+            self.additional_total_seats if additional_method != "none" else 0)
+        self.total_const_seats = sum(self.desired_row_sums) + additional_seats
         self.apportion_fixed_seats(use_thresholds)
         self.apportion_total_party_seats(use_thresholds)
         self.allocate_adjustment_seats()
@@ -149,18 +195,6 @@ class Election:
             self.results['all_grand_total'] = self.results['all_const_total']
         self.prepare_results()
         pass
-
-    def voteless_seats(self):
-        over = [None]*self.nconst
-        all_const_seats = self.results["all_const_seats"]
-        for c in range(self.nconst):
-            for p in range(self.nparty):
-                over[c] = [r > 0 and float(v) == 0
-                           for (r, v) in zip(all_const_seats[c], self.votes[c])]
-        return over
-
-    def any_voteless(self):
-        return any(v for x in self.voteless_seats() for v in x)
 
     def apportion_fixed_seats(self, use_thresholds):
         constituencies = self.system["constituencies"]
@@ -233,11 +267,32 @@ class Election:
         choice = self.system["adj_threshold_choice"] if use_thresholds else 0
         seats = self.system["adjustment_threshold_seats"] if use_thresholds else 0
 
+        entitlement_votes = self.nat_votes
+        norwegian = self.system["adjustment_method"] == "norwegian-law"
+        if norwegian:
+            # Positive votes in every source constituency are the simulator's
+            # proxy for the Norwegian requirement to stand everywhere.
+            entitlement_votes = np.where(
+                self.party_stands_everywhere, self.nat_votes, 0)
+
+        fixed_allocations = np.array(self.results["fixed_grand_total"])
+        if (norwegian
+                and fixed_allocations.sum() < self.total_const_seats + nat_seats):
+            qualified_votes = threshold_drop(
+                entitlement_votes,
+                [choice, threshold, seats, fixed_allocations],
+                threshold_total=self.nat_threshold_total,
+            )
+            if not any(qualified_votes):
+                raise ValueError(
+                    "No party qualifies for Norwegian adjustment seats after "
+                    "applying the threshold and everywhere-standing rule.")
+
         self.desired_col_sums, self.adj_seat_gen, _ \
             = apportion1d_general(
-                v_votes = self.nat_votes,
+                v_votes = entitlement_votes,
                 num_total_seats = self.total_const_seats + nat_seats,
-                prior_allocations = np.array(self.results["fixed_grand_total"]),
+                prior_allocations = fixed_allocations,
                 rule = self.system.get_generator("adj_determine_divider"),
                 type_of_rule = self.system.get_type("adj_determine_divider"),
                 threshold_percent = threshold,
@@ -260,19 +315,6 @@ class Election:
             if total_votes else np.zeros(self.nparty)
         )
 
-    def set_forced_reasons(self, demoTable):
-        if "Criteria" in demoTable["headers"]:
-            criteria_idx = demoTable["headers"].index("Criteria")
-            for row in demoTable["steps"]:
-                (constituency, party) = row[1:3]
-                const = [c["name"] for c in self.system["constituencies"]]
-                parties = self.system["parties"]
-                constIdx = const.index(constituency)
-                partyIdx = parties.index(party)
-                if self.votes[constIdx,partyIdx] < 1:
-                    row[criteria_idx] = "Forced allocation"
-        return demoTable
-
     def allocate_adjustment_seats(self):
         """Conduct adjustment seat apportionment."""
         method = ADJUSTMENT_METHODS[self.system["adjustment_method"]]
@@ -292,12 +334,47 @@ class Election:
             nat_prior_allocations = (self.results['fixed_nat_seats']
                                      if self.party_vote_info['specified']
                                      else None),
+            nat_votes=self.nat_votes,
+            nat_threshold_total=self.nat_threshold_total,
+            const_threshold_totals=self.const_threshold_totals,
+            national_threshold=(
+                self.system["adjustment_threshold"] if self.use_thresholds else 0),
+            local_threshold=(
+                self.system["constituency_threshold"] if self.use_thresholds else 0),
+            party_divisor_gen=self.system.get_generator("adj_determine_divider"),
+            total_seats=self.total_const_seats,
         )
+        if "party_totals" in stepbystep:
+            self.desired_col_sums = np.asarray(
+                stepbystep["party_totals"], dtype=int)
+        self.switching_seat_changes = np.asarray(
+            stepbystep.get("seat_changes", np.zeros_like(all_const_seats)),
+            dtype=int,
+        )
+
+        additional_method = self.system["additional_adjustment_method"]
+        additional_stepbystep = None
+        allocation_before_additional = np.asarray(all_const_seats).copy()
+        self.base_adjustment_seat_allocations = (
+            allocation_before_additional - self.results["fixed_const_seats"])
+        if additional_method != "none":
+            allocator = ADDITIONAL_ADJUSTMENT_METHODS[additional_method]
+            all_const_seats, additional_stepbystep = allocator(
+                self.votes,
+                self.desired_col_sums,
+                all_const_seats,
+                self.system.get_generator("additional_adj_alloc_divider"),
+                self.additional_total_seats,
+                self.additional_max_per_const,
+            )
+        self.additional_seat_allocations = (
+            np.asarray(all_const_seats) - allocation_before_additional)
         adj_const_seats = all_const_seats - self.results["fixed_const_seats"]
         self.results["all_const_seats"] = all_const_seats
         self.results["adj_const_seats"] = adj_const_seats
         self.results["adj_const_total"] = adj_const_seats.sum(0)
         self.results["all_const_total"] = all_const_seats.sum(0)
+        self.final_row_sums = all_const_seats.sum(1)
         # print('stepbystep=', stepbystep);
         alloc_sequence = stepbystep["data"]
         self.demo_tables = []
@@ -316,9 +393,17 @@ class Election:
                     "sup_header": sup_header,
                     "format":     format[i],
                 }
-                demo_table = self.set_forced_reasons(demo_table)
                 self.demo_tables.append(demo_table)
-            self.fix_special_formats()
+        if additional_stepbystep and additional_stepbystep["data"]:
+            headers, steps, sup_header = additional_stepbystep["function"](
+                self.system, additional_stepbystep["data"])
+            self.demo_tables.append({
+                "headers": headers,
+                "steps": steps,
+                "sup_header": sup_header,
+                "format": ADDITIONAL_DEMO_TABLE_FORMATS[additional_method],
+            })
+        self.fix_special_formats()
 
     def add_national_adjustment_seats(self):
         self.results["adj_nat_seats"] = (self.desired_col_sums
@@ -340,11 +425,10 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
-
     def calculate_ref_seat_shares(self, scaling, id=None):
         """Calculate threshold-free fractional seat shares for quality measures."""
         col_sums = np.array(self.fractional_party_seats)
-        row_sums = np.array(self.desired_row_sums)
+        row_sums = np.array(self.final_row_sums)
         total_votes = self.votes.sum()
         ref_seat_shares = (
             self.votes.astype(float) * self.total_const_seats / total_votes
@@ -354,27 +438,47 @@ class Election:
         col_constraints = scaling in {"both", "party"}
         error = 1e-8
         if row_constraints and col_constraints:
+            equal_margins = np.isclose(row_sums.sum(), col_sums.sum())
             for _ in range(10000):
-                for c, row_sum in enumerate(row_sums):
-                    current = ref_seat_shares[c, :].sum()
-                    if current:
-                        ref_seat_shares[c, :] *= row_sum / current
+                current_rows = ref_seat_shares.sum(axis=1)
+                ref_seat_shares *= np.divide(
+                    row_sums,
+                    current_rows,
+                    out=np.ones_like(row_sums, dtype=float),
+                    where=current_rows != 0,
+                )[:, None]
 
                 current_cols = ref_seat_shares.sum(axis=0)
-                over = current_cols > col_sums + error
-                if not over.any():
-                    break
+                if equal_margins:
+                    ref_seat_shares *= np.divide(
+                        col_sums,
+                        current_cols,
+                        out=np.ones_like(col_sums, dtype=float),
+                        where=current_cols != 0,
+                    )[None, :]
+                    if np.max(np.abs(
+                            ref_seat_shares.sum(axis=1) - row_sums)) <= error:
+                        break
+                else:
+                    over = current_cols > col_sums + error
+                    if not over.any():
+                        break
 
-                for p in np.flatnonzero(over):
-                    ref_seat_shares[:, p] *= col_sums[p] / current_cols[p]
+                    for p in np.flatnonzero(over):
+                        ref_seat_shares[:, p] *= col_sums[p] / current_cols[p]
 
-                under = ~over
-                available = self.total_const_seats - col_sums[over].sum()
-                current = ref_seat_shares[:, under].sum()
-                if current:
-                    ref_seat_shares[:, under] *= available / current
+                    under = ~over
+                    available = self.total_const_seats - col_sums[over].sum()
+                    current = ref_seat_shares[:, under].sum()
+                    if current:
+                        ref_seat_shares[:, under] *= available / current
             else:
-                raise RuntimeError("Reference seat share scaling did not converge.")
+                raise RuntimeError(
+                    'Reference seat share scaling did not converge. This may '
+                    'happen when isolated parties or constituencies, such as '
+                    'Åland, make party and constituency totals incompatible. '
+                    'Try "within constituencies" scaling.'
+                )
         elif row_constraints:
             for c, row_sum in enumerate(row_sums):
                 current = ref_seat_shares[c, :].sum()

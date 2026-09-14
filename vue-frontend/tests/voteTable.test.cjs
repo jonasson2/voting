@@ -45,6 +45,47 @@ test("pruning rejects invalid national votes without changing the table", async 
   assert.deepEqual(table, original)
 })
 
+test("pruning keeps the largest party in an otherwise empty local contest", async () => {
+  const {pruneSmallParties} = await voteTableModule()
+  const table = exampleTable()
+  table.parties = ["National", "Local runner-up", "Local winner"]
+  table.constituencies = [
+    {name: "Mainland", num_fixed_seats: 9, num_adj_seats: 0},
+    {name: "Island", num_fixed_seats: 1, num_adj_seats: 0},
+  ]
+  table.votes = [[1000, 0, 0], [0, 40, 60]]
+  table.pruned = [0, 0]
+  table.party_vote_info.votes = [1000, 40, 60]
+  table.party_vote_info.total = 1100
+
+  const result = pruneSmallParties(table, 10)
+
+  assert.deepEqual(result, {changed: true})
+  assert.deepEqual(table.parties, ["National", "Local winner"])
+  assert.deepEqual(table.votes, [[1000, 0], [0, 60]])
+  assert.deepEqual(table.pruned, [0, 40])
+})
+
+test("pruning keeps tied largest parties in an otherwise empty local contest", async () => {
+  const {pruneSmallParties} = await voteTableModule()
+  const table = exampleTable()
+  table.parties = ["National", "Local A", "Local B", "Smaller local"]
+  table.constituencies = [
+    {name: "Mainland", num_fixed_seats: 9, num_adj_seats: 0},
+    {name: "Island", num_fixed_seats: 1, num_adj_seats: 0},
+  ]
+  table.votes = [[1000, 0, 0, 0], [0, 50, 50, 10]]
+  table.pruned = [0, 0]
+  table.party_vote_info.votes = [1000, 50, 50, 10]
+  table.party_vote_info.total = 1110
+
+  const result = pruneSmallParties(table, 10)
+
+  assert.deepEqual(result, {changed: true})
+  assert.deepEqual(table.parties, ["National", "Local A", "Local B"])
+  assert.deepEqual(table.pruned, [0, 10])
+})
+
 test("vote-table labels must be present", async () => {
   const {validVoteTableLabels} = await voteTableModule()
   const table = exampleTable()

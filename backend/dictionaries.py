@@ -1,5 +1,5 @@
 from division_rules import dhondt_gen, sainte_lague_gen, \
-    sainte_lague_1_4_gen, sainte_lague_1_5_gen, \
+    sainte_lague_1_2_gen, sainte_lague_1_4_gen, sainte_lague_1_5_gen, \
     danish_gen, huntington_hill_gen, \
     adams_gen
 from division_rules import droop, hare
@@ -25,6 +25,7 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
 from methods.switching_se import switching as switching_se
+from methods.max_const_votes import max_const_votes
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
@@ -45,6 +46,7 @@ CONSTANTS = {
 DIVIDER_RULES = {
     "dhondt": dhondt_gen,
     "sainte-lague": sainte_lague_gen,
+    "nordic-1.2": sainte_lague_1_2_gen,
     "nordic-1.4": sainte_lague_1_4_gen,
     "nordic-1.5": sainte_lague_1_5_gen,
     # "imperiali": imperiali_gen,
@@ -55,6 +57,7 @@ DIVIDER_RULES = {
 DIVIDER_RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
+    {"value": "nordic-1.2",      "text": "Sainte-Laguë with 1st divisor 1.2"},
     {"value": "nordic-1.4",      "text": "Sainte-Laguë with 1st divisor 1.4"},
     {"value": "nordic-1.5",      "text": "Sainte-Laguë with 1st divisor 1.5"},
     {"value": "danish",          "text": "Danish"},
@@ -64,6 +67,7 @@ DIVIDER_RULE_NAMES = [
 RULE_NAMES = [
     {"value": "dhondt",          "text": "D'Hondt"},
     {"value": "sainte-lague",    "text": "Sainte-Laguë"},
+    {"value": "nordic-1.2",      "text": "Sainte-Laguë with 1st divisor 1.2"},
     {"value": "nordic-1.4",      "text": "Sainte-Laguë with 1st divisor 1.4"},
     {"value": "nordic-1.5",      "text": "Sainte-Laguë with 1st divisor 1.5"},
     {"value": "danish",          "text": "Danish"},
@@ -72,6 +76,101 @@ RULE_NAMES = [
     {"value": "hare",            "text": "Hare quota"},
     {"value": "droop",           "text": "Droop quota"},
 ]
+
+ELECTION_LAW_PRESETS = [
+    {
+        "value": "custom",
+        "text": "Custom",
+        "disabled": True,
+        "settings": None,
+    },
+    {
+        "value": "finland",
+        "text": "Finland",
+        "settings": {
+            "primary_divider": "dhondt",
+            "constituency_threshold": 0,
+            "adj_determine_divider": "dhondt",
+            "adjustment_threshold": 0,
+            "adjustment_threshold_seats": 0,
+            "adj_threshold_choice": 1,
+            "adjustment_method": "adjustment-as-fixed",
+            "adj_alloc_divider": "dhondt",
+            "additional_adjustment_method": "none",
+            "additional_adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "refer",
+        },
+    },
+    {
+        "value": "iceland",
+        "text": "Iceland",
+        "settings": {
+            "primary_divider": "dhondt",
+            "constituency_threshold": 0,
+            "adj_determine_divider": "dhondt",
+            "adjustment_threshold": 5,
+            "adjustment_threshold_seats": 0,
+            "adj_threshold_choice": 1,
+            "adjustment_method": "icelandic-law",
+            "adj_alloc_divider": "dhondt",
+            "additional_adjustment_method": "none",
+            "additional_adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "refer",
+        },
+    },
+    {
+        "value": "norway",
+        "text": "Norway",
+        "settings": {
+            "primary_divider": "nordic-1.4",
+            "constituency_threshold": 0,
+            "adj_determine_divider": "nordic-1.4",
+            "adjustment_threshold": 4,
+            "adjustment_threshold_seats": 0,
+            "adj_threshold_choice": 1,
+            "adjustment_method": "norwegian-law",
+            "adj_alloc_divider": "sainte-lague",
+            "additional_adjustment_method": "none",
+            "additional_adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "refer",
+        },
+    },
+    {
+        "value": "sweden-2014",
+        "text": "Sweden (2014)",
+        "settings": {
+            "primary_divider": "nordic-1.4",
+            "constituency_threshold": 12,
+            "adj_determine_divider": "nordic-1.4",
+            "adjustment_threshold": 4,
+            "adjustment_threshold_seats": 0,
+            "adj_threshold_choice": 1,
+            "adjustment_method": "switching_se",
+            "adj_alloc_divider": "nordic-1.4",
+            "additional_adjustment_method": "max-const-votes",
+            "additional_adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "make_const_adj",
+        },
+    },
+    {
+        "value": "sweden-2018",
+        "text": "Sweden (2018–present)",
+        "settings": {
+            "primary_divider": "nordic-1.2",
+            "constituency_threshold": 12,
+            "adj_determine_divider": "nordic-1.2",
+            "adjustment_threshold": 4,
+            "adjustment_threshold_seats": 0,
+            "adj_threshold_choice": 1,
+            "adjustment_method": "switching_se",
+            "adj_alloc_divider": "nordic-1.2",
+            "additional_adjustment_method": "max-const-votes",
+            "additional_adj_alloc_divider": "sainte-lague",
+            "constituency_seat_specification": "make_const_adj",
+        },
+    },
+]
+
 ADJUSTMENT_METHOD_NAMES = [
     {"value": "icelandic-law", "text": "Icelandic law 112/2021"},
     {"value": "ice-shares",    "text": "Icelandic law based on constituency seat shares"},
@@ -87,10 +186,16 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
     # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching_se",              "text": "Swedish-style switching of seats"},
+    {"value": "switching_se",              "text": "Swedish switching"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
+
+ADDITIONAL_ADJUSTMENT_METHOD_NAMES = [
+    {"value": "none", "text": "None"},
+    {"value": "max-const-votes", "text": "Maximum constituency votes"},
+]
+
 DEMO_TABLE_FORMATS = {
     "icelandic-law":             "clsl1%",
     "ice-shares":                "clsl13",
@@ -105,7 +210,7 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
-    "switching_se":              ("sccc","clss33"),
+    "switching_se":              "clss33",
     "alternating-scaling":       "",
     #"gurobi":                    "",
     }
@@ -128,6 +233,14 @@ SEAT_SPECIFICATION_OPTIONS = {
         {"value": "party_vote_info", "text": "National party votes"},
         {"value": "average", "text": "Average of both"},
     ]
+}
+
+ADDITIONAL_ADJUSTMENT_METHODS = {
+    "max-const-votes": max_const_votes,
+}
+
+ADDITIONAL_DEMO_TABLE_FORMATS = {
+    "max-const-votes": "clsl3",
 }
 
 GENERATING_METHOD_NAMES = [

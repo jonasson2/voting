@@ -370,10 +370,23 @@ class Simulation():
     def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:
             option = remove_prefix(measure, "dev_")
+            if (system["additional_adjustment_method"] != "none"
+                    and option != "all_adj"):
+                # These counterfactual layouts do not define where the
+                # additional national seat pool belongs.
+                self.add_deviation(
+                    election, election, measure, deviations)
+                continue
             comparison_system = system.generate_system(option)
             comparison_election = Election(comparison_system,
                                            election.votes,
-                                           election.party_vote_info)
+                                           election.party_vote_info,
+                                           pruned_votes=election.pruned_votes,
+                                           adjustment_seat_info={
+                                               "total": election.additional_total_seats,
+                                               "max_per_const":
+                                                   election.additional_max_per_const,
+                                           })
             comparison_election.assign_seats()
             self.add_deviation(election, comparison_election, measure, deviations)
 

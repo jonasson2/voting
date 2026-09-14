@@ -1,6 +1,4 @@
 #coding:utf-8
-from copy import deepcopy, copy
-from apportion import superiority, compute_forced, forced_stepbystep_entries
 import numpy as np
 from numpy import flatnonzero as find
 
@@ -9,6 +7,8 @@ def common_allocate(
         compute_criteria, criterion_name, reason, nolast_reason=None, last=None, **kwargs):
 
     # PREPARE WORK ARRAYS
+    # Generic methods treat every constituency-party cell as available.
+    votes = np.maximum(np.asarray(votes, dtype=float), 1)
     nconst = len(total_const_seats)
     alloc_list = prior_alloc.copy()
     free_const_seats = total_const_seats - alloc_list.sum(1)
@@ -24,22 +24,8 @@ def common_allocate(
     # ALLOCATE SEATS ONE BY ONE
     allocation_sequence = []
     last_party = [l['idx'] for l in last] if has_last else np.full(nconst, None)
-    print("IN COMMON ALLOCATE");
-    print("votes=", votes);
-
     votesum = votes.sum(1)
     while any(free_const_seats):
-        # FORCED ALLOCATION
-        forced, forced_party = compute_forced(votes, free_const_seats, free_party_seats)
-        alloc_list += forced
-        free_const_seats -= forced.sum(1)
-        free_party_seats -= forced.sum(0)
-        allocation_sequence.extend(forced_stepbystep_entries(forced, has_last))
-        last_party = np.where(forced_party >=0, forced_party, last_party)
-        if not any(free_const_seats):
-           break
-
-        # PREPARE NOT-FORCED ALLOCATION
         openC = find(free_const_seats > 0)
         openP = find(free_party_seats > 0)
 

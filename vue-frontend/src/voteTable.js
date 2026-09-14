@@ -191,6 +191,26 @@ export function pruneSmallParties(table, cutoff) {
   if (!keep.some(Boolean)) {
     return {error: "Small party cutoff would remove all parties"}
   }
+
+  // A national cutoff must not erase a complete local contest. For each
+  // seat-bearing constituency with no nationally retained votes, keep the
+  // largest local party (or every party tied for largest).
+  const nationallyKept = [...keep]
+  table.votes.forEach((row, constituencyIndex) => {
+    const constituency = table.constituencies[constituencyIndex]
+    const hasSeats = Number(constituency.num_fixed_seats)
+      + Number(constituency.num_adj_seats) > 0
+    const hasRetainedVotes = row.some(
+      (votes, partyIndex) => nationallyKept[partyIndex] && votes > 0
+    )
+    if (!hasSeats || hasRetainedVotes) return
+
+    const largest = Math.max(...row)
+    if (largest <= 0) return
+    row.forEach((votes, partyIndex) => {
+      if (votes === largest) keep[partyIndex] = true
+    })
+  })
   if (keep.every(Boolean)) return {changed: false}
 
   table.pruned = table.votes.map(

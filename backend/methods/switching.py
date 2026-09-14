@@ -25,7 +25,8 @@ def switching(m_votes,
               **kwargs):
 
     # CREATE NUMPY ARRAYS AND COUNTS FROM PARAMETER LISTS
-    votes = np.array(m_votes, float)
+    # This generic method treats every constituency-party cell as available.
+    votes = np.maximum(np.asarray(m_votes, dtype=float), 1)
     alloc_prior = np.array(m_prior_allocations)
     desired_const = np.array(v_desired_row_sums)
     max_party = np.array(v_desired_col_sums)

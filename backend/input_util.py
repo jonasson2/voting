@@ -1,5 +1,6 @@
 from util import disp
 from vote_table import check_vote_table
+from dictionaries import ADDITIONAL_ADJUSTMENT_METHODS, DIVIDER_RULES
 
 def parse_bool(value):
     value = value.lower()
@@ -29,6 +30,18 @@ def check_systems(electoral_systems):
     electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
+        electoral_system.setdefault("additional_adjustment_method", "none")
+        electoral_system.setdefault(
+            "additional_adj_alloc_divider", "sainte-lague")
+        additional_method = electoral_system["additional_adjustment_method"]
+        if (additional_method != "none"
+                and additional_method not in ADDITIONAL_ADJUSTMENT_METHODS):
+            raise ValueError(
+                f"Unknown additional adjustment-seat method: {additional_method}")
+        additional_divider = electoral_system["additional_adj_alloc_divider"]
+        if additional_divider not in DIVIDER_RULES:
+            raise ValueError(
+                f"Unknown additional adjustment-seat rule: {additional_divider}")
         if "compare_with" not in electoral_system:
             electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:

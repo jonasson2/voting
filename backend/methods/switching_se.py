@@ -1,164 +1,157 @@
-from apportion import apportion1d_general
 import numpy as np
-from numpy import argmin, flatnonzero as find
-from copy import deepcopy
 
-def min_with_index(x, I=None):
-    if I is None:
-        i = np.argmin(x)
-    else:
-        i = np.argmin(np.where(I, x, np.inf))
-    return (x[i], i)
+from apportion import apportion1d_general
 
-def max_with_index(x, I=None):
-    if I is None:
-        i = np.argmax(x)
-    else:
-        i = np.argmax(np.where(I, x, -np.inf))
-    return (x[i], i)
 
-def switching(m_votes,
-              v_desired_row_sums,
-              v_desired_col_sums,
-              m_prior_allocations,
-              divisor_gen,
-              **kwargs):
+def _divisors(divisor_gen, count):
+    generator = divisor_gen()
+    return np.array([next(generator) for _ in range(count + 1)], dtype=float)
 
-    # CREATE NUMPY ARRAYS AND COUNTS FROM PARAMETER LISTS
-    votes = np.array(m_votes, float)
-    alloc_prior = np.array(m_prior_allocations)
-    desired_const = np.array(v_desired_row_sums)
-    max_party = np.array(v_desired_col_sums)
-    num_constituencies = len(v_desired_row_sums)
-    num_parties        = len(v_desired_col_sums)
-    assert(sum(max_party) >= sum(desired_const))
 
-    # CALCULATE DIVISORS
-    N = max(max(desired_const), max(max_party)) + 1
-    div_gen = divisor_gen()
-    divisors = np.array([next(div_gen) for i in range(N + 1)])
-    
-    # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
-    alloc= np.zeros((num_constituencies, num_parties), int)
-    temp_votes = deepcopy(votes)
-    full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
-    temp_votes[:,full] = 0
-    for c in range(num_constituencies):
-        alloc_const, _,_ = apportion1d_general(
-            v_votes = list(temp_votes[c,:]),
-            num_total_seats = desired_const[c],
-            prior_allocations = list(alloc_prior[c,:]),
-            rule = divisor_gen
+def _eligible(shares, threshold):
+    return shares * 100 >= threshold
+
+
+def switching(
+        m_votes, v_desired_row_sums, v_desired_col_sums,
+        m_prior_allocations, divisor_gen, **kwargs):
+    """Allocate and reconcile Swedish constituency seats."""
+    votes = np.asarray(m_votes, dtype=float)
+    row_totals = np.asarray(v_desired_row_sums, dtype=int)
+    prior = np.asarray(m_prior_allocations, dtype=int)
+    if prior.any():
+        raise ValueError("Swedish switching requires zero prior allocations.")
+
+    nat_votes = np.asarray(kwargs.get("nat_votes", votes.sum(axis=0)), dtype=float)
+    nat_threshold_total = kwargs.get("nat_threshold_total", nat_votes.sum())
+    const_threshold_totals = np.asarray(
+        kwargs.get("const_threshold_totals", votes.sum(axis=1)), dtype=float)
+    national_threshold = kwargs.get("national_threshold", 0)
+    local_threshold = kwargs.get("local_threshold", 0)
+    party_divisor_gen = kwargs.get("party_divisor_gen", divisor_gen)
+    total_seats = kwargs.get("total_seats", int(np.sum(v_desired_col_sums)))
+
+    national_shares = (
+        nat_votes / nat_threshold_total
+        if nat_threshold_total else np.zeros_like(nat_votes)
+    )
+    nationally_eligible = _eligible(national_shares, national_threshold)
+    local_shares = np.divide(
+        votes,
+        const_threshold_totals[:, None],
+        out=np.zeros_like(votes),
+        where=const_threshold_totals[:, None] != 0,
+    )
+    list_eligible = nationally_eligible[None, :] | _eligible(
+        local_shares, local_threshold)
+
+    allocation = np.zeros_like(prior)
+    for c, seats in enumerate(row_totals):
+        eligible_votes = np.where(list_eligible[c], votes[c], 0)
+        if seats and not eligible_votes.any():
+            raise ValueError(
+                f"No party qualifies for constituency seat allocation in row {c}.")
+        allocation[c], _, _ = apportion1d_general(
+            v_votes=eligible_votes,
+            num_total_seats=int(seats),
+            prior_allocations=[],
+            rule=divisor_gen,
         )
-        alloc[c,:] = np.array(alloc_const)
 
-    # INFORMATION FOR FIRST STEP-BY-STEP DEMO TABLE
-    initial_allocation = [{
-        "party": p,
-        "goal": int(max_party[p]),
-        "actual": int(sum(alloc[:,p]))
-    } for p in range(num_parties)]
+    initial = allocation.copy()
+    local_only = ~nationally_eligible
+    protected_totals = np.where(local_only, initial.sum(axis=0), 0)
+    nationally_apportioned = total_seats - int(protected_totals.sum())
+    if nationally_apportioned < 0:
+        raise ValueError("Locally qualified seats exceed the total seat count.")
+    if nationally_apportioned and not nationally_eligible.any():
+        raise ValueError("No party qualifies for national seat apportionment.")
 
-    # WHILE SOME PARTIES HAVE TOO MANY SEATS DO SWITCHING
+    national_allocation, _, _ = apportion1d_general(
+        v_votes=np.where(nationally_eligible, nat_votes, 0),
+        num_total_seats=nationally_apportioned,
+        prior_allocations=[],
+        rule=party_divisor_gen,
+    )
+    party_totals = np.asarray(national_allocation, dtype=int) + protected_totals
+
+    divisors = _divisors(divisor_gen, max(total_seats, int(row_totals.max())))
+    vacancies = []
+    for p in np.flatnonzero(allocation.sum(axis=0) > party_totals):
+        excess = int(allocation[:, p].sum() - party_totals[p])
+        for _ in range(excess):
+            removable = (allocation[:, p] > 0) & (row_totals >= 3)
+            if not removable.any():
+                raise ValueError(
+                    f"No removable overhang seat exists for party {p}.")
+            quotients = np.full(len(row_totals), np.inf)
+            quotients[removable] = (
+                votes[removable, p] / divisors[allocation[removable, p] - 1]
+            )
+            c = int(np.argmin(quotients))
+            removal_quotient = float(quotients[c])
+            allocation[c, p] -= 1
+            vacancies.append({
+                "constituency": c,
+                "from": int(p),
+                "removal_quotient": removal_quotient,
+            })
+
     switches = []
-    i = 0
-    votesum = [sum(votes[c]) for c in range(num_constituencies)]
-    seatshares = np.array([
-        [votes[c, p]/votesum[c]*desired_const[c] for p in range(num_parties)]
-        for c in range(num_constituencies)
-    ])
-    while True:
-        i += 1
-        surplus = sum(alloc,0) > max_party
-        if not any(surplus):
-            break
-        wanting = sum(alloc,0) < max_party
+    while vacancies:
+        deficits = party_totals - allocation.sum(axis=0)
+        wanting = deficits > 0
+        best = None
+        for vacancy_index, vacancy in enumerate(vacancies):
+            c = vacancy["constituency"]
+            recipients = wanting & list_eligible[c]
+            if not recipients.any():
+                continue
+            scores = np.full(votes.shape[1], -np.inf)
+            scores[recipients] = (
+                votes[c, recipients] / divisors[allocation[c, recipients]]
+            )
+            q = int(np.argmax(scores))
+            candidate = (float(scores[q]), -vacancy_index, q)
+            if best is None or candidate > best[0]:
+                best = (candidate, vacancy_index, q)
+        if best is None:
+            raise ValueError("A returned Swedish constituency seat cannot be reassigned.")
 
-        # CALCULATE MINIMUM SEAT SHARE OF SURPLUS PARTIES
-        P = []
-        Q = []
-        C = []
-        mincrit = []
-        for c in range(num_constituencies):
-            with_seats = alloc[c,:] > alloc_prior[c,:]
-            with_votes = votes[c,:] > 0
-            score = np.zeros(num_parties)
-            S = surplus & with_seats
-            score[S] = seatshares[c, S]/divisors[alloc[c, S] - 1]
-            if any(S):
-                (min_score, p) = min_with_index(score, S)
-                C.append(c)
-                P.append(p)
-                mincrit.append(min_score)
-        if not C:  # NO SURPLUS PARTIES LEFT
-            break
-        else:
-            cmin = np.argmin(mincrit)
-            c = C[cmin]
-            with_votes = votes[c,:] > 0
-            scoreto = np.zeros(num_parties)
-            W = wanting & with_votes
-            scoreto[W] = seatshares[c, W]/divisors[alloc[c, W]]
-            if not any(W):
-                break
-            else:
-                (maxcrit, q) = max_with_index(scoreto, W)
-                alloc[c, P[cmin]] -= 1
-                alloc[c, q] += 1
-
-                switches.append({
-                    "constituency": c,
-                    "from": P[cmin],
-                    "to": q,
-                    "mincrit": mincrit[cmin],
-                    "maxcrit": maxcrit
-                })
-
-    # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
-    steps = {
-        "initial_allocation": initial_allocation,
-        "switches": switches,
-    }
+        _, vacancy_index, q = best
+        vacancy = vacancies.pop(vacancy_index)
+        c = vacancy["constituency"]
+        recipient_quotient = float(
+            votes[c, q] / divisors[allocation[c, q]])
+        allocation[c, q] += 1
+        switches.append({
+            **vacancy,
+            "to": q,
+            "recipient_quotient": recipient_quotient,
+        })
 
     stepbystep = {
-        "data": steps,
-        "function": print_demo_table1,
-        "additional_function": print_demo_table2
+        "data": {"switches": switches},
+        "function": print_switching_table,
+        "party_totals": party_totals,
+        "seat_changes": allocation - initial,
     }
-    return alloc, stepbystep
+    return allocation, stepbystep
 
-def print_demo_table1(rules, steps):
-    sup_header = "Nationally apportioned vs. full constituency allocation"
-    headers = ["Party", "Nationally apportioned", "All as const. seats", "Off by"]
-    data = []
-    for party in steps["initial_allocation"]:
-        data.append([
-            rules["parties"][party["party"]],
-            party["goal"],
-            party["actual"],
-            party["actual"] - party["goal"],
-        ])
-    return headers, data, sup_header 
 
-def print_demo_table2(rules, steps):
-    sup_header = "Switching of seats"
-    headers = ["No.", "Constituency", "From", "To", "Min crit", "Max crit"]
-    data = []
-    switch_number = 0
-    for switch in steps["switches"]:
-        switch_number += 1
-        const_name = rules["constituencies"][switch["constituency"]]["name"]
-        from_party = rules["parties"][switch["from"]]
-        to_party   = rules["parties"][switch["to"]]
-        mincrit    = switch["mincrit"]
-        maxcrit    = switch["maxcrit"]
-        data.append([
-            switch_number,
-            const_name,
-            from_party,
-            to_party,
-            mincrit,
-            maxcrit
-        ])
-
-    return headers, data, sup_header 
+def print_switching_table(rules, steps):
+    headers = [
+        "Step", "Constituency", "From", "To",
+        "Returned quotient", "Recipient quotient",
+    ]
+    data = [[
+        number,
+        rules["constituencies"][switch["constituency"]]["name"],
+        rules["parties"][switch["from"]],
+        rules["parties"][switch["to"]],
+        switch["removal_quotient"],
+        switch["recipient_quotient"],
+    ] for number, switch in enumerate(steps["switches"], start=1)]
+    if not data:
+        data = [["–", "–", "No switching required", "–", "–", "–"]]
+    return headers, data, "Swedish switching of overhang seats"

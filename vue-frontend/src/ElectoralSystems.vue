@@ -144,10 +144,12 @@
         <b>+</b>
       </b-button>
     </template>
-    <div slot="empty">
-      There are no electoral systems specified.
-      Use the <b>+</b> button to create a new electoral system.
-    </div>
+    <template #empty>
+      <div>
+        There are no electoral systems specified.
+        Use the <b>+</b> button to create a new electoral system.
+      </div>
+    </template>
   </b-tabs>
 </div>
 </template>
@@ -211,6 +213,7 @@ export default {
       "deleteAllSystems",
       "setWaitingForData",
       "clearWaitingForData",
+      "serverError",
       "addBeforeunload",
       "newNumbering",
       "setActiveSystemIndex",
@@ -279,21 +282,30 @@ export default {
       this.$http.post(
         'api/capabilities/',
         this.vote_table.constituencies,
-      ).then(response => {
-        let r = response.body
-        this.capabilities = r.capabilities;
-        console.log('r.capabilities', r.capabilities)
-        this.addSystem(r.election_system)
-        this.updateSimSettings(r.sim_settings)
-        this.$store.dispatch("recalc_sys_const")
-        this.$nextTick(()=>{
-          this.created = true
-          console.log("new system added")
-          console.log("systems, system_numbering", this.systems, this.system_numbering)
+      ).then(
+        response => {
+          let r = response.body
+          if (!r || r.error) {
+            this.serverError(r)
+            this.adding_system = false
+            this.clearWaitingForData()
+            return
+          }
+          this.capabilities = r.capabilities;
+          this.addSystem(r.election_system)
+          this.updateSimSettings(r.sim_settings)
+          this.$store.dispatch("recalc_sys_const")
+          this.$nextTick(()=>{
+            this.created = true
+            this.adding_system = false
+          })
+        },
+        response => {
+          this.serverError(response.status)
           this.adding_system = false
-          console.log("in addsys, new activeTabIndex", this.activeTabIndex)
-        })
-      })
+          this.clearWaitingForData()
+        }
+      )
     },
     loadAll: function() {
       var formData = new FormData();
@@ -306,10 +318,7 @@ export default {
     },
   },
   created: function () {
-    console.log("CreatedElectoralSystems")
-    console.log("systems", this.systems)
-    this.deleteAllSystems()
-    this.addNewSystem()
+    if (!this.systems.length) this.addNewSystem()
   },
   watch: {
     systems: {

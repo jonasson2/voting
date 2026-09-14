@@ -47,7 +47,9 @@ class ElectionHandler:
                                 party_vote_info=deepcopy(self.party_vote_info),
                                 vote_table_name=vote_table["name"],
                                 pruned_votes=vote_table.get(
-                                    "pruned", [0] * len(self.votes)))
+                                    "pruned", [0] * len(self.votes)),
+                                adjustment_seat_info=adjustment_seat_info(
+                                    vote_table))
             self.elections.append(election)
 
     def to_xlsx(self, filename):
@@ -80,3 +82,24 @@ def update_constituencies(vote_table, systems):
         constituencies.append(const)
         nat_seats.append(nat)
     return (constituencies, nat_seats)
+
+
+def adjustment_seat_info(vote_table):
+    if "max_total_adj_seats" not in vote_table:
+        return {"total": 0, "max_per_const": None}
+    minimums = [
+        constituency["num_adj_seats"]
+        for constituency in vote_table["constituencies"]
+    ]
+    maxima = [
+        constituency.get("max_adj_seats")
+        for constituency in vote_table["constituencies"]
+    ]
+    capacities = [
+        None if maximum is None else maximum - minimum
+        for minimum, maximum in zip(minimums, maxima)
+    ]
+    return {
+        "total": vote_table["max_total_adj_seats"] - sum(minimums),
+        "max_per_const": capacities,
+    }
