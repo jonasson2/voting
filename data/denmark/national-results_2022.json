@@ -1,0 +1,9 @@
+{
+  "description": "Official mainland national totals and overhang case; report tables 1 and 3",
+  "source": "https://www.valg.im.dk/Media/638040301540778324/Danmarks%20Statistiks%20opg%C3%B8relse%20af%20folketingsvalget%20den%201.%20november%202022.pdf",
+  "parties": ["A", "B", "C", "D", "F", "I", "K", "M", "O", "Q", "V", "Æ", "Ø", "Å"],
+  "votes": [971995, 133931, 194820, 129524, 293186, 278656, 18276, 327699, 93428, 31787, 470546, 286796, 181452, 117567],
+  "eligible": [true, true, true, true, true, true, false, true, true, false, true, true, true, true],
+  "fixed_seats": [50, 2, 7, 2, 12, 10, 0, 13, 1, 0, 21, 11, 4, 2],
+  "total_seats": [50, 7, 10, 6, 15, 14, 0, 16, 5, 0, 23, 14, 9, 6]
+}

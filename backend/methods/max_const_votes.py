@@ -66,10 +66,16 @@ def max_const_votes(
             votes[np.ix_(open_const, open_party)]
             / divisors[allocation[np.ix_(open_const, open_party)]]
         )
+        if kwargs.get("exclude_zero_votes"):
+            scores[votes <= 0] = -np.inf
         if not np.isfinite(scores).any():
-            raise ValueError("Constituency maxima prevent allocation of all seats.")
-        c, p = np.unravel_index(np.argmax(scores), scores.shape)
+            raise ValueError("No eligible party-constituency pair can receive the remaining seats.")
+        tied = np.flatnonzero(scores == scores.max())
+        rng = kwargs.get("rng")
+        winner = rng.choice(tied) if rng is not None else tied[0]
+        c, p = np.unravel_index(winner, scores.shape)
         quotient = float(scores[c, p])
+        divisor = float(divisors[allocation[c, p]])
         allocation[c, p] += 1
         added[c] += 1
         deficits[p] -= 1
@@ -77,6 +83,9 @@ def max_const_votes(
             "constituency": int(c),
             "party": int(p),
             "quotient": quotient,
+            "votes": float(votes[c, p]),
+            "divisor": divisor,
+            "lot": bool(len(tied) > 1 and rng is not None),
         })
 
     if (added < minimums).any():

@@ -216,6 +216,7 @@
   
   
   <national-party-votes
+    v-if="!hasRegions"
     :vote-table="vote_table"
     :basis-options="partyVoteBasisOptions"
     :has-pruned-votes="hasPrunedVotes"
@@ -225,6 +226,10 @@
   <b-alert :show="checkPartyInput()==false">
     The national name, seats, and votes must be valid
   </b-alert>
+
+  <region-table v-if="hasRegions || !vote_table.party_vote_info.specified"
+    :vote-table="vote_table" />
+  <b-alert :show="Boolean(regionsError)">{{ regionsError }}</b-alert>
 
   <party-names-table
     :vote-table="vote_table"
@@ -240,6 +245,7 @@ import { mapState,mapMutations,mapActions } from 'vuex';
 import ConstituencyVoteTable from "./components/ConstituencyVoteTable.vue";
 import NationalPartyVotes from "./components/NationalPartyVotes.vue";
 import PartyNamesTable from "./components/PartyNamesTable.vue";
+import RegionTable from "./components/RegionTable.vue";
 import {
   addAdjustmentSeatMaximums,
   addConstituency,
@@ -253,6 +259,7 @@ import {
   validNationalVotes,
   validVoteTableLabels,
   validVotes,
+  regionError,
 } from "./voteTable.js";
 
 export default {
@@ -260,6 +267,7 @@ export default {
     ConstituencyVoteTable,
     NationalPartyVotes,
     PartyNamesTable,
+    RegionTable,
   },
   computed: {
     ...mapState([
@@ -281,11 +289,14 @@ export default {
       return Array.isArray(this.vote_table.party_names)
         && this.vote_table.party_names.some(name => name.trim())
     },
+    hasRegions() { return this.vote_table.regions && this.vote_table.regions.length > 0 },
+    regionsError() { return regionError(this.vote_table) },
     hasMaxAdjustmentSeats() {
       return this.show_max_adj_seats
     },
     showPartyNameTable() {
-      return this.hasPartyNames || (this.show_party_names
+      return this.hasPartyNames || (this.vote_table.independent_candidates || []).some(Boolean)
+        || (this.show_party_names
         && Array.isArray(this.vote_table.party_names))
     },
   },
@@ -385,6 +396,9 @@ export default {
         "party_names",
         Array(this.vote_table.parties.length).fill("")
       )
+      if (!this.vote_table.independent_candidates) {
+        this.$set(this.vote_table, "independent_candidates", this.vote_table.parties.map(() => false))
+      }
       this.show_party_names = true
     },
     save: function () {

@@ -1,0 +1,19 @@
+Denmark 2026,fixed,min_adj,max_adj,region,A,B,C,F,H,I,M,O,V,Æ,Ø,Å,U1,U2,U3,U4,U5,U6
+Party names,,,,,Socialdemokratiet,Radikale Venstre,Det Konservative Folkeparti,SF - Socialistisk Folkeparti,Borgernes Parti - Lars Boje Mathiesen,Liberal Alliance,Moderaterne,Dansk Folkeparti,"Venstre, Danmarks Liberale Parti",Danmarksdemokraterne - Inger Støjberg,Enhedslisten - De Rød-Grønne,Alternativet,Rashid Ali,Rasmus Paludan,Theresa Scavenius,John Erik Wagner,Søren Skjold Andersen,Knud Gaarn-Larsen
+Independent candidates,,,,,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1
+Max adj seats,,,40,,,,,,,,,,,,,,,,,,,
+Københavns Storkreds,17,0,,H,71298,55768,41744,62111,3494,37491,38283,25393,16975,3334,77227,30627,75,156,1749,34,0,0
+Københavns Omegns Storkreds,11,0,,H,67028,25737,30880,36676,4561,25498,27798,33569,17290,5206,24367,7850,0,0,0,0,0,0
+Nordsjællands Storkreds,10,0,,H,55960,21438,35464,35234,4842,30314,30491,28559,25506,6991,13610,6997,0,0,0,0,0,0
+Bornholms Storkreds,2,0,,H,7246,417,874,2764,421,1200,1376,2501,4167,1001,1322,438,0,0,0,0,0,0
+Sjællands Storkreds,20,0,,SS,119530,17576,31282,65989,14590,46604,46846,74790,44912,28183,22197,10095,0,0,0,0,0,0
+Fyns Storkreds,12,0,,SS,82183,13804,21827,38746,7068,26396,23900,27111,31723,15227,19043,6975,0,0,0,0,0,0
+Sydjyllands Storkreds,17,0,,SS,96612,12146,22378,36249,12630,43657,30088,48404,72194,33580,13613,4512,0,0,0,0,0,0
+Østjyllands Storkreds,19,0,,MN,110462,37121,40485,69726,10948,55011,38871,34707,50669,25590,33055,15600,0,0,0,0,158,0
+Vestjyllands Storkreds,13,0,,MN,66800,9971,25914,32281,8539,32770,18390,24309,51884,41084,8292,3592,0,0,0,0,0,264
+Nordjyllands Storkreds,14,0,,MN,102133,13464,19901,33530,8835,35480,18732,25175,46369,45106,13311,5084,0,0,0,0,0,0
+,,,,,,,,,,,,,,,,,,,,,,
+Regions,Name,adj,,,,,,,,,,,,,,,,,,,,
+H,Hovedstaden,12,,,,,,,,,,,,,,,,,,,,
+SS,Sjælland-Syddanmark,14,,,,,,,,,,,,,,,,,,,,
+MN,Midtjylland-Nordjylland,14,,,,,,,,,,,,,,,,,,,,

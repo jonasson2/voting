@@ -11,6 +11,10 @@
           <tr>
             <th>Abbreviation</th>
             <th>Name</th>
+            <th v-b-tooltip.hover.top.v-primary.ds500
+              title="Independent candidates receive fixed seats only under Danish rules and are omitted from simulations; their votes remain in threshold totals.">
+              Independent
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -22,6 +26,10 @@
                 type="text"
                 :size="Math.min(Math.max(voteTable.party_names[partyIndex].length + 1, 3), 50)"
                 />
+            </td>
+            <td class="displaycenter">
+              <input type="checkbox" v-model="voteTable.independent_candidates[partyIndex]"
+                :aria-label="`${party}: independent candidate`" />
             </td>
           </tr>
         </tbody>

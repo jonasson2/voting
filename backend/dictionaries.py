@@ -26,6 +26,7 @@ from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
 from methods.switching_se import switching as switching_se
 from methods.max_const_votes import max_const_votes
+from methods.danish import prepare_regions
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
@@ -83,6 +84,23 @@ ELECTION_LAW_PRESETS = [
         "text": "Custom",
         "disabled": True,
         "settings": None,
+    },
+    {
+        "value": "denmark",
+        "text": "Denmark",
+        "settings": {
+            "primary_divider": "dhondt",
+            "constituency_threshold": 0,
+            "adj_determine_divider": "hare",
+            "adjustment_threshold": 2,
+            "adjustment_threshold_seats": 1,
+            "adj_threshold_choice": 1,
+            "adjustment_preparation_method": "danish-regions",
+            "adj_preparation_divider": "sainte-lague",
+            "adjustment_method": "max-const-votes",
+            "adj_alloc_divider": "danish",
+            "constituency_seat_specification": "refer",
+        },
     },
     {
         "value": "finland",
@@ -194,6 +212,7 @@ ADJUSTMENT_METHOD_NAMES = [
 ADJUSTMENT_PREPARATION_METHOD_NAMES = [
     {"value": "none", "text": "Not applicable"},
     {"value": "switching_se", "text": "Swedish switching"},
+    {"value": "danish-regions", "text": "Danish allocation to regions"},
 ]
 
 DEMO_TABLE_FORMATS = {
@@ -237,10 +256,12 @@ SEAT_SPECIFICATION_OPTIONS = {
 
 ADJUSTMENT_PREPARATION_METHODS = {
     "switching_se": switching_se,
+    "danish-regions": prepare_regions,
 }
 
 ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS = {
     "switching_se": "clss33",
+    "danish-regions": "clscc3l",
 }
 
 GENERATING_METHOD_NAMES = [

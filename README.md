@@ -6,9 +6,9 @@ adjustment seats, calculates a single election under one or more electoral
 systems, and compares systems over simulated elections.
 
 The simulator is intended for statutory, comparative, and hypothetical work.
-It includes allocation methods used in Iceland and Norway, biproportional
-methods such as alternating scaling, configurable thresholds and divisor rules,
-and Excel export of election and simulation results.
+It includes allocation methods used in Iceland, Norway, Sweden, Finland and
+Denmark, biproportional methods such as alternating scaling, configurable
+thresholds and divisor rules, and Excel export of election and simulation results.
 
 The browser interface is built with Vue and the HTTP API with Flask. The
 allocation and simulation code is under `backend/` and can also be run without

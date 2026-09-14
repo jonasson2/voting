@@ -11,6 +11,12 @@ export function emptyPartyVoteInfo() {
 }
 
 export function normalizeVoteTable(table) {
+  if (table.party_names || table.independent_candidates) {
+    if (!table.party_names) table.party_names = table.parties.map(() => "")
+    if (!table.independent_candidates) {
+      table.independent_candidates = table.parties.map(() => false)
+    }
+  }
   const constituencyCount = Array.isArray(table.constituencies)
     ? table.constituencies.length
     : 0
@@ -115,6 +121,9 @@ export function validVotes(table) {
       row.length === table.parties.length
       && row.every(isNonnegativeInteger)
     )
+    && (!table.independent_candidates
+        || (table.independent_candidates.length === table.parties.length
+            && table.independent_candidates.every(flag => typeof flag === "boolean")))
 }
 
 export function validNationalVotes(table) {
@@ -133,6 +142,7 @@ export function validNationalVotes(table) {
 export function removeParty(table, index) {
   table.parties.splice(index, 1)
   if (Array.isArray(table.party_names)) table.party_names.splice(index, 1)
+  if (table.independent_candidates) table.independent_candidates.splice(index, 1)
   table.votes.forEach(row => row.splice(index, 1))
   if (table.party_vote_info.specified) {
     table.party_vote_info.votes.splice(index, 1)
@@ -142,6 +152,7 @@ export function removeParty(table, index) {
 export function addParty(table) {
   table.parties.push("")
   if (Array.isArray(table.party_names)) table.party_names.push("")
+  if (table.independent_candidates) table.independent_candidates.push(false)
   table.votes.forEach(row => row.push(1))
   if (table.party_vote_info.specified) table.party_vote_info.votes.push(1)
 }
@@ -162,8 +173,13 @@ export function addConstituency(table) {
     constituency.max_adj_seats = 1
     table.max_total_adj_seats = Number(table.max_total_adj_seats) + 1
   }
+  if (table.regions && table.regions.length) {
+    constituency.region = table.regions[0].abbreviation
+    table.regions[0].num_adj_seats += constituency.num_adj_seats
+  }
   table.constituencies.push(constituency)
-  table.votes.push(Array(table.parties.length).fill(1))
+  table.votes.push(table.parties.map((_, p) =>
+    table.independent_candidates && table.independent_candidates[p] ? 0 : 1))
   table.pruned.push(0)
 }
 
@@ -224,6 +240,9 @@ export function pruneSmallParties(table, cutoff) {
   if (Array.isArray(table.party_names)) {
     table.party_names = table.party_names.filter((_, index) => keep[index])
   }
+  if (table.independent_candidates) {
+    table.independent_candidates = table.independent_candidates.filter((_, index) => keep[index])
+  }
   table.votes = table.votes.map(row =>
     row.filter((_, index) => keep[index])
   )
@@ -246,6 +265,8 @@ export function clearVoteTable(table) {
   table.votes = []
   table.pruned = []
   delete table.party_names
+  delete table.independent_candidates
+  delete table.regions
   delete table.max_total_adj_seats
   table.party_vote_info = emptyPartyVoteInfo()
   table.party_vote_basis = "totals"
@@ -265,4 +286,87 @@ export function removeAdjustmentSeatMaximums(table) {
     delete constituency.max_adj_seats
   })
   delete table.max_total_adj_seats
+}
+
+export function regionError(table) {
+  const regions = table.regions || []
+  if (!Array.isArray(regions)) return "Regions must be a list"
+  if (!regions.length) {
+    return table.constituencies.some(c => c.region)
+      ? "Constituency regions require a Regions table" : ""
+  }
+  if (table.party_vote_info.specified) return "National party votes cannot be combined with regions"
+  const codes = regions.map(region => region.abbreviation)
+  if (codes.some(code => !isNonblankText(code) || code !== code.trim())
+      || new Set(codes).size !== codes.length) {
+    return "Region abbreviations must be unique and non-blank, without surrounding spaces"
+  }
+  if (regions.some(region => !isNonblankText(region.name)
+      || !isNonnegativeInteger(region.num_adj_seats))) {
+    return "Regions require names and non-negative integer adjustment-seat counts"
+  }
+  if (table.constituencies.some(c => !codes.includes(c.region))) {
+    return "Every constituency must belong to a listed region"
+  }
+  for (const region of regions) {
+    const constituencies = table.constituencies.filter(c => c.region === region.abbreviation)
+    if (!constituencies.length) return `Region ${region.abbreviation} has no constituencies`
+    const minimum = sumNumbers(constituencies.map(c => c.num_adj_seats))
+    const maxima = constituencies.map(c => "max_total_adj_seats" in table
+      ? (c.max_adj_seats === "" ? null : c.max_adj_seats) : c.num_adj_seats)
+    if (region.num_adj_seats < minimum || (maxima.every(m => m !== null)
+        && region.num_adj_seats > sumNumbers(maxima))) {
+      return `Adjustment seats in region ${region.abbreviation} do not fit its constituency bounds`
+    }
+  }
+  const total = "max_total_adj_seats" in table ? table.max_total_adj_seats
+    : sumNumbers(table.constituencies.map(c => c.num_adj_seats))
+  return sumNumbers(regions.map(r => r.num_adj_seats)) === total ? ""
+    : "Regional adjustment seats must sum to the table's adjustment-seat total"
+}
+
+export function addRegion(table) {
+  if (table.party_vote_info.specified) return
+  if (!table.regions) table.regions = []
+  const defaults = [
+    ["H", "Hovedstaden"], ["SS", "Sjælland-Syddanmark"], ["MN", "Midtjylland-Nordjylland"],
+  ]
+  const used = table.regions.map(r => r.abbreviation)
+  let [abbreviation, name] = defaults.find(([code]) => !used.includes(code)) || ["", ""]
+  if (!abbreviation) {
+    let index = 4
+    while (used.includes(`R${index}`)) index++
+    abbreviation = `R${index}`
+    name = abbreviation
+  }
+  const seats = table.regions.length ? 0 : (table.max_total_adj_seats
+    ?? sumNumbers(table.constituencies.map(c => c.num_adj_seats)))
+  table.regions.push({abbreviation, name, num_adj_seats: seats})
+  if (table.regions.length === 1) {
+    table.constituencies.forEach(c => { c.region = abbreviation })
+  }
+}
+
+export function renameRegion(table, index, abbreviation) {
+  abbreviation = abbreviation.trim()
+  if (!abbreviation || table.regions.some((region, i) =>
+    i !== index && region.abbreviation === abbreviation)) {
+    return "Region abbreviations must be unique and non-blank"
+  }
+  const old = table.regions[index].abbreviation
+  table.regions[index].abbreviation = abbreviation
+  table.constituencies.forEach(c => {
+    if (c.region === old) c.region = abbreviation
+  })
+  return ""
+}
+
+export function removeRegion(table, index) {
+  const [removed] = table.regions.splice(index, 1)
+  table.constituencies.forEach(c => {
+    if (c.region === removed.abbreviation) c.region = ""
+  })
+  if (!table.regions.length) {
+    table.constituencies.forEach(c => { delete c.region })
+  }
 }

@@ -1,8 +1,11 @@
 Danish allocation discussion
 ============================
 
-This note preserves the design discussion for a future Danish-law
-implementation. No Danish implementation has been started yet.
+This note preserves the agreed Danish-law procedure and implementation plan.
+The implementation now includes regions, independent candidates, the Denmark
+preset, both allocation tables, and the 2026 mainland data. Tests cover the
+official 2026 allocations and the national 2022 overhang case. The statutory
+advance-allocation procedure remains deferred as specified below.
 
 Basic structure
 ---------------
@@ -22,6 +25,115 @@ The three regions are:
 * Hovedstaden
 * Sjælland-Syddanmark
 * Midtjylland-Nordjylland
+
+Verified allocation procedure
+-----------------------------
+
+### 1. Allocation of constituency seats
+
+Allocate the fixed constituency seats separately in each constituency using
+d'Hondt divisors 1, 2, 3, and so on. Parties and independent candidates both
+participate. There is no electoral threshold at this stage. Exact quotient
+ties are decided by lot under Danish law.
+
+### 2. Eligibility for compensatory seats
+
+An independent candidate is not eligible for compensatory seats. A party is
+eligible if it satisfies at least one of these conditions:
+
+1. It obtained at least one constituency seat.
+2. In at least two of the three regions, its regional vote is at least the
+   total number of valid votes in that region divided by the number of fixed
+   constituency seats in that region.
+3. It obtained at least 2 percent of all valid votes nationally.
+
+For conditions 2 and 3, "all valid votes" includes votes for every party and
+independent candidate, whether or not they qualify for compensatory seats. In
+the simulator it also includes the retained totals for pruned parties. Pruned
+parties and independent candidates contribute to these threshold bases but do
+not thereby participate in the later allocation of compensatory seats.
+
+### 3. Initial calculation of national party totals
+
+Allocate the available seats among the eligible parties using the Hare quota
+and largest remainders. The available number is the total number of seats
+(normally 175) minus constituency seats won by independent candidates. Only
+eligible-party votes enter the Hare quota, and the constituency seats already
+won by parties are not minimum allocations. Exact ties are decided by lot.
+
+### 4. Correction for overhang
+
+Let f[p] be party p's constituency seats and t[p] its national total from
+step 3. Keep f[p] fixed and recalculate t[p] as follows.
+
+a) If no party has f[p] > t[p], accept the step-3 totals and finish.
+b) Otherwise, set the final total of every party with f[p] >= t[p] to f[p]
+   and remove those parties from further calculations.
+c) Subtract all removed parties' final totals from the party-seat pool in
+   step 3. Allocate the remaining seats among the remaining parties using
+   their votes and Hare/largest remainders, updating t[p].
+d) If no remaining party's t[p] exceeds its original step-3 total, accept
+   these totals and finish.
+e) Otherwise, fix each such party at its original step-3 total, remove it,
+   and repeat c)-e) until d) ends the procedure.
+
+Each party's compensatory seats equal its final total minus f[p].
+
+### 5. Allocation of adjustment seats to regions
+
+a) Sum each party's votes and fixed seats within each region.
+b) Allocate adjustment seats using Maximum constituency votes with
+   Sainte-Lague, treating regions as constituencies and starting from the
+   fixed seats already allocated.
+c) Enforce both each party's adjustment-seat entitlement from stage 4 and
+   each region's specified adjustment-seat total.
+
+If allocation cannot be completed because a party has no votes in some
+regions, report a clear error. The statutory advance-allocation procedure
+is deferred.
+
+### 6. Allocation of adjustment seats to lists
+
+a) Within each region, use Maximum constituency votes with the Danish
+   divisor rule (1, 4, 7, ...), starting from the fixed seats already allocated.
+b) For each seat, select the party-constituency pair with the highest
+   quotient, considering only parties that still lack adjustment seats
+   assigned to them in that region by stage 5. Give that party one seat in
+   the selected constituency and update its quotient. Resolve exact ties
+   by lot.
+c) Repeat until every party has received its assigned adjustment seats in
+   the region.
+
+Step-by-step tables
+-------------------
+
+Use the two existing step-by-step tables, with one row per adjustment seat
+in each table. Record the actual allocation decisions as they happen.
+
+First table: Allocation of adjustment seats to regions (stage 5)
+
+Columns: Adjustment seat # | Region | Party | Votes | Divisor | Vote score
+
+Each row identifies the selected party and region. Votes are the party's
+regional votes; Divisor is the Sainte-Lague divisor used for that seat;
+Vote score is Votes / Divisor, calculated before awarding the seat. Rows
+follow the allocation order across all regions.
+
+Second table: Allocation of adjustment seats to constituencies (stage 6)
+
+Columns: Adjustment seat # | Region | Constituency | Party | Votes |
+         Divisor | Vote score
+
+Each row identifies the selected party and constituency, together with its
+region. Votes are the party's constituency votes; Divisor is the Danish
+divisor used for that seat; Vote score is Votes / Divisor, calculated before
+awarding the seat. Process regions in vote-table order and retain the seat
+allocation order within each region.
+
+Number the seats consecutively from 1 in each table. Both tables describe
+the same adjustment-seat total at different geographical levels; their seat
+numbers are independent and do not identify the same individual seat.
+Mark any allocation decided by lot in the relevant row.
 
 Input-table direction
 ---------------------
@@ -48,8 +160,10 @@ regional and national calculations should use sums of constituency votes.
 
 Independent candidates need an explicit representation in real-election
 input because they do not participate like nationwide parties. They should
-be excluded from generated simulations. The exact file marker and
-single-election handling remain to be designed.
+be excluded from generated simulations. The file marker is an optional
+Independent candidates row of 0/1 values. In a Danish single election each
+independent can win at most one fixed seat in its constituency and cannot
+receive adjustment seats.
 
 Electoral-system pipeline
 -------------------------
@@ -72,65 +186,99 @@ then place those seats in the constituencies while observing the region
 totals.
 
 There must be only one adjustment-seat allocator. The former secondary or
-"additional" allocator is being removed. The primary allocator must either
+"additional" allocator has been removed. The primary allocator must either
 handle flexible constituency bounds itself or reject them before allocation.
 This is the right foundation for the future Danish stage 5.
 
-National party totals and overhang
-----------------------------------
+Implementation plan
+-------------------
 
-After constituency seats and compensation eligibility have been determined,
-the eligible parties' national seat totals are calculated by the Hare quota,
-equivalently the largest-remainder method: allocate the integer parts of the
-quotas and allocate the remaining seats in descending order of fractional
-remainders.
+Implement in the following four increments, beginning with the input format
+and tab-1 controls so the representation can be inspected before connecting
+the calculations. The six-stage procedure above defines the Danish rules;
+the headings below describe implementation work.
 
-At that point f[p] is party p's constituency-seat count and t[p] is its
-calculated national total. If f[p] > t[p], the party keeps its constituency
-seats, is fixed at f[p], and is removed from the next calculation. Recompute
-the national totals for the remaining parties and remaining seats. Repeat
-until every remaining party satisfies f[p] <= t[p]. An iteration can expose a
-new overhang, so this is genuinely iterative.
+### 1. Vote data and tab 1
 
-The simulator normally describes party-total allocation as starting from
-zero. That wording need not be added to the UI for Denmark; it is already the
-normal interpretation of this stage.
+Add optional region identifiers to constituencies, a region table containing
+abbreviation, name and adjustment-seat count, and an independent-candidate
+flag for each party/candidate column.
 
-The legal allocation after national party totals
--------------------------------------------------
+Provide a Region column and a small editable region table below the votes.
+Add an Independent checkbox to the party-name table.
 
-The remaining statutory formulas still need to be transcribed and tested
-carefully before implementation:
+Extend CSV/Excel import and vote-table downloads with the region column,
+region table, and an optional Independent candidates metadata row. Preserve
+all metadata in download-all. The prepared data/denmark_2026.csv demonstrates
+the file layout, documented in data/denmark/README.md: region follows max_adj,
+independent flags align with vote columns, and the region table follows a
+blank row headed Regions,Name,adj.
 
-* allocation of each party's compensatory seats among the three regions;
-* allocation from each region to its constituencies;
-* the precise eligibility tests for compensatory seats;
-* treatment of independent candidates and votes not participating in the
-  compensatory allocation;
-* statutory tie handling;
-* the special advance-allocation provision in section 78 when a party's
-  absence from a region would otherwise prevent filling its entitlement.
+Validate identifiers, assignments and seat totals in frontend and backend.
+Regional adjustment-seat totals must sum to the vote-table adjustment-seat
+total, and constituency bounds must permit each region's total. Disallow
+National party votes when regions are present. Existing files without regions
+continue to work; seat counts remain configurable.
 
-The section 78 rule resembles the simulator's historical forced-allocation
-idea but has not been established as equivalent. The initial implementation
-should report a clear single-election error if this exceptional provision is
-needed. Generated simulations may assume that every simulated party has
-positive votes in every constituency.
+### 2. Electoral-system settings
 
-Implementation sequence
------------------------
+Add Denmark to the Election-law preset selector with these settings:
 
-1. Finalize the region metadata and independent-candidate file format.
-2. Add parsing, validation, editing, download, and round-trip tests for region
-   data without changing election calculations.
-3. Implement Danish fixed-seat allocation and compensation eligibility with
-   small legal examples.
-4. Implement iterative national Hare/largest-remainder totals and overhang
-   handling as a separately tested operation.
-5. Implement region allocation as a preparation method.
-6. Extend the sole adjustment-seat allocator to enforce region totals and
-   flexible constituency bounds.
-7. Add official-election regression fixtures and simulation tests.
+* Fixed-seat rule: D'Hondt; local threshold: 0%.
+* Party-total rule: Hare quota; adjustment threshold: 2% OR 1 fixed seat.
+* Preparation method: Danish allocation to regions; rule: Sainte-Lague.
+* Adjustment allocation method: Maximum constituency votes; rule: Danish.
+* Seat specification: Refer to vote table.
 
-Before coding stages 3-6, verify every formula and the exceptional cases
-against the current Danish election law or an authoritative official manual.
+Selecting Danish preparation activates the regional eligibility test and
+Danish overhang procedure, following the existing pattern for Swedish
+preparation. Explain these associated rules in its tooltip. Only applying
+the election-law preset changes the other settings.
+
+### 3. Allocation and results
+
+Keep Danish eligibility and overhang calculations in a small dedicated
+backend module called from the existing party-total calculation.
+
+For regional preparation, aggregate votes and fixed seats by region and
+reuse Maximum constituency votes with exact regional adjustment-seat totals.
+Store party-by-region entitlements separately from constituency allocations.
+
+For final allocation, run Maximum constituency votes separately within each
+region using those entitlements and the selected divisor rule. Combine the
+results into the existing constituency-by-party result matrix.
+
+Handle independent candidates in fixed-seat allocation, threshold bases, and
+the national party-seat pool. Exclude zero-vote pairs and report a clear error
+when the deferred advance-allocation procedure is needed. Support drawing
+lots for ties with reproducible randomness for tests. Reject unsupported
+combinations of regional preparation and final allocation methods.
+
+Produce the two step-by-step tables specified above directly from allocation
+records, including Excel output.
+
+### 4. Simulation, presets and verification
+
+Prepare a simulation copy of the vote table with independent candidates
+removed and their votes retained in Pruned. Use that same copy for simulation
+baseline calculations and generated elections.
+
+Apply the agreed minimum-one-vote convention to participating lists in Danish
+simulations, including the generator's starting data. Recompute eligibility,
+national totals and regional allocations for every election.
+
+Add a Danish data preparation script under data/denmark/, record sources in
+data/sources.txt, and add official election presets and expected results.
+Include the national 2022 totals to exercise its overhang case, alongside the
+complete newest-election data.
+
+Tests must cover:
+
+* File round trips, malformed metadata, pruning, and party/constituency edits.
+* All eligibility routes, independent votes, and overhang recalculations.
+* Regional and national seat totals, constituency bounds, zero votes and ties.
+* Both step-by-step tables and their Excel exports.
+* Official Danish results, simulations and existing Nordic regressions.
+
+Run the backend suite and frontend checks, and inspect the changed tabs in
+the browser, including narrow-screen layouts.

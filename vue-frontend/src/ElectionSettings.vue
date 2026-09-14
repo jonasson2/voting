@@ -5,9 +5,13 @@
       v-b-tooltip.hover.bottom.v-primary.ds500
       title="Sets the rules below to match the selected election law. Seat numbers and vote data are not changed.">
       <span>Election-law preset</span>
-      <b-form-select class="compact-select settings-preset"
-        v-model="election_law_preset"
-        :options="capabilities.election_law_presets"/>
+      <select class="custom-select compact-select settings-preset"
+        v-model="election_law_preset">
+        <option v-for="preset in capabilities.election_law_presets"
+          :key="preset.value" :value="preset.value" :disabled="preset.disabled">
+          {{ preset.text }}
+        </option>
+      </select>
     </label>
   </div>
   <hr class="settings-preset-separator">
@@ -93,7 +97,9 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Method used to prepare the fixed-seat allocation and party totals for adjustment-seat allocation.">
+      :title="systems[systemidx].adjustment_preparation_method === 'danish-regions'
+        ? 'Danish preparation also applies the regional qualification test and Danish overhang correction. Independents receive fixed seats only. It then assigns each party\'s adjustment seats to regions using their specified totals.'
+        : 'Method used to prepare the fixed-seat allocation and party totals for adjustment-seat allocation.'">
       <span>Preparation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_preparation_method"

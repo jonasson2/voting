@@ -47,6 +47,7 @@
               >X
             </b-button>
           </th>
+          <th v-if="hasRegions" class="displaycenter">Region</th>
           <th
             v-for="(party, partyIndex) in voteTable.parties"
             :key="partyIndex"
@@ -127,6 +128,13 @@
               v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
               />
           </td>
+          <td v-if="hasRegions">
+            <select v-model="constituency.region" :aria-label="`${constituency.name}: region`">
+              <option value="" disabled></option>
+              <option v-for="(region, index) in voteTable.regions" :key="index"
+                :value="region.abbreviation">{{ region.abbreviation }}</option>
+            </select>
+          </td>
           <td
             v-for="(party, partyIndex) in voteTable.parties"
             :key="partyIndex"
@@ -156,6 +164,7 @@
               title="Maximum total number of adjustment seats"
               />
           </td>
+          <td v-if="hasRegions"></td>
           <td
             v-for="(party, partyIndex) in voteTable.parties"
             :key="partyIndex"
@@ -171,6 +180,7 @@
           <td></td>
           <td></td>
           <td v-if="hasMaximums"></td>
+          <td v-if="hasRegions"></td>
           <td
             v-for="(party, partyIndex) in voteTable.parties"
             :key="partyIndex"
@@ -200,6 +210,9 @@
 
 <script>
 export default {
+  computed: {
+    hasRegions() { return this.voteTable.regions && this.voteTable.regions.length > 0 },
+  },
   props: {
     voteTable: {type: Object, required: true},
     voteSums: {type: Object, required: true},

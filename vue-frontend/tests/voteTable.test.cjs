@@ -103,3 +103,60 @@ test("a specified national vote row must have a name", async () => {
   table.party_vote_info.name = ""
   assert.equal(validNationalVotes(table), false)
 })
+
+test("party edits and pruning keep independent flags aligned", async () => {
+  const {addParty, removeParty, pruneSmallParties} = await voteTableModule()
+  const table = exampleTable()
+  table.independent_candidates = [false, true]
+  table.party_names = ["Party", "Candidate"]
+  addParty(table)
+  assert.deepEqual(table.independent_candidates, [false, true, false])
+  removeParty(table, 2)
+  pruneSmallParties(table, 20)
+  assert.deepEqual(table.independent_candidates, [false])
+  assert.deepEqual(table.party_names, ["Party"])
+  assert.deepEqual(table.pruned, [10])
+})
+
+test("region controls retain assignments on rename and remove them on deletion", async () => {
+  const {addRegion, renameRegion, removeRegion, regionError} = await voteTableModule()
+  const table = exampleTable()
+  addRegion(table)
+  assert.equal(table.regions, undefined)
+  table.party_vote_info.specified = false
+  addRegion(table)
+  assert.equal(table.regions[0].abbreviation, "H")
+  assert.equal(table.constituencies[0].region, "H")
+  assert.equal(regionError(table), "")
+  renameRegion(table, 0, "Capital")
+  assert.equal(table.constituencies[0].region, "Capital")
+  addRegion(table)
+  assert.match(regionError(table), /no constituencies/)
+  const beforeDuplicate = structuredClone(table)
+  assert.match(renameRegion(table, 0, "H"), /unique/)
+  assert.deepEqual(table, beforeDuplicate)
+  removeRegion(table, 1)
+  removeRegion(table, 0)
+  assert.equal(table.constituencies[0].region, undefined)
+})
+
+test("region validation enforces bounds, totals, identifiers and national-vote exclusion", async () => {
+  const {regionError} = await voteTableModule()
+  const table = exampleTable()
+  table.party_vote_info.specified = false
+  table.regions = [{abbreviation: "H", name: "Capital", num_adj_seats: 2}]
+  table.constituencies[0].region = "H"
+  table.constituencies[0].max_adj_seats = null
+  table.max_total_adj_seats = 2
+  assert.equal(regionError(table), "")
+  table.regions[0].num_adj_seats = 3
+  assert.match(regionError(table), /sum/)
+  table.regions[0].num_adj_seats = 2
+  table.constituencies[0].max_adj_seats = 1
+  assert.match(regionError(table), /bounds/)
+  table.constituencies[0].max_adj_seats = null
+  table.constituencies[0].region = "missing"
+  assert.match(regionError(table), /listed region/)
+  table.party_vote_info.specified = true
+  assert.match(regionError(table), /National party votes/)
+})

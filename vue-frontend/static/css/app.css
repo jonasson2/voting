@@ -212,9 +212,17 @@ th {
   vertical-align: middle;
 }
 
-.party-names-table td input {
+.party-names-table td input,
+.region-table td input {
   border: 0;
   background: none;
+}
+
+.votematrix select {
+  min-width: 65px;
+  border: 0;
+  background: transparent;
+  font: inherit;
 }
 
 .simulation-settings-layout > div {

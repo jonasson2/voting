@@ -97,6 +97,10 @@ def _parse_vote_table(rows, filename):
             'Adjustment-seat headings must be "adj", or "min_adj" and "max_adj"'
         )
 
+    region_column = (party_start if len(header) > party_start
+                     and _text(header[party_start]).lower() == "region" else None)
+    if region_column is not None:
+        party_start += 1
     has_pruned = _text(header[-1]).lower() == "pruned"
     party_end = len(header) - 1 if has_pruned else len(header)
     parties = header[party_start:party_end]
@@ -107,26 +111,34 @@ def _parse_vote_table(rows, filename):
     parties = [party.strip() for party in parties]
 
     party_names = None
+    independent_candidates = None
     maximum_total = None
     seen_metadata = set()
     while rows:
         row_name = _text(rows[0][0]).lower()
-        if row_name not in {"party names", "max adj seats"}:
+        if row_name not in {"party names", "independent candidates", "max adj seats"}:
             break
         if row_name in seen_metadata:
             raise VoteTableFormatError(f'Duplicate metadata row "{rows[0][0]}"')
         seen_metadata.add(row_name)
         row = rows.pop(0)
 
-        if row_name == "party names":
+        if row_name in {"party names", "independent candidates"}:
             if any(not _is_blank(value) for value in row[1:party_start]):
-                raise VoteTableFormatError("Party names row must have blank seat cells")
+                raise VoteTableFormatError(f"{row[0]} row must have blank seat and region cells")
             if has_pruned and not _is_blank(row[-1]):
                 raise VoteTableFormatError(
-                    "Party names row must have a blank pruned-votes cell"
+                    f"{row[0]} row must have a blank pruned-votes cell"
                 )
-            names = [_text(value) for value in row[party_start:party_end]]
-            party_names = names if any(names) else None
+            if row_name == "party names":
+                names = [_text(value) for value in row[party_start:party_end]]
+                party_names = names if any(names) else None
+            else:
+                flags = [_nonnegative_int(value, "Independent candidate flag")
+                         for value in row[party_start:party_end]]
+                if any(flag not in (0, 1) for flag in flags):
+                    raise VoteTableFormatError("Independent candidate flags must be 0 or 1")
+                independent_candidates = [bool(flag) for flag in flags]
         else:
             if not has_maximum:
                 raise VoteTableFormatError(
@@ -137,6 +149,8 @@ def _parse_vote_table(rows, filename):
                     "Max adj seats row must have blank fixed and minimum-seat cells"
                 )
             maximum_total = _nonnegative_int(row[3], "Max adj seats")
+            if region_column is not None and not _is_blank(row[region_column]):
+                raise VoteTableFormatError("Max adj seats row must have a blank region cell")
             if any(not _is_blank(value) for value in row[party_start:party_end]):
                 raise VoteTableFormatError(
                     "Max adj seats row must have blank party-vote cells"
@@ -155,7 +169,26 @@ def _parse_vote_table(rows, filename):
         index for index, row in enumerate(rows)
         if all(_is_blank(value) for value in row)
     ]
-    if separators:
+    regions = []
+    if region_column is not None:
+        if len(separators) != 1:
+            raise VoteTableFormatError("A region column requires a Regions table after one blank row")
+        split = separators[0]
+        constituency_rows = rows[:split]
+        footer = rows[split + 1:]
+        if (not footer or [_text(value).lower() for value in footer[0][:3]]
+                != ["regions", "name", "adj"]
+                or any(not _is_blank(value) for value in footer[0][3:])):
+            raise VoteTableFormatError('The region table heading must be "Regions,Name,adj"')
+        for row in footer[1:]:
+            if any(not _is_blank(value) for value in row[3:]):
+                raise VoteTableFormatError("Region rows must have blank cells after their seat count")
+            regions.append({"abbreviation": _text(row[0]), "name": _text(row[1]),
+                            "num_adj_seats": _nonnegative_int(row[2], "Regional adjustment seats")})
+        if not regions:
+            raise VoteTableFormatError("The Regions table is empty")
+        national_row = None
+    elif separators:
         if len(separators) != 1 or separators[0] != len(rows) - 2:
             raise VoteTableFormatError(
                 "A blank row may appear only immediately before national party votes"
@@ -194,6 +227,8 @@ def _parse_vote_table(rows, filename):
                     f"Maximum adjustment seats in {name} may not be below the minimum"
                 )
             constituency["max_adj_seats"] = maximum
+        if region_column is not None:
+            constituency["region"] = _text(row[region_column])
         constituencies.append(constituency)
         votes.append([
             _nonnegative_int(value, f"Votes in row {row_number}")
@@ -215,6 +250,10 @@ def _parse_vote_table(rows, filename):
     }
     if party_names:
         result["party_names"] = party_names
+    if independent_candidates is not None:
+        result["independent_candidates"] = independent_candidates
+    if regions:
+        result["regions"] = regions
     if has_maximum:
         result["max_total_adj_seats"] = maximum_total
 
@@ -252,7 +291,9 @@ def _parse_vote_table(rows, filename):
 
 def process_vote_table(rows, filename):
     try:
-        return _parse_vote_table(rows, filename)
+        table = _parse_vote_table(rows, filename)
+        check_regions(table)
+        return table
     except VoteTableFormatError as error:
         return str(error)
 
@@ -297,6 +338,11 @@ def check_vote_table(vote_table):
             _require_nonnegative_int(value, "Votes")
 
     party_names = table.get("party_names")
+    flags = table.get("independent_candidates")
+    if flags is not None and (
+            not isinstance(flags, list) or len(flags) != num_parties
+            or any(type(flag) is not bool for flag in flags)):
+        raise ValueError("Independent candidate flags must be booleans matching the party list.")
     if party_names is not None:
         if not isinstance(party_names, list) or len(party_names) != num_parties:
             raise ValueError("Party names do not match the party list.")
@@ -413,4 +459,45 @@ def check_vote_table(vote_table):
     table["party_vote_basis"] = (
         basis if party_vote_info["specified"] else "totals"
     )
+    check_regions(table)
     return table
+
+
+def check_regions(table):
+    """Validate the optional intermediate geographical seat constraints."""
+    regions = table.get("regions", [])
+    if not isinstance(regions, list):
+        raise VoteTableFormatError("Regions must be a list")
+    if not regions:
+        if any(const.get("region") for const in table["constituencies"]):
+            raise VoteTableFormatError("Constituency regions require a Regions table")
+        return
+    if table.get("party_vote_info", {}).get("specified"):
+        raise VoteTableFormatError("National party votes cannot be combined with regions")
+    codes = []
+    for region in regions:
+        if not isinstance(region, dict) or any(
+                not isinstance(region.get(key), str) or not region[key].strip()
+                for key in ("abbreviation", "name")):
+            raise VoteTableFormatError("Regions require non-blank abbreviations and names")
+        code = region["abbreviation"]
+        if code != code.strip() or code in codes:
+            raise VoteTableFormatError("Region abbreviations must be unique and have no surrounding spaces")
+        codes.append(code)
+        seats = region.get("num_adj_seats")
+        if type(seats) is not int or seats < 0:
+            raise VoteTableFormatError("Regional adjustment seats must be non-negative integers")
+        consts = [const for const in table["constituencies"] if const.get("region") == code]
+        if not consts:
+            raise VoteTableFormatError(f"Region {code} has no constituencies")
+        minimum = sum(const["num_adj_seats"] for const in consts)
+        maxima = [const["max_adj_seats"] if "max_total_adj_seats" in table
+                  else const["num_adj_seats"] for const in consts]
+        if seats < minimum or (all(value is not None for value in maxima) and seats > sum(maxima)):
+            raise VoteTableFormatError(f"Adjustment seats in region {code} do not fit its constituency bounds")
+    if any(const.get("region") not in codes for const in table["constituencies"]):
+        raise VoteTableFormatError("Every constituency must belong to a listed region")
+    total = table.get("max_total_adj_seats", sum(
+        const["num_adj_seats"] for const in table["constituencies"]))
+    if sum(region["num_adj_seats"] for region in regions) != total:
+        raise VoteTableFormatError("Regional adjustment seats must sum to the table's adjustment-seat total")

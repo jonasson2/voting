@@ -12,7 +12,7 @@ from running_stats import Running_stats
 from table_util import add_totals, find_percentages, find_bias
 from table_util import np_add_total, np_add_totals
 from util import hms, count
-from copy import copy
+from copy import copy, deepcopy
 from util import remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
@@ -50,12 +50,40 @@ class SimulationSettings(dict):
     def sq(q, s):       return (q - s)**2
 
 
+def simulation_vote_table(source, minimum_one=False):
+    table = deepcopy(source)
+    independent = table.get("independent_candidates", [False] * len(table["parties"]))
+    keep = [p for p, flag in enumerate(independent) if not flag]
+    if not keep:
+        raise ValueError("A simulation needs at least one party after excluding independent candidates.")
+    if any(independent):
+        table["pruned"] = [
+            pruned + sum(vote for vote, flag in zip(row, independent) if flag)
+            for pruned, row in zip(table.get("pruned", [0] * len(table["votes"])), table["votes"])]
+        for key in ("parties", "party_names", "independent_candidates"):
+            if key in table:
+                table[key] = [table[key][p] for p in keep]
+        table["votes"] = [[row[p] for p in keep] for row in table["votes"]]
+        info = table["party_vote_info"]
+        if info["specified"]:
+            info["pruned"] = info.get("pruned", 0) + sum(
+                vote for vote, flag in zip(info["votes"], independent) if flag)
+            info["votes"] = [info["votes"][p] for p in keep]
+    if minimum_one:
+        table["votes"] = np.maximum(table["votes"], 1).tolist()
+    return table
+
+
 class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0):
         warnings_to_errors()
         use_thresholds = sim_settings['use_thresholds']
         self.sim_settings = sim_settings
+        self.danish_simulation = any(
+            system.get("adjustment_preparation_method") == "danish-regions"
+            for system in systems)
+        vote_table = simulation_vote_table(vote_table, self.danish_simulation)
         self.vote_table = vote_table
         self.reference_handler = ElectionHandler(vote_table, systems, use_thresholds)
         self.election_handler = ElectionHandler(vote_table, systems, use_thresholds)
@@ -198,7 +226,6 @@ class Simulation():
                     self.party_vote_rsd,
                     self.party_vote_corr
                     )
-                yield (votes, party_votes)
             else:
                 votes = generate_votes(
                     self.election_handler.votes, self.const_rsd,
@@ -207,9 +234,12 @@ class Simulation():
                     party_votes = generate_votes(
                         [self.election_handler.party_vote_info["votes"]], self.party_vote_rsd,
                         self.distribution)
-                    yield (votes, party_votes[0])
+                    party_votes = party_votes[0]
                 else:
-                    yield (votes, None)
+                    party_votes = None
+            if self.danish_simulation:
+                votes = np.maximum(votes, 1).tolist()
+            yield (votes, party_votes)
 
     def run_and_collect_measures(self, votes, party_votes):
         use_thresholds = self.sim_settings["use_thresholds"]

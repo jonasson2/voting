@@ -52,3 +52,29 @@ https://pxdata.stat.fi/PxWeb/pxweb/en/StatFin/StatFin__evaa/statfin_evaa_pxt_13s
 The generated Finland 2019 and 2023 files include all constituency-level
 candidate nominators and all 200 seats. Their D'Hondt allocations reproduce
 the official seat allocation in every constituency.
+
+Denmark Folketing election, 24 March 2026
+Generator: data/denmark/get-votes.py
+Run: uv run --locked python data/denmark/get-votes.py 2026
+Vote file: data/denmark_2026.csv
+Official votes and seats: data/denmark/official-results_2026.json
+Format and checks: data/denmark/README.md
+All 12 parties and 6 independent candidates are retained, with original names
+and unmodified votes. The 10 constituencies sum to 3,567,625 valid votes,
+135 fixed seats and 40 adjustment seats. Regional adjustment totals are
+12 (Hovedstaden), 14 (Sjaelland-Syddanmark), 14 (Midtjylland-Nordjylland).
+The file is registered as a simulator preset, excluding Faroe Islands and Greenland.
+
+Official final national votes and seats
+https://www.valg.im.dk/valg/folketingsvalg/resultater-fra-seneste-folketingsvalg
+
+Statistics Denmark results by region and constituency
+https://dst.dk/valg/Valg2546527/valgopg/valgopg.htm
+
+Official allocation calculations, published 10 April 2026
+https://www.valg.im.dk/Media/639117581241830159/Danmarks%20Statistiks%20opgrelse%20af%20folketingsvalget%20den%2024.%20marts%202026.pdf
+
+Danish national overhang regression fixture, 2022
+data/denmark/national-results_2022.json: votes, fixed seats and final totals
+transcribed from tables 1 and 3 of the official allocation report:
+https://www.valg.im.dk/Media/638040301540778324/Danmarks%20Statistiks%20opg%C3%B8relse%20af%20folketingsvalget%20den%201.%20november%202022.pdf

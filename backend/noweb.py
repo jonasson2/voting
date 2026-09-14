@@ -207,6 +207,9 @@ def votes_to_excel(vote_table, file):
     pruned = vote_table.get("pruned", [0] * len(vote_table["constituencies"]))
     has_max_adj_seats = "max_total_adj_seats" in vote_table
     seat_headers = ["cons", "min_adj", "max_adj"] if has_max_adj_seats else ["cons", "adj"]
+    regions = vote_table.get("regions", [])
+    if regions:
+        seat_headers.append("region")
     file_matrix = [
         [vote_table["name"], *seat_headers] + vote_table["parties"] + ["Pruned"],
     ]
@@ -214,10 +217,14 @@ def votes_to_excel(vote_table, file):
     if party_names and any(party_names):
         file_matrix.append(["Party names"] + [""] * len(seat_headers)
                            + party_names + [""])
+    independent = vote_table.get("independent_candidates")
+    if independent and any(independent):
+        file_matrix.append(["Independent candidates"] + [""] * len(seat_headers)
+                           + [int(flag) for flag in independent] + [""])
     if has_max_adj_seats:
         file_matrix.append(["Max adj seats", "", "",
                             vote_table["max_total_adj_seats"]]
-                           + [""] * (len(vote_table["parties"]) + 1))
+                           + [""] * (len(file_matrix[0]) - 4))
     file_matrix += [
         [
             vote_table["constituencies"][c]["name"],
@@ -225,9 +232,17 @@ def votes_to_excel(vote_table, file):
             vote_table["constituencies"][c]["num_adj_seats"],
             *([vote_table["constituencies"][c]["max_adj_seats"]]
               if has_max_adj_seats else []),
+            *([vote_table["constituencies"][c]["region"]] if regions else []),
         ] + vote_table["votes"][c] + [pruned[c]]
             for c in range(len(vote_table["constituencies"]))
     ]
+    if regions:
+        width = len(file_matrix[0])
+        file_matrix.append([""] * width)
+        file_matrix.append(["Regions", "Name", "adj"] + [""] * (width - 3))
+        file_matrix.extend([
+            [region["abbreviation"], region["name"], region["num_adj_seats"]]
+            + [""] * (width - 3) for region in regions])
     if vote_table["party_vote_info"]["specified"]:
         party_votes_matrix = [ [
             vote_table["party_vote_info"]["name"],

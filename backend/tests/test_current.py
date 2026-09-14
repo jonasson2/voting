@@ -260,7 +260,7 @@ class CurrentApplicationTest(unittest.TestCase):
         }
         self.assertEqual(
             list(presets),
-            ['finland', 'iceland', 'norway', 'sweden-2014', 'sweden-2018'],
+            ['denmark', 'finland', 'iceland', 'norway', 'sweden-2014', 'sweden-2018'],
         )
         self.assertEqual(
             (presets['finland']['primary_divider'],

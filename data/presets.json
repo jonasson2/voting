@@ -1,5 +1,11 @@
 [
   {
+    "Name": "Folketing (Denmark only)",
+    "Country": "Denmark",
+    "Year": "2026",
+    "filename": "denmark_2026.csv"
+  },
+  {
     "Name": "2 by 2 example",
     "Country": "-",
     "Year": "-",
