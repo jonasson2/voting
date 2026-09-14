@@ -12,6 +12,7 @@ slurm*.out
 __pycache__/
 /doc/leiðbeiningar.docx
 /pardir/
+/tmp/
 /backend/*.xlsx
 /.venv/
 /vue-frontend/node_modules
