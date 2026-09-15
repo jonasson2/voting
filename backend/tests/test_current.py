@@ -24,6 +24,7 @@ from simulate import Simulation, SimulationSettings
 from input_util import check_simul_settings, normalize_system
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
+from table_util import entropy
 from vote_table import check_vote_table
 import web
 from web import app
@@ -393,6 +394,45 @@ class CurrentApplicationTest(unittest.TestCase):
     def test_swedish_divisor_starts_at_1_2(self):
         generator = DIVIDER_RULES['nordic-1.2']()
         self.assertEqual([next(generator) for _ in range(4)], [1.2, 3, 5, 7])
+
+    def test_entropy_uses_fixed_dhondt_and_sainte_lague_rules(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        system['adj_alloc_divider'] = 'danish'
+        election = ElectionHandler(table, [system], True).elections[0]
+
+        values = election.entropies()
+        seats = election.results['all_const_seats']
+        self.assertEqual(
+            values['entropy_dhondt'],
+            entropy(table['votes'], seats, DIVIDER_RULES['dhondt']),
+        )
+        self.assertEqual(
+            values['entropy_sainte_lague'],
+            entropy(
+                table['votes'], seats, DIVIDER_RULES['sainte-lague']),
+        )
+        self.assertNotEqual(
+            values['entropy_dhondt'], values['entropy_sainte_lague'])
+
+        excel_result = election.get_result_excel()
+        self.assertEqual(excel_result['entropy_dhondt'], values['entropy_dhondt'])
+        self.assertEqual(
+            excel_result['entropy_sainte_lague'],
+            values['entropy_sainte_lague'])
+
+        election.set_votes(np.asarray(table['votes']) * 2)
+        election.assign_seats(True)
+        self.assertNotEqual(election.entropies(), values)
+
+        settings = SimulationSettings()
+        settings.update(simulation_count=0, cpu_count=1)
+        simulation = Simulation(settings, [system], table)
+        simulation.run_and_collect_measures(table['votes'], None)
+        simulated = simulation.election_handler.elections[0].entropies()
+        for measure, value in simulated.items():
+            self.assertEqual(simulation.stat[measure].mean(), [value])
+        self.assertNotIn('entropy', simulation.stat)
 
     def test_finnish_2015_matches_official_party_seat_totals(self):
         table = load_votes('../data/finland_2015.csv')

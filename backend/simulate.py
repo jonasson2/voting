@@ -337,7 +337,8 @@ class Simulation():
             self.stat["neg_margin_count"][i].update(cpm_counts)
             deviations.add("max_neg_margin", max(neg_margins))
             deviations.add("freq_neg_margin", count(neg_margins))
-            deviations.add("entropy", election.entropy())
+            for measure, value in election.entropies().items():
+                deviations.add(measure, value)
             excess, shortage, disparity = self.calculate_disparity(election)
             deviations.add("excess", excess)
             deviations.add("shortage", shortage)

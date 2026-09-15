@@ -104,7 +104,8 @@ class MeasureGroups(dict):
         self["other"] = {
             "title": "Specific quality indices for allocations in the constituencies",
             "rows": {
-                "entropy":        ('Sum of logs of votes per seat ("entropy")', ""),
+                "entropy_dhondt": ("D'Hondt entropy", ""),
+                "entropy_sainte_lague": ('Sainte-Laguë entropy', ""),
                 "min_seat_val":   ("Minimum reference seat share per seat", ""),
                 "max_neg_margin": ("Maximum negative margin over constituencies",""),
                 "freq_neg_margin": ("Frequency of negative margin over constituencies",""),

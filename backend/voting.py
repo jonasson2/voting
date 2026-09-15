@@ -10,6 +10,7 @@ from dictionaries import FLEXIBLE_ADJUSTMENT_METHODS
 from dictionaries import ADJUSTMENT_PREPARATION_METHODS
 from dictionaries import DEMO_TABLE_FORMATS
 from dictionaries import ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS
+from division_rules import dhondt_gen, sainte_lague_gen
 import numpy as np
 from methods import danish
 from ties import TieReport
@@ -87,18 +88,24 @@ class Election:
         self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
-        self.stored_entropy = None
+        self.stored_entropies = None
 
-    def entropy(self):
-        if self.stored_entropy is None:
-            self.stored_entropy = entropy(self.votes, self.results['all_const_seats'],
-                                          self.gen)
-        return self.stored_entropy
+    def entropies(self):
+        """Evaluate the final allocation using fixed divisor sequences."""
+        if self.stored_entropies is None:
+            seats = self.results['all_const_seats']
+            self.stored_entropies = {
+                "entropy_dhondt": entropy(self.votes, seats, dhondt_gen),
+                "entropy_sainte_lague": entropy(
+                    self.votes, seats, sainte_lague_gen),
+            }
+        return self.stored_entropies
 
     def set_reference_results(self):
         self.reference_results = self.results['all_const_seats']
 
     def set_votes(self, votes, party_votes=None):
+        self.stored_entropies = None
         # votesums: column sums of m_votes
         self.votes = np.array(votes)
         if party_votes is not None:
@@ -183,7 +190,7 @@ class Election:
             "system": self.system,
             "results": self.results,
             "demo_tables": self.demo_tables,
-            "entropy": self.entropy()
+            **self.entropies(),
         }
 
     def get_result_web(self):
@@ -227,6 +234,7 @@ class Election:
         return self.tie_report.reporter(stage, labels)
 
     def assign_seats(self, use_thresholds=True):
+        self.stored_entropies = None
         self.tie_report = TieReport()
         if self.danish:
             if not self.regions:

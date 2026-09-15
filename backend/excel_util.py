@@ -331,8 +331,12 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
             matrix = result["results"]["all"], cformat=fmt["base"]
         )
 
-        worksheet.write(row, col, 'Entropy:', fmt["h"])
-        worksheet.write(row, col+1, result["entropy"], fmt["cell"])
+        for label, key in (
+                ("D'Hondt entropy:", "entropy_dhondt"),
+                ("Sainte-Laguë entropy:", "entropy_sainte_lague")):
+            worksheet.write(row, col, label, fmt["h"])
+            worksheet.write(row, col+1, result[key], fmt["cell"])
+            row += 1
 
         row = 0
         col = len(parties) + 1
