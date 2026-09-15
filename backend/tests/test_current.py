@@ -569,6 +569,38 @@ class CurrentApplicationTest(unittest.TestCase):
             349,
         )
 
+    def test_disabled_thresholds_apply_to_counterfactual_simulation_measures(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        threshold_system = self.make_system(
+            table, 'max-const-seat-share', threshold=50)
+        zero_system = deepcopy(threshold_system)
+        zero_system['adjustment_threshold'] = 0
+
+        disabled_settings = SimulationSettings()
+        disabled_settings.update({
+            'simulation_count': 0,
+            'cpu_count': 1,
+            'use_thresholds': False,
+        })
+        zero_settings = deepcopy(disabled_settings)
+        zero_settings['use_thresholds'] = True
+
+        disabled = Simulation(disabled_settings, [threshold_system], table)
+        explicit_zero = Simulation(zero_settings, [zero_system], table)
+        for simulation in (disabled, explicit_zero):
+            simulation.run_and_collect_measures(table['votes'], None)
+
+        self.assertEqual(disabled.stat['dev_all_adj_const'].mean(), [0.0])
+        self.assertEqual(disabled.stat['dev_all_adj_tot'].mean(), [0.0])
+        self.assertEqual(
+            disabled.stat['dev_all_adj_const'].mean(),
+            explicit_zero.stat['dev_all_adj_const'].mean(),
+        )
+        self.assertEqual(
+            disabled.stat['dev_all_adj_tot'].mean(),
+            explicit_zero.stat['dev_all_adj_tot'].mean(),
+        )
+
     def test_swedish_switching_returns_an_overhang(self):
         allocation, steps = swedish_switching(
             [[1, 1], [24, 1]],

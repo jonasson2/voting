@@ -410,7 +410,7 @@ class Simulation():
                                            election.votes,
                                            election.party_vote_info,
                                            pruned_votes=election.pruned_votes)
-            comparison_election.assign_seats()
+            comparison_election.assign_seats(election.use_thresholds)
             self.add_deviation(election, comparison_election, measure, deviations)
 
     def add_deviation(self, election, comparison_election, prefix, deviations):
