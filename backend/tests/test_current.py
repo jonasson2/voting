@@ -608,18 +608,19 @@ class CurrentApplicationTest(unittest.TestCase):
         settings = SimulationSettings()
         settings.update(random_seed=24680, simulation_count=3, cpu_count=1)
 
-        full = Simulation(settings, [system], table)
-        first_worker = Simulation(settings, [self.make_system(
-            table, 'max-const-seat-share')], table, start_iteration=0)
-        second_worker = Simulation(settings, [self.make_system(
-            table, 'max-const-seat-share')], table, start_iteration=2)
+        for distribution in ('log-normal', 'uniform', 'gamma', 'beta'):
+            with self.subTest(distribution=distribution):
+                settings['gen_method'] = distribution
+                full = Simulation(settings, [system], table)
+                first_worker = Simulation(settings, [self.make_system(
+                    table, 'max-const-seat-share')], table, start_iteration=0)
+                second_worker = Simulation(settings, [self.make_system(
+                    table, 'max-const-seat-share')], table, start_iteration=2)
 
-        expected = [full.generate_simulated_votes(i) for i in range(3)]
-        actual = [first_worker.generate_simulated_votes(i) for i in range(2)]
-        actual.append(second_worker.generate_simulated_votes(2))
-        for expected_result, actual_result in zip(expected, actual):
-            np.testing.assert_allclose(expected_result[0], actual_result[0])
-            self.assertEqual(expected_result[1], actual_result[1])
+                expected = [full.generate_simulated_votes(i) for i in range(3)]
+                actual = [first_worker.generate_simulated_votes(i) for i in range(2)]
+                actual.append(second_worker.generate_simulated_votes(2))
+                self.assertEqual(expected, actual)
 
     def test_random_seed_validation(self):
         settings = SimulationSettings()
@@ -632,6 +633,29 @@ class CurrentApplicationTest(unittest.TestCase):
         settings['random_seed'] = 2**31
         with self.assertRaisesRegex(ValueError, 'Random seed'):
             check_simul_settings(settings)
+
+    def test_bulk_vote_generation_with_national_votes(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['party_vote_info'] = {
+            'name': 'National votes',
+            'num_fixed_seats': 0,
+            'num_adj_seats': 0,
+            'votes': [4200, 3800],
+            'specified': True,
+            'pruned': 0,
+        }
+        for distribution in ('uniform', 'gamma', 'beta'):
+            with self.subTest(distribution=distribution):
+                settings = SimulationSettings()
+                settings.update(random_seed=42, cpu_count=1, gen_method=distribution)
+                system = self.make_system(table, 'max-const-seat-share')
+                simulation = Simulation(settings, [system], table)
+                votes, national = simulation.generate_simulated_votes(0)
+                self.assertEqual(len(national), 2)
+                self.assertTrue(all(v > 0 for v in national))
+                self.assertEqual(
+                    (votes, national), simulation.generate_simulated_votes(0))
+                simulation.run_and_collect_measures(votes, national, 0)
 
     def test_swedish_switching_returns_an_overhang(self):
         allocation, steps = swedish_switching(

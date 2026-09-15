@@ -3,46 +3,27 @@ from math import sqrt
 import numpy as np
 
 
-def adjustment(vote, rng):
-    return vote + rng.unif(a=-0.01, b=0.01)
-
-
-def generated_vote(mean, var_coeff, distribution, rng):
-    if var_coeff == 0:
-        return mean
-    if distribution == "beta":
-        sigma = var_coeff * mean
-        alpha = ((1 - mean) / sigma**2 - 1 / mean) * mean**2
-        beta = alpha * (1 / mean - 1)
-        return rng.beta(a=alpha, b=beta)
-    if distribution == "gamma":
-        shape = 1 / var_coeff**2
-        return rng.gamma(shape=shape, scale=mean / shape)
-    if distribution == "uniform":
-        deviation = sqrt(3) * var_coeff * mean
-        return rng.unif(a=max(0, mean - deviation), b=mean + deviation)
-    raise ValueError(f"Unknown vote-generating distribution: {distribution}")
-
-
 def generate_votes(base_votes, var_coeff, distribution, rng):
-    """
-    Generate a set of random votes using 'base_votes' as reference.
-    """
-    generated_votes = []
-    num_constit = len(base_votes)
-    num_parties = len(base_votes[0])
-    for c in range(num_constit):
-        generated_votes.append([])
-        for p in range(num_parties):
-            mean = base_votes[c][p]
-            if mean == 0:
-                vote = 0
-            else:
-                vote = round(generated_vote(mean, var_coeff, distribution, rng))
-            if vote >= 1:
-                vote = adjustment(vote, rng)
-            generated_votes[c].append(vote)
-    return generated_votes
+    """Generate continuous votes with one batch of random factors per table."""
+    if distribution not in ("beta", "gamma", "uniform"):
+        raise ValueError(f"Unknown vote-generating distribution: {distribution}")
+    means = np.asarray(base_votes, dtype=float)
+    if var_coeff == 0:
+        return means.tolist()
+
+    # A common relative SD lets every cell use the same factor distribution.
+    if distribution == "beta":
+        shape = (1 / var_coeff**2 - 1) / 2
+        factors = 2 * rng.beta(size=means.shape, a=shape, b=shape)
+    elif distribution == "gamma":
+        shape = 1 / var_coeff**2
+        factors = rng.gamma(size=means.shape, shape=shape, scale=1 / shape)
+    else:
+        deviation = sqrt(3) * var_coeff
+        factors = rng.unif(
+            size=means.shape, a=max(0, 1 - deviation), b=1 + deviation)
+    return (means * factors).tolist()
+
 
 def generate_corr_votes(
     votes,
