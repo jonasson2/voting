@@ -90,7 +90,8 @@ def apportion1d_general(
                             and threshold_seats (0 for both, 1 for either)
         - threshold_seats: A cutoff threshold in range of 0 to 10
         - threshold_total: Optional complete vote total used as the denominator
-                           for threshold_percent.
+                           for threshold_percent. Votes omitted from v_votes
+                           are also retained in a quota-rule denominator.
     Outputs:
         - allocations vector (list of int)
         - a generator that generates a sequence of seat allocations,
@@ -104,21 +105,27 @@ def apportion1d_general(
         else prior_allocations.copy() if isinstance(prior_allocations, np.ndarray)
         else np.array(prior_allocations)
     )
+    votes = threshold_drop(
+        v_votes,
+        threshold = [
+            threshold_choice,
+            threshold_percent,
+            threshold_seats,
+            prior_allocations if len(prior_allocations) else None
+        ],
+        threshold_total=threshold_total,
+    )
+    unrepresented_votes = (
+        max(0, threshold_total - sum(v_votes))
+        if threshold_total is not None else 0
+    )
     seat_gen = seat_generator(
-        votes = threshold_drop(
-            v_votes,
-            threshold = [
-                threshold_choice,
-                threshold_percent,
-                threshold_seats,
-                prior_allocations if len(prior_allocations) else None
-            ],
-            threshold_total=threshold_total,
-        ),
+        votes = votes,
         num_total_seats = num_total_seats,
         prior_allocations = deepcopy(allocations),
         rule = rule,
-        type_of_rule = type_of_rule
+        type_of_rule = type_of_rule,
+        quota_total = sum(votes) + unrepresented_votes,
     )
 
     last_in = None
@@ -135,7 +142,8 @@ def seat_generator(
     num_total_seats,
     prior_allocations,
     rule,
-    type_of_rule
+    type_of_rule,
+    quota_total=None,
 ):
     if type_of_rule == "Division":
         seat_gen = seat_generator_div(
@@ -149,7 +157,8 @@ def seat_generator(
             votes=votes,
             num_total_seats=num_total_seats,
             prior_allocations=prior_allocations,
-            quota_rule=rule
+            quota_rule=rule,
+            total_votes=quota_total,
         )
     return seat_gen
 
@@ -193,6 +202,7 @@ def seat_generator_quota(
     num_total_seats,
     prior_allocations,
     quota_rule,
+    total_votes=None,
 ):
     """
     Assist with one-dimensional apportionment of seats,
@@ -202,6 +212,7 @@ def seat_generator_quota(
         - num_total_seats: Total number of seats to allocate.
         - prior_allocations: Prior allocations to each party.
         - quota_rule: A rule to find the number of votes required for a seat.
+        - total_votes: Optional vote total to use instead of sum(votes).
     Outputs:
         - a generator that generates a sequence of seat allocations,
         -  including vote values used.
@@ -209,7 +220,7 @@ def seat_generator_quota(
     N = len(votes)
     assert N == len(prior_allocations)
 
-    total_votes = sum(votes)
+    total_votes = sum(votes) if total_votes is None else total_votes
     quota = quota_rule(total_votes, num_total_seats)
     for n in range(N):
         votes[n] -= quota*prior_allocations[n]

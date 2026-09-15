@@ -12,7 +12,8 @@ from unittest.mock import patch
 import numpy as np
 
 from apportion import apportion1d_general, threshold_drop
-from dictionaries import ADJUSTMENT_METHODS, DIVIDER_RULES, ELECTION_LAW_PRESETS
+from dictionaries import (ADJUSTMENT_METHODS, DIVIDER_RULES,
+                          ELECTION_LAW_PRESETS, QUOTA_RULES)
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from noweb import load_json, load_votes, votes_to_excel
@@ -749,6 +750,26 @@ class CurrentApplicationTest(unittest.TestCase):
             threshold_drop([39, 936], threshold, threshold_total=1000),
             [0, 936],
         )
+
+    def test_quota_includes_pruned_but_not_threshold_excluded_votes(self):
+        cases = [
+            ('hare', 36),
+            ('droop', 70 - 170 / 6),
+        ]
+        for rule_name, second_value in cases:
+            with self.subTest(rule=rule_name):
+                _, seat_factory, _ = apportion1d_general(
+                    v_votes=[70, 30],
+                    num_total_seats=5,
+                    prior_allocations=[],
+                    rule=QUOTA_RULES[rule_name],
+                    type_of_rule='Quota',
+                    threshold_percent=30,
+                    threshold_total=200,
+                )
+                seats = seat_factory()
+                self.assertEqual(next(seats)['active_votes'], 70)
+                self.assertAlmostEqual(next(seats)['active_votes'], second_value)
 
     def test_constituency_threshold_includes_pruned_votes(self):
         table = {
