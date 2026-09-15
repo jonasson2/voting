@@ -1,7 +1,7 @@
 #coding:utf-8
 import numpy as np
 
-from randomness import random_index
+from ties import select, remap
 
 def icelandic_apportionment(
     m_votes,
@@ -81,15 +81,11 @@ def icelandic_apportionment(
         #   skulu síðan báðar felldar niður.)
 
         if max(v_proportions) != 0:
-            const = [j for j,k in enumerate(v_proportions)
-                        if k == max(v_proportions)]
-            if len(const) > 1:
-                # 2.4.
-                #   (Nú eru tvær eða fleiri lands- eða hlutfallstölur jafnháar
-                #   þegar að þeim kemur skv. 3. tölul. og skal þá hluta um röð
-                #   þeirra.)
-                rng = kwargs.get("rng")
-                const = [const[random_index(rng, len(const))] if rng else const[0]]
+            const = [select(
+                v_proportions,
+                remap(kwargs.get("on_tie"),
+                      np.arange(len(m_votes)) * len(v_votes) + idx),
+                rng=kwargs.get("rng"))]
 
             m_allocations[const[0]][idx] += 1
             num_allocated += 1

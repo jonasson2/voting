@@ -12,7 +12,7 @@ from dictionaries import DEMO_TABLE_FORMATS
 from dictionaries import ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS
 import numpy as np
 from methods import danish
-from randomness import make_rng
+from ties import TieReport
 from vote_table import check_regions
 
 class Election:
@@ -33,7 +33,8 @@ class Election:
             else [False] * self.nparty, dtype=bool)
         if self.independent_candidates.shape != (self.nparty,):
             raise ValueError("Independent candidates must match the party list.")
-        self.rng = rng if rng is not None else make_rng()
+        self.rng = rng
+        self.tie_report = TieReport()
         self.danish = system["adjustment_preparation_method"] == "danish-regions"
         self.party_vote_info = party_vote_info
         self.party_votes = np.array(party_vote_info["votes"])
@@ -212,10 +213,21 @@ class Election:
         
         return {
             "demo_tables":      self.demo_tables,
+            "ties":             self.tie_report.events,
             "display_results":  dispResult
         }
 
+    def report_ties(self, stage, labels=None):
+        if self.rng is not None:
+            return None
+        if labels is None:
+            labels = [f'{const["name"]}: {party}'
+                      for const in self.system["constituencies"]
+                      for party in self.system["parties"]]
+        return self.tie_report.reporter(stage, labels)
+
     def assign_seats(self, use_thresholds=True):
+        self.tie_report = TieReport()
         if self.danish:
             if not self.regions:
                 raise ValueError("Danish allocation requires a region table and constituency regions.")
@@ -298,6 +310,9 @@ class Election:
         for i in range(self.nconst):
             num_seats = constituencies[i]["num_fixed_seats"]
             if num_seats != 0:
+                on_tie = self.report_ties(
+                    f'Fixed seats in {constituencies[i]["name"]}',
+                    self.system["parties"])
                 votes = self.votes[i]
                 applied_threshold = threshold
                 if national_or_constituency:
@@ -314,7 +329,7 @@ class Election:
                         threshold_total=self.const_threshold_totals[i])
                     alloc, last_in = danish.fixed_seats(
                         eligible_votes, num_seats, self.independent_candidates,
-                        self.system.get_generator("primary_divider"), self.rng)
+                        self.system.get_generator("primary_divider"), self.rng, on_tie)
                 else:
                     alloc, _, last_in = apportion1d_general(
                         v_votes=votes,
@@ -324,6 +339,7 @@ class Election:
                         type_of_rule=self.system.get_type("primary_divider"),
                         threshold_percent=applied_threshold,
                         threshold_total=self.const_threshold_totals[i],
+                        on_tie=on_tie,
                     )
                 assert last_in  # last_in is not None because num_seats > 0
                 self.last.append(last_in)
@@ -345,6 +361,7 @@ class Election:
                     type_of_rule = self.system.get_type("primary_divider"),
                     threshold_percent = threshold,
                     threshold_total = self.nat_threshold_total,
+                    on_tie=self.report_ties("National fixed seats", self.system["parties"]),
                 )
                 v_allocations += nat_fixed_alloc
             else:
@@ -373,6 +390,7 @@ class Election:
                 self.party_stands_everywhere, self.nat_votes, 0)
 
         fixed_allocations = np.array(self.results["fixed_grand_total"])
+        on_tie = self.report_ties("Party totals", self.system["parties"])
         swedish = (
             self.system["adjustment_preparation_method"] == "switching_se")
         if self.danish:
@@ -382,7 +400,7 @@ class Election:
             self.desired_col_sums = danish.party_totals(
                 self.nat_votes, fixed_allocations, eligible, self.total_const_seats,
                 self.system.get_generator("adj_determine_divider"),
-                self.system.get_type("adj_determine_divider"), self.rng)
+                self.system.get_type("adj_determine_divider"), self.rng, on_tie)
             self.adj_seat_gen = None
         elif swedish:
             national_shares = (
@@ -406,6 +424,7 @@ class Election:
                 prior_allocations=[0] * len(self.nat_votes),
                 rule=self.system.get_generator("adj_determine_divider"),
                 type_of_rule=self.system.get_type("adj_determine_divider"),
+                on_tie=on_tie,
             )
             self.desired_col_sums = np.asarray(
                 national_allocation, dtype=int) + protected_totals
@@ -432,6 +451,7 @@ class Election:
                 threshold_choice = choice,
                 threshold_seats = seats,
                 threshold_total = self.nat_threshold_total,
+                on_tie=on_tie,
             )
 
         self.ref_seat_alloc, _, _ = apportion1d_general(
@@ -462,7 +482,10 @@ class Election:
             self.prepared_const_seats = fixed.copy()
             self.region_party_totals, self.preparation_stepbystep = danish.prepare_regions(
                 self.votes, fixed, self.desired_col_sums, self.regions, self.region_groups,
-                self.system.get_generator("adj_preparation_divider"), self.rng)
+                self.system.get_generator("adj_preparation_divider"), self.rng,
+                self.report_ties("Allocation to regions", [
+                    f'{region["abbreviation"]}: {party}' for region in self.regions
+                    for party in self.system["parties"]]))
             return
 
         method = ADJUSTMENT_PREPARATION_METHODS[method_name]
@@ -482,6 +505,7 @@ class Election:
                 self.system["constituency_threshold"] if self.use_thresholds else 0),
             total_seats=self.total_const_seats,
             rng=self.rng,
+            on_tie=self.report_ties("Preparation for adjustment seats"),
         )
         if "party_totals" in self.preparation_stepbystep:
             self.desired_col_sums = np.asarray(
@@ -504,7 +528,7 @@ class Election:
             all_const_seats, stepbystep = danish.allocate_regions(
                 self.votes, self.prepared_const_seats, self.region_party_totals,
                 self.regions, self.region_groups, self.min_adj_seats, self.max_adj_seats,
-                self.gen, self.rng)
+                self.gen, self.rng, self.report_ties("Adjustment seats"))
         else:
             all_const_seats, stepbystep = method(
                 self.votes,
@@ -521,6 +545,7 @@ class Election:
                 min_adj_seats=self.min_adj_seats,
                 max_adj_seats=self.max_adj_seats,
                 rng=self.rng,
+                on_tie=self.report_ties("Adjustment seats"),
             )
 
         adjustment_row_totals = (

@@ -4,15 +4,16 @@ import numpy as np
 from apportion import apportion1d_general
 from methods.max_const_votes import max_const_votes
 from randomness import random_permutation
+from ties import remap
 
 
-def fixed_seats(votes, seats, independent, divisor_gen, rng):
+def fixed_seats(votes, seats, independent, divisor_gen, rng, on_tie=None):
     # An independent candidate can win one seat, not a party delegation.
     targets = np.where(independent, 1, seats)
     allocation, demo = max_const_votes(
         [votes], [seats], targets, np.zeros((1, len(votes)), int), divisor_gen,
         num_adjustment_seats=seats, min_adj_seats=[seats], max_adj_seats=[seats],
-        exclude_zero_votes=True, rng=rng)
+        exclude_zero_votes=True, rng=rng, on_tie=on_tie)
     last = demo["data"][-1]
     return allocation[0], {"idx": last["party"], "active_votes": last["quotient"]}
 
@@ -38,7 +39,7 @@ def eligible_parties(votes, fixed, independent, groups, threshold_totals,
     return (qualified | (regional_tests >= 2)) & ~independent & (national > 0)
 
 
-def party_totals(votes, fixed, eligible, total, rule, rule_type, rng):
+def party_totals(votes, fixed, eligible, total, rule, rule_type, rng, on_tie=None):
     """Recalculate mutable t; fixed f and original entitlements stay unchanged."""
     def apportion(active, seats):
         active_indices = np.flatnonzero(active)
@@ -49,7 +50,8 @@ def party_totals(votes, fixed, eligible, total, rule, rule_type, rng):
             raise ValueError("No eligible parties can receive the Danish party-seat pool.")
         if seats:
             allocation, _, _ = apportion1d_general(
-                votes[indices], seats, [], rule, rule_type)
+                votes[indices], seats, [], rule, rule_type,
+                on_tie=remap(on_tie, indices))
             result[indices] = allocation
         return result
 
@@ -81,7 +83,7 @@ def region_groups(constituencies, regions):
             for region in regions]
 
 
-def prepare_regions(votes, fixed, totals, regions, groups, divisor_gen, rng):
+def prepare_regions(votes, fixed, totals, regions, groups, divisor_gen, rng, on_tie=None):
     regional_votes = np.array([votes[group].sum(axis=0) for group in groups])
     regional_fixed = np.array([fixed[group].sum(axis=0) for group in groups])
     seats = [region["num_adj_seats"] for region in regions]
@@ -90,7 +92,7 @@ def prepare_regions(votes, fixed, totals, regions, groups, divisor_gen, rng):
             regional_votes, regional_fixed.sum(axis=1) + seats, totals,
             regional_fixed, divisor_gen, num_adjustment_seats=sum(seats),
             min_adj_seats=seats, max_adj_seats=seats,
-            exclude_zero_votes=True, rng=rng)
+            exclude_zero_votes=True, rng=rng, on_tie=on_tie)
     except ValueError as error:
         raise ValueError(
             "Danish regional allocation cannot fill the entitlements with the "
@@ -103,7 +105,7 @@ def prepare_regions(votes, fixed, totals, regions, groups, divisor_gen, rng):
 
 
 def allocate_regions(votes, fixed, regional_totals, regions, groups,
-                     minimums, maxima, divisor_gen, rng):
+                     minimums, maxima, divisor_gen, rng, on_tie=None):
     allocated = fixed.copy()
     steps = []
     for r, (region, group) in enumerate(zip(regions, groups)):
@@ -112,7 +114,9 @@ def allocate_regions(votes, fixed, regional_totals, regions, groups,
             regional_totals[r], fixed[group], divisor_gen,
             num_adjustment_seats=region["num_adj_seats"],
             min_adj_seats=minimums[group], max_adj_seats=[maxima[c] for c in group],
-            exclude_zero_votes=True, rng=rng)
+            exclude_zero_votes=True, rng=rng,
+            on_tie=remap(on_tie, (group[:, None] * votes.shape[1]
+                                 + np.arange(votes.shape[1])).ravel()))
         if not np.array_equal(local.sum(axis=0), regional_totals[r]):
             raise RuntimeError("Danish constituency allocation missed its regional party totals.")
         allocated[group] = local
@@ -126,7 +130,8 @@ def allocate_regions(votes, fixed, regional_totals, regions, groups,
 def regional_demo(system, steps):
     headers = ["Adjustment seat #", "Region", "Party", "Votes", "Divisor", "Vote score", "Tie"]
     rows = [[i, step["region"], system["parties"][step["party"]],
-             step["votes"], step["divisor"], step["quotient"], "Lot" if step["lot"] else ""]
+             step["votes"], step["divisor"], step["quotient"],
+             "Lot" if step["lot"] else "First in table" if step["tie"] else ""]
             for i, step in enumerate(steps, 1)]
     return headers, rows, "Allocation of adjustment seats to regions"
 

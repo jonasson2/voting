@@ -1,6 +1,7 @@
 #coding:utf-8
 from copy import deepcopy
 import numpy as np
+from ties import select
 
 def norwegian_apportionment(m_votes,
                             v_desired_row_sums,
@@ -42,8 +43,8 @@ def norwegian_apportionment(m_votes,
         if maximum <= 0:
             raise ValueError(
                 f"No valid recipient of adjustment seat nr. {n + 1}")
-        const = maximums.index(maximum)
-        party = m_seat_props[const].index(maximum)
+        const, party = np.unravel_index(
+            select(m_seat_props, kwargs.get("on_tie")), np.shape(m_seat_props))
 
         m_allocations[const][party] += 1
         allocation_sequence.append({

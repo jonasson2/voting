@@ -1,4 +1,5 @@
 import numpy as np
+from ties import select, remap
 
 
 def _divisors(divisor_gen, count):
@@ -59,7 +60,9 @@ def switching(
             quotients[removable] = (
                 votes[removable, p] / divisors[allocation[removable, p] - 1]
             )
-            c = int(np.argmin(quotients))
+            c = select(quotients, remap(kwargs.get("on_tie"),
+                                       np.arange(len(row_totals)) * votes.shape[1] + p),
+                       minimum=True)
             removal_quotient = float(quotients[c])
             allocation[c, p] -= 1
             vacancies.append({
@@ -72,24 +75,22 @@ def switching(
     while vacancies:
         deficits = party_totals - allocation.sum(axis=0)
         wanting = deficits > 0
-        best = None
+        scores = np.full((len(vacancies), votes.shape[1]), -np.inf)
         for vacancy_index, vacancy in enumerate(vacancies):
             c = vacancy["constituency"]
             recipients = wanting & list_eligible[c]
             if not recipients.any():
                 continue
-            scores = np.full(votes.shape[1], -np.inf)
-            scores[recipients] = (
+            scores[vacancy_index, recipients] = (
                 votes[c, recipients] / divisors[allocation[c, recipients]]
             )
-            q = int(np.argmax(scores))
-            candidate = (float(scores[q]), -vacancy_index, q)
-            if best is None or candidate > best[0]:
-                best = (candidate, vacancy_index, q)
-        if best is None:
+        if not np.isfinite(scores).any():
             raise ValueError("A returned Swedish constituency seat cannot be reassigned.")
 
-        _, vacancy_index, q = best
+        candidates = [v["constituency"] * votes.shape[1] + p
+                      for v in vacancies for p in range(votes.shape[1])]
+        vacancy_index, q = np.unravel_index(
+            select(scores, remap(kwargs.get("on_tie"), candidates)), scores.shape)
         vacancy = vacancies.pop(vacancy_index)
         c = vacancy["constituency"]
         recipient_quotient = float(

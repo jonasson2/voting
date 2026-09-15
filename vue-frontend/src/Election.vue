@@ -34,6 +34,17 @@
               :party_votes_specified="vote_table.party_vote_info.specified"
               >
             </ResultMatrix>
+          <b-alert :show="!!results[activeTabIndex].ties?.length" variant="warning">
+            <strong>Tied allocation scores</strong>
+            <p>The first tied entry in table order was selected. An official draw
+              of lots could give a different result.</p>
+            <ul class="mb-0">
+              <li v-for="(tie, index) in results[activeTabIndex].ties" :key="index">
+                {{tie.stage}}: {{tie.candidates.join('; ')}}.
+                Selected: {{tie.selected}}.
+              </li>
+            </ul>
+          </b-alert>
           <b-row>
             <br>
             <h4>Seat allocation step-by-step</h4>

@@ -74,6 +74,7 @@ def apportion1d_general(
     threshold_choice=0,
     threshold_seats=0,
     threshold_total=None,
+    on_tie=None,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -132,6 +133,8 @@ def apportion1d_general(
     gen = seat_gen()
     while sum(allocations) < num_total_seats:
         seat = next(gen)
+        if on_tie is not None and len(seat["tied"]) > 1:
+            on_tie(seat["tied"], seat["idx"], float(seat["active_votes"]))
         allocations[seat["idx"]] += 1
         last_in = seat
 
@@ -192,6 +195,8 @@ def seat_generator_div(
             yield {
                 "idx": idx,
                 "active_votes": active_votes[idx],
+                "tied": [i for i, score in enumerate(active_votes)
+                         if score == active_votes[idx]],
             }
             active_votes[idx] = votes[idx]*1.0/next(divisor_gens[idx])
 
@@ -232,6 +237,8 @@ def seat_generator_quota(
             yield {
                 "idx": idx,
                 "active_votes": active_votes[idx],
+                "tied": [i for i, score in enumerate(active_votes)
+                         if score == active_votes[idx]],
             }
             active_votes[idx] -= quota
 
