@@ -16,6 +16,7 @@ from copy import copy, deepcopy
 from util import remove_prefix, sum_abs_diff
 from histogram import Histogram
 from sim_measures import add_vuedata
+from randomness import make_rng
 import numpy as np
 from numpy import vstack
 
@@ -45,6 +46,7 @@ class SimulationSettings(dict):
         self["use_thresholds"] = True
         self["scaling"] = "both"
         self["sensitivity"] = False
+        self["random_seed"] = None
 
     def abs(q, s):      return abs(q - s)
     def sq(q, s):       return (q - s)**2
@@ -76,10 +78,13 @@ def simulation_vote_table(source, minimum_one=False):
 
 class Simulation():
     # Simulate a set of elections in a single thread
-    def __init__(self, sim_settings, systems, vote_table, nr=0):
+    def __init__(self, sim_settings, systems, vote_table, nr=0, start_iteration=0):
         warnings_to_errors()
         use_thresholds = sim_settings['use_thresholds']
         self.sim_settings = sim_settings
+        self.random_seed = sim_settings.get("random_seed")
+        self.start_iteration = start_iteration
+        self.next_global_iteration = start_iteration
         self.danish_simulation = any(
             system.get("adjustment_preparation_method") == "danish-regions"
             for system in systems)
@@ -112,7 +117,19 @@ class Simulation():
         self.total_time = 0
         self.time_left = 0
         self.initialize_stat_counters()
+        self.set_election_rngs(self.reference_handler, 0, purpose=2)
+        self.reference_handler.run_elections(use_thresholds)
         self.run_initial_elections()
+
+    def rng(self, iteration, purpose, system_index=0):
+        return make_rng(
+            self.random_seed,
+            (iteration, purpose, system_index),
+        )
+
+    def set_election_rngs(self, handler, iteration, purpose):
+        for index, election in enumerate(handler.elections):
+            election.rng = self.rng(iteration, purpose, index)
 
     def initialize_stat_counters(self):
         ns = self.nsys
@@ -194,15 +211,15 @@ class Simulation():
         # Simulate many elections.
         if self.sim_count == 0:
             return
-        gen = self.gen_votes()
         begin_time = datetime.now()
-        #random.seed(42)
         for i in range(self.sim_count):
             self.iteration = i + 1
+            global_iteration = self.start_iteration + i
             if tasknr==0:
                 print(f'iteration = {self.iteration}')
-            (votes, party_votes) = next(gen)
-            self.run_and_collect_measures(votes, party_votes)  # This allocates
+            votes, party_votes = self.generate_simulated_votes(global_iteration)
+            self.run_and_collect_measures(
+                votes, party_votes, global_iteration)  # This allocates
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)
@@ -215,37 +232,46 @@ class Simulation():
         return
 
     def gen_votes(self):
-        # Generate votes similar to given votes using selected distribution
+        iteration = self.next_global_iteration
         while True:
-            if self.distribution == 'log-normal':
-                votes, party_votes = generate_corr_votes(
-                    self.election_handler.votes,
-                    self.const_rsd,
-                    self.const_corr,
-                    self.election_handler.party_vote_info["votes"],
-                    self.party_vote_rsd,
-                    self.party_vote_corr
-                    )
-            else:
-                votes = generate_votes(
-                    self.election_handler.votes, self.const_rsd,
-                    self.distribution)
-                if self.party_votes_specified:
-                    party_votes = generate_votes(
-                        [self.election_handler.party_vote_info["votes"]], self.party_vote_rsd,
-                        self.distribution)
-                    party_votes = party_votes[0]
-                else:
-                    party_votes = None
-            if self.danish_simulation:
-                votes = np.maximum(votes, 1).tolist()
-            yield (votes, party_votes)
+            yield self.generate_simulated_votes(iteration)
+            iteration += 1
 
-    def run_and_collect_measures(self, votes, party_votes):
+    def generate_simulated_votes(self, iteration):
+        rng = self.rng(iteration, purpose=0)
+        if self.distribution == 'log-normal':
+            votes, party_votes = generate_corr_votes(
+                self.election_handler.votes,
+                self.const_rsd,
+                self.const_corr,
+                self.election_handler.party_vote_info["votes"],
+                self.party_vote_rsd,
+                self.party_vote_corr,
+                rng,
+            )
+        else:
+            votes = generate_votes(
+                self.election_handler.votes, self.const_rsd,
+                self.distribution, rng)
+            if self.party_votes_specified:
+                party_votes = generate_votes(
+                    [self.election_handler.party_vote_info["votes"]],
+                    self.party_vote_rsd, self.distribution, rng)[0]
+            else:
+                party_votes = None
+        if self.danish_simulation:
+            votes = np.maximum(votes, 1).tolist()
+        return votes, party_votes
+
+    def run_and_collect_measures(self, votes, party_votes, iteration=None):
+        if iteration is None:
+            iteration = self.next_global_iteration
+            self.next_global_iteration += 1
         use_thresholds = self.sim_settings["use_thresholds"]
+        self.set_election_rngs(self.election_handler, iteration, purpose=1)
         self.election_handler.run_elections(use_thresholds, votes, party_votes)
         if self.sensitivity:
-            self.run_sensitivity(votes)
+            self.run_sensitivity(votes, iteration)
         else:
             self.collect_vote_measures()
             self.collect_seat_measures()
@@ -409,7 +435,8 @@ class Simulation():
             comparison_election = Election(comparison_system,
                                            election.votes,
                                            election.party_vote_info,
-                                           pruned_votes=election.pruned_votes)
+                                           pruned_votes=election.pruned_votes,
+                                           rng=election.rng.duplicate())
             comparison_election.assign_seats(election.use_thresholds)
             self.add_deviation(election, comparison_election, measure, deviations)
 
@@ -466,14 +493,17 @@ class Simulation():
                 measure = min(measure, function(h,s))
         return measure
 
-    def run_sensitivity(self, votes):
+    def run_sensitivity(self, votes, iteration):
         elections = self.election_handler.elections
         relative_SD = self.sim_settings["sens_rsd"]
         sens_method = self.sim_settings["sens_method"]
-        sens_votes = generate_votes(votes, relative_SD, sens_method)
+        sens_votes = generate_votes(
+            votes, relative_SD, sens_method, self.rng(iteration, purpose=3))
         for (i, election) in enumerate(elections):
-            sens_election = Election(election.system, sens_votes)
-            sens_election.assign_seats()
+            sens_election = Election(
+                election.system, sens_votes,
+                rng=self.rng(iteration, purpose=4, system_index=i))
+            sens_election.assign_seats(election.use_thresholds)
             party_seats1 = election.desired_col_sums
             party_seats2 = sens_election.desired_col_sums
             party_seat_diff = sum_abs_diff(party_seats1, party_seats2)

@@ -3,6 +3,7 @@ import numpy as np
 
 from apportion import apportion1d_general
 from methods.max_const_votes import max_const_votes
+from randomness import random_permutation
 
 
 def fixed_seats(votes, seats, independent, divisor_gen, rng):
@@ -40,7 +41,9 @@ def eligible_parties(votes, fixed, independent, groups, threshold_totals,
 def party_totals(votes, fixed, eligible, total, rule, rule_type, rng):
     """Recalculate mutable t; fixed f and original entitlements stay unchanged."""
     def apportion(active, seats):
-        indices = rng.permutation(np.flatnonzero(active))
+        active_indices = np.flatnonzero(active)
+        indices = (active_indices[random_permutation(rng, len(active_indices))]
+                   if rng is not None else active_indices)
         result = np.zeros(len(votes), int)
         if seats < 0 or (seats and (not len(indices) or not votes[indices].sum())):
             raise ValueError("No eligible parties can receive the Danish party-seat pool.")

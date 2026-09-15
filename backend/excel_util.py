@@ -377,6 +377,8 @@ def simulation_to_xlsx(results, filename, display_settings=None):
     sim_settings = [
         {"label": "Number of simulations",
          "data": results["iteration"]},
+        {"label": "Random seed",
+         "data": results["sim_settings"].get("random_seed", "")},
         {"label": "Generating method",
          "data": results["sim_settings"]["gen_method"]},
         {"label": "Relative standard deviation for list votes",

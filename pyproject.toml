@@ -3,13 +3,14 @@ name = "voting-simulator"
 version = "0.1.1.dev0"
 description = "Voting system simulator"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "flask",
     "flask-cors",
     "numpy",
     "openpyxl",
     "psutil",
+    "randompack==0.1.10",
     "waitress>=3.0.2",
     "werkzeug",
     "xlsxwriter",

@@ -111,6 +111,12 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sens_rsd", 0.01)
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
+    seed = sim_settings.get("random_seed")
+    if seed in (None, ""):
+        sim_settings["random_seed"] = None
+    elif type(seed) is not int or not -(2**31) <= seed < 2**31:
+        raise ValueError(
+            "Random seed must be an integer from -2147483648 to 2147483647.")
     if "const_cov" in sim_settings:
         sim_settings["const_rsd"] = sim_settings["const_cov"]
     if "party_vote_cov" in sim_settings:

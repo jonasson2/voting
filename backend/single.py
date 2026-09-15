@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, math, time, random
+import sys, math, time
 from run_util import get_arguments, get_hostname
 sys.path.append("../backend")
 from electionHandler import ElectionHandler
@@ -64,7 +64,6 @@ def main():
                     "   adjfix\n"))
     (votes, vote_path, systems) = read_data(vote_file, json_file_or_method)
 
-    #random.seed(42)
     results = single_election(votes, systems)
     handler = ElectionHandler(votes, systems, use_thresholds=True)
     handler.to_xlsx("single.xlsx")

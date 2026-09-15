@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import r_
+from randomness import make_rng, random_uniform
 np.set_printoptions(suppress=True, floatmode="fixed", precision=3, linewidth=200)
 from apportion import apportion
 from copy import deepcopy
@@ -8,7 +8,7 @@ total_iter = 0
 total_step = 0
 icore = 0
 
-def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
+def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div, rng):
     x = prior_alloc.copy()
     r = const_seats - np.sum(x, 1)
     c = party_seats - np.sum(x, 0)
@@ -20,13 +20,15 @@ def alt_scaling_orig(v, const_seats, party_seats, prior_alloc, div):
     for iter in range(1, Niter):
         print("iter=",iter)
         for i in range(nrows):
-            (x[i, :], rho) = apportion_orig(v[i, :], xsaved[i, :], r[i], div)
+            (x[i, :], rho) = apportion_orig(
+                v[i, :], xsaved[i, :], r[i], div, rng)
             v[i, :] = v[i, :]/rho
             print(f"i: {i}, rho:{rho:.10f}")
         if iter > 1 and np.array_equal(x, y):
             break
         for j in range(ncols):
-            (y[:, j], sigma) = apportion_orig(v[:, j], xsaved[:, j], c[j], div)
+            (y[:, j], sigma) = apportion_orig(
+                v[:, j], xsaved[:, j], c[j], div, rng)
             v[:, j] = v[:, j]/sigma
             print(f"i: {i}, sigma:{sigma:.10f}")
         if np.array_equal(x, y):
@@ -105,94 +107,20 @@ def alt_scaling(m_votes,
     party_seats = np.array(v_desired_col_sums) - nat_prior_alloc
     nat_seats = sum(party_seats) - sum(const_seats)
     div_gen = divisor_gen()
+    rng = kwargs.get("rng") or make_rng()
     N = max(max(const_seats), max(party_seats)) + 1
     div = np.array([next(div_gen) for i in range(N + 1)])
 
     if nat_seats == 0:
-        seats = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div)
+        seats = alt_scaling_orig(votes, const_seats, party_seats, prior_alloc, div, rng)
         stepbystep = {"data": [], "function": print_demo_table}
     else:
         seats, stepbystep = alt_scaling_new(votes, const_seats, party_seats, prior_alloc,
                                             div)
     return seats, stepbystep
 
-def alt_scaling_old(m_votes,
-                v_desired_row_sums,
-                v_desired_col_sums,
-                m_prior_allocations,
-                divisor_gen,
-                party_votes_specified,
-                nat_prior_allocations,
-                nat_seats,
-                **kwargs):
-    # ÚRELT
-    nat_list_with_seats = party_votes_specified and nat_seats > sum(nat_prior_allocations)
-    if not nat_seats > sum(nat_prior_allocations) and party_votes_specified:
-        v_desired_col_sums = [x-y for x,y in zip(v_desired_col_sums,nat_prior_allocations)]
-    v = np.array(m_votes, float)
-    xp = np.array(m_prior_allocations)
-    row_sums = np.array(v_desired_row_sums)
-    if nat_list_with_seats :
-        v = np.vstack([v, np.ones(len(m_votes[0]))])
-        xp = np.vstack([xp, nat_prior_allocations])
-        row_sums = np.append(row_sums, nat_seats)
-    x = xp.copy()
-    y = xp.copy()
-    r = row_sums - np.sum(xp, 1)
-    c = np.array(v_desired_col_sums) - np.sum(xp, 0)
-
-    if not r.any() and not c.any(): #No iterations as no adj seats to allocate
-        stepbystep = {"data": [], "function": print_demo_table}
-        return xp[:-1].tolist() if nat_list_with_seats else xp.tolist(), stepbystep
-    N = max(max(v_desired_row_sums), max(v_desired_col_sums)) + 1
-    (nrows, ncols) = np.shape(v)
-    div_gen = divisor_gen()
-    inverse_divisors = 1/np.array([next(div_gen) for i in range(N + 1)])
-    k = -1 if nat_list_with_seats else nrows
-    for iter in range(1,100):
-        #print('iter=',iter)
-        for i in range(nrows):
-            if nat_list_with_seats and i == nrows-1:
-                pass
-            else:
-                (x[i,:], rho) = apportion_special(v[i,:], xp[i,:], r[i], inverse_divisors)
-                v[i,:] = v[i,:]*rho
-        if nat_list_with_seats :
-            p_alloc = x[:-1].sum(axis=0)
-            x[-1,:] = [max(0, x)+y for x,y in zip(c - p_alloc, nat_prior_allocations)]
-        if iter > 1 and np.array_equal(x, y):
-            break
-        for j in range(ncols):
-            #print('j=',j)
-            (y[:,j], sigma) = apportion_special(v[:,j], xp[:,j], c[j], inverse_divisors,
-                                         nat_list_with_seats)
-            v[:k,j] = v[:k,j]*sigma
-        if np.array_equal(x, y):
-            break
-    #Debug
-    #print('iter =', iter)
-    if iter == 99:
-       print('alt_scaling_equalities: No convergence in 99 iterations')
-    #else:
-    #    print('iter:', iter)
-    stepbystep = {"data": [], "function": print_demo_table}
-    return (x[:-1].astype(int).tolist() if nat_list_with_seats
-            else x.astype(int).tolist()), stepbystep
-
 def print_demo_table(rules, allocation_sequence):
     return [], [], None
-
-def apportion_special(v, xp, max_seats, div): # líklega úrelt
-    x = xp.copy()
-    if max_seats == 0:
-        return x, np.inf
-    for i in range(max_seats):
-        vdiv = r_[v/div[x], 1.0]
-        k = vdiv.argmax()
-        if k < len(x):
-            x[k] += 1
-    vdivnext = max(r_[v/div[x], 1.0])
-    return x, random.uniform(vdivnext, vdiv[k]) # (vdiv[k] + vdivnext)/2
 
 def apportion_until_score_min(votes, seats_in, max_seats, div, score_min, mix_factor):
     seats = seats_in.copy()
@@ -229,8 +157,7 @@ def apportion_equalities(votes, seats_in, max_seats, div, mix_factor):
     separator = mix_factor*last_score + (1 - mix_factor)*score[k_next]
     return seats, separator
 
-def apportion_orig(v, xp, total_seats, div):
-    import random
+def apportion_orig(v, xp, total_seats, div, rng):
     x = xp.copy()
     if total_seats == 0:
         return x, np.inf
@@ -239,5 +166,6 @@ def apportion_orig(v, xp, total_seats, div):
         k = vdiv.argmax()
         x[k] += 1
     vdivnext = max(v/div[x])
-    return x, random.uniform(vdivnext, vdiv[k]) + 0.00001*random.uniform(0,1)
+    return x, (random_uniform(rng, vdivnext, vdiv[k])
+               + 0.00001 * random_uniform(rng, 0, 1))
     # return x, (vdiv[k] + vdivnext)/2

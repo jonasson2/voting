@@ -6,10 +6,10 @@ import multiprocessing as mp
 import numpy as np
 from time import time, sleep
 from trace_util import traceback, long_traceback
-def task_simulate(nr, ntask, sim_settings, systems, votes, monitor):
+def task_simulate(nr, ntask, start_iteration, sim_settings, systems, votes, monitor):
     sim_settings = copy(sim_settings)
     sim_settings["simulation_count"] = ntask
-    sim = Simulation(sim_settings, systems, votes, nr)
+    sim = Simulation(sim_settings, systems, votes, nr, start_iteration)
     sim.simulate(nr, monitor)
     return sim.attributes()
 
@@ -44,7 +44,8 @@ def parallel_simulate(simid):
     starttime = time()
 
     # CREATE POOL OF WORKERS
-    pars = ((k, ntask[k], sim_settings, systems, votes, monitor)
+    start_iterations = np.cumsum([0] + ntask[:-1])
+    pars = ((k, ntask[k], int(start_iterations[k]), sim_settings, systems, votes, monitor)
             for k in range(nproc))
     pool = mp.Pool(nproc)
 

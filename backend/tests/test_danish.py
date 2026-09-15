@@ -16,6 +16,7 @@ from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from methods import danish
 from noweb import load_votes, votes_to_excel
+from randomness import make_rng
 from simulate import Simulation, SimulationSettings, simulation_vote_table
 from vote_table import check_vote_table, process_vote_table
 from web import app
@@ -201,7 +202,7 @@ class DanishTest(unittest.TestCase):
         for _ in range(2):
             allocation, demo = danish.prepare_regions(np.array([[10, 10]]),
                 np.zeros((1, 2), int), [1, 1], [{"abbreviation": "H", "num_adj_seats": 2}],
-                [np.array([0])], sainte_lague_gen, np.random.default_rng(42))
+                [np.array([0])], sainte_lague_gen, make_rng(42))
             self.assertTrue(demo["data"][0]["lot"])
             results.append(demo["data"])
         self.assertEqual(*results)

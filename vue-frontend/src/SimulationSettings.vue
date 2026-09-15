@@ -26,6 +26,16 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Optional integer seed for repeatable generated votes and random tie decisions. Leave blank for fresh random draws.">
+          <label for="simulation-random-seed">Random seed</label>
+          <span class="simulation-setting-control compact-entry">
+            <input id="simulation-random-seed" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
+              v-model.number="sim_settings.random_seed"/>
+          </span>
+        </div>
+        <div class="simulation-setting-row"
+          v-b-tooltip.hover.bottom.v-primary.ds500
           title="Distribution used to simulate votes of each list, with the
                  specified relative SD and the source votes as 
                  expected values">

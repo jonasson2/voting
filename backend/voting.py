@@ -12,6 +12,7 @@ from dictionaries import DEMO_TABLE_FORMATS
 from dictionaries import ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS
 import numpy as np
 from methods import danish
+from randomness import make_rng
 from vote_table import check_regions
 
 class Election:
@@ -32,7 +33,7 @@ class Election:
             else [False] * self.nparty, dtype=bool)
         if self.independent_candidates.shape != (self.nparty,):
             raise ValueError("Independent candidates must match the party list.")
-        self.rng = rng if rng is not None else np.random.default_rng()
+        self.rng = rng if rng is not None else make_rng()
         self.danish = system["adjustment_preparation_method"] == "danish-regions"
         self.party_vote_info = party_vote_info
         self.party_votes = np.array(party_vote_info["votes"])
@@ -480,6 +481,7 @@ class Election:
             local_threshold=(
                 self.system["constituency_threshold"] if self.use_thresholds else 0),
             total_seats=self.total_const_seats,
+            rng=self.rng,
         )
         if "party_totals" in self.preparation_stepbystep:
             self.desired_col_sums = np.asarray(
@@ -518,6 +520,7 @@ class Election:
                 num_adjustment_seats=self.num_adjustment_seats,
                 min_adj_seats=self.min_adj_seats,
                 max_adj_seats=self.max_adj_seats,
+                rng=self.rng,
             )
 
         adjustment_row_totals = (

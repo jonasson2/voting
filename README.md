@@ -20,7 +20,7 @@ Requirements:
 
 - Git
 - [uv](https://docs.astral.sh/uv/)
-- Python 3.9 or later (selected by `uv`)
+- Python 3.10 or later (selected by `uv`)
 - Node.js and npm; use a maintained LTS release
 
 Clone the repository and install the locked dependencies:

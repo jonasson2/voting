@@ -1,5 +1,7 @@
 import numpy as np
 
+from randomness import random_index
+
 
 def max_const_votes(
         m_votes, v_desired_row_sums, v_desired_col_sums,
@@ -72,7 +74,7 @@ def max_const_votes(
             raise ValueError("No eligible party-constituency pair can receive the remaining seats.")
         tied = np.flatnonzero(scores == scores.max())
         rng = kwargs.get("rng")
-        winner = rng.choice(tied) if rng is not None else tied[0]
+        winner = tied[random_index(rng, len(tied))] if rng is not None else tied[0]
         c, p = np.unravel_index(winner, scores.shape)
         quotient = float(scores[c, p])
         divisor = float(divisors[allocation[c, p]])

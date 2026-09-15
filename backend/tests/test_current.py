@@ -21,6 +21,7 @@ from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
+from input_util import check_simul_settings
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
 from vote_table import check_vote_table
@@ -600,6 +601,37 @@ class CurrentApplicationTest(unittest.TestCase):
             disabled.stat['dev_all_adj_tot'].mean(),
             explicit_zero.stat['dev_all_adj_tot'].mean(),
         )
+
+    def test_random_seed_reproduces_vote_generation_across_worker_ranges(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        settings = SimulationSettings()
+        settings.update(random_seed=24680, simulation_count=3, cpu_count=1)
+
+        full = Simulation(settings, [system], table)
+        first_worker = Simulation(settings, [self.make_system(
+            table, 'max-const-seat-share')], table, start_iteration=0)
+        second_worker = Simulation(settings, [self.make_system(
+            table, 'max-const-seat-share')], table, start_iteration=2)
+
+        expected = [full.generate_simulated_votes(i) for i in range(3)]
+        actual = [first_worker.generate_simulated_votes(i) for i in range(2)]
+        actual.append(second_worker.generate_simulated_votes(2))
+        for expected_result, actual_result in zip(expected, actual):
+            np.testing.assert_allclose(expected_result[0], actual_result[0])
+            self.assertEqual(expected_result[1], actual_result[1])
+
+    def test_random_seed_validation(self):
+        settings = SimulationSettings()
+        settings['random_seed'] = ''
+        self.assertIsNone(check_simul_settings(settings)['random_seed'])
+        settings = SimulationSettings()
+        settings['random_seed'] = 123
+        self.assertEqual(check_simul_settings(settings)['random_seed'], 123)
+        settings = SimulationSettings()
+        settings['random_seed'] = 2**31
+        with self.assertRaisesRegex(ValueError, 'Random seed'):
+            check_simul_settings(settings)
 
     def test_swedish_switching_returns_an_overhang(self):
         allocation, steps = swedish_switching(

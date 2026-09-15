@@ -1,20 +1,33 @@
-from table_util import find_percentages
-from random import randint, uniform
-import dictionaries
+from math import sqrt
 
-def adjustment(vote):
-    return vote + uniform(-0.01, 0.01)
+import numpy as np
 
-def generate_votes (
-    base_votes,      # 2d - votes for each list
-    var_coeff,       # relative SD, SD/mean
-    distribution,    # "beta", "uniform"...
-):
+
+def adjustment(vote, rng):
+    return vote + rng.unif(a=-0.01, b=0.01)
+
+
+def generated_vote(mean, var_coeff, distribution, rng):
+    if var_coeff == 0:
+        return mean
+    if distribution == "beta":
+        sigma = var_coeff * mean
+        alpha = ((1 - mean) / sigma**2 - 1 / mean) * mean**2
+        beta = alpha * (1 / mean - 1)
+        return rng.beta(a=alpha, b=beta)
+    if distribution == "gamma":
+        shape = 1 / var_coeff**2
+        return rng.gamma(shape=shape, scale=mean / shape)
+    if distribution == "uniform":
+        deviation = sqrt(3) * var_coeff * mean
+        return rng.unif(a=max(0, mean - deviation), b=mean + deviation)
+    raise ValueError(f"Unknown vote-generating distribution: {distribution}")
+
+
+def generate_votes(base_votes, var_coeff, distribution, rng):
     """
     Generate a set of random votes using 'base_votes' as reference.
     """
-    rand = dictionaries.GENERATING_METHODS[distribution]
-    
     generated_votes = []
     num_constit = len(base_votes)
     num_parties = len(base_votes[0])
@@ -25,9 +38,9 @@ def generate_votes (
             if mean == 0:
                 vote = 0
             else:
-                vote = round(rand(mean, var_coeff))
+                vote = round(generated_vote(mean, var_coeff, distribution, rng))
             if vote >= 1:
-                vote = adjustment(vote)
+                vote = adjustment(vote, rng)
             generated_votes[c].append(vote)
     return generated_votes
 
@@ -37,11 +50,12 @@ def generate_corr_votes(
     const_corr,
     party_votes = [],
     party_vote_rsd = 0,
-    party_vote_corr = 0
+    party_vote_corr = 0,
+    rng = None,
 ):
-    import numpy as np
+    if rng is None:
+        raise ValueError("Correlated vote generation requires an RNG.")
     include_pv = len(party_votes) > 0
-    rng = np.random.default_rng()
     M = np.array(votes)
     nconst, nparty = M.shape
     if include_pv:
@@ -94,13 +108,11 @@ def generate_corr_votes(
             sigma_ext = np.append(sigma, sigma_pv)
             mu_ext = np.append(mu, mu_pv)
             Sig = sigma_ext[:,None]*corr*sigma_ext
-            X = rng.multivariate_normal(mu_ext, Sig)
-            gv[:, p] = np.exp(X)
+            gv[:, p] = np.exp(rng.mvn(Sigma=Sig, mu=mu_ext)[0])
 
         else:
             Sig = sigma[:, None] * corr * sigma
-            X = rng.multivariate_normal(mu, Sig)
-            gv[:, p] = np.exp(X)
+            gv[:, p] = np.exp(rng.mvn(Sigma=Sig, mu=mu)[0])
 
     return (gv[:-1].tolist(), gv[-1].tolist()) if include_pv \
         else (gv.tolist(), [])

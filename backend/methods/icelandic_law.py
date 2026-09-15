@@ -1,7 +1,7 @@
 #coding:utf-8
-from copy import deepcopy
-import random
 import numpy as np
+
+from randomness import random_index
 
 def icelandic_apportionment(
     m_votes,
@@ -88,7 +88,8 @@ def icelandic_apportionment(
                 #   (Nú eru tvær eða fleiri lands- eða hlutfallstölur jafnháar
                 #   þegar að þeim kemur skv. 3. tölul. og skal þá hluta um röð
                 #   þeirra.)
-                const = [random.choice(const)]
+                rng = kwargs.get("rng")
+                const = [const[random_index(rng, len(const))] if rng else const[0]]
 
             m_allocations[const[0]][idx] += 1
             num_allocated += 1

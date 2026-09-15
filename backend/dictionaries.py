@@ -31,10 +31,6 @@ from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
 
-from distributions.symmetric_beta_distribution import symmetric_beta_distribution
-from distributions.gamma_distribution import gamma_distribution
-from distributions.uniform_distribution import uniform_distribution
-from distributions.log_normal_distribution import log_normal_distribution
 
 CONSTANTS = {
     'CoeffVar': 0.25,
@@ -332,13 +328,6 @@ ADJUSTMENT_METHODS = {
 }
 
 FLEXIBLE_ADJUSTMENT_METHODS = {"max-const-votes"}
-
-GENERATING_METHODS = {
-    "log-normal": log_normal_distribution,
-    "gamma": gamma_distribution,
-    "beta": symmetric_beta_distribution,
-    "uniform": uniform_distribution
-}
 
 USE_THRESHOLDS = [
     {"value": False, "text": "no"},
