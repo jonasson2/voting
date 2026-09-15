@@ -40,6 +40,7 @@ def icelandic_apportionment(
     invalid = []
     seats_info = []
     adj_seat = adj_seat_gen() if adj_seat_gen else divisor_gen()
+    on_party_tie = kwargs.get("on_party_tie")
     while num_allocated < total_seats:
         #if all parties are either invalid or below threshold,
         #then no more seats can be allocated
@@ -81,6 +82,13 @@ def icelandic_apportionment(
         #   skulu síðan báðar felldar niður.)
 
         if max(v_proportions) != 0:
+            if on_party_tie is not None and len(seat["tied"]) > 1:
+                # A tied party with no available constituency is not a contender.
+                tied = [p for p in seat["tied"] if p not in invalid and any(
+                    sum(m_allocations[c]) < v_desired_row_sums[c] and m_votes[c][p] > 0
+                    for c in range(len(m_votes)))]
+                if len(tied) > 1:
+                    on_party_tie(tied, idx, float(country_num))
             const = [select(
                 v_proportions,
                 remap(kwargs.get("on_tie"),

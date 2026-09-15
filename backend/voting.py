@@ -546,6 +546,8 @@ class Election:
                 max_adj_seats=self.max_adj_seats,
                 rng=self.rng,
                 on_tie=self.report_ties("Adjustment seats"),
+                on_party_tie=self.report_ties(
+                    "Adjustment-seat party order", self.system["parties"]),
             )
 
         adjustment_row_totals = (

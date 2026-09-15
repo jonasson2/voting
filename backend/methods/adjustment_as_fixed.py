@@ -2,6 +2,7 @@ from apportion import apportion1d_general
 import numpy as np
 from numpy import argmin, flatnonzero as find
 from copy import deepcopy
+from ties import remap
 
 def min_with_index(x, I=None):
     if I is None:
@@ -52,7 +53,9 @@ def adjustment_as_fixed(m_votes,
             v_votes = list(temp_votes[c,:]),
             num_total_seats = desired_const[c],
             prior_allocations = list(alloc_prior[c,:]),
-            rule = divisor_gen
+            rule = divisor_gen,
+            on_tie=remap(kwargs.get("on_tie"),
+                         c * num_parties + np.arange(num_parties)),
         )
         alloc[c,:] = np.array(alloc_const)
 

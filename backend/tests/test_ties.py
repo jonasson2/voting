@@ -5,12 +5,14 @@ import numpy as np
 
 from apportion import apportion1d_general
 from division_rules import dhondt_gen, hare, sainte_lague_gen
+from dictionaries import ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from methods import danish
 from methods.icelandic_law import icelandic_apportionment
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching_se import switching
+from randomness import make_rng
 from simulate import Simulation, SimulationSettings
 from ties import TieReport
 from vote_table import check_vote_table, process_vote_table
@@ -67,6 +69,50 @@ class TieTest(unittest.TestCase):
         table = self.table(['Example,fixed,adj,A,B', 'North,0,1,100,100'])
         election = ElectionHandler(table, [self.system(table)], True).elections[0]
         self.assertEqual(election.get_result_web()['ties'][0]['stage'], 'Party totals')
+
+    def preset_election(self, table, preset):
+        system = self.system(table)
+        settings = next(p['settings'] for p in ELECTION_LAW_PRESETS
+                        if p['value'] == preset)
+        system.update({key: value for key, value in settings.items()
+                       if key != 'constituency_seat_specification'})
+        return ElectionHandler(table, [system], True).elections[0]
+
+    def test_finnish_adjustment_as_fixed_tie_reaches_single_election_results(self):
+        table = self.table(['Example,fixed,adj,A,B',
+                            'North,0,1,100,100', 'South,0,2,300,400'])
+        election = self.preset_election(table, 'finland')
+        self.assertEqual(election.results['all_const_seats'], [[1, 0], [1, 1]])
+        self.assertEqual(election.get_result_web()['ties'], [{
+            'stage': 'Adjustment seats',
+            'candidates': ['North: A', 'North: B'], 'selected': 'North: A',
+        }])
+        election.rng = make_rng(42)
+        election.assign_seats()
+        self.assertEqual(election.tie_report.events, [])
+
+    def test_icelandic_fallback_party_tie_beyond_original_entitlements(self):
+        table = self.table(['Example,fixed,adj,A,B,C',
+                            'North,0,1,1000,0,0', 'South,0,2,0,100,100'])
+        election = self.preset_election(table, 'iceland')
+        # The initial three national entitlements all go to A, but A can only
+        # take one seat. B and C tie further down the quotient sequence.
+        np.testing.assert_array_equal(election.desired_col_sums, [3, 0, 0])
+        self.assertEqual(election.results['all_const_seats'], [[1, 0, 0], [0, 1, 1]])
+        self.assertEqual(election.get_result_web()['ties'], [{
+            'stage': 'Adjustment-seat party order',
+            'candidates': ['B', 'C'], 'selected': 'B',
+        }])
+        election.rng = make_rng(42)
+        election.assign_seats()
+        self.assertEqual(election.tie_report.events, [])
+
+    def test_icelandic_fallback_ignores_party_without_an_available_constituency(self):
+        table = self.table(['Example,fixed,adj,A,B,C',
+                            'North,0,1,1000,100,0', 'South,0,1,0,0,100'])
+        election = self.preset_election(table, 'iceland')
+        self.assertEqual(election.results['all_const_seats'], [[1, 0, 0], [0, 0, 1]])
+        self.assertEqual(election.get_result_web()['ties'], [])
 
     def test_simulated_elections_do_not_collect_tie_reports(self):
         table = self.table(['Example,fixed,adj,A,B',
