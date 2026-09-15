@@ -15,6 +15,7 @@ def normalize_system(system):
     system.setdefault("fixed_seat_eligibility", "constituency")
     system.setdefault("adjustment_preparation_method", "none")
     system.setdefault("adj_preparation_divider", "sainte-lague")
+    system.setdefault("compare_with", True)
     return system
 
 def parse_bool(value):
@@ -62,8 +63,6 @@ def check_systems(electoral_systems):
         if adjustment_method not in ADJUSTMENT_METHODS:
             raise ValueError(
                 f"Unknown adjustment-seat method: {adjustment_method}")
-        if "compare_with" not in electoral_system:
-            electoral_system["compare_with"] = False
         for const in electoral_system["constituencies"]:
             if 'num_const_seats' in const:
                 const['num_fixed_seats'] = const['num_const_seats']

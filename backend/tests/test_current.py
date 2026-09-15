@@ -21,7 +21,7 @@ from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
-from input_util import check_simul_settings
+from input_util import check_simul_settings, normalize_system
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
 from vote_table import check_vote_table
@@ -50,6 +50,13 @@ class CurrentApplicationTest(unittest.TestCase):
 
     def test_wsgi_import_initializes_simulation_state(self):
         self.assertIsInstance(noweb.SIMULATIONS, dict)
+
+    def test_systems_default_to_comparison(self):
+        self.assertTrue(ElectionSystem()['compare_with'])
+        self.assertTrue(normalize_system({})['compare_with'])
+        self.assertFalse(normalize_system({'compare_with': False})['compare_with'])
+        response = app.test_client().post('/api/capabilities/', json=[])
+        self.assertTrue(response.get_json()['election_system']['compare_with'])
 
     def test_default_web_ports(self):
         with patch.dict(os.environ, {}, clear=True):

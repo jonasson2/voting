@@ -4,6 +4,9 @@ import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 import { defaultDisplaySettings, normalizeDisplaySettings } from "./numberFormat.js"
 
 function normalizeSystem(system) {
+  if (system.compare_with === undefined) {
+    system.compare_with = true
+  }
   if (system.fixed_seat_eligibility === undefined) {
     system.fixed_seat_eligibility = 'constituency'
   }
@@ -254,7 +257,6 @@ const store = new Vuex.Store({
             }
             let systems = response.data.systems
             for (var i=0; i < systems.length; i++) {
-              if (!("compare_with" in systems[i])) systems[i].compare_with = false
               context.commit("addSystem", systems[i])
             }
             findNumbering(context.state, 0)
