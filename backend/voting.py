@@ -480,12 +480,15 @@ class Election:
 
         if self.danish:
             self.prepared_const_seats = fixed.copy()
+            on_tie = None
+            if self.rng is None:
+                on_tie = self.report_ties("Allocation to regions", [
+                    f'{region["abbreviation"]}: {party}' for region in self.regions
+                    for party in self.system["parties"]])
             self.region_party_totals, self.preparation_stepbystep = danish.prepare_regions(
                 self.votes, fixed, self.desired_col_sums, self.regions, self.region_groups,
                 self.system.get_generator("adj_preparation_divider"), self.rng,
-                self.report_ties("Allocation to regions", [
-                    f'{region["abbreviation"]}: {party}' for region in self.regions
-                    for party in self.system["parties"]]))
+                on_tie)
             return
 
         method = ADJUSTMENT_PREPARATION_METHODS[method_name]

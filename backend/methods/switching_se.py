@@ -49,6 +49,7 @@ def switching(
     initial = allocation.copy()
     divisors = _divisors(divisor_gen, max(total_seats, int(row_totals.max())))
     vacancies = []
+    on_tie = kwargs.get("on_tie")
     for p in np.flatnonzero(allocation.sum(axis=0) > party_totals):
         excess = int(allocation[:, p].sum() - party_totals[p])
         for _ in range(excess):
@@ -60,9 +61,11 @@ def switching(
             quotients[removable] = (
                 votes[removable, p] / divisors[allocation[removable, p] - 1]
             )
-            c = select(quotients, remap(kwargs.get("on_tie"),
-                                       np.arange(len(row_totals)) * votes.shape[1] + p),
-                       minimum=True)
+            c = select(
+                quotients,
+                remap(on_tie, np.arange(len(row_totals)) * votes.shape[1] + p)
+                if on_tie is not None else None,
+                minimum=True)
             removal_quotient = float(quotients[c])
             allocation[c, p] -= 1
             vacancies.append({
@@ -87,10 +90,13 @@ def switching(
         if not np.isfinite(scores).any():
             raise ValueError("A returned Swedish constituency seat cannot be reassigned.")
 
-        candidates = [v["constituency"] * votes.shape[1] + p
-                      for v in vacancies for p in range(votes.shape[1])]
+        report = None
+        if on_tie is not None:
+            candidates = [v["constituency"] * votes.shape[1] + p
+                          for v in vacancies for p in range(votes.shape[1])]
+            report = remap(on_tie, candidates)
         vacancy_index, q = np.unravel_index(
-            select(scores, remap(kwargs.get("on_tie"), candidates)), scores.shape)
+            select(scores, report), scores.shape)
         vacancy = vacancies.pop(vacancy_index)
         c = vacancy["constituency"]
         recipient_quotient = float(

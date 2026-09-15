@@ -127,6 +127,7 @@ def apportion1d_general(
         rule = rule,
         type_of_rule = type_of_rule,
         quota_total = sum(votes) + unrepresented_votes,
+        report_ties = on_tie is not None,
     )
 
     last_in = None
@@ -147,12 +148,14 @@ def seat_generator(
     rule,
     type_of_rule,
     quota_total=None,
+    report_ties=False,
 ):
     if type_of_rule == "Division":
         seat_gen = seat_generator_div(
             votes=votes,
             prior_allocations=prior_allocations,
-            divisor_gen=rule
+            divisor_gen=rule,
+            report_ties=report_ties,
         )
     else:
         assert type_of_rule == "Quota"
@@ -162,6 +165,7 @@ def seat_generator(
             prior_allocations=prior_allocations,
             quota_rule=rule,
             total_votes=quota_total,
+            report_ties=report_ties,
         )
     return seat_gen
 
@@ -169,6 +173,7 @@ def seat_generator_div(
     votes,
     prior_allocations,
     divisor_gen,
+    report_ties=False,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -192,12 +197,14 @@ def seat_generator_div(
             active_votes[i] = votes[i]*1.0/next(divisor_gens[i])
         while True:
             idx = active_votes.index(max(active_votes))
-            yield {
+            seat = {
                 "idx": idx,
                 "active_votes": active_votes[idx],
-                "tied": [i for i, score in enumerate(active_votes)
-                         if score == active_votes[idx]],
             }
+            if report_ties:
+                seat["tied"] = [i for i, score in enumerate(active_votes)
+                                if score == active_votes[idx]]
+            yield seat
             active_votes[idx] = votes[idx]*1.0/next(divisor_gens[idx])
 
     return seat_gen
@@ -208,6 +215,7 @@ def seat_generator_quota(
     prior_allocations,
     quota_rule,
     total_votes=None,
+    report_ties=False,
 ):
     """
     Assist with one-dimensional apportionment of seats,
@@ -234,12 +242,14 @@ def seat_generator_quota(
         active_votes = copy(votes)
         while True:
             idx = active_votes.index(max(active_votes))
-            yield {
+            seat = {
                 "idx": idx,
                 "active_votes": active_votes[idx],
-                "tied": [i for i, score in enumerate(active_votes)
-                         if score == active_votes[idx]],
             }
+            if report_ties:
+                seat["tied"] = [i for i, score in enumerate(active_votes)
+                                if score == active_votes[idx]]
+            yield seat
             active_votes[idx] -= quota
 
     return seat_gen

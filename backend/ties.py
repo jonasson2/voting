@@ -8,12 +8,22 @@ from randomness import random_index
 def select(scores, on_tie=None, *, minimum=False, rng=None):
     """Return a flat index, preferring table order unless an RNG is supplied."""
     scores = np.asarray(scores)
+    if on_tie is None and rng is None:
+        return int(scores.argmin() if minimum else scores.argmax())
     best = scores.min() if minimum else scores.max()
     tied = np.flatnonzero(scores == best)
-    winner = int(tied[random_index(rng, len(tied))]
-                 if rng is not None else tied[0])
-    if on_tie is not None and len(tied) > 1 and np.isfinite(best):
-        on_tie(tied, winner, float(best))
+    return select_tied(tied, best, on_tie, rng=rng)
+
+
+def select_tied(tied, score, on_tie=None, *, rng=None):
+    """Choose among already identified best candidates without rescanning scores."""
+    winner = int(tied[0])
+    if len(tied) == 1:
+        return winner
+    if rng is not None:
+        winner = int(tied[random_index(rng, len(tied))])
+    if on_tie is not None and np.isfinite(score):
+        on_tie(tied, winner, float(score))
     return winner
 
 

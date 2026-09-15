@@ -116,7 +116,8 @@ def allocate_regions(votes, fixed, regional_totals, regions, groups,
             min_adj_seats=minimums[group], max_adj_seats=[maxima[c] for c in group],
             exclude_zero_votes=True, rng=rng,
             on_tie=remap(on_tie, (group[:, None] * votes.shape[1]
-                                 + np.arange(votes.shape[1])).ravel()))
+                                 + np.arange(votes.shape[1])).ravel())
+            if on_tie is not None else None)
         if not np.array_equal(local.sum(axis=0), regional_totals[r]):
             raise RuntimeError("Danish constituency allocation missed its regional party totals.")
         allocated[group] = local

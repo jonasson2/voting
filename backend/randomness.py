@@ -5,9 +5,7 @@ import randompack
 
 def make_rng(seed=None, spawn_key=()):
     rng = randompack.Rng("x256++", bitexact=True)
-    if seed is None:
-        rng.randomize()
-    else:
+    if seed is not None:
         rng.seed(seed, spawn_key=list(spawn_key))
     return rng
 

@@ -1,25 +1,89 @@
 import csv
 import unittest
+from unittest.mock import Mock, patch
 
 import numpy as np
 
-from apportion import apportion1d_general
+from apportion import apportion1d_general, seat_generator
 from division_rules import dhondt_gen, hare, sainte_lague_gen
 from dictionaries import ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from methods import danish
 from methods.icelandic_law import icelandic_apportionment
+from methods.max_const_votes import max_const_votes
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching_se import switching
 from randomness import make_rng
 from simulate import Simulation, SimulationSettings
-from ties import TieReport
+from ties import TieReport, select
 from vote_table import check_vote_table, process_vote_table
 from web import app
 
 
 class TieTest(unittest.TestCase):
+    def test_unseeded_rng_is_not_randomized_twice(self):
+        with patch('randomness.randompack.Rng') as constructor:
+            rng = make_rng()
+            rng.randomize.assert_not_called()
+            rng.seed.assert_not_called()
+            self.assertIs(rng, constructor.return_value)
+        with patch('randomness.randompack.Rng'):
+            rng = make_rng(42, (1, 2, 3))
+            rng.seed.assert_called_once_with(42, spawn_key=[1, 2, 3])
+            rng.randomize.assert_not_called()
+
+    def test_seat_generators_collect_ties_only_for_reporting(self):
+        for rule, kind in [(dhondt_gen, 'Division'), (hare, 'Quota')]:
+            for reporting in (False, True):
+                with self.subTest(kind=kind, reporting=reporting):
+                    report = Mock() if reporting else None
+                    allocation, generator, last = apportion1d_general(
+                        [100, 100], 1, [], rule, kind, on_tie=report)
+                    np.testing.assert_array_equal(allocation, [1, 0])
+                    self.assertEqual('tied' in last, reporting)
+                    # Icelandic allocation reuses this generator beyond the
+                    # original national entitlements, so it needs the same mode.
+                    sequence = generator()
+                    for _ in range(4):
+                        self.assertEqual('tied' in next(sequence), reporting)
+
+    def test_unique_winner_does_not_draw_random_number_or_report_tie(self):
+        report = Mock()
+        with patch('ties.random_index') as draw:
+            self.assertEqual(select([100, 101], report, rng=make_rng(42)), 1)
+            self.assertEqual(select([100, 101], report, minimum=True, rng=make_rng(42)), 0)
+            draw.assert_not_called()
+        report.assert_not_called()
+
+    def test_actual_tie_still_uses_rng_and_reports_winner(self):
+        report = Mock()
+        rng = make_rng(42)
+        with patch('ties.random_index', return_value=1) as draw:
+            self.assertEqual(select([1, 100, 100], report, rng=rng), 2)
+            draw.assert_called_once_with(rng, 2)
+        tied, winner, score = report.call_args.args
+        np.testing.assert_array_equal(tied, [1, 2])
+        self.assertEqual((winner, score), (2, 100))
+
+    def test_deterministic_selection_without_reporting_skips_tie_search(self):
+        with patch('ties.np.flatnonzero', side_effect=AssertionError('Unneeded tie search')):
+            self.assertEqual(select([100, 100]), 0)
+            self.assertEqual(select([200, 100, 100], minimum=True), 1)
+
+    def test_max_const_votes_searches_ties_once_per_seat(self):
+        report = TieReport()
+        with patch('methods.max_const_votes.np.flatnonzero', wraps=np.flatnonzero) as find:
+            allocated, demo = max_const_votes(
+                [[100, 100]], [1], [1, 1], [[0, 0]], dhondt_gen,
+                min_adj_seats=[1], max_adj_seats=[1],
+                on_tie=report.reporter('Adjustment seats', ['A', 'B']))
+            self.assertEqual(find.call_count, 1)
+        np.testing.assert_array_equal(allocated, [[1, 0]])
+        self.assertTrue(demo['data'][0]['tie'])
+        self.assertFalse(demo['data'][0]['lot'])
+        self.assertEqual(report.events[0]['selected'], 'A')
+
     def table(self, rows):
         return check_vote_table(process_vote_table(list(csv.reader(rows)), 'test.csv'))
 
@@ -88,7 +152,9 @@ class TieTest(unittest.TestCase):
             'candidates': ['North: A', 'North: B'], 'selected': 'North: A',
         }])
         election.rng = make_rng(42)
-        election.assign_seats()
+        with patch('methods.adjustment_as_fixed.remap',
+                   side_effect=AssertionError('Unneeded reporting map')):
+            election.assign_seats()
         self.assertEqual(election.tie_report.events, [])
 
     def test_icelandic_fallback_party_tie_beyond_original_entitlements(self):
@@ -104,7 +170,9 @@ class TieTest(unittest.TestCase):
             'candidates': ['B', 'C'], 'selected': 'B',
         }])
         election.rng = make_rng(42)
-        election.assign_seats()
+        with patch('methods.icelandic_law.remap',
+                   side_effect=AssertionError('Unneeded reporting map')):
+            election.assign_seats()
         self.assertEqual(election.tie_report.events, [])
 
     def test_icelandic_fallback_ignores_party_without_an_available_constituency(self):
@@ -120,7 +188,11 @@ class TieTest(unittest.TestCase):
         settings = SimulationSettings()
         settings.update(cpu_count=1, simulation_count=1, random_seed=42)
         sim = Simulation(settings, [self.system(table)], table)
-        sim.run_and_collect_measures(table['votes'], None)
+        with patch('apportion.seat_generator', wraps=seat_generator) as generator:
+            sim.run_and_collect_measures(table['votes'], None)
+            self.assertGreater(generator.call_count, 0)
+            self.assertTrue(all(not call.kwargs['report_ties']
+                                for call in generator.call_args_list))
         for handler in (sim.reference_handler, sim.election_handler):
             self.assertEqual(handler.elections[0].tie_report.events, [])
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ties import select
+from ties import select_tied
 
 
 def max_const_votes(
@@ -55,6 +55,8 @@ def max_const_votes(
     ])
     added = np.zeros(nconst, dtype=int)
     steps = []
+    rng = kwargs.get("rng")
+    on_tie = kwargs.get("on_tie")
     for _ in range(total_seats):
         minimum_needed = np.maximum(minimums - added, 0)
         remaining = total_seats - int(added.sum())
@@ -73,8 +75,7 @@ def max_const_votes(
         if not np.isfinite(scores).any():
             raise ValueError("No eligible party-constituency pair can receive the remaining seats.")
         tied = np.flatnonzero(scores == scores.max())
-        rng = kwargs.get("rng")
-        winner = select(scores, kwargs.get("on_tie"), rng=rng)
+        winner = select_tied(tied, scores.flat[tied[0]], on_tie, rng=rng)
         c, p = np.unravel_index(winner, scores.shape)
         quotient = float(scores[c, p])
         divisor = float(divisors[allocation[c, p]])

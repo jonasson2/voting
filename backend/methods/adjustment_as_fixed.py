@@ -48,14 +48,15 @@ def adjustment_as_fixed(m_votes,
     temp_votes = deepcopy(votes)
     full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
     temp_votes[:,full] = 0
+    on_tie = kwargs.get("on_tie")
     for c in range(num_constituencies):
         alloc_const, _,_ = apportion1d_general(
             v_votes = list(temp_votes[c,:]),
             num_total_seats = desired_const[c],
             prior_allocations = list(alloc_prior[c,:]),
             rule = divisor_gen,
-            on_tie=remap(kwargs.get("on_tie"),
-                         c * num_parties + np.arange(num_parties)),
+            on_tie=remap(on_tie, c * num_parties + np.arange(num_parties))
+            if on_tie is not None else None,
         )
         alloc[c,:] = np.array(alloc_const)
 
