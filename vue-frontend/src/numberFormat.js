@@ -48,3 +48,7 @@ export function parseInteger(value, allowUnlimited = false) {
   if (allowUnlimited && text === "-") return text
   return /^\d+$/.test(text) ? Number(text) : text
 }
+
+export function validIntegerEntry(value, allowUnlimited = false) {
+  return /^\d*$/.test(value) || (allowUnlimited && value === "-")
+}

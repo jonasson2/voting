@@ -199,7 +199,7 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
 })
 
 test("result numbers use the selected separators and precision", async () => {
-  const {formatNumber, parseInteger} = await numberFormatModule()
+  const {formatNumber, parseInteger, validIntegerEntry} = await numberFormatModule()
   assert.equal(formatNumber(12345.6789, 3, {
     thousands_separator: ",",
     decimal_separator: ".",
@@ -219,4 +219,9 @@ test("result numbers use the selected separators and precision", async () => {
   assert.equal(parseInteger("423,122.00"), "423,122.00")
   assert.equal(parseInteger("12,34"), "12,34")
   assert.equal(parseInteger("-", true), "-")
+  assert.equal(validIntegerEntry("423122"), true)
+  assert.equal(validIntegerEntry("423,122"), false)
+  assert.equal(validIntegerEntry("423.122,00"), false)
+  assert.equal(validIntegerEntry("-", true), true)
+  assert.equal(validIntegerEntry("-", false), false)
 })
