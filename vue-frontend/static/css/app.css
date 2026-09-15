@@ -2,7 +2,9 @@ p {
   margin-left: 15px;
 }
 
-td {
+td,
+input[type="number"],
+input[inputmode="numeric"] {
   font-variant-numeric: tabular-nums;
 }  
 
@@ -327,6 +329,13 @@ th.topleft {
 .tablename input:hover, .tablename input:focus {
   border:         0px;
   background:     #fff;
+}
+
+.numerical input.integer-input-invalid,
+.numerical input.integer-input-invalid:hover,
+.numerical input.integer-input-invalid:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #b10e1e;
 }
 
 .growtable {

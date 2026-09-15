@@ -1,7 +1,7 @@
 export const NUMBER_SEPARATOR_OPTIONS = [
   {value: "comma-dot", text: "1,234.567", thousands: ",", decimal: "."},
   {value: "dot-comma", text: "1.234,567", thousands: ".", decimal: ","},
-  {value: "space-comma", text: "1 234,567", thousands: " ", decimal: ","},
+  {value: "space-comma", text: "1\u202f234,567", thousands: " ", decimal: ","},
 ]
 
 export function defaultDisplaySettings() {
@@ -35,20 +35,37 @@ export function formatNumber(value, digits, settings) {
   const precision = Math.min(10, Math.max(0, Number(digits)))
   const fixed = (Object.is(number, -0) ? 0 : number).toFixed(precision)
   const [integer, fraction] = fixed.split(".")
-  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g,
-    normalized.thousands_separator)
+  const displaySeparator = normalized.thousands_separator === " "
+    ? "\u202f"
+    : normalized.thousands_separator
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, displaySeparator)
   return fraction === undefined
     ? grouped
     : grouped + normalized.decimal_separator + fraction
 }
 
-export function parseInteger(value, allowUnlimited = false) {
+function groupedIntegerDigits(text, settings) {
+  const separator = normalizeDisplaySettings(settings).thousands_separator
+  const separatorPattern = separator === " "
+    ? "[ \\u00a0\\u202f]"
+    : separator.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const groupedPattern = new RegExp(`^\\d{1,3}(?:${separatorPattern}\\d{3})+$`)
+  return groupedPattern.test(text)
+    ? text.replace(new RegExp(separatorPattern, "g"), "")
+    : null
+}
+
+export function parseInteger(value, settings = {}, allowUnlimited = false) {
   if (Number.isInteger(value)) return value
   const text = String(value ?? "").trim()
   if (allowUnlimited && text === "-") return text
-  return /^\d+$/.test(text) ? Number(text) : text
+  if (/^\d+$/.test(text)) return Number(text)
+  const digits = groupedIntegerDigits(text, settings)
+  return digits === null ? text : Number(digits)
 }
 
-export function validIntegerEntry(value, allowUnlimited = false) {
-  return /^\d*$/.test(value) || (allowUnlimited && value === "-")
+export function validIntegerEntry(value, settings = {}, allowUnlimited = false) {
+  const text = String(value ?? "").trim()
+  return text === "" || Number.isInteger(parseInteger(text, settings, allowUnlimited))
+    || (allowUnlimited && text === "-")
 }

@@ -206,10 +206,12 @@
   <b-alert :show="checkVoteSeats()==false">
     Seat counts must be non-negative integers, and each constituency # Max adj.
     must be at least its # Min adj. A hyphen (-) is allowed only in a
-    constituency # Max adj. cell, where it means unlimited.
+    constituency # Max adj. cell, where it means unlimited. Thousands separators
+    may be omitted; if used, they must match Settings and group digits in threes.
   </b-alert>
   <b-alert :show="checkVoteInput()==false">
-    Votes must be non-negative integers.
+    Votes must be non-negative integers. Thousands separators may be omitted; if
+    used, they must match Settings and group digits in threes.
   </b-alert>
   <b-alert :show="checkVoteLabels()==false">
     Table, party, and constituency names must not be blank
@@ -226,7 +228,8 @@
     />
   <b-alert :show="checkPartyInput()==false">
     The national name must not be blank, and national seats and votes must be
-    non-negative integers.
+    non-negative integers. Thousands separators may be omitted; if used, they
+    must match Settings and group digits in threes.
   </b-alert>
 
   <region-table v-if="hasRegions || !vote_table.party_vote_info.specified"

@@ -2,13 +2,13 @@
   <input
     v-bind="$attrs"
     :value="displayValue"
+    :aria-invalid="invalid || undefined"
+    :class="{'integer-input-invalid': invalid}"
     type="text"
     v-autowidth="{ maxWidth, minWidth }"
     inputmode="numeric"
-    @focus="focused = true"
-    @blur="focused = false"
-    @beforeinput="checkInsertion"
-    @paste="checkPaste"
+    @focus="startEditing"
+    @blur="finishEditing"
     @input="updateValue"
   />
 </template>
@@ -27,39 +27,44 @@ export default {
   },
   emits: ["input"],
   data() {
-    return {focused: false}
+    return {focused: false, draft: ""}
   },
   computed: {
     ...mapState(["display_settings"]),
     displayValue() {
-      if (this.focused || !Number.isInteger(this.value)) {
-        return this.value
-      }
+      if (this.focused) return this.draft
+      if (!Number.isInteger(this.value)) return this.value
       return formatNumber(this.value, 0, this.display_settings)
+    },
+    invalid() {
+      return !validIntegerEntry(
+        this.focused ? this.draft : this.value,
+        this.display_settings,
+        this.allowUnlimited,
+      )
     },
   },
   methods: {
-    insertedValue(element, text) {
-      return element.value.slice(0, element.selectionStart)
-        + text
-        + element.value.slice(element.selectionEnd)
+    startEditing(event) {
+      this.draft = String(this.value ?? "")
+      this.focused = true
+      event.target.value = this.draft
     },
-    checkInsertion(event) {
-      if (event.data === null) return
-      if (!validIntegerEntry(
-        this.insertedValue(event.target, event.data), this.allowUnlimited)) {
-        event.preventDefault()
-      }
-    },
-    checkPaste(event) {
-      const text = event.clipboardData.getData("text")
-      if (!validIntegerEntry(
-        this.insertedValue(event.target, text), this.allowUnlimited)) {
-        event.preventDefault()
-      }
+    finishEditing() {
+      this.focused = false
+      this.$emit("input", parseInteger(
+        this.draft,
+        this.display_settings,
+        this.allowUnlimited,
+      ))
     },
     updateValue(event) {
-      this.$emit("input", parseInteger(event.target.value, this.allowUnlimited))
+      this.draft = event.target.value
+      this.$emit("input", parseInteger(
+        this.draft,
+        this.display_settings,
+        this.allowUnlimited,
+      ))
     },
   },
 }

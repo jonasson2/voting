@@ -15,9 +15,9 @@
             <td><input type="text" v-model="region.name"
               :aria-label="`Region ${index + 1}: name`"
               v-autowidth="{minWidth: '80px', maxWidth: '350px'}" /></td>
-            <td class="numerical"><input type="text" v-model.number="region.num_adj_seats"
+            <td class="numerical"><IntegerInput v-model="region.num_adj_seats"
               :aria-label="`Region ${region.abbreviation}: adjustment seats`"
-              v-autowidth="{minWidth: '25px', maxWidth: '100px'}" /></td>
+              max-width="100px" /></td>
             <td><b-button variant="link" size="sm" class="xbutton"
               v-b-tooltip.hover.bottom.v-primary.ds500 title="Remove region"
               @click="removeRegion(voteTable, index)">X</b-button></td>
@@ -35,7 +35,9 @@
 
 <script>
 import {addRegion, renameRegion, removeRegion} from "../voteTable.js"
+import IntegerInput from "./IntegerInput.vue"
 export default {
+  components: {IntegerInput},
   props: {voteTable: {type: Object, required: true}},
   data: () => ({renameError: ""}),
   methods: {
