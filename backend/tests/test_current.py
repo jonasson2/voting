@@ -16,6 +16,7 @@ from dictionaries import (ADJUSTMENT_METHODS, DIVIDER_RULES,
                           ELECTION_LAW_PRESETS, QUOTA_RULES)
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
+from excel_util import result_fractional_digits, result_number_format
 from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
@@ -61,6 +62,14 @@ class CurrentApplicationTest(unittest.TestCase):
                 self.assertEqual(web.default_port(), '5001')
         with patch.dict(os.environ, {'FLASK_RUN_PORT': '5050'}):
             self.assertEqual(web.default_port(), '5050')
+
+    def test_result_excel_precision_setting(self):
+        self.assertEqual(result_fractional_digits(None), 3)
+        self.assertEqual(result_fractional_digits({'fractional_digits': 2}), 2)
+        self.assertEqual(result_number_format(2), '#,##0.00')
+        self.assertEqual(result_number_format(2, percentage=True), '#,##0.00%')
+        with self.assertRaisesRegex(ValueError, 'between 0 and 10'):
+            result_fractional_digits({'fractional_digits': 11})
 
     def test_parallel_files_can_use_service_state_directory(self):
         with TemporaryDirectory() as directory:

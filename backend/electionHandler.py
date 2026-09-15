@@ -54,8 +54,9 @@ class ElectionHandler:
                                     vote_table, constituencies))
             self.elections.append(election)
 
-    def to_xlsx(self, filename):
-        elections_to_xlsx(self.elections, filename, self.party_names)
+    def to_xlsx(self, filename, display_settings=None):
+        elections_to_xlsx(
+            self.elections, filename, self.party_names, display_settings)
 
 def update_constituencies(vote_table, systems):
     constituencies = []

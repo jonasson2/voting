@@ -43,6 +43,9 @@
       <Simulate>
       </Simulate>
     </b-tab>
+    <b-tab title="Settings">
+      <Settings />
+    </b-tab>
     <b-tab title="Help">
       <Intro>
       </Intro>
@@ -57,6 +60,7 @@ import ElectoralSystems from './ElectoralSystems.vue'
 import Simulate from './Simulate.vue'
 import VoteMatrix from './VoteMatrix.vue'
 import Intro from './Intro.vue'
+import Settings from './Settings.vue'
 import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
@@ -66,6 +70,7 @@ export default {
     Simulate,
     ElectoralSystems,
     Intro,
+    Settings,
   },
   
   computed: {

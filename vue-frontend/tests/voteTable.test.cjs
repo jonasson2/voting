@@ -9,6 +9,12 @@ async function voteTableModule() {
   return import(url)
 }
 
+async function numberFormatModule() {
+  const source = await readFile(resolve(__dirname, "../src/numberFormat.js"), "utf8")
+  const url = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
+  return import(url)
+}
+
 function exampleTable() {
   return {
     name: "Example",
@@ -190,4 +196,20 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
   assert.match(regionError(table), /listed region/)
   table.party_vote_info.specified = true
   assert.match(regionError(table), /National party votes/)
+})
+
+test("result numbers use the selected separators and precision", async () => {
+  const {formatNumber} = await numberFormatModule()
+  assert.equal(formatNumber(12345.6789, 3, {
+    thousands_separator: ",",
+    decimal_separator: ".",
+  }), "12,345.679")
+  assert.equal(formatNumber(12345.6789, 2, {
+    thousands_separator: ".",
+    decimal_separator: ",",
+  }), "12.345,68")
+  assert.equal(formatNumber(-12345.6, 1, {
+    thousands_separator: " ",
+    decimal_separator: ",",
+  }), "-12 345,6")
 })

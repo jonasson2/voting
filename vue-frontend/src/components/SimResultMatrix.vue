@@ -36,28 +36,28 @@
         </th>
         <template v-for="(party, partyidx) in parties">
           <td class="displayright">
-            {{ values[conidx][partyidx].toFixed(round) }}
+            {{ format(values[conidx][partyidx]) }}
           </td>
           <td v-if="stddev" class="displayright">
-            {{ stddev[conidx][partyidx].toFixed(round) }}
+            {{ format(stddev[conidx][partyidx]) }}
           </td>
         </template>
         <td class="displayright">
-          {{ values[conidx][parties.length].toFixed(round) }}
+          {{ format(values[conidx][parties.length]) }}
         </td>
       </tr>
       <tr>
         <th class="displayleft">Total</th>
         <template v-for="(party, partyidx) in parties">
           <td class="displayright">
-            {{ values[constituencies.length][partyidx].toFixed(round) }}
+            {{ format(values[constituencies.length][partyidx]) }}
           </td>
           <td v-if="stddev" class="displayright">
-            {{ stddev[constituencies.length][partyidx].toFixed(round) }}
+            {{ format(stddev[constituencies.length][partyidx]) }}
           </td>
         </template>
         <td class="displayright">
-          {{ values[constituencies.length][parties.length].toFixed(round) }}
+          {{ format(values[constituencies.length][parties.length]) }}
         </td>
       </tr>
       <tr v-if="party_votes_specified">
@@ -66,14 +66,14 @@
         </th>
         <template v-for="(party, partyidx) in parties">
           <td class="displayright">
-            {{ values[constituencies.length + 1][partyidx].toFixed(round) }}
+            {{ format(values[constituencies.length + 1][partyidx]) }}
           </td>
           <td v-if="stddev" class="displayright">
-            {{ stddev[constituencies.length + 1][partyidx].toFixed(round) }}
+            {{ format(stddev[constituencies.length + 1][partyidx]) }}
           </td>
         </template>
         <td class="displayright">
-          {{ values[constituencies.length + 1][parties.length].toFixed(round) }}
+          {{ format(values[constituencies.length + 1][parties.length]) }}
         </td>
       </tr>
       <tr v-if="party_votes_specified">
@@ -82,14 +82,14 @@
         </th>
         <template v-for="(party, partyidx) in parties">
           <td class="displayright">
-            {{ values[constituencies.length + 2][partyidx].toFixed(round) }}
+            {{ format(values[constituencies.length + 2][partyidx]) }}
           </td>
           <td v-if="stddev" class="displayright">
-            {{ stddev[constituencies.length + 2][partyidx].toFixed(round) }}
+            {{ format(stddev[constituencies.length + 2][partyidx]) }}
           </td>
         </template>
         <td class="displayright">
-          {{ values[constituencies.length + 2][parties.length].toFixed(round) }}
+          {{ format(values[constituencies.length + 2][parties.length]) }}
         </td>
       </tr>
       </tbody>
@@ -98,6 +98,8 @@
   </b-container>
 </template>
 <script>
+import { mapState } from "vuex"
+import { formatNumber } from "../numberFormat.js"
 
 export default {
   props: {
@@ -109,6 +111,12 @@ export default {
     "title": { default: "" },
     "party_votes_specified": false,
     "party_votes_name": "",
+  },
+  computed: mapState(["display_settings"]),
+  methods: {
+    format(value) {
+      return formatNumber(value, this.round, this.display_settings)
+    },
   },
 }
 </script>

@@ -28,11 +28,14 @@
 </div>
 </template>
 <script>
+import { mapState } from "vuex"
+import { formatNumber } from "../numberFormat.js"
 
 export default {
   props: {
     "table": { default: { "headers": [], "steps": [] } },
   },
+  computed: mapState(["display_settings"]),
   methods: {
     alignment: function(c) {
       return "text-align: " + (c=="l" ? "left" : "center")
@@ -41,12 +44,15 @@ export default {
       var fmt = this.table.format[colidx]
       if (fmt == "%") {
         let number = parseFloat(value)
-        return isNaN(number) ? "–" : (number*100).toFixed(3)+"%"
+        if (!Number.isFinite(number)) return "–"
+        return formatNumber(number * 100,
+          this.display_settings.fractional_digits, this.display_settings) + "%"
       }
       let n = parseInt(fmt)
       if (isNaN(n)) return value
       let number = parseFloat(value)
-      return isNaN(number) ? "–" : number.toFixed(n)
+      const digits = n === 3 ? this.display_settings.fractional_digits : n
+      return formatNumber(number, digits, this.display_settings)
     }
   }
 }

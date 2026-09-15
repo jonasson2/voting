@@ -239,13 +239,24 @@ class DanishTest(unittest.TestCase):
         result.analysis()
         web_result = result.get_result_web(False)
         self.assertEqual(len(web_result["parties"]), 12)
+        populated_groups = [
+            group for group in web_result["vuedata"]["group_ids"]
+            if web_result["vuedata"][group]
+        ]
+        displayed_measure = web_result["vuedata"][populated_groups[0]][0]["avg"][0]
+        self.assertEqual(set(displayed_measure), {"value", "integer", "ci"})
+        self.assertIsInstance(displayed_measure["value"], float)
         with TemporaryDirectory() as directory:
             path = Path(directory) / "simulation.xlsx"
-            simulation_to_xlsx(web_result, path)
+            simulation_to_xlsx(web_result, path, {"fractional_digits": 2})
             book = load_workbook(path)
             self.assertIn("Party names", book.sheetnames)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
+            self.assertTrue(any(
+                cell.number_format == "#,##0.00"
+                for sheet in book for row in sheet.iter_rows() for cell in row
+            ))
             book.close()
 
     def test_unsupported_configuration_errors(self):

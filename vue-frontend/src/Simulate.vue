@@ -98,7 +98,7 @@
       :title="system.name"
       :party_votes_name="vote_table.party_vote_info.name"
       :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="3">
+      :round="display_settings.fractional_digits">
     </SimResultMatrix>
     <h4>Adjustment seats</h4>
     <SimResultMatrix
@@ -111,7 +111,7 @@
       :title="system.name"
       :party_votes_name="vote_table.party_vote_info.name"
       :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="3">
+      :round="display_settings.fractional_digits">
     </SimResultMatrix>
     <h4>Total seats</h4>
     <SimResultMatrix
@@ -124,7 +124,7 @@
       :title="system.name"
       :party_votes_name="vote_table.party_vote_info.name"
       :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="3"
+      :round="display_settings.fractional_digits"
       >
     </SimResultMatrix>
   </div>
@@ -145,7 +145,8 @@ export default {
       'systems',
       'sim_settings',
       'show_simulate',
-      'simulateCreated'
+      'simulateCreated',
+      'display_settings',
     ]),
     check_interval_ms: function() {
       // milliseconds between updating simulation progress bar
@@ -255,7 +256,10 @@ export default {
       let promise = axios({
         method: "post",
         url: "api/simdownload/",
-        data: { simid: this.simid },
+        data: {
+          simid: this.simid,
+          display_settings: this.display_settings,
+        },
         responseType: "arraybuffer",
       });
       this.downloadFile(promise)

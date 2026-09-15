@@ -87,11 +87,13 @@ def api_election():
 @app.route('/api/election/save/', methods=['POST'])
 def api_election_save():
     try:
-        (vote_table, systems) = getparam('vote_table', 'systems')
+        payload = request.get_json(force=True)
+        vote_table = payload['vote_table']
+        systems = payload['systems']
         vote_table = check_vote_table(vote_table)
         handler = ElectionHandler(vote_table, systems, use_thresholds=True)
         tmpfilename = tempfile.mktemp(prefix='election-')
-        handler.to_xlsx(tmpfilename)
+        handler.to_xlsx(tmpfilename, payload.get('display_settings'))
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name=f"Election-{date}.xlsx"
         return save_file(tmpfilename, download_name)
@@ -304,9 +306,11 @@ def api_presets():
 @app.route('/api/simdownload/', methods=['GET','POST'])
 def api_simdownload():
     try:
-        simid = getparam('simid')
+        payload = request.get_json(force=True)
+        simid = payload['simid']
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{simid[:6]}')
-        simulation_to_excel(simid, tmpfilename)
+        simulation_to_excel(
+            simid, tmpfilename, payload.get('display_settings'))
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name = f"simulation-{date}.xlsx"
         return save_file(tmpfilename, download_name);

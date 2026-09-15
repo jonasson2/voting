@@ -80,6 +80,7 @@ export default {
       'results',
       'vote_table',
       'systems',
+      'display_settings',
     ]),
   },
   data: function() {
@@ -103,6 +104,7 @@ export default {
         data: {
           vote_table:     this.vote_table,
           systems:        this.systems,
+          display_settings: this.display_settings,
         },
         responseType: "arraybuffer",
       });

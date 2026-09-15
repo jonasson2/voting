@@ -58,12 +58,15 @@ def add_vuedata(sim_result_dict, parallel):
                     #print('stat:', stat, ', measures:', data[s]["measures"].keys())
                     entry = normalize_negative_zero(
                         data[s]["measures"][measure][stat])
-                    ndig = 0 if entry == 0 else fractional_digits(id, stat)
-                    row[stat].append(f"{entry:.{ndig}f}")
+                    display_value = {
+                        "value": entry,
+                        "integer": fractional_digits(id, stat) == 0,
+                        "ci": None,
+                    }
                     if stat == "avg" and entry != 0:
                         std = data[s]["measures"][measure]["std"]
-                        CI = 1.96*std/sqrt(nsim)
-                        row[stat][-1] += f" ± {CI:.{ndig}f}"
+                        display_value["ci"] = 1.96 * std / sqrt(nsim)
+                    row[stat].append(display_value)
             vuedata[id].append(row)
     sim_result_dict["vuedata"] = vuedata
 

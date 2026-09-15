@@ -21,11 +21,25 @@ GMN = {gmn["value"]: gmn["text"] for gmn in GENERATING_METHOD_NAMES}
 SCONST = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["const"]}
 SPARTY = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["party"]}
 
-def prepare_formats(workbook):
+def result_fractional_digits(display_settings=None):
+    value = (display_settings or {}).get("fractional_digits", 3)
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10:
+        raise ValueError("Fractional digits must be an integer between 0 and 10")
+    return value
+
+
+def result_number_format(fractional_digits, percentage=False):
+    decimals = "." + "0" * fractional_digits if fractional_digits else ""
+    return "#,##0" + decimals + ("%" if percentage else "")
+
+
+def prepare_formats(workbook, display_settings=None):
+    fractional_digits = result_fractional_digits(display_settings)
+    result_format = result_number_format(fractional_digits)
     formats = {}
     formats["cell"] = workbook.add_format()
     formats["cell"].set_align('right')
-    formats["cell"].set_num_format('#,##0.000')
+    formats["cell"].set_num_format(result_format)
 
     formats["votes"] = workbook.add_format()
     formats["votes"].set_align('right')
@@ -99,7 +113,7 @@ def prepare_formats(workbook):
     formats["base"].set_num_format('#,##0')
 
     formats["sim"] = workbook.add_format()
-    formats["sim"].set_num_format('#,##0.000')
+    formats["sim"].set_num_format(result_format)
 
     formats["c"] = workbook.add_format()
     #formats["c"].set_text_wrap()
@@ -115,11 +129,11 @@ def prepare_formats(workbook):
     
     formats["3"] = workbook.add_format()
     formats["3"].set_align('center')
-    formats["3"].set_num_format('#,##0.000')
+    formats["3"].set_num_format(result_format)
 
     formats["%"] = workbook.add_format()
     formats["%"].set_align('center')
-    formats["%"].set_num_format('#,##0.000%')
+    formats["%"].set_num_format(result_number_format(fractional_digits, True))
     
     return formats
 
@@ -140,11 +154,11 @@ def write_matrix(worksheet, startrow, startcol,
             value = int(value) if isPosInt(value) else value
             worksheet.write(startrow+c, startcol+len(matrix[c])-1, value, totalsformat)
 
-def cell_width(x, fmt):
+def cell_width(x, fmt, fractional_digits=3):
     if isinstance(x,str): n = len(x)
     elif fmt == '1':      n = len(f'{x:,.1f}')
-    elif fmt == '3':      n = len(f'{x:,.3f}')
-    elif fmt == '%':      n = len(f'{x:,.3%}')
+    elif fmt == '3':      n = len(f'{x:,.{fractional_digits}f}')
+    elif fmt == '%':      n = len(f'{x:,.{fractional_digits}%}')
     elif fmt == 'votes':  n = len(f'{x:,.0f}')
     else:                 n = 10
     return n
@@ -154,7 +168,8 @@ def demo_table_to_xlsx(
         row,
         col,
         fmt,
-        demo_table
+        demo_table,
+        fractional_digits=3,
 ):
     headers = demo_table["headers"]
     steps = demo_table["steps"]
@@ -177,7 +192,7 @@ def demo_table_to_xlsx(
                 stp = stp.replace('\n', ',  ')
             elif np.isinf(stp):
                 stp = "N/A"
-            width[j] = max(width[j], cell_width(stp, f))
+            width[j] = max(width[j], cell_width(stp, f, fractional_digits))
             worksheet.write(row, col + j, stp, fmt[f])
         row += 1
     for j in range(len(headers)):
@@ -196,12 +211,13 @@ def party_names_to_xlsx(workbook, fmt, parties, party_names):
         worksheet.write_row(row, 0, [party, name], fmt["basic"])
 
 
-def elections_to_xlsx(elections, filename, party_names=None):
+def elections_to_xlsx(elections, filename, party_names=None, display_settings=None):
     """Write detailed information about an election with a single vote table
     but multiple electoral systems, to an xlsx file.
     """
     workbook = xlsxwriter.Workbook(filename)
-    fmt = prepare_formats(workbook)
+    fractional_digits = result_fractional_digits(display_settings)
+    fmt = prepare_formats(workbook, display_settings)
 
     def draw_block(worksheet, row, col,
         heading, xheaders, yheaders,
@@ -327,15 +343,16 @@ def elections_to_xlsx(elections, filename, party_names=None):
             fmt["h"]
         )
         for demo_table in result["demo_tables"]:
-           col = demo_table_to_xlsx(worksheet, row+1, col, fmt, demo_table)
+           col = demo_table_to_xlsx(
+               worksheet, row + 1, col, fmt, demo_table, fractional_digits)
 
     party_names_to_xlsx(workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
 
-def simulation_to_xlsx(results, filename):
+def simulation_to_xlsx(results, filename, display_settings=None):
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
-    fmt = prepare_formats(workbook)
+    fmt = prepare_formats(workbook, display_settings)
 
     def draw_sim_block(worksheet, row, col, heading, data, abbreviation, setTotal="hide"):
         cformat = fmt['sim'] if abbreviation in {'avg', 'std'} else fmt['base']

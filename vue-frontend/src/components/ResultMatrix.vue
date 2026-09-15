@@ -18,7 +18,7 @@
         </th>
         <template v-for="partyidx in parties.length + 1">
           <td class="displaycenter">
-            {{ values[conidx][partyidx - 1] }}
+            {{ format(values[conidx][partyidx - 1]) }}
           </td>
         </template>
       </tr>
@@ -26,7 +26,7 @@
         <th class="displayleft">Total</th>
         <template v-for="partyidx in parties.length + 1">
           <td class="displaycenter">
-            {{ values[constituencies.length][partyidx - 1] }}
+            {{ format(values[constituencies.length][partyidx - 1]) }}
           </td>
         </template>
       </tr>
@@ -36,7 +36,7 @@
         </th>
         <template v-for="partyidx in parties.length + 1">
           <td class="displaycenter">
-            {{ values[constituencies.length + 1][partyidx - 1] }}
+            {{ format(values[constituencies.length + 1][partyidx - 1]) }}
           </td>
         </template>
       </tr>
@@ -44,7 +44,7 @@
         <th class="displayleft">Grand total</th>
         <template v-for="partyidx in parties.length + 1">
           <td class="displaycenter">
-            {{ values[constituencies.length + 2][partyidx - 1] }}
+            {{ format(values[constituencies.length + 2][partyidx - 1]) }}
           </td>
         </template>
       </tr>
@@ -57,6 +57,8 @@
 </b-container>
 </template>
 <script>
+import { mapState } from "vuex"
+import { formatNumber } from "../numberFormat.js"
 
 export default {
   props: {
@@ -65,6 +67,14 @@ export default {
     "values": { default: [] },
     "party_votes_specified": false,
     "party_votes_name": "",
+  },
+  computed: mapState(["display_settings"]),
+  methods: {
+    format(value) {
+      return typeof value === "number"
+        ? formatNumber(value, 0, this.display_settings)
+        : value
+    },
   },
 }
 </script>

@@ -49,7 +49,7 @@
             <template v-for="stat in stats" :key="stat">
               <template v-for="s in nsys" :key="s">
                 <td :class="sysclass(s-1)">
-                  {{row[stat][s - 1]}}
+                  {{format(row[stat][s - 1])}}
                 </td>
               </template>
             </template>
@@ -71,6 +71,9 @@
 </template>
 
 <script>
+import { mapState } from "vuex"
+import { formatNumber } from "../numberFormat.js"
+
 export default {
   props: [
     "vuedata",
@@ -83,11 +86,21 @@ export default {
     "show",
   ],
   computed: {
+    ...mapState(["display_settings"]),
     nstat: function() {return this.stats.length},
     nsys:  function() {return this.system_names.length},
     headingType: function() {return this.vuedata.headingType}
   },
   methods: {
+    format(entry) {
+      if (entry === null || typeof entry !== "object") return entry
+      const digits = entry.integer ? 0 : this.display_settings.fractional_digits
+      let result = formatNumber(entry.value, digits, this.display_settings)
+      if (entry.ci !== null) {
+        result += " ± " + formatNumber(entry.ci, digits, this.display_settings)
+      }
+      return result
+    },
     sysclass: function(s) {
       if (s==this.nsys-1) return "last"
       else return "middle"

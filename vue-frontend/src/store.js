@@ -1,6 +1,7 @@
 import Vue from "vue"
 import Vuex from "vuex"
 import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
+import { defaultDisplaySettings, normalizeDisplaySettings } from "./numberFormat.js"
 
 function normalizeSystem(system) {
   if (system.fixed_seat_eligibility === undefined) {
@@ -53,6 +54,7 @@ const store = new Vuex.Store({
     system_numbering: [],
     activeSystemIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
+    display_settings: defaultDisplaySettings(),
     sim_capabilities: {},
     results: [],
     server_error: "",
@@ -134,6 +136,10 @@ const store = new Vuex.Store({
 
     updateSimSettings(state, sim_settings) {
       state.sim_settings = sim_settings
+    },
+
+    updateDisplaySettings(state, settings) {
+      state.display_settings = normalizeDisplaySettings(settings)
     },
 
     setWaitingForData(state) { state.waiting_for_data = true },

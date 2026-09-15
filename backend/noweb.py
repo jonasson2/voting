@@ -197,11 +197,11 @@ def check_simulation(simid, stop=False):
         sim_result_dict = {'data': []}
     return sim_status, sim_result_dict
 
-def simulation_to_excel(simid, file):
+def simulation_to_excel(simid, file, display_settings=None):
     sim_result = SIMULATIONS[simid]["result"]
     parallel = SIMULATIONS[simid]["kind"] == 'parallel'
     sim_result_dict = sim_result.get_result_web(parallel)
-    simulation_to_xlsx(sim_result_dict, file)
+    simulation_to_xlsx(sim_result_dict, file, display_settings)
 
 def votes_to_excel(vote_table, file):
     pruned = vote_table.get("pruned", [0] * len(vote_table["constituencies"]))
