@@ -72,7 +72,7 @@
 
 <script>
 import { mapState } from "vuex"
-import { formatNumber } from "../numberFormat.js"
+import { formatNumberUnlessZero } from "../numberFormat.js"
 
 export default {
   props: [
@@ -95,11 +95,15 @@ export default {
     format(entry) {
       if (entry === null || typeof entry !== "object") return entry
       const digits = entry.integer ? 0 : this.display_settings.fractional_digits
-      let result = formatNumber(entry.value, digits, this.display_settings)
-      if (entry.ci !== null) {
-        result += " ± " + formatNumber(entry.ci, digits, this.display_settings)
+      const value = formatNumberUnlessZero(
+        entry.value, digits, this.display_settings)
+      const ci = entry.ci === null ? "" : formatNumberUnlessZero(
+        entry.ci, digits, this.display_settings)
+      if (value && ci) {
+        return value + " ± " + ci
       }
-      return result
+      if (ci) return "± " + ci
+      return value
     },
     sysclass: function(s) {
       if (s==this.nsys-1) return "last"

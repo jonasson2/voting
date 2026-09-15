@@ -99,7 +99,7 @@
 </template>
 <script>
 import { mapState } from "vuex"
-import { formatNumber } from "../numberFormat.js"
+import { formatNumberUnlessZero } from "../numberFormat.js"
 
 export default {
   props: {
@@ -115,7 +115,7 @@ export default {
   computed: mapState(["display_settings"]),
   methods: {
     format(value) {
-      return formatNumber(value, this.round, this.display_settings)
+      return formatNumberUnlessZero(value, this.round, this.display_settings)
     },
   },
 }

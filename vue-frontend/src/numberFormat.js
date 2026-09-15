@@ -44,6 +44,13 @@ export function formatNumber(value, digits, settings) {
     : grouped + normalized.decimal_separator + fraction
 }
 
+export function formatNumberUnlessZero(value, digits, settings) {
+  const number = Number(value)
+  const precision = Math.min(10, Math.max(0, Number(digits)))
+  if (Number.isFinite(number) && Number(number.toFixed(precision)) === 0) return ""
+  return formatNumber(value, precision, settings)
+}
+
 function groupedIntegerDigits(text, settings) {
   const separator = normalizeDisplaySettings(settings).thousands_separator
   const separatorPattern = separator === " "
