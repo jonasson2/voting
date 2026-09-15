@@ -23,8 +23,7 @@
       accept=".csv, .xlsx"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
-      @input="$refs.modaluploadref.hide();
-              loadVotes();"
+      @input="loadVotes"
       ></b-form-file>
     <template #modal-footer="{ cancel }">
       <b-button size="sm" @click="cancel()">
@@ -48,8 +47,7 @@
       accept=".json"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
-      @input="$refs.modaluploadallref.hide();
-              loadAll();"
+      @input="loadAll"
       ></b-form-file>
     <template #modal-footer="{ cancel }">
       <b-button size="sm" @click="cancel()">
@@ -435,10 +433,12 @@ export default {
         }
       )
     },
-    loadVotes: function() {
+    loadVotes: function(file) {
+      if (!file) return
+      this.$refs.modaluploadref.hide()
       this.setWaitingForData()
       var formData = new FormData();
-      formData.append("file", this.uploadfile, this.uploadfile.name);
+      formData.append("file", file, file.name);
       this.$http.post("api/votes/upload/", formData).then(
         (response) => {
           if (!response.body || response.body.error) {
@@ -455,9 +455,11 @@ export default {
         }
       )
     },
-    loadAll: function() {
+    loadAll: function(file) {
+      if (!file) return
+      this.$refs.modaluploadallref.hide()
       var formData = new FormData();
-      formData.append("file", this.uploadfile, this.uploadfile.name);
+      formData.append("file", file, file.name);
       this.uploadAll(formData)
     },
     checkVoteSeats: function() {

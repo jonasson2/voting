@@ -251,6 +251,22 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertIn('Maximum adjustment seats may not be below the minimum',
                       response.get_json()['error'])
 
+    def test_vote_table_api_download_can_be_uploaded(self):
+        app.config.update(TESTING=True)
+        client = app.test_client()
+        table = load_votes('../data/iceland-2021.csv')
+
+        download = client.post('/api/votes/save/', json={'vote_table': table})
+        self.assertEqual(download.status_code, 200)
+        upload = client.post(
+            '/api/votes/upload/',
+            data={'file': (BytesIO(download.data), 'votes.xlsx')},
+        )
+
+        self.assertEqual(upload.status_code, 200)
+        self.assertNotIn('error', upload.get_json())
+        self.assertEqual(upload.get_json()['votes'], table['votes'])
+
     def test_swedish_vote_table_uses_adjustment_seat_bounds(self):
         table = load_votes('../data/sweden_2022.csv')
         self.assertEqual(table['max_total_adj_seats'], 39)
