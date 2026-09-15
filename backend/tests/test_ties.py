@@ -10,11 +10,12 @@ from dictionaries import ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from methods import danish
+from methods.alternating_scaling import apportion_orig
 from methods.icelandic_law import icelandic_apportionment
 from methods.max_const_votes import max_const_votes
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching_se import switching
-from randomness import make_rng
+from randomness import make_rng, random_uniform
 from simulate import Simulation, SimulationSettings
 from ties import TieReport, select
 from vote_table import check_vote_table, process_vote_table
@@ -22,6 +23,31 @@ from web import app
 
 
 class TieTest(unittest.TestCase):
+    def test_equal_uniform_bounds_return_bound_without_consuming_randomness(self):
+        rng = make_rng(42)
+        unchanged = rng.duplicate()
+        self.assertEqual(random_uniform(rng, 100, 100), 100.0)
+        self.assertEqual(rng.unif(), unchanged.unif())
+
+    def test_optimal_divisor_tied_boundary(self):
+        allocation, separator = apportion_orig(
+            np.array([100., 100.]), np.array([0, 0]), 1,
+            np.array([1., 2., 3.]), make_rng(42))
+        np.testing.assert_array_equal(allocation, [1, 0])
+        self.assertGreaterEqual(separator, 100)
+        self.assertLessEqual(separator, 100.00001)
+
+    def test_optimal_divisor_single_election_with_tied_boundary(self):
+        table = self.table(['Example,fixed,adj,A,B',
+                            'North,0,1,100,100', 'South,0,1,100,200'])
+        system = self.system(table)
+        system['adjustment_method'] = 'alternating-scaling'
+        with patch('methods.alternating_scaling.make_rng', return_value=make_rng(42)):
+            election = ElectionHandler(table, [system], True).elections[0]
+        allocation = np.array(election.results['all_const_seats'])
+        np.testing.assert_array_equal(allocation.sum(axis=0), [1, 1])
+        np.testing.assert_array_equal(allocation.sum(axis=1), [1, 1])
+
     def test_unseeded_rng_is_not_randomized_twice(self):
         with patch('randomness.randompack.Rng') as constructor:
             rng = make_rng()

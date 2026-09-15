@@ -29,6 +29,8 @@ def random_permutation(rng, size):
 
 def random_uniform(rng, lower, upper):
     """Return a uniform draw, accepting legacy NumPy generators."""
+    if lower == upper:
+        return float(lower)
     if hasattr(rng, "uniform"):
         return float(rng.uniform(lower, upper))
     return float(rng.unif(a=lower, b=upper))
