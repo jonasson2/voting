@@ -64,32 +64,20 @@
                 />
             </th>
             <td class="numerical" size="sm">
-              <input
-                v-model.number="info.num_fixed_seats"
-                type="text"
-                v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-                />
+              <IntegerInput v-model="info.num_fixed_seats" max-width="200px" />
             </td>
             <td class="numerical" size="sm">
-              <input
-                v-model.number="info.num_adj_seats"
-                type="text"
-                v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-                />
+              <IntegerInput v-model="info.num_adj_seats" max-width="200px" />
             </td>
             <td
               v-for="(party, partyIndex) in voteTable.parties"
               :key="partyIndex"
               class="numerical"
               >
-              <input
-                v-model.number="info.votes[partyIndex]"
-                type="text"
-                v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
-                />
+              <IntegerInput v-model="info.votes[partyIndex]" />
             </td>
-            <td v-if="hasPrunedVotes" class="displayright">{{ info.pruned }}</td>
-            <td class="displayright">{{ info.total }}</td>
+            <td v-if="hasPrunedVotes" class="displayright">{{ integer(info.pruned) }}</td>
+            <td class="displayright">{{ integer(info.total) }}</td>
           </tr>
           <tr v-if="!info.specified">
             <th class="growtable">
@@ -120,7 +108,12 @@
 </template>
 
 <script>
+import { mapState } from "vuex"
+import IntegerInput from "./IntegerInput.vue"
+import { formatNumber } from "../numberFormat.js"
+
 export default {
+  components: {IntegerInput},
   props: {
     voteTable: {type: Object, required: true},
     basisOptions: {type: Array, required: true},
@@ -128,8 +121,14 @@ export default {
   },
   emits: ["add", "remove"],
   computed: {
+    ...mapState(["display_settings"]),
     info() {
       return this.voteTable.party_vote_info
+    },
+  },
+  methods: {
+    integer(value) {
+      return formatNumber(value, 0, this.display_settings)
     },
   },
 }

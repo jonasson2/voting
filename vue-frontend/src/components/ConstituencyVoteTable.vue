@@ -108,26 +108,24 @@
               />
           </th>
           <td class="numerical" size="sm">
-            <input
-              v-model.number="constituency.num_fixed_seats"
-              type="text"
-              v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-              />
+            <IntegerInput
+              v-model="constituency.num_fixed_seats"
+              max-width="200px"
+            />
           </td>
           <td class="numerical" size="sm">
-            <input
-              v-model.number="constituency.num_adj_seats"
-              type="text"
-              v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-              />
+            <IntegerInput
+              v-model="constituency.num_adj_seats"
+              max-width="200px"
+            />
           </td>
           <td v-if="hasMaximums" class="numerical" size="sm">
-            <input
-              v-model.number="constituency.max_adj_seats"
-              type="text"
+            <IntegerInput
+              v-model="constituency.max_adj_seats"
+              allow-unlimited
               title="Use - for unlimited"
-              v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
-              />
+              max-width="200px"
+            />
           </td>
           <td v-if="hasRegions">
             <select v-model="constituency.region" :aria-label="`${constituency.name}: region`">
@@ -141,29 +139,26 @@
             :key="partyIndex"
             class="numerical"
             >
-            <input
-              v-model.number="voteTable.votes[constituencyIndex][partyIndex]"
-              type="text"
-              v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
-              />
+            <IntegerInput
+              v-model="voteTable.votes[constituencyIndex][partyIndex]"
+            />
           </td>
           <td v-if="hasPrunedVotes" class="displayright">
-            {{ voteTable.pruned[constituencyIndex] }}
+            {{ integer(voteTable.pruned[constituencyIndex]) }}
           </td>
-          <td class="displayright">{{ voteSums.row[constituencyIndex] }}</td>
+          <td class="displayright">{{ integer(voteSums.row[constituencyIndex]) }}</td>
         </tr>
         <tr>
           <th class="displayleft">Total</th>
-          <td class="displayright">{{ voteSums.cseats }}</td>
-          <td class="displayright">{{ voteSums.aseats }}</td>
+          <td class="displayright">{{ integer(voteSums.cseats) }}</td>
+          <td class="displayright">{{ integer(voteSums.aseats) }}</td>
           <td v-if="hasMaximums" class="numerical">
-            <input
-              v-model.number="voteTable.max_total_adj_seats"
-              type="text"
-              v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
+            <IntegerInput
+              v-model="voteTable.max_total_adj_seats"
+              max-width="200px"
               v-b-tooltip.hover.bottom.v-primary.ds500
               title="Maximum total number of adjustment seats"
-              />
+            />
           </td>
           <td v-if="hasRegions"></td>
           <td
@@ -171,10 +166,10 @@
             :key="partyIndex"
             class="displayright"
             >
-            {{ voteSums.col[partyIndex] }}
+            {{ integer(voteSums.col[partyIndex]) }}
           </td>
-          <td v-if="hasPrunedVotes" class="displayright">{{ voteSums.pruned }}</td>
-          <td class="displayright">{{ voteSums.tot }}</td>
+          <td v-if="hasPrunedVotes" class="displayright">{{ integer(voteSums.pruned) }}</td>
+          <td class="displayright">{{ integer(voteSums.tot) }}</td>
         </tr>
         <tr>
           <th class="displayleft">Vote share</th>
@@ -210,8 +205,14 @@
 </template>
 
 <script>
+import { mapState } from "vuex"
+import IntegerInput from "./IntegerInput.vue"
+import { formatNumber } from "../numberFormat.js"
+
 export default {
+  components: {IntegerInput},
   computed: {
+    ...mapState(["display_settings"]),
     hasRegions() { return this.voteTable.regions && this.voteTable.regions.length > 0 },
   },
   props: {
@@ -229,12 +230,15 @@ export default {
     "remove-party",
   ],
   methods: {
+    integer(value) {
+      return formatNumber(value, 0, this.display_settings)
+    },
     votePercentage(votes) {
       const total = this.voteSums.tot
       if (!Number.isFinite(votes) || !Number.isFinite(total) || total <= 0) {
         return "–"
       }
-      return (100 * votes / total).toFixed(1) + "%"
+      return formatNumber(100 * votes / total, 1, this.display_settings) + "%"
     },
   },
 }

@@ -41,3 +41,10 @@ export function formatNumber(value, digits, settings) {
     ? grouped
     : grouped + normalized.decimal_separator + fraction
 }
+
+export function parseInteger(value, allowUnlimited = false) {
+  if (Number.isInteger(value)) return value
+  const text = String(value ?? "").trim()
+  if (allowUnlimited && text === "-") return text
+  return /^\d+$/.test(text) ? Number(text) : text
+}
