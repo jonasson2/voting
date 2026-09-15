@@ -31,7 +31,7 @@ the header's width. CSV quoting preserves names containing commas.
 - `Max adj seats`: the national adjustment-seat count (40) in the `max_adj`
   column; other fields are blank.
 - Constituency rows: official fixed-seat counts, minimum adjustment seats 0,
-  blank maximum (unlimited), region abbreviation, and unmodified vote counts.
+  unlimited maximum (`-`), region abbreviation, and unmodified vote counts.
 - After a blank row, `Regions,Name,adj` begins the region table. Its rows hold
   abbreviation, official region name, and adjustment-seat count.
 

@@ -2,7 +2,7 @@
   <div>
     <b-row>
       <b-col cols="auto">
-        <legend style="margin-left:0px; margin-top:12px">Party names</legend>
+        <legend class="vote-table-section-heading">Party names</legend>
       </b-col>
     </b-row>
     <div class="table-scroll">
@@ -43,7 +43,7 @@
                 v-b-tooltip.hover.right.v-primary.ds500
                 title="Add party names"
                 @click="$emit('add')"
-                ><b>+</b></b-button>
+                ><span class="add-button-symbol">+</span></b-button>
             </th>
           </tr>
         </tbody>

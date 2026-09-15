@@ -1,6 +1,6 @@
 <template>
   <div>
-    <legend style="margin-top:12px">Regions</legend>
+    <legend class="vote-table-section-heading">Regions</legend>
     <div class="table-scroll">
       <table class="votematrix region-table">
         <thead v-if="voteTable.regions && voteTable.regions.length">
@@ -24,7 +24,8 @@
           </tr>
           <tr><th class="growtable"><b-button size="sm"
             v-b-tooltip.hover.bottom.v-primary.ds500 title="Add region"
-            @click="addRegion(voteTable)"><b>+</b></b-button></th></tr>
+            @click="addRegion(voteTable)">
+            <span class="add-button-symbol">+</span></b-button></th></tr>
         </tbody>
       </table>
     </div>

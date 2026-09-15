@@ -399,7 +399,7 @@ def write_votes(year, out):
         max_total_adj_seats = sum(row["adj"] for row in rows)
     for row in rows:
         row["min_adj"] = 0
-        row["max_adj"] = ""
+        row["max_adj"] = "-"
         del row["adj"]
     fieldnames = ["Kjördæmi", "fixed", "min_adj", "max_adj", *parties]
     with open(out, "w", encoding="utf-8", newline="") as fd:

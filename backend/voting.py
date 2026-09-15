@@ -280,9 +280,10 @@ class Election:
     def apportion_fixed_seats(self, use_thresholds):
         constituencies = self.system["constituencies"]
         threshold = self.system["constituency_threshold"] if use_thresholds else 0
-        swedish = (
-            self.system["adjustment_preparation_method"] == "switching_se")
-        if swedish:
+        national_or_constituency = (
+            self.system["fixed_seat_eligibility"]
+            == "national-or-constituency")
+        if national_or_constituency:
             national_threshold = (
                 self.system["adjustment_threshold"] if use_thresholds else 0)
             national_shares = (
@@ -298,7 +299,7 @@ class Election:
             if num_seats != 0:
                 votes = self.votes[i]
                 applied_threshold = threshold
-                if swedish:
+                if national_or_constituency:
                     local_shares = (
                         votes / self.const_threshold_totals[i]
                         if self.const_threshold_totals[i] else np.zeros_like(votes)

@@ -3,7 +3,7 @@
     <b-row>
       <b-col cols="auto">
         <legend
-          style="margin-left:0px; margin-top:12px"
+          class="vote-table-section-heading"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title='Seat numbers and votes for the national list (German "Zweitstimmen", New Zealand "party votes").'
           >
@@ -98,7 +98,7 @@
                 v-b-tooltip.hover.right.v-primary.ds500
                 title="Add party votes"
                 @click="$emit('add')"
-                ><b>+</b></b-button>
+                ><span class="add-button-symbol">+</span></b-button>
             </th>
           </tr>
         </tbody>

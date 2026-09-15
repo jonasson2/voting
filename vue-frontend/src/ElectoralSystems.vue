@@ -141,7 +141,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Add electoral system"
         @click="addNewSystem">
-        <b>+</b>
+        <span class="add-button-symbol">+</span>
       </b-button>
     </template>
     <template #empty>

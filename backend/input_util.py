@@ -2,11 +2,17 @@ from dictionaries import (
     ADJUSTMENT_METHODS,
     ADJUSTMENT_PREPARATION_METHODS,
     DIVIDER_RULES,
+    FIXED_SEAT_ELIGIBILITY_NAMES,
 )
+
+FIXED_SEAT_ELIGIBILITY_VALUES = {
+    option["value"] for option in FIXED_SEAT_ELIGIBILITY_NAMES
+}
 
 
 def normalize_system(system):
-    """Add defaults for settings saved before preparation was introduced."""
+    """Add defaults for settings saved before newer system fields existed."""
+    system.setdefault("fixed_seat_eligibility", "constituency")
     system.setdefault("adjustment_preparation_method", "none")
     system.setdefault("adj_preparation_divider", "sainte-lague")
     return system
@@ -39,6 +45,10 @@ def check_systems(electoral_systems):
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
         normalize_system(electoral_system)
+        fixed_seat_eligibility = electoral_system["fixed_seat_eligibility"]
+        if fixed_seat_eligibility not in FIXED_SEAT_ELIGIBILITY_VALUES:
+            raise ValueError(
+                f"Unknown fixed-seat eligibility rule: {fixed_seat_eligibility}")
         preparation_method = electoral_system["adjustment_preparation_method"]
         if (preparation_method != "none"
                 and preparation_method not in ADJUSTMENT_PREPARATION_METHODS):

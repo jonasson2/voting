@@ -14,9 +14,9 @@ def _text(value):
     return "" if value is None else str(value).strip()
 
 
-def _nonnegative_int(value, description, *, blank=0):
+def _nonnegative_int(value, description):
     if _is_blank(value):
-        return blank
+        return 0
     if isinstance(value, bool):
         raise VoteTableFormatError(f"{description} must be a non-negative integer")
     if isinstance(value, int):
@@ -30,6 +30,16 @@ def _nonnegative_int(value, description, *, blank=0):
     if result < 0:
         raise VoteTableFormatError(f"{description} must be a non-negative integer")
     return result
+
+
+def _maximum_adj_seats(value, description):
+    if _text(value) == "-":
+        return None
+    if _is_blank(value):
+        raise VoteTableFormatError(
+            f"{description} must be a non-negative integer or - for unlimited"
+        )
+    return _nonnegative_int(value, description)
 
 
 def empty_party_vote_info():
@@ -219,8 +229,8 @@ def _parse_vote_table(rows, filename):
             "num_adj_seats": minimum,
         }
         if has_maximum:
-            maximum = _nonnegative_int(
-                row[3], f"Maximum adjustment seats in {name}", blank=None
+            maximum = _maximum_adj_seats(
+                row[3], f"Maximum adjustment seats in {name}"
             )
             if maximum is not None and maximum < minimum:
                 raise VoteTableFormatError(
@@ -383,7 +393,7 @@ def check_vote_table(vote_table):
                     f"Missing maximum adjustment seats for {constituency_name}."
                 )
             maximum = constituency["max_adj_seats"]
-            if maximum == "":
+            if maximum == "-":
                 maximum = None
                 constituency["max_adj_seats"] = None
             if maximum is not None:

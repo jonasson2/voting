@@ -14,7 +14,8 @@
     <p>
       Use <code>fixed,adj</code> for exact adjustment-seat counts, or
       <code>fixed,min_adj,max_adj</code> with a <code>Max adj seats</code> row
-      for bounds. Optional <code>Party names</code> and <code>Pruned</code>
+      for bounds; <code>-</code> means that a constituency maximum is unlimited.
+      Optional <code>Party names</code> and <code>Pruned</code>
       fields are preserved.
     </p>
     <b-form-file
@@ -205,10 +206,12 @@
     @remove-party="deleteParty"
     />
   <b-alert :show="checkVoteSeats()==false">
-    Some seats are not in numerical format
+    Seat counts must be non-negative integers, and each constituency # Max adj.
+    must be at least its # Min adj. A hyphen (-) is allowed only in a
+    constituency # Max adj. cell, where it means unlimited.
   </b-alert>
   <b-alert :show="checkVoteInput()==false">
-    Some votes are not in numerical format
+    Votes must be non-negative integers.
   </b-alert>
   <b-alert :show="checkVoteLabels()==false">
     Table, party, and constituency names must not be blank
@@ -224,7 +227,8 @@
     @remove="deletePartyVotes"
     />
   <b-alert :show="checkPartyInput()==false">
-    The national name, seats, and votes must be valid
+    The national name must not be blank, and national seats and votes must be
+    non-negative integers.
   </b-alert>
 
   <region-table v-if="hasRegions || !vote_table.party_vote_info.specified"

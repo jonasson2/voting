@@ -42,6 +42,14 @@
         <span class="compact-entry-unit">%</span>
       </span>
     </label>
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Choose whether fixed-seat lists qualify only through the local threshold, or through either the national threshold below or the local threshold.">
+      <span>Eligibility</span>
+      <b-form-select class="compact-select settings-eligibility"
+        v-model="systems[systemidx].fixed_seat_eligibility"
+        :options="capabilities.fixed_seat_eligibility"/>
+    </label>
   </div>
 
   <!-- APPORTIONMENT -->

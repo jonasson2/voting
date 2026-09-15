@@ -226,7 +226,7 @@ def write_votes(official, output):
         if sum(votes) != district["valid_votes"]:
             raise ValueError(f"Output vote total differs in {district['name']}")
         fixed = sum(p["fixed_seats"] for p in district["parties"].values())
-        rows.append([district["name"], fixed, 0, "", district["region"], *votes])
+        rows.append([district["name"], fixed, 0, "-", district["region"], *votes])
     rows.extend([[], ["Regions", "Name", "adj"]])
     for region in official["regions"]:
         adjustment = sum(p["adjustment_seats"] for p in region["parties"].values())

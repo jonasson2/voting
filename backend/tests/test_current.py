@@ -42,6 +42,7 @@ class CurrentApplicationTest(unittest.TestCase):
         system['adj_preparation_divider'] = divider
         system['adj_alloc_divider'] = 'sainte-lague'
         system['constituency_threshold'] = 12
+        system['fixed_seat_eligibility'] = 'national-or-constituency'
         return system
 
     def test_wsgi_import_initializes_simulation_state(self):
@@ -133,7 +134,7 @@ class CurrentApplicationTest(unittest.TestCase):
             b'Example,fixed,min_adj,max_adj,A,B\n'
             b'Max adj seats,,,5,,\n'
             b'I,1,2,4,10,20\n'
-            b'II,1,1,,30,40\n'
+            b'II,1,1,-,30,40\n'
         )
         response = client.post('/api/votes/upload/',
                                data={'file': (upload, 'votes.csv')})
@@ -144,6 +145,20 @@ class CurrentApplicationTest(unittest.TestCase):
             [constituency['max_adj_seats']
              for constituency in vote_table['constituencies']],
             [4, None],
+        )
+
+    def test_csv_upload_rejects_blank_adjustment_seat_maximum(self):
+        app.config.update(TESTING=True)
+        upload = BytesIO(
+            b'Example,fixed,min_adj,max_adj,A\n'
+            b'Max adj seats,,,1,\n'
+            b'I,1,0,,10\n'
+        )
+        response = app.test_client().post(
+            '/api/votes/upload/', data={'file': (upload, 'votes.csv')})
+        self.assertIn(
+            'must be a non-negative integer or - for unlimited',
+            response.get_json()['error'],
         )
 
     def test_csv_upload_reads_national_votes_after_blank_row(self):
@@ -223,6 +238,19 @@ class CurrentApplicationTest(unittest.TestCase):
         response = client.post('/api/votes/save/', json={'vote_table': table})
         self.assertIn('may not be negative', response.get_json()['error'])
 
+        table = load_votes('../data/2-by-2-example.csv')
+        table['votes'][0][0] = -1
+        response = client.post('/api/votes/save/', json={'vote_table': table})
+        self.assertIn('Votes may not be negative', response.get_json()['error'])
+
+        table = load_votes('../data/2-by-2-example.csv')
+        table['max_total_adj_seats'] = 5
+        table['constituencies'][0]['max_adj_seats'] = 1
+        table['constituencies'][1]['max_adj_seats'] = None
+        response = client.post('/api/votes/save/', json={'vote_table': table})
+        self.assertIn('Maximum adjustment seats may not be below the minimum',
+                      response.get_json()['error'])
+
     def test_swedish_vote_table_uses_adjustment_seat_bounds(self):
         table = load_votes('../data/sweden_2022.csv')
         self.assertEqual(table['max_total_adj_seats'], 39)
@@ -263,6 +291,17 @@ class CurrentApplicationTest(unittest.TestCase):
             ['denmark', 'finland', 'iceland', 'norway', 'sweden-2014', 'sweden-2018'],
         )
         self.assertEqual(
+            [preset['text'] for preset in ELECTION_LAW_PRESETS[1:]],
+            [
+                'Denmark (2007–present)',
+                'Finland (1907–present)',
+                'Iceland (2003–present)',
+                'Norway (2005–present)',
+                'Sweden (1988–2014)',
+                'Sweden (2018–present)',
+            ],
+        )
+        self.assertEqual(
             (presets['finland']['primary_divider'],
              presets['finland']['constituency_threshold'],
              presets['finland']['adjustment_method'],
@@ -284,17 +323,23 @@ class CurrentApplicationTest(unittest.TestCase):
         )
         self.assertEqual(
             (presets['sweden-2014']['constituency_threshold'],
+             presets['sweden-2014']['fixed_seat_eligibility'],
+             presets['sweden-2014']['adjustment_preparation_method'],
              presets['sweden-2014']['adj_preparation_divider'],
              presets['sweden-2014']['adjustment_method'],
              presets['sweden-2014']['constituency_seat_specification']),
-            (12, 'nordic-1.4', 'max-const-votes', 'refer'),
+            (12, 'national-or-constituency', 'none', 'nordic-1.4',
+             'max-const-votes', 'refer'),
         )
         self.assertEqual(
             (presets['sweden-2018']['constituency_threshold'],
+             presets['sweden-2018']['fixed_seat_eligibility'],
+             presets['sweden-2018']['adjustment_preparation_method'],
              presets['sweden-2018']['adj_preparation_divider'],
              presets['sweden-2018']['adjustment_method'],
              presets['sweden-2018']['constituency_seat_specification']),
-            (12, 'nordic-1.2', 'max-const-votes', 'refer'),
+            (12, 'national-or-constituency', 'switching_se', 'nordic-1.2',
+             'max-const-votes', 'refer'),
         )
         forbidden = {
             'constituencies', 'num_fixed_seats', 'num_adj_seats',
@@ -413,31 +458,25 @@ class CurrentApplicationTest(unittest.TestCase):
             'No switching required',
         )
 
-    def test_swedish_2014_switches_three_overhang_seats(self):
+    def test_swedish_2014_matches_official_party_totals_without_switching(self):
         table = load_votes('../data/sweden_2014.csv')
-        election = ElectionHandler(
-            table,
-            [self.make_swedish_system(table, 'nordic-1.4')],
-            True,
-        ).elections[0]
-        switches = election.demo_tables[0]['steps']
-        self.assertEqual(len(switches), 3)
-        self.assertCountEqual(
-            [(row[2], row[3]) for row in switches],
-            [('S', 'M'), ('SD', 'KD'), ('SD', 'L')],
+        settings = next(
+            preset['settings'] for preset in ELECTION_LAW_PRESETS
+            if preset['value'] == 'sweden-2014'
         )
-        display = election.get_result_web()['display_results']
-        constituency = [
-            item['name'] for item in election.system['constituencies']
-        ].index('Malmö kommun')
+        system = self.make_system(table, settings['adjustment_method'])
+        system.update(deepcopy(settings))
+        election = ElectionHandler(table, [system], True).elections[0]
+        allocation = np.asarray(election.results['all_const_seats'])
         self.assertEqual(
-            display[constituency][table['parties'].index('SD')],
-            '1 (-1+0)',
+            {party: int(seats) for party, seats in
+             zip(table['parties'], allocation.sum(axis=0)) if seats},
+            {
+                'M': 84, 'C': 22, 'L': 19, 'KD': 16,
+                'S': 113, 'V': 21, 'MP': 25, 'SD': 49,
+            },
         )
-        self.assertEqual(
-            display[constituency][table['parties'].index('L')],
-            '1 (+1+0)',
-        )
+        self.assertIsNone(election.preparation_stepbystep)
 
     def test_swedish_2022_matches_official_seat_margins(self):
         table = load_votes('../data/sweden_2022.csv')
@@ -638,6 +677,8 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertEqual(loaded['party_names'], table['party_names'])
 
     def test_vote_table_xlsx_round_trip_preserves_adjustment_seat_maxima(self):
+        import openpyxl
+
         table = load_votes('../data/2-by-2-example.csv')
         table['max_total_adj_seats'] = 6
         table['constituencies'][0]['max_adj_seats'] = 2
@@ -645,6 +686,9 @@ class CurrentApplicationTest(unittest.TestCase):
         with TemporaryDirectory() as directory:
             filename = Path(directory) / 'votes.xlsx'
             votes_to_excel(table, filename)
+            workbook = openpyxl.load_workbook(filename, read_only=True)
+            self.assertEqual(workbook.active['D4'].value, '-')
+            workbook.close()
             loaded = load_votes(filename)
         self.assertEqual(loaded['max_total_adj_seats'], 6)
         self.assertEqual(
@@ -1012,6 +1056,9 @@ class CurrentApplicationTest(unittest.TestCase):
             saved_system['adjustment_preparation_method'], 'switching_se')
         self.assertEqual(
             saved_system['adjustment_preparation_rule'], 'nordic-1.2')
+        self.assertEqual(
+            saved_system['fixed_seat_eligibility'],
+            'national-or-constituency')
         self.assertNotIn('additional_adjustment_method', saved_system)
         self.assertNotIn('additional_adjustment_allocation_rule', saved_system)
 

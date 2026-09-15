@@ -34,6 +34,11 @@ export function normalizeVoteTable(table) {
       || !table.party_vote_info.specified) {
     table.party_vote_basis = "totals"
   }
+  if ("max_total_adj_seats" in table) {
+    table.constituencies.forEach(constituency => {
+      if (constituency.max_adj_seats === null) constituency.max_adj_seats = "-"
+    })
+  }
   return table
 }
 
@@ -101,7 +106,7 @@ export function validConstituencySeats(table) {
   if (table.max_total_adj_seats < minimumTotal) return false
 
   const maxima = table.constituencies.map(constituency =>
-    constituency.max_adj_seats === "" ? null : constituency.max_adj_seats
+    constituency.max_adj_seats === "-" ? null : constituency.max_adj_seats
   )
   if (!maxima.every((maximum, index) =>
     maximum === null
@@ -313,7 +318,7 @@ export function regionError(table) {
     if (!constituencies.length) return `Region ${region.abbreviation} has no constituencies`
     const minimum = sumNumbers(constituencies.map(c => c.num_adj_seats))
     const maxima = constituencies.map(c => "max_total_adj_seats" in table
-      ? (c.max_adj_seats === "" ? null : c.max_adj_seats) : c.num_adj_seats)
+      ? (c.max_adj_seats === "-" ? null : c.max_adj_seats) : c.num_adj_seats)
     if (region.num_adj_seats < minimum || (maxima.every(m => m !== null)
         && region.num_adj_seats > sumNumbers(maxima))) {
       return `Adjustment seats in region ${region.abbreviation} do not fit its constituency bounds`
@@ -328,17 +333,11 @@ export function regionError(table) {
 export function addRegion(table) {
   if (table.party_vote_info.specified) return
   if (!table.regions) table.regions = []
-  const defaults = [
-    ["H", "Hovedstaden"], ["SS", "Sjælland-Syddanmark"], ["MN", "Midtjylland-Nordjylland"],
-  ]
   const used = table.regions.map(r => r.abbreviation)
-  let [abbreviation, name] = defaults.find(([code]) => !used.includes(code)) || ["", ""]
-  if (!abbreviation) {
-    let index = 4
-    while (used.includes(`R${index}`)) index++
-    abbreviation = `R${index}`
-    name = abbreviation
-  }
+  let index = table.regions.length + 1
+  while (used.includes(`R${index}`)) index++
+  const abbreviation = `R${index}`
+  const name = abbreviation
   const seats = table.regions.length ? 0 : (table.max_total_adj_seats
     ?? sumNumbers(table.constituencies.map(c => c.num_adj_seats)))
   table.regions.push({abbreviation, name, num_adj_seats: seats})

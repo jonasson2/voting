@@ -102,6 +102,36 @@ test("a specified national vote row must have a name", async () => {
 
   table.party_vote_info.name = ""
   assert.equal(validNationalVotes(table), false)
+  table.party_vote_info.name = "National"
+  table.party_vote_info.votes[0] = -1
+  assert.equal(validNationalVotes(table), false)
+})
+
+test("a hyphen represents an unlimited constituency adjustment-seat maximum", async () => {
+  const {normalizeVoteTable, validConstituencySeats} = await voteTableModule()
+  const table = exampleTable()
+  table.max_total_adj_seats = 2
+  table.constituencies[0].max_adj_seats = null
+
+  normalizeVoteTable(table)
+
+  assert.equal(table.constituencies[0].max_adj_seats, "-")
+  assert.equal(validConstituencySeats(table), true)
+  table.constituencies[0].max_adj_seats = 1
+  table.constituencies[0].num_adj_seats = 2
+  assert.equal(validConstituencySeats(table), false)
+  table.constituencies[0].max_adj_seats = ""
+  assert.equal(validConstituencySeats(table), false)
+})
+
+test("constituency votes must be non-negative integers", async () => {
+  const {validVotes} = await voteTableModule()
+  const table = exampleTable()
+  assert.equal(validVotes(table), true)
+
+  table.votes[0][0] = -1
+
+  assert.equal(validVotes(table), false)
 })
 
 test("party edits and pruning keep independent flags aligned", async () => {
@@ -125,15 +155,16 @@ test("region controls retain assignments on rename and remove them on deletion",
   assert.equal(table.regions, undefined)
   table.party_vote_info.specified = false
   addRegion(table)
-  assert.equal(table.regions[0].abbreviation, "H")
-  assert.equal(table.constituencies[0].region, "H")
+  assert.deepEqual(table.regions[0], {abbreviation: "R1", name: "R1", num_adj_seats: 0})
+  assert.equal(table.constituencies[0].region, "R1")
   assert.equal(regionError(table), "")
   renameRegion(table, 0, "Capital")
   assert.equal(table.constituencies[0].region, "Capital")
   addRegion(table)
+  assert.deepEqual(table.regions[1], {abbreviation: "R2", name: "R2", num_adj_seats: 0})
   assert.match(regionError(table), /no constituencies/)
   const beforeDuplicate = structuredClone(table)
-  assert.match(renameRegion(table, 0, "H"), /unique/)
+  assert.match(renameRegion(table, 0, "R2"), /unique/)
   assert.deepEqual(table, beforeDuplicate)
   removeRegion(table, 1)
   removeRegion(table, 0)
@@ -146,7 +177,7 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
   table.party_vote_info.specified = false
   table.regions = [{abbreviation: "H", name: "Capital", num_adj_seats: 2}]
   table.constituencies[0].region = "H"
-  table.constituencies[0].max_adj_seats = null
+  table.constituencies[0].max_adj_seats = "-"
   table.max_total_adj_seats = 2
   assert.equal(regionError(table), "")
   table.regions[0].num_adj_seats = 3
@@ -154,7 +185,7 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
   table.regions[0].num_adj_seats = 2
   table.constituencies[0].max_adj_seats = 1
   assert.match(regionError(table), /bounds/)
-  table.constituencies[0].max_adj_seats = null
+  table.constituencies[0].max_adj_seats = "-"
   table.constituencies[0].region = "missing"
   assert.match(regionError(table), /listed region/)
   table.party_vote_info.specified = true

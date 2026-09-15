@@ -230,7 +230,8 @@ def votes_to_excel(vote_table, file):
             vote_table["constituencies"][c]["name"],
             vote_table["constituencies"][c]["num_fixed_seats"],
             vote_table["constituencies"][c]["num_adj_seats"],
-            *([vote_table["constituencies"][c]["max_adj_seats"]]
+            *([vote_table["constituencies"][c]["max_adj_seats"]
+               if vote_table["constituencies"][c]["max_adj_seats"] is not None else "-"]
               if has_max_adj_seats else []),
             *([vote_table["constituencies"][c]["region"]] if regions else []),
         ] + vote_table["votes"][c] + [pruned[c]]

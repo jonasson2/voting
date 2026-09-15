@@ -17,6 +17,7 @@ class ElectionSystem(dict):
         self["adjustment_threshold_seats"] = 0
         self["adj_threshold_choice"] = 1
         self["constituency_threshold"] = 0
+        self["fixed_seat_eligibility"] = "constituency"
         self["adjustment_preparation_method"] = "none"
         self["adj_preparation_divider"] = "sainte-lague"
         self["adjustment_method"] = "max-const-seat-share"

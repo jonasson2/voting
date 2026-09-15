@@ -26,14 +26,14 @@
               v-b-tooltip.hover.bottom.v-primary.ds500
               title="Split adjustment seats into minimum and maximum seats"
               @click="$emit('add-maximums')"
-              >+
+              ><span class="add-button-symbol">+</span>
             </b-button>
           </th>
           <th
             v-if="hasMaximums"
             class="seatnumberheading"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Maximum adjustment seats"
+            title="Maximum adjustment seats. Use a hyphen (-) for unlimited."
             >
             # Max adj.
             <b-button
@@ -84,7 +84,7 @@
               v-b-tooltip.hover.bottom.v-primary.ds500
               title="Add party"
               @click="$emit('add-party')"
-              ><b>+</b></b-button>
+              ><span class="add-button-symbol">+</span></b-button>
           </th>
         </tr>
         <tr
@@ -125,6 +125,7 @@
             <input
               v-model.number="constituency.max_adj_seats"
               type="text"
+              title="Use - for unlimited"
               v-autowidth="{ maxWidth: '200px', minWidth: '25px' }"
               />
           </td>
@@ -200,7 +201,7 @@
               v-b-tooltip.hover.bottom.v-primary.ds500
               title="Add constituency"
               @click="$emit('add-constituency')"
-              ><b>+</b></b-button>
+              ><span class="add-button-symbol">+</span></b-button>
           </th>
         </tr>
       </tbody>

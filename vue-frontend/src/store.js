@@ -3,6 +3,9 @@ import Vuex from "vuex"
 import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 
 function normalizeSystem(system) {
+  if (system.fixed_seat_eligibility === undefined) {
+    system.fixed_seat_eligibility = 'constituency'
+  }
   if (system.adjustment_preparation_method === undefined) {
     system.adjustment_preparation_method = 'none'
   }
@@ -98,6 +101,7 @@ const store = new Vuex.Store({
         system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
+        system.fixed_seat_eligibility = state.systems[idx-1].fixed_seat_eligibility
         system.adjustment_method = state.systems[idx-1].adjustment_method
         system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
         system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
