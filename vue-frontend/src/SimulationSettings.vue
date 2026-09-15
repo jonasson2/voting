@@ -93,7 +93,7 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Selecting No is equivalent to setting all percentage and fixed-seat thresholds in Electoral systems to zero, including for reference elections and comparison measures. Other eligibility rules still apply. Your saved system settings and Single election results are unchanged.">
+          title="Selecting No is equivalent to setting all percentage and fixed-seat thresholds in Electoral systems to zero, including for reference elections and comparison measures. Other eligibility rules still apply.">
           <label for="simulation-thresholds">Simulate with thresholds?</label>
           <b-form-select id="simulation-thresholds"
             class="compact-select simulation-threshold-select simulation-setting-control"
