@@ -366,12 +366,12 @@ PARTY_MEASURES = {
     "party_disparity": "disparity of allocation compared to reference",
     "party_excess": "positive disparity only or 0",
     "party_shortage": "negative disparity only (as positive number) or 0",
-    "party_fixed_excess": "potential fixed-seat excess"
+    "party_overhang": "potential overhang"
 }
 
 HISTOGRAM_MEASURES = {
     "disparity_count",
-    "fixed_excess_count"
+    "overhang_count"
 }
 
 SCALING_NAMES = {

@@ -114,7 +114,7 @@ class MeasureGroups(dict):
                                    "shares", ""),
                 #"disparity":      ("Total and reference allocations abs. difference",""),
                 "excess":         ("Total seat excess", ""),
-                "total_fixed_excess": ("Potential fixed-seat excess", ""),
+                "total_overhang": ("Potential overhang", ""),
                 #"shortage":       ("Shortage", "")
             }
         }

@@ -559,7 +559,7 @@ def simulation_to_xlsx(results, filename, display_settings=None):
             "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
             "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
             "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
-            "fex": [results["base_allocations"][r]["party_fixed_excess"] for r in range(nsys)],
+            "ovh": [results["base_allocations"][r]["party_overhang"] for r in range(nsys)],
             "exs": [results["base_allocations"][r]["party_excess"] for r in range(nsys)],
             "sht": [results["base_allocations"][r]["party_shortage"] for r in range(nsys)],
 
@@ -573,7 +573,7 @@ def simulation_to_xlsx(results, filename, display_settings=None):
             "ts":  [add_total(party_measures[r]['party_total_seats'][stat]) for r in range(nsys)],
             "ra":  [add_total(party_measures[r]['ref_seat_alloc'][stat]) for r in range(nsys)],
             "dis": [party_measures[r]['party_disparity'][stat] for r in range(nsys)],
-            "fex": [party_measures[r]['party_fixed_excess'][stat] for r in range(nsys)],
+            "ovh": [party_measures[r]['party_overhang'][stat] for r in range(nsys)],
             "exs": [party_measures[r]['party_excess'][stat] for r in range(nsys)],
             "sht": [party_measures[r]['party_shortage'][stat] for r in range(nsys)]
         }
@@ -603,13 +603,13 @@ def simulation_to_xlsx(results, filename, display_settings=None):
         {"abbr": "ts", "heading": "Total seats"},
         {"abbr": "ra", "heading": "Reference allocations"},
         {"abbr": "dis", "heading": "Disparity (excess if positive/deficiency if negative)"},
-        {"abbr": "fex", "heading": "Potential fixed-seat excess"},
+        {"abbr": "ovh", "heading": "Potential overhang"},
         {"abbr": "exs", "heading": "Excess (Positive disparity only)"},
         {"abbr": "sht", "heading": "Shortage (Negative disparity only)"}
     ]
     col = 2
     for table in summary_tables:
-        no_total_column = table["heading"].endswith(("percentages", "excess")) or \
+        no_total_column = table["heading"].endswith(("percentages", "overhang")) or \
             table["heading"].startswith(('Disparity', 'Excess', 'Shortage'))
         worksheet.write(toprow, col, table["heading"], fmt["h"])
         worksheet.write_row(
@@ -678,13 +678,13 @@ def simulation_to_xlsx(results, filename, display_settings=None):
         write_matrix(worksheet, row, 2, hist, fmt["base"])
         row += len(bins) + 1
 
-    # FIXED-SEAT EXCESS DATA
+    # OVERHANG DATA
     from numpy import c_
-    worksheet = workbook.add_worksheet("Fixed-seat excess data")
+    worksheet = workbook.add_worksheet("Overhang data")
     nparty = len(parties) - 1
-    data = np.reshape(results["histogram_data"]["fixed_excess_count"], (nsys, nparty))
+    data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
     toprow = 0
-    worksheet.write(toprow, 0, "Fixed-seat excess", fmt["h"])
+    worksheet.write(toprow, 0, "Overhang", fmt["h"])
     toprow += 1
     worksheet.write(toprow, 0, "Positive values of fixed seats of party minus its reference allocation", fmt["h"])
     toprow += 1
@@ -692,7 +692,7 @@ def simulation_to_xlsx(results, filename, display_settings=None):
     toprow += 1
     worksheet.write(toprow, 0, "System", fmt["h"])
     worksheet.set_column(1,1,15)
-    worksheet.write(toprow, 1, "Fixed-seat excess value", fmt["h_right"])
+    worksheet.write(toprow, 1, "Overhang value", fmt["h_right"])
     worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
     row = toprow + 1
     for sys in range(nsys):

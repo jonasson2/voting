@@ -240,9 +240,9 @@ class DanishTest(unittest.TestCase):
         result.analysis()
         web_result = result.get_result_web(False)
         self.assertEqual(len(web_result["parties"]), 12)
-        self.assertIn("total_fixed_excess", web_result["data"][0]["measures"])
-        self.assertIn("party_fixed_excess", web_result["party_data"][0])
-        self.assertIn("fixed_excess_count", web_result["histogram_data"])
+        self.assertIn("total_overhang", web_result["data"][0]["measures"])
+        self.assertIn("party_overhang", web_result["party_data"][0])
+        self.assertIn("overhang_count", web_result["histogram_data"])
         populated_groups = [
             group for group in web_result["vuedata"]["group_ids"]
             if web_result["vuedata"][group]
@@ -255,7 +255,7 @@ class DanishTest(unittest.TestCase):
             simulation_to_xlsx(web_result, path, {"fractional_digits": 2})
             book = load_workbook(path)
             self.assertIn("Party names", book.sheetnames)
-            self.assertIn("Fixed-seat excess data", book.sheetnames)
+            self.assertIn("Overhang data", book.sheetnames)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
             self.assertTrue(any(
