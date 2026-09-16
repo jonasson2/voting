@@ -7,6 +7,7 @@
       <span>Election-law preset</span>
       <select class="custom-select compact-select settings-preset"
         v-model="election_law_preset">
+        <option value="unmatched" disabled>Select preset</option>
         <option v-for="preset in capabilities.election_law_presets"
           :key="preset.value" :value="preset.value" :disabled="preset.disabled">
           {{ preset.text }}
@@ -31,25 +32,39 @@
         v-model="systems[systemidx].primary_divider"
         :options="capabilities.systems"/>
     </label>
-    <label class="settings-field settings-fixed-threshold"
+  </div>
+  <div class="settings-row">
+    <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Threshold as percentage of valid votes in a constituency required by a list to qualify for fixed seats in that constituency, also applies to national fixed seats.">
-      <span>Local threshold</span>
+      title="National vote share required for the national qualification test. Set 0% with And to use only the local threshold.">
+      <span>National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-          v-model.number="systems[systemidx].constituency_threshold"/>
+          v-model.number="systems[systemidx].fixed_seat_national_threshold"
+          @blur="restoreNationalThreshold('fixed_seat_national_threshold')"/>
         <span class="compact-entry-unit">%</span>
       </span>
     </label>
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Choose whether fixed-seat lists qualify only through the local threshold, or through either the national threshold below or the local threshold.">
-      <span>Eligibility</span>
-      <b-form-select class="compact-select settings-eligibility"
-        v-model="systems[systemidx].fixed_seat_eligibility"
-        :options="capabilities.fixed_seat_eligibility"/>
-    </label>
+    <span class="settings-threshold-alternative">
+      <b-form-select class="compact-select settings-threshold-choice"
+        aria-label="Fixed-seat threshold combination"
+        v-model="systems[systemidx].fixed_seat_threshold_choice"
+        :options="capabilities.adj_threshold_choice"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Choose whether a party must meet both thresholds or either one."/>
+      <label class="settings-field"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Share of all votes in a constituency required for the local qualification test. This percentage also applies to national fixed seats when present.">
+        <span>Local threshold</span>
+        <span class="compact-entry">
+          <input class="compact-entry-input" type="text"
+            v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+            v-model.number="systems[systemidx].constituency_threshold"/>
+          <span class="compact-entry-unit">%</span>
+        </span>
+      </label>
+    </span>
   </div>
 
   <!-- APPORTIONMENT -->
@@ -71,12 +86,13 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Threshold as percentage of total votes required by a party to qualify for apportionment of adjustment seats. Choose 0 if not applicable">
-      <span>Threshold</span>
+      title="National vote share required by a party to qualify for adjustment seats. Choose 0 if not applicable.">
+      <span>National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-          v-model.number="systems[systemidx].adjustment_threshold"/>
+          v-model.number="systems[systemidx].adjustment_threshold"
+          @blur="restoreNationalThreshold('adjustment_threshold')"/>
         <span class="compact-entry-unit">%</span>
       </span>
     </label>
@@ -96,6 +112,17 @@
     </label>
   </div>
 
+  <div class="settings-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Yes: Apply the Danish two-region qualification and recalculate party totals under section 77 of the Danish Parliamentary Elections Act when fixed seats exceed provisional entitlements. No: Retain fixed seats and apportion the remaining seats using the selected rule and the national and fixed-seat qualifications above.">
+      <span>Danish special rules</span>
+      <b-form-select class="compact-select settings-yes-no"
+        v-model="systems[systemidx].danish_special_rules"
+        :options="[{ value: false, text: 'No' }, { value: true, text: 'Yes' }]"/>
+    </label>
+  </div>
+
   <!-- PREPARATION FOR ADJUSTMENT SEAT ALLOCATION -->
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
@@ -105,9 +132,7 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      :title="systems[systemidx].adjustment_preparation_method === 'danish-regions'
-        ? 'Danish preparation also applies the regional qualification test and Danish excess-seat correction. Independents receive fixed seats only. It then assigns each party\'s adjustment seats to regions using their specified totals.'
-        : 'Method used to prepare the fixed-seat allocation and party totals for adjustment-seat allocation.'">
+      title="Swedish switching: Reallocates constituency seats that exceed parties’ national entitlements. Danish allocation to regions: Distributes each party’s adjustment-seat entitlement among regions, respecting each region’s seat total.">
       <span>Preparation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_preparation_method"
@@ -283,7 +308,7 @@ export default {
         let system = this.systems[this.systemidx]
         let preset = presets.find(item =>
           item.settings && this.matchesPreset(system, item.settings))
-        return preset ? preset.value : 'custom'
+        return preset ? preset.value : 'unmatched'
       },
       set(value) {
         let preset = this.capabilities.election_law_presets.find(
@@ -291,7 +316,7 @@ export default {
         if (!preset || !preset.settings) return
         this.applyElectionLawPreset({
           idx: this.systemidx,
-          name: preset.text,
+          name: value == 'default' ? null : (preset.system_name || preset.text),
           settings: preset.settings,
         })
         this.recalc_sys_const()
@@ -299,6 +324,10 @@ export default {
     },
   },
   methods: {
+    restoreNationalThreshold: function(key) {
+      let system = this.systems[this.systemidx]
+      if (system[key] === '') system[key] = 0
+    },
     matchesPreset: function(system, settings) {
       return Object.entries(settings).every(([key, value]) => {
         if (key == 'constituency_seat_specification') {

@@ -26,6 +26,8 @@ class SimulationThresholdTest(unittest.TestCase):
             if use_thresholds:
                 for system in run_systems:
                     system.update(dict.fromkeys(THRESHOLDS, 0))
+                    system['fixed_seat_national_threshold'] = 0
+                    system['danish_special_rules'] = False
             run_settings = deepcopy(settings)
             run_settings['use_thresholds'] = use_thresholds
             simulation = Simulation(run_settings, run_systems, deepcopy(table))
@@ -74,7 +76,9 @@ class SimulationThresholdTest(unittest.TestCase):
                     system.update(
                         name=f'System {index}', compare_with=index == 0,
                         primary_divider=rule, adj_determine_divider=rule,
-                        constituency_threshold=45, adjustment_threshold=55,
+                        constituency_threshold=45, fixed_seat_national_threshold=35,
+                        fixed_seat_threshold_choice=choice,
+                        adjustment_threshold=55,
                         adjustment_threshold_seats=8, adj_threshold_choice=choice)
                     systems.append(system)
                 for distribution in ('log-normal', 'uniform', 'gamma', 'beta'):

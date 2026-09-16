@@ -42,13 +42,13 @@ added. Faroe Islands and Greenland are outside this Danish allocation.
 
 ## Checks
 
-`national-results_2022.json` records the official national excess-seat example
-from tables 1 and 3 of the linked 2022 report. It is a small hand-transcribed
-regression fixture, not a full election preset.
+`national-results_2022.json` records the official recalculation of national
+party totals from tables 1 and 3 of the linked 2022 report. It is a small
+hand-transcribed regression fixture, not a full election preset.
 
 The backend tests reproduce every official 2026 constituency and region
-allocation, and the 2022 excess-seat totals. Danish simulations omit independent
-candidates, retain their votes in Pruned, and give participating lists at
+allocation, and the 2022 recalculated party totals. Danish simulations omit
+independent candidates, retain their votes in Pruned, and give participating lists at
 least one vote. Single elections use unmodified votes. If absent parties
 prevent regional allocation, the simulator reports an error: the statutory
 advance-allocation procedure remains deferred.

@@ -1,5 +1,5 @@
 {
-  "description": "Official mainland national totals and excess-seat case; report tables 1 and 3",
+  "description": "Official mainland national party-total recalculation; report tables 1 and 3",
   "source": "https://www.valg.im.dk/Media/638040301540778324/Danmarks%20Statistiks%20opg%C3%B8relse%20af%20folketingsvalget%20den%201.%20november%202022.pdf",
   "parties": ["A", "B", "C", "D", "F", "I", "K", "M", "O", "Q", "V", "Æ", "Ø", "Å"],
   "votes": [971995, 133931, 194820, 129524, 293186, 278656, 18276, 327699, 93428, 31787, 470546, 286796, 181452, 117567],

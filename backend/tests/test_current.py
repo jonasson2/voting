@@ -12,20 +12,22 @@ from unittest.mock import patch
 import numpy as np
 
 from apportion import apportion1d_general, threshold_drop
-from dictionaries import (ADJUSTMENT_METHODS, DIVIDER_RULES,
+from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER_RULES,
                           ELECTION_LAW_PRESETS, QUOTA_RULES)
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
-from excel_util import result_fractional_digits, result_number_format
+from excel_util import (fixed_seat_threshold_text, result_fractional_digits,
+                        result_number_format)
 from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
 from simulate import Simulation, SimulationSettings
-from input_util import check_simul_settings, normalize_system
+from input_util import check_simul_settings, check_systems, normalize_system
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
 from table_util import entropy
 from vote_table import check_vote_table
+from voting import Election
 import web
 from web import app
 
@@ -46,7 +48,8 @@ class CurrentApplicationTest(unittest.TestCase):
         system['adj_preparation_divider'] = divider
         system['adj_alloc_divider'] = 'sainte-lague'
         system['constituency_threshold'] = 12
-        system['fixed_seat_eligibility'] = 'national-or-constituency'
+        system['fixed_seat_national_threshold'] = 4
+        system['fixed_seat_threshold_choice'] = 1
         return system
 
     def test_wsgi_import_initializes_simulation_state(self):
@@ -58,6 +61,19 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertFalse(normalize_system({'compare_with': False})['compare_with'])
         response = app.test_client().post('/api/capabilities/', json=[])
         self.assertTrue(response.get_json()['election_system']['compare_with'])
+
+    def test_legacy_fixed_seat_eligibility_is_normalized(self):
+        system = normalize_system({
+            'adjustment_threshold': 4,
+            'fixed_seat_eligibility': 'national-or-constituency',
+        })
+        self.assertEqual(system['fixed_seat_national_threshold'], 4)
+        self.assertEqual(system['fixed_seat_threshold_choice'], 1)
+        self.assertNotIn('fixed_seat_eligibility', system)
+        self.assertEqual(normalize_system({})['fixed_seat_national_threshold'], 0)
+        self.assertEqual(normalize_system({})['fixed_seat_threshold_choice'], 0)
+        with self.assertRaisesRegex(ValueError, 'Unknown fixed-seat eligibility'):
+            normalize_system({'fixed_seat_eligibility': 'invalid'})
 
     def test_default_web_ports(self):
         with patch.dict(os.environ, {}, clear=True):
@@ -323,19 +339,34 @@ class CurrentApplicationTest(unittest.TestCase):
         }
         self.assertEqual(
             list(presets),
-            ['denmark', 'finland', 'iceland', 'norway', 'sweden-2014', 'sweden-2018'],
+            ['default', 'denmark', 'finland', 'iceland', 'norway',
+             'sweden-2014', 'sweden-2018'],
         )
         self.assertEqual(
             [preset['text'] for preset in ELECTION_LAW_PRESETS[1:]],
             [
-                'Denmark (2007–present)',
-                'Finland (1907–present)',
-                'Iceland (2003–present)',
-                'Norway (2005–present)',
+                'Denmark (2007–)',
+                'Finland (1907–)',
+                'Iceland (2003–)',
+                'Norway (2005–)',
                 'Sweden (1988–2014)',
-                'Sweden (2018–present)',
+                'Sweden (2018–)',
             ],
         )
+        self.assertEqual(
+            [preset.get('system_name', preset['text'])
+             for preset in ELECTION_LAW_PRESETS[1:]],
+            ['Denmark', 'Finland', 'Iceland', 'Norway',
+             'Sweden (1988–2014)', 'Sweden'],
+        )
+        self.assertEqual(
+            presets['default'],
+            {**DEFAULT_ELECTION_SETTINGS,
+             'constituency_seat_specification': 'refer'},
+        )
+        defaults = ElectionSystem()
+        for key, value in DEFAULT_ELECTION_SETTINGS.items():
+            self.assertEqual(defaults[key], value)
         self.assertEqual(
             (presets['finland']['primary_divider'],
              presets['finland']['constituency_threshold'],
@@ -358,22 +389,22 @@ class CurrentApplicationTest(unittest.TestCase):
         )
         self.assertEqual(
             (presets['sweden-2014']['constituency_threshold'],
-             presets['sweden-2014']['fixed_seat_eligibility'],
+             presets['sweden-2014']['fixed_seat_national_threshold'],
              presets['sweden-2014']['adjustment_preparation_method'],
              presets['sweden-2014']['adj_preparation_divider'],
              presets['sweden-2014']['adjustment_method'],
              presets['sweden-2014']['constituency_seat_specification']),
-            (12, 'national-or-constituency', 'none', 'nordic-1.4',
+            (12, 4, 'none', 'nordic-1.4',
              'max-const-votes', 'refer'),
         )
         self.assertEqual(
             (presets['sweden-2018']['constituency_threshold'],
-             presets['sweden-2018']['fixed_seat_eligibility'],
+             presets['sweden-2018']['fixed_seat_national_threshold'],
              presets['sweden-2018']['adjustment_preparation_method'],
              presets['sweden-2018']['adj_preparation_divider'],
              presets['sweden-2018']['adjustment_method'],
              presets['sweden-2018']['constituency_seat_specification']),
-            (12, 'national-or-constituency', 'switching_se', 'nordic-1.2',
+            (12, 4, 'switching_se', 'nordic-1.2',
              'max-const-votes', 'refer'),
         )
         forbidden = {
@@ -383,6 +414,11 @@ class CurrentApplicationTest(unittest.TestCase):
         }
         for settings in presets.values():
             self.assertTrue(forbidden.isdisjoint(settings))
+            self.assertIsNotNone(settings['fixed_seat_national_threshold'])
+        self.assertEqual(
+            [settings['fixed_seat_threshold_choice'] for settings in presets.values()],
+            [0, 0, 0, 0, 0, 1, 1],
+        )
 
         client = app.test_client()
         response = client.post('/api/capabilities/', json={})
@@ -587,12 +623,14 @@ class CurrentApplicationTest(unittest.TestCase):
             'No switching required',
         )
         self.assertEqual(len(election.demo_tables[1]['steps']), 39)
-        display = election.get_result_web()['display_results']
+        web_result = election.get_result_web()
+        display = web_result['display_results']
         self.assertEqual(
             display[-1][table['parties'].index('M')],
-            '68 (+0+1)',
+            '68 (1)',
         )
-        self.assertEqual(display[-1][-1], '349 (+0+39)')
+        self.assertEqual(display[-1][-1], '349 (39)')
+        self.assertFalse(web_result['switching_affected'])
         unchanged = np.argwhere(
             (np.asarray(election.results['all_const_seats']) > 0)
             & (election.switching_seat_changes == 0)
@@ -601,6 +639,26 @@ class CurrentApplicationTest(unittest.TestCase):
         c, p = map(int, unchanged)
         self.assertEqual(
             display[c][p], str(election.results['all_const_seats'][c][p]))
+
+    def test_swedish_switching_marks_only_affected_lists(self):
+        self.assertEqual(Election.display_swedish_seats(0, 0, True), '0*')
+        self.assertEqual(Election.display_swedish_seats(1, 1, True), '1 (1)*')
+        table = load_votes('../data/sweden_2022.csv')
+        election = ElectionHandler(
+            table, [self.make_swedish_system(table)], True).elections[0]
+        election.switching_seat_changes[0, 0] = -1
+        election.switching_seat_changes[0, 1] = 1
+        web_result = election.get_result_web()
+        display = web_result['display_results']
+        self.assertTrue(web_result['switching_affected'])
+        for party_index in (0, 1):
+            expected = election.display_seats(
+                election.results['all'][0][party_index],
+                election.adjustment_seat_allocations[0][party_index])
+            self.assertEqual(display[0][party_index], f'{expected}*')
+        self.assertFalse(display[0][-1].endswith('*'))
+        self.assertFalse(display[-1][0].endswith('*'))
+        self.assertFalse(display[-1][-1].endswith('*'))
 
     def test_swedish_system_runs_through_simulation_measures(self):
         table = load_votes('../data/sweden_2022.csv')
@@ -942,6 +1000,60 @@ class CurrentApplicationTest(unittest.TestCase):
         allocation = handler.elections[0].results['fixed_const_seats'][0]
         self.assertEqual(allocation, [0, 100])
 
+    def test_fixed_seat_threshold_combination(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        table['constituencies'] = table['constituencies'][:1]
+        table['constituencies'][0].update(num_fixed_seats=2, num_adj_seats=0)
+        table['votes'] = [[40, 60]]
+        table['pruned'] = [0]
+        system = self.make_system(table, 'max-const-seat-share', threshold=90)
+        system['constituency_threshold'] = 50
+        for national_threshold, choice, expected in (
+                (0, 0, [0, 2]), (40, 0, [0, 2]),
+                (40, 1, [1, 1]), (0, 1, [1, 1])):
+            with self.subTest(national_threshold=national_threshold, choice=choice):
+                system['fixed_seat_national_threshold'] = national_threshold
+                system['fixed_seat_threshold_choice'] = choice
+                allocation = ElectionHandler(
+                    table, [system], use_thresholds=True).elections[0]
+                self.assertEqual(allocation.results['fixed_const_seats'][0], expected)
+        self.assertEqual(fixed_seat_threshold_text(system), '0% national or 50% local')
+        system['fixed_seat_threshold_choice'] = 0
+        self.assertEqual(fixed_seat_threshold_text(system), '0% national and 50% local')
+        table['pruned'] = [20]
+        for national_threshold, expected in ((40, [0, 2]), (30, [1, 1])):
+            with self.subTest(pruned_national_threshold=national_threshold):
+                system['fixed_seat_national_threshold'] = national_threshold
+                system['fixed_seat_threshold_choice'] = 1
+                allocation = ElectionHandler(
+                    table, [system], use_thresholds=True).elections[0]
+                self.assertEqual(allocation.results['fixed_const_seats'][0], expected)
+
+    def test_fixed_seat_national_threshold_validation(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        for value in (0, 100):
+            with self.subTest(value=value):
+                system['fixed_seat_national_threshold'] = value
+                check_systems([system])
+        for value in (None, '', -1, 101, 'invalid', True):
+            with self.subTest(value=value):
+                system['fixed_seat_national_threshold'] = value
+                with self.assertRaisesRegex(ValueError, 'National threshold'):
+                    check_systems([system])
+        system['fixed_seat_national_threshold'] = 0
+        for value in (None, '', -1, 101, 'invalid', True):
+            with self.subTest(adjustment_threshold=value):
+                system['adjustment_threshold'] = value
+                with self.assertRaisesRegex(ValueError, 'National threshold'):
+                    check_systems([system])
+        system['adjustment_threshold'] = 0
+        for value in (None, '', 2, True):
+            with self.subTest(fixed_seat_threshold_choice=value):
+                system['fixed_seat_threshold_choice'] = value
+                with self.assertRaisesRegex(ValueError, 'threshold combination'):
+                    check_systems([system])
+
     def test_zero_list_votes_are_preserved_in_election_calculations(self):
         table = {
             'name': 'Zero-list example',
@@ -1238,8 +1350,14 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertEqual(
             saved_system['adjustment_preparation_rule'], 'nordic-1.2')
         self.assertEqual(
-            saved_system['fixed_seat_eligibility'],
-            'national-or-constituency')
+            saved_system['fixed_seat_national_threshold'], 4)
+        self.assertEqual(saved_system['danish_special_rules'], False)
+        self.assertEqual(
+            saved_system['adjustment_threshold_seats'],
+            system['adjustment_threshold_seats'])
+        self.assertEqual(
+            saved_system['adj_threshold_choice'],
+            system['adj_threshold_choice'])
         self.assertNotIn('additional_adjustment_method', saved_system)
         self.assertNotIn('additional_adjustment_allocation_rule', saved_system)
 

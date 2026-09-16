@@ -74,7 +74,7 @@ https://dst.dk/valg/Valg2546527/valgopg/valgopg.htm
 Official allocation calculations, published 10 April 2026
 https://www.valg.im.dk/Media/639117581241830159/Danmarks%20Statistiks%20opgrelse%20af%20folketingsvalget%20den%2024.%20marts%202026.pdf
 
-Danish national excess-seat regression fixture, 2022
+Danish national party-total recalculation regression fixture, 2022
 data/denmark/national-results_2022.json: votes, fixed seats and final totals
 transcribed from tables 1 and 3 of the official allocation report:
 https://www.valg.im.dk/Media/638040301540778324/Danmarks%20Statistiks%20opg%C3%B8relse%20af%20folketingsvalget%20den%201.%20november%202022.pdf

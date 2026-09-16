@@ -104,10 +104,6 @@ th {
   margin-left: 3pt;
 }
 
-.settings-fixed-threshold {
-  margin-left: 1em;
-}
-
 .custom-select.compact-select {
   height: 24px;
   line-height: 20px;
@@ -149,6 +145,13 @@ th {
   max-width: 100%;
 }
 
+.settings-threshold-alternative {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  max-width: 100%;
+}
+
 .table-scroll,
 .settings-seat-table {
   max-width: 100%;
@@ -169,9 +172,9 @@ th {
 .compact-select.settings-rule { width: 280px; }
 .compact-select.settings-vote-basis { width: 220px; }
 .compact-select.settings-method { width: 400px; }
-.compact-select.settings-eligibility { width: 290px; }
 .compact-select.settings-preset { width: 220px; }
 .compact-select.settings-threshold-choice { width: 62px; }
+.compact-select.settings-yes-no { width: 70px; }
 .compact-select.settings-seat-spec {
   width: 400px;
   align-self: flex-start;

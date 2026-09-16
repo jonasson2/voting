@@ -168,6 +168,35 @@ class DanishTest(unittest.TestCase):
             groups, np.array([1000, 1000, 2000]), threshold=2)
         self.assertFalse(eligible[1])
 
+        eligible = danish.eligible_parties(
+            votes, fixed, np.array([0, 0, 0, 0, 1], bool), groups,
+            np.array([100, 100, 2000]), threshold=2,
+            two_region_qualification=False)
+        self.assertFalse(eligible[1])
+        self.assertTrue(eligible[0])  # The fixed-seat route still applies.
+
+    def test_special_rules_setting_controls_both_danish_procedures(self):
+        from input_util import check_systems
+
+        system = system_for(self.table)
+        self.assertTrue(system["danish_special_rules"])
+        for enabled in (True, False):
+            system["danish_special_rules"] = enabled
+            with (patch("voting.danish.eligible_parties", wraps=danish.eligible_parties) as eligibility,
+                  patch("voting.danish.party_totals", wraps=danish.party_totals) as statutory,
+                  patch("voting.danish.party_totals_from_fixed",
+                        wraps=danish.party_totals_from_fixed) as from_fixed):
+                election = ElectionHandler(self.table, [system], True).elections[0]
+            self.assertEqual(eligibility.call_args.args[-1], enabled)
+            self.assertEqual(statutory.call_count, int(enabled))
+            self.assertEqual(from_fixed.call_count, int(not enabled))
+            if not enabled:
+                self.assertTrue(np.all(
+                    election.desired_col_sums >= election.results["fixed_grand_total"]))
+        with self.assertRaisesRegex(ValueError, "Yes or No"):
+            system["danish_special_rules"] = "No"
+            check_systems([system])
+
     def test_independent_can_win_only_one_fixed_seat(self):
         allocation, _ = danish.fixed_seats(np.array([1000, 100]), 3,
             np.array([True, False]), dhondt_gen, self.rng)
@@ -176,14 +205,34 @@ class DanishTest(unittest.TestCase):
             np.array([False, True]), 5, hare, "Quota", self.rng)
         np.testing.assert_array_equal(totals, [1, 4])
 
-    def test_excess_and_original_entitlement_cap(self):
-        # Initial totals [1,2,6,1,10]. Removing overhung A would give B
+    def test_recalculation_and_original_entitlement_cap(self):
+        # Initial totals [1,2,6,1,10]. Setting aside A would give B
         # three seats; cap B at its original two and recalculate again.
         totals = danish.party_totals(np.array([7, 24, 53, 11, 93]),
             np.array([2, 0, 4, 0, 8]), np.ones(5, bool), 20, hare, "Quota", self.rng)
         np.testing.assert_array_equal(totals, [2, 2, 5, 1, 10])
 
-    def test_official_2022_excess(self):
+    def test_without_special_rules_starts_from_fixed_seats(self):
+        votes = np.array([2, 3, 4])
+        fixed = np.array([4, 0, 0])
+        eligible = np.ones(3, bool)
+        ordinary = danish.party_totals_from_fixed(
+            votes, fixed, eligible, 10, hare, "Quota", 0, None)
+        statutory = danish.party_totals(
+            votes, fixed, eligible, 10, hare, "Quota", None)
+        np.testing.assert_array_equal(ordinary, [4, 2, 4])
+        np.testing.assert_array_equal(statutory, [4, 3, 3])
+        np.testing.assert_array_equal(danish.party_totals_from_fixed(
+            votes, fixed, np.array([True, False, True]), 10,
+            hare, "Quota", 0, None), [4, 0, 6])
+        with patch("methods.danish.apportion1d_general",
+                   wraps=danish.apportion1d_general) as apportion:
+            danish.party_totals_from_fixed(
+                np.array([2.25, 3.5, 4.25]), fixed, eligible, 10,
+                hare, "Quota", 0.75, None)
+        self.assertAlmostEqual(apportion.call_args.kwargs["threshold_total"], 10.75)
+
+    def test_official_2022_recalculation(self):
         fixture = json.loads((DATA / "denmark/national-results_2022.json").read_text())
         totals = danish.party_totals(np.array(fixture["votes"]),
             np.array(fixture["fixed_seats"]), np.array(fixture["eligible"]),

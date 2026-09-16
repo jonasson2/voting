@@ -2,25 +2,14 @@ from copy import copy, deepcopy
 #from system import System
 #from util import load_constituencies
 from util import remove_prefix
-from dictionaries import DIVIDER_RULES, QUOTA_RULES
+from dictionaries import DEFAULT_ELECTION_SETTINGS, DIVIDER_RULES, QUOTA_RULES
 class ElectionSystem(dict):
     """A set of rules for an election to follow."""
 
     def __init__(self):
         self["name"] = "System"
 
-        # Election systems
-        self["primary_divider"] = "dhondt"
-        self["adj_determine_divider"] = "dhondt"
-        self["adj_alloc_divider"] = "dhondt"
-        self["adjustment_threshold"] = 0
-        self["adjustment_threshold_seats"] = 0
-        self["adj_threshold_choice"] = 1
-        self["constituency_threshold"] = 0
-        self["fixed_seat_eligibility"] = "constituency"
-        self["adjustment_preparation_method"] = "none"
-        self["adj_preparation_divider"] = "sainte-lague"
-        self["adjustment_method"] = "max-const-seat-share"
+        self.update(DEFAULT_ELECTION_SETTINGS)
         self["seat_spec_options"] = {"const": "refer", "party": "totals"}
         self["compare_with"] = True
         self["parties"] = []

@@ -1,19 +1,27 @@
+import math
+
 from dictionaries import (
     ADJUSTMENT_METHODS,
     ADJUSTMENT_PREPARATION_METHODS,
     DIVIDER_RULES,
-    FIXED_SEAT_ELIGIBILITY_NAMES,
 )
-
-FIXED_SEAT_ELIGIBILITY_VALUES = {
-    option["value"] for option in FIXED_SEAT_ELIGIBILITY_NAMES
-}
 
 
 def normalize_system(system):
     """Add defaults for settings saved before newer system fields existed."""
-    system.setdefault("fixed_seat_eligibility", "constituency")
+    legacy_eligibility = system.pop("fixed_seat_eligibility", None)
+    if legacy_eligibility not in (None, "constituency", "national-or-constituency"):
+        raise ValueError(f"Unknown fixed-seat eligibility rule: {legacy_eligibility}")
+    system.setdefault("fixed_seat_threshold_choice", 1 if (
+        legacy_eligibility == "national-or-constituency"
+        or system.get("fixed_seat_national_threshold") not in (None, "")) else 0)
+    if "fixed_seat_national_threshold" not in system:
+        system["fixed_seat_national_threshold"] = (
+            system.get("adjustment_threshold", 0)
+            if legacy_eligibility == "national-or-constituency" else 0)
     system.setdefault("adjustment_preparation_method", "none")
+    system.setdefault("danish_special_rules",
+                      system["adjustment_preparation_method"] == "danish-regions")
     system.setdefault("adj_preparation_divider", "sainte-lague")
     system.setdefault("compare_with", True)
     return system
@@ -46,11 +54,30 @@ def check_systems(electoral_systems):
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:
         normalize_system(electoral_system)
-        fixed_seat_eligibility = electoral_system["fixed_seat_eligibility"]
-        if fixed_seat_eligibility not in FIXED_SEAT_ELIGIBILITY_VALUES:
+        national_threshold = electoral_system["fixed_seat_national_threshold"]
+        if electoral_system["fixed_seat_threshold_choice"] not in (0, 1) or isinstance(
+                electoral_system["fixed_seat_threshold_choice"], bool):
+            raise ValueError("Fixed-seat threshold combination must be And or Or.")
+        if (isinstance(national_threshold, bool)
+                or not isinstance(national_threshold, (int, float))
+                or not math.isfinite(national_threshold)
+                or not 0 <= national_threshold <= 100):
             raise ValueError(
-                f"Unknown fixed-seat eligibility rule: {fixed_seat_eligibility}")
+                "National threshold for fixed seats must be a number between 0 and 100%; blank is not allowed.")
+        adjustment_threshold = electoral_system["adjustment_threshold"]
+        if (isinstance(adjustment_threshold, bool)
+                or not isinstance(adjustment_threshold, (int, float))
+                or not math.isfinite(adjustment_threshold)
+                or not 0 <= adjustment_threshold <= 100):
+            raise ValueError(
+                "National threshold for adjustment seats must be a number between 0 and 100%; blank is not allowed.")
         preparation_method = electoral_system["adjustment_preparation_method"]
+        if not isinstance(electoral_system["danish_special_rules"], bool):
+            raise ValueError("Danish special rules must be Yes or No.")
+        if (electoral_system["danish_special_rules"]
+                and preparation_method != "danish-regions"):
+            raise ValueError(
+                "Danish special rules require Danish regional preparation.")
         if (preparation_method != "none"
                 and preparation_method not in ADJUSTMENT_PREPARATION_METHODS):
             raise ValueError(

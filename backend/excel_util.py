@@ -21,6 +21,24 @@ GMN = {gmn["value"]: gmn["text"] for gmn in GENERATING_METHOD_NAMES}
 SCONST = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["const"]}
 SPARTY = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["party"]}
 
+
+def fixed_seat_threshold_text(system):
+    local = f'{system["constituency_threshold"]:g}% local'
+    national = system["fixed_seat_national_threshold"]
+    choice = "or" if system["fixed_seat_threshold_choice"] else "and"
+    return f'{national:g}% national {choice} {local}'
+
+
+def adjustment_qualification_text(system):
+    text = (str(system["adjustment_threshold"]) + "% " +
+            ("or " if system["adj_threshold_choice"] else "and ") +
+            str(system["adjustment_threshold_seats"]) + " fixed seat(s)")
+    if system["adjustment_preparation_method"] == "danish-regions":
+        text += ("; Danish special rules: " +
+                 ("Yes" if system["danish_special_rules"] else "No"))
+    return text
+
+
 def result_fractional_digits(display_settings=None):
     value = (display_settings or {}).get("fractional_digits", 3)
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10:
@@ -260,18 +278,16 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
              DRN[system["primary_divider"]],
              "basic"
              ],
-            ["Threshold for fixed seats:",
-             system["constituency_threshold"]/100,
-             "left-pct1"
+            ["Fixed-seat thresholds:",
+             fixed_seat_threshold_text(system),
+             "basic"
              ],
             ["Rule for apportioning adjustment seats:",
              DRN[system["adj_determine_divider"]],
              "basic"
              ],
             ["Threshold for adjustment seats:",
-             str(system["adjustment_threshold"]) + "% " +
-                 ("or " if system["adj_threshold_choice"] else "and ") +
-                 str(system["adjustment_threshold_seats"]) + " const. seat(s)",
+             adjustment_qualification_text(system),
              "basic"
             ],
             ["Rule for allocating adjustment seats:",
@@ -754,15 +770,10 @@ def simulation_to_xlsx(results, filename, display_settings=None):
             "left_span": 2, "center_span": 2, "right_span": 1, "info": [
                 {"label": "Allocation of fixed seats:",
                  "rule": DRN[results["systems"][r]["primary_divider"]],
-                 "threshold": (
-                         str(results["systems"][r]["constituency_threshold"]) + "%")},
+                 "threshold": fixed_seat_threshold_text(results["systems"][r])},
                 {"label": "Apportionment of adjustment seats to parties:",
                  "rule": DRN[results["systems"][r]["adj_determine_divider"]],
-                 "threshold": (
-                         str(results["systems"][r]["adjustment_threshold"]) + "% " +
-                         ("or " if results["systems"][r]["adj_threshold_choice"] else "and ") +
-                         str(results["systems"][r]["adjustment_threshold_seats"]) +
-                         " const. seat(s)")},
+                 "threshold": adjustment_qualification_text(results["systems"][r])},
                 {"label": "Allocation of adjustment seats to lists:",
                  "rule": DRN[results["systems"][r]["adj_alloc_divider"]],
                  "threshold": None}

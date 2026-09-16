@@ -34,6 +34,9 @@
               :party_votes_specified="vote_table.party_vote_info.specified"
               >
             </ResultMatrix>
+          <p v-if="results[activeTabIndex].switching_affected">
+            * Affected by switching, see table below.
+          </p>
           <b-alert :show="!!results[activeTabIndex].ties?.length" variant="warning">
             <strong>Tied allocation scores</strong>
             <p>The first tied entry in table order was selected. An official draw

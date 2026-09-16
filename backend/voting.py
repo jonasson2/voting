@@ -128,12 +128,9 @@ class Election:
             return ""
 
     @staticmethod
-    def display_decomposed_seats(all_seats, switching, adjustment):
-        if all_seats or switching or adjustment:
-            if not switching and not adjustment:
-                return str(all_seats)
-            return f"{all_seats} ({switching:+d}+{adjustment})"
-        return ""
+    def display_swedish_seats(all_seats, adjustment, switched):
+        display = Election.display_seats(all_seats, adjustment)
+        return f"{display or all_seats}*" if switched else display
 
     def component_table(self, matrix):
         party_totals = matrix.sum(axis=0).tolist()
@@ -198,17 +195,18 @@ class Election:
         preparation_method = self.system["adjustment_preparation_method"]
         swedish = preparation_method == "switching_se"
         if swedish:
-            first_stage = self.component_table(
-                self.switching_seat_changes)
             adjustment = self.component_table(
                 self.adjustment_seat_allocations)
-            for allrow, firstrow, adjustmentrow in zip(
-                    self.results["all"], first_stage, adjustment):
+            switched = self.switching_seat_changes != 0
+            for row_index, (allrow, adjustmentrow) in enumerate(zip(
+                    self.results["all"], adjustment)):
                 dispResult.append([
-                    self.display_decomposed_seats(
-                        total, first, added)
-                    for total, first, added in zip(
-                        allrow, firstrow, adjustmentrow)
+                    self.display_swedish_seats(
+                        total, added,
+                        row_index < self.nconst and party_index < self.nparty
+                        and switched[row_index, party_index])
+                    for party_index, (total, added) in enumerate(zip(
+                        allrow, adjustmentrow))
                 ])
         else:
             for allrow, adjrow in zip(
@@ -221,6 +219,7 @@ class Election:
         return {
             "demo_tables":      self.demo_tables,
             "ties":             self.tie_report.events,
+            "switching_affected": bool(switched.any()) if swedish else False,
             "display_results":  dispResult
         }
 
@@ -301,17 +300,12 @@ class Election:
     def apportion_fixed_seats(self, use_thresholds):
         constituencies = self.system["constituencies"]
         threshold = self.system["constituency_threshold"] if use_thresholds else 0
-        national_or_constituency = (
-            self.system["fixed_seat_eligibility"]
-            == "national-or-constituency")
-        if national_or_constituency:
-            national_threshold = (
-                self.system["adjustment_threshold"] if use_thresholds else 0)
-            national_shares = (
-                self.nat_votes / self.nat_threshold_total
-                if self.nat_threshold_total else np.zeros_like(self.nat_votes)
-            )
-            nationally_eligible = national_shares * 100 >= national_threshold
+        national_threshold = self.system["fixed_seat_national_threshold"] if use_thresholds else 0
+        national_shares = (
+            self.nat_votes / self.nat_threshold_total
+            if self.nat_threshold_total else np.zeros_like(self.nat_votes)
+        )
+        nationally_eligible = national_shares * 100 >= national_threshold
         m_allocations = np.zeros((self.nconst, self.nparty), int)
         self.last = []
         self.results = {}
@@ -323,14 +317,17 @@ class Election:
                     self.system["parties"])
                 votes = self.votes[i]
                 applied_threshold = threshold
-                if national_or_constituency:
-                    local_shares = (
-                        votes / self.const_threshold_totals[i]
-                        if self.const_threshold_totals[i] else np.zeros_like(votes)
-                    )
-                    eligible = nationally_eligible | (local_shares * 100 >= threshold)
-                    votes = np.where(eligible, votes, 0)
-                    applied_threshold = 0
+                local_shares = (
+                    votes / self.const_threshold_totals[i]
+                    if self.const_threshold_totals[i] else np.zeros_like(votes)
+                )
+                locally_eligible = local_shares * 100 >= threshold
+                if self.system["fixed_seat_threshold_choice"]:
+                    eligible = nationally_eligible | locally_eligible
+                else:
+                    eligible = nationally_eligible & locally_eligible
+                votes = np.where(eligible, votes, 0)
+                applied_threshold = 0
                 if self.danish:
                     eligible_votes = threshold_drop(
                         votes, [1, applied_threshold, 0, []],
@@ -402,13 +399,23 @@ class Election:
         swedish = (
             self.system["adjustment_preparation_method"] == "switching_se")
         if self.danish:
+            special_rules = self.system["danish_special_rules"]
             eligible = danish.eligible_parties(
                 self.votes, self.results["fixed_const_seats"], self.independent_candidates,
-                self.region_groups, self.const_threshold_totals, threshold, seats, choice)
-            self.desired_col_sums = danish.party_totals(
-                self.nat_votes, fixed_allocations, eligible, self.total_const_seats,
-                self.system.get_generator("adj_determine_divider"),
-                self.system.get_type("adj_determine_divider"), self.rng, on_tie)
+                self.region_groups, self.const_threshold_totals, threshold, seats, choice,
+                special_rules and use_thresholds)
+            if special_rules:
+                self.desired_col_sums = danish.party_totals(
+                    self.nat_votes, fixed_allocations, eligible, self.total_const_seats,
+                    self.system.get_generator("adj_determine_divider"),
+                    self.system.get_type("adj_determine_divider"), self.rng, on_tie)
+            else:
+                self.desired_col_sums = danish.party_totals_from_fixed(
+                    self.nat_votes, fixed_allocations, eligible, self.total_const_seats,
+                    self.system.get_generator("adj_determine_divider"),
+                    self.system.get_type("adj_determine_divider"),
+                    self.nat_threshold_total - self.nat_votes.sum(),
+                    self.rng, on_tie)
             self.adj_seat_gen = None
         elif swedish:
             national_shares = (

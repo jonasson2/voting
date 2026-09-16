@@ -119,8 +119,10 @@ def api_settings_save():
         keys = [
             "name", "seat_spec_options", "constituencies",
             "compare_with",
-            "constituency_threshold", "fixed_seat_eligibility",
-            "adjustment_threshold", #"adjustment_division_rule",
+            "constituency_threshold", "fixed_seat_national_threshold",
+            "fixed_seat_threshold_choice",
+            "adjustment_threshold", "adjustment_threshold_seats",
+            "adj_threshold_choice", "danish_special_rules",
             "adjustment_preparation_method",
             "adjustment_method", #"adjustment_allocation_rule",
             "nat_seats"
@@ -281,8 +283,6 @@ def api_capabilities():
                 "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
                 "adjustment_preparation_methods":
                     dictionaries.ADJUSTMENT_PREPARATION_METHOD_NAMES,
-                "fixed_seat_eligibility":
-                    dictionaries.FIXED_SEAT_ELIGIBILITY_NAMES,
                 "election_law_presets": dictionaries.ELECTION_LAW_PRESETS,
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,

@@ -57,7 +57,7 @@ DIVIDER_RULE_NAMES = [
     {"value": "nordic-1.2",      "text": "Sainte-Laguë with 1st divisor 1.2"},
     {"value": "nordic-1.4",      "text": "Sainte-Laguë with 1st divisor 1.4"},
     {"value": "nordic-1.5",      "text": "Sainte-Laguë with 1st divisor 1.5"},
-    {"value": "danish",          "text": "Danish"},
+    {"value": "danish",          "text": "Danish (divisors 1, 4, 7, ...)"},
     {"value": "huntington-hill", "text": "Hill-Huntington"},
     {"value": "adams",           "text":"Adams"}
 ]
@@ -74,24 +74,45 @@ RULE_NAMES = [
     {"value": "droop",           "text": "Droop quota"},
 ]
 
+DEFAULT_ELECTION_SETTINGS = {
+    "primary_divider": "dhondt",
+    "constituency_threshold": 0,
+    "fixed_seat_national_threshold": 0,
+    "fixed_seat_threshold_choice": 0,
+    "adj_determine_divider": "dhondt",
+    "adjustment_threshold": 0,
+    "adjustment_threshold_seats": 0,
+    "adj_threshold_choice": 1,
+    "danish_special_rules": False,
+    "adjustment_preparation_method": "none",
+    "adj_preparation_divider": "sainte-lague",
+    "adjustment_method": "max-const-seat-share",
+    "adj_alloc_divider": "dhondt",
+}
+
 ELECTION_LAW_PRESETS = [
     {
-        "value": "custom",
-        "text": "Custom",
-        "disabled": True,
-        "settings": None,
+        "value": "default",
+        "text": "Default",
+        "settings": {
+            **DEFAULT_ELECTION_SETTINGS,
+            "constituency_seat_specification": "refer",
+        },
     },
     {
         "value": "denmark",
-        "text": "Denmark (2007–present)",
+        "text": "Denmark (2007–)",
+        "system_name": "Denmark",
         "settings": {
-            "fixed_seat_eligibility": "constituency",
+            "fixed_seat_national_threshold": 0,
+            "fixed_seat_threshold_choice": 0,
             "primary_divider": "dhondt",
             "constituency_threshold": 0,
             "adj_determine_divider": "hare",
             "adjustment_threshold": 2,
             "adjustment_threshold_seats": 1,
             "adj_threshold_choice": 1,
+            "danish_special_rules": True,
             "adjustment_preparation_method": "danish-regions",
             "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "max-const-votes",
@@ -101,15 +122,18 @@ ELECTION_LAW_PRESETS = [
     },
     {
         "value": "finland",
-        "text": "Finland (1907–present)",
+        "text": "Finland (1907–)",
+        "system_name": "Finland",
         "settings": {
-            "fixed_seat_eligibility": "constituency",
+            "fixed_seat_national_threshold": 0,
+            "fixed_seat_threshold_choice": 0,
             "primary_divider": "dhondt",
             "constituency_threshold": 0,
             "adj_determine_divider": "dhondt",
             "adjustment_threshold": 0,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "danish_special_rules": False,
             "adjustment_preparation_method": "none",
             "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "adjustment-as-fixed",
@@ -119,15 +143,18 @@ ELECTION_LAW_PRESETS = [
     },
     {
         "value": "iceland",
-        "text": "Iceland (2003–present)",
+        "text": "Iceland (2003–)",
+        "system_name": "Iceland",
         "settings": {
-            "fixed_seat_eligibility": "constituency",
+            "fixed_seat_national_threshold": 0,
+            "fixed_seat_threshold_choice": 0,
             "primary_divider": "dhondt",
             "constituency_threshold": 0,
             "adj_determine_divider": "dhondt",
             "adjustment_threshold": 5,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "danish_special_rules": False,
             "adjustment_preparation_method": "none",
             "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "icelandic-law",
@@ -137,15 +164,18 @@ ELECTION_LAW_PRESETS = [
     },
     {
         "value": "norway",
-        "text": "Norway (2005–present)",
+        "text": "Norway (2005–)",
+        "system_name": "Norway",
         "settings": {
-            "fixed_seat_eligibility": "constituency",
+            "fixed_seat_national_threshold": 0,
+            "fixed_seat_threshold_choice": 0,
             "primary_divider": "nordic-1.4",
             "constituency_threshold": 0,
             "adj_determine_divider": "nordic-1.4",
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "danish_special_rules": False,
             "adjustment_preparation_method": "none",
             "adj_preparation_divider": "sainte-lague",
             "adjustment_method": "norwegian-law",
@@ -157,13 +187,15 @@ ELECTION_LAW_PRESETS = [
         "value": "sweden-2014",
         "text": "Sweden (1988–2014)",
         "settings": {
-            "fixed_seat_eligibility": "national-or-constituency",
+            "fixed_seat_national_threshold": 4,
+            "fixed_seat_threshold_choice": 1,
             "primary_divider": "nordic-1.4",
             "constituency_threshold": 12,
             "adj_determine_divider": "nordic-1.4",
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "danish_special_rules": False,
             "adjustment_preparation_method": "none",
             "adj_preparation_divider": "nordic-1.4",
             "adjustment_method": "max-const-votes",
@@ -173,15 +205,18 @@ ELECTION_LAW_PRESETS = [
     },
     {
         "value": "sweden-2018",
-        "text": "Sweden (2018–present)",
+        "text": "Sweden (2018–)",
+        "system_name": "Sweden",
         "settings": {
-            "fixed_seat_eligibility": "national-or-constituency",
+            "fixed_seat_national_threshold": 4,
+            "fixed_seat_threshold_choice": 1,
             "primary_divider": "nordic-1.2",
             "constituency_threshold": 12,
             "adj_determine_divider": "nordic-1.2",
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "danish_special_rules": False,
             "adjustment_preparation_method": "switching_se",
             "adj_preparation_divider": "nordic-1.2",
             "adjustment_method": "max-const-votes",
@@ -215,14 +250,6 @@ ADJUSTMENT_PREPARATION_METHOD_NAMES = [
     {"value": "none", "text": "None"},
     {"value": "switching_se", "text": "Swedish switching"},
     {"value": "danish-regions", "text": "Danish allocation to regions"},
-]
-
-FIXED_SEAT_ELIGIBILITY_NAMES = [
-    {"value": "constituency", "text": "Constituency threshold only"},
-    {
-        "value": "national-or-constituency",
-        "text": "National or constituency threshold",
-    },
 ]
 
 DEMO_TABLE_FORMATS = {

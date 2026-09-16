@@ -7,11 +7,18 @@ function normalizeSystem(system) {
   if (system.compare_with === undefined) {
     system.compare_with = true
   }
-  if (system.fixed_seat_eligibility === undefined) {
-    system.fixed_seat_eligibility = 'constituency'
+  if (system.fixed_seat_national_threshold === undefined) {
+    system.fixed_seat_national_threshold = 0
+  }
+  if (system.fixed_seat_threshold_choice === undefined) {
+    system.fixed_seat_threshold_choice = 0
   }
   if (system.adjustment_preparation_method === undefined) {
     system.adjustment_preparation_method = 'none'
+  }
+  if (system.danish_special_rules === undefined) {
+    system.danish_special_rules =
+      system.adjustment_preparation_method === 'danish-regions'
   }
   if (system.adj_preparation_divider === undefined) {
     system.adj_preparation_divider = 'sainte-lague'
@@ -81,7 +88,16 @@ const store = new Vuex.Store({
     },
     applyElectionLawPreset(state, payload) {
       let system = state.systems[payload.idx]
-      system.name = payload.name
+      if (payload.name === null) {
+        let number = payload.idx + 1
+        while (state.systems.some((item, idx) =>
+          idx !== payload.idx && item.name === `System-${number}`)) {
+          number += 1
+        }
+        system.name = `System-${number}`
+      } else {
+        system.name = payload.name
+      }
       for (let [key, value] of Object.entries(payload.settings)) {
         if (key == 'constituency_seat_specification') {
           system.seat_spec_options.const = value
@@ -105,8 +121,13 @@ const store = new Vuex.Store({
         system.adjustment_threshold = state.systems[idx-1].adjustment_threshold
         system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
+        system.danish_special_rules =
+          state.systems[idx-1].danish_special_rules
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
-        system.fixed_seat_eligibility = state.systems[idx-1].fixed_seat_eligibility
+        system.fixed_seat_national_threshold =
+          state.systems[idx-1].fixed_seat_national_threshold
+        system.fixed_seat_threshold_choice =
+          state.systems[idx-1].fixed_seat_threshold_choice
         system.adjustment_method = state.systems[idx-1].adjustment_method
         system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
         system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
