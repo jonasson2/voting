@@ -31,6 +31,11 @@
       </b-button>
     </template>
   </b-modal>
+  <DownloadNameDialog
+    id="systems-download-name"
+    ref="downloadNameDialog"
+    @confirm="confirmDownload"
+  />
   <b-button-toolbar key-nav aria-label="Electoral settings tools"
                     style="margin-left:12px">
     <b-button-group class="mx-1">
@@ -62,7 +67,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Download settings for all electoral systems to local
                json-file. Also saves simulation settings" 
-        @click="saveSettings()"
+        @click="openDownload('settings')"
         >
         Download
       </b-button>
@@ -84,7 +89,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Download vote table, all electoral systems and simulation
                settings to local JSON file."
-        @click="saveAll()"
+        @click="openDownload('all')"
         >
         Download all
       </b-button>
@@ -155,11 +160,18 @@
 </template>
 
 <script>
+import DownloadNameDialog from './components/DownloadNameDialog.vue'
 import ElectionSettings from './ElectionSettings.vue'
+import {
+  canChooseSaveLocation,
+  chooseSaveLocation,
+  timestampedDownloadBasename,
+} from './downloadName.js'
 import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
   components: {
+    DownloadNameDialog,
     ElectionSettings,
   },  
   computed: {
@@ -201,6 +213,7 @@ export default {
       uploadfile: null,
       adding_system: false,
       created: false,
+      downloadKind: null,
     }
   },
   
@@ -224,6 +237,25 @@ export default {
       "downloadFile",
       "uploadElectoralSystems"
     ]),
+    async openDownload(kind) {
+      this.downloadKind = kind
+      const prefix = kind === 'settings' ? 'electoral-systems' : 'simulator'
+      const basename = timestampedDownloadBasename(prefix)
+      if (canChooseSaveLocation()) {
+        try {
+          const fileHandle = await chooseSaveLocation(basename, 'json')
+          this.confirmDownload({fileHandle})
+          return
+        } catch (error) {
+          if (error.name === 'AbortError') return
+        }
+      }
+      this.$refs.downloadNameDialog.open(basename, 'json')
+    },
+    confirmDownload(destination) {
+      if (this.downloadKind === 'settings') this.saveSettings(destination)
+      else this.saveAll(destination)
+    },
     setReplace: function(status) {
       this.replace = status
     },
@@ -253,7 +285,7 @@ export default {
       this.newNumbering(this.activeSystemIndex)
       console.log("new activeSystemIndex", this.activeSystemIndex)
     },
-    saveSettings: function () {
+    saveSettings: function (destination) {
       let promise;
       promise = axios({
         method: "post",
@@ -264,7 +296,7 @@ export default {
         },
         responseType: "arraybuffer",
       });
-      this.downloadFile(promise)
+      this.downloadFile({promise, ...destination})
     },
     uploadSystems: function() {
       var formData = new FormData();

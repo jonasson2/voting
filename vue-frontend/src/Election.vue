@@ -1,13 +1,18 @@
 <template>
 <div v-if="results.length > 0">
   <h3>Results based on the source votes</h3>
+  <DownloadNameDialog
+    id="election-results-download-name"
+    ref="downloadNameDialog"
+    @confirm="saveResults"
+  />
   <b-container style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"
       style="margin-left:0px"
       v-b-tooltip.hover.bottom.v-primary.ds500
       title="Download results to local Excel xlsx-file"
-      @click="saveResults">
+      @click="openDownload">
       Download Excel file
     </b-button>
   </b-container>
@@ -86,6 +91,12 @@
 <script>
 import ResultMatrix from './components/ResultMatrix.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
+import DownloadNameDialog from './components/DownloadNameDialog.vue'
+import {
+  canChooseSaveLocation,
+  chooseSaveLocation,
+  timestampedDownloadBasename,
+} from './downloadName.js'
 import { mapState, mapActions } from 'vuex';
 
 export default {
@@ -105,13 +116,27 @@ export default {
   components: {
     ResultMatrix,
     ResultDemonstration,
+    DownloadNameDialog,
   },
   
   methods: {
     ...mapActions([
       "downloadFile"
     ]),    
-    saveResults: function() {
+    async openDownload() {
+      const basename = timestampedDownloadBasename('Election')
+      if (canChooseSaveLocation()) {
+        try {
+          const fileHandle = await chooseSaveLocation(basename, 'xlsx')
+          this.saveResults({fileHandle})
+          return
+        } catch (error) {
+          if (error.name === 'AbortError') return
+        }
+      }
+      this.$refs.downloadNameDialog.open(basename, 'xlsx')
+    },
+    saveResults: function(destination) {
       let promise = axios({
         method: "post",
         url: "api/election/save/",
@@ -122,7 +147,7 @@ export default {
         },
         responseType: "arraybuffer",
       });
-      this.downloadFile(promise)
+      this.downloadFile({promise, ...destination})
     },
     usesPartyVotes: function() {
       return this.vote_table.party_vote_info.specified

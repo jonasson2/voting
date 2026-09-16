@@ -59,18 +59,21 @@ th {
 
 .vote-table-controls {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  column-gap: 1em;
+  row-gap: 6px;
   margin-bottom: 6px;
+  max-width: 100%;
+  width: 800px;
 }
 
 .vote-table-controls label {
   margin-bottom: 0;
 }
 
-.vote-table-controls .prune-percent-label {
-  margin-left: 1em;
+.vote-table-controls input {
+  max-width: 100%;
 }
 
 .compact-entry {

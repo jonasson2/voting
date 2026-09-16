@@ -130,6 +130,23 @@ test("a hyphen represents an unlimited constituency adjustment-seat maximum", as
   assert.equal(validConstituencySeats(table), false)
 })
 
+test("the maximum-seat column total sums finite maxima and shows unlimited otherwise", async () => {
+  const {calculateVoteSums} = await voteTableModule()
+  const table = exampleTable()
+  table.max_total_adj_seats = 5
+  table.constituencies[0].max_adj_seats = 2
+  table.constituencies.push({name: "II", num_fixed_seats: 1,
+    num_adj_seats: 1, max_adj_seats: 4})
+  table.votes.push([10, 20])
+  table.pruned.push(0)
+
+  assert.equal(calculateVoteSums(table).maxAdjSeats, 6)
+  table.constituencies[1].max_adj_seats = "-"
+  assert.equal(calculateVoteSums(table).maxAdjSeats, null)
+  table.constituencies[1].max_adj_seats = ""
+  assert.equal(calculateVoteSums(table).maxAdjSeats, null)
+})
+
 test("constituency votes must be non-negative integers", async () => {
   const {validVotes} = await voteTableModule()
   const table = exampleTable()

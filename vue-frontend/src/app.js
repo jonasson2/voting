@@ -7,6 +7,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 import Main from './Main.vue'
 import store from './store.js'
 import autowidth from './autowidth.js'
+import { gridNavigation } from './keyboardNavigation.js'
 
 const app = createApp(Main)
 app.config.compatConfig = { MODE: 2 }
@@ -17,4 +18,5 @@ app.use(VueResource)
 Vue.http = app.http
 app.use(BootstrapVue)
 app.directive('autowidth', autowidth)
+app.directive('grid-navigation', gridNavigation)
 app.mount('#app')

@@ -2,6 +2,7 @@ import Vue from "vue"
 import Vuex from "vuex"
 import { calculateVoteSums, normalizeVoteTable } from "./voteTable.js"
 import { defaultDisplaySettings, normalizeDisplaySettings } from "./numberFormat.js"
+import { writeDownload } from "./downloadName.js"
 
 function normalizeSystem(system) {
   if (system.compare_with === undefined) {
@@ -309,7 +310,7 @@ const store = new Vuex.Store({
         response => context.commit("serverError", response.status)
       )
     },
-    saveAll(context) {
+    saveAll(context, destination = {}) {
       let promise;
       promise = axios({
         method: "post",
@@ -321,7 +322,7 @@ const store = new Vuex.Store({
         },
         responseType: "arraybuffer",
       });
-      context.dispatch("downloadFile", promise)
+      context.dispatch("downloadFile", {promise, ...destination})
       context.commit("removeBeforeunload")
     },
     
@@ -372,9 +373,10 @@ const store = new Vuex.Store({
         }, response => context.commit("serverError", response.status))
     },
     // Thanks to Pétur Helgi Einarsson for the next two functions
-    downloadFile: function (context, promise) {
+    downloadFile: function (context, request) {
+      const promise = request.promise || request
       promise.then (
-        (response) => {
+        async (response) => {
           const status = response.status;
           if (status != 200) {
             context.commit("serverError", response.body)
@@ -394,12 +396,20 @@ const store = new Vuex.Store({
                 return
               }
             }
-            let link = document.createElement("a");
             const [type, downloadname] = parse_headers(response.headers);
             const blob = new Blob([response.data], {type: type});
+            if (request.fileHandle) {
+              try {
+                await writeDownload(request.fileHandle, blob);
+              } catch (error) {
+                context.commit("serverError", `Could not save file: ${error.message}`);
+              }
+              return;
+            }
+            let link = document.createElement("a");
             const blobUrl = URL.createObjectURL(blob);
             link.href = blobUrl;
-            link.download = downloadname;
+            link.download = request.filename || downloadname;
             document.body.appendChild(link);
             // Dispatch click event on the link (this is necessary
             // as link.click() does not work in the latest Firefox

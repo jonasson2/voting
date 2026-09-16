@@ -58,6 +58,7 @@ export function calculateVoteSums(table) {
     ? sumNumbers(table.party_vote_info.votes)
       + Number(table.party_vote_info.pruned)
     : 0
+  const maxima = table.constituencies.map(constituency => constituency.max_adj_seats)
   return {
     row,
     col,
@@ -69,6 +70,7 @@ export function calculateVoteSums(table) {
     aseats: sumNumbers(
       table.constituencies.map(constituency => constituency.num_adj_seats)
     ),
+    maxAdjSeats: maxima.every(isNonnegativeInteger) ? sumNumbers(maxima) : null,
     partyVoteTotal,
   }
 }

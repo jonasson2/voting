@@ -19,6 +19,7 @@ function setupMirror(el) {
     fontFamily: styles.fontFamily,
     fontWeight: styles.fontWeight,
     fontStyle: styles.fontStyle,
+    fontVariantNumeric: styles.fontVariantNumeric,
     letterSpacing: styles.letterSpacing,
     textTransform: styles.textTransform,
   })

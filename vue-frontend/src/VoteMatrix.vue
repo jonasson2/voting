@@ -76,6 +76,12 @@
       </b-button>
     </template>
   </b-modal>
+
+  <DownloadNameDialog
+    id="vote-download-name"
+    ref="downloadNameDialog"
+    @confirm="confirmDownload"
+  />
   
   <b-button-toolbar key-nav aria-label="Vote tools">
     <b-button-group class="mx-1">
@@ -113,7 +119,7 @@
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Download votes and seat table to local Excel xlsx-file."
-        @click="save()"
+        @click="openDownload('votes')"
         >
         Download
       </b-button>
@@ -135,7 +141,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Download vote table, all electoral systems and simulation 
                settings to local JSON file."
-        @click="saveAll()"
+        @click="openDownload('all')"
         >
         Download all
       </b-button>
@@ -165,17 +171,31 @@
              votes and seats, and the National party votes and seats
              (if specified)"
       />
-    <label class="prune-percent-label" for="prune-small-parties-percent">Small party cutoff</label>
-    <input
-      id="prune-small-parties-percent"
-      class="compact-entry-input prune-percent-input"
-      type="text"
-      v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-      v-model.number="prune_percent"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Parties with less than this percentage of all constituency votes are removed from the table."
+    <label for="prune-small-parties-percent">Small party cutoff</label>
+    <span class="compact-entry">
+      <input
+        id="prune-small-parties-percent"
+        class="compact-entry-input prune-percent-input"
+        type="text"
+        v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
+        v-model.number="prune_percent"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Parties with less than this percentage of all constituency votes are removed from the table."
+        />
+      <span class="compact-entry-unit">%</span>
+    </span>
+    <template v-if="hasMaxAdjustmentSeats">
+      <label for="adjustment-seats-to-allocate"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Total adjustment seats to allocate among constituencies, between the sum of their minima and the sum of their maxima when all maxima are finite.">
+        Adjustment seats to allocate
+      </label>
+      <IntegerInput
+        id="adjustment-seats-to-allocate"
+        v-model="vote_table.max_total_adj_seats"
+        max-width="200px"
       />
-    <span class="compact-entry-unit">%</span>
+    </template>
   </div>
   <b-row>
     <b-col cols="auto">
@@ -205,7 +225,9 @@
     />
   <b-alert :show="checkVoteSeats()==false">
     Seat counts must be non-negative integers, and each constituency # Max adj.
-    must be at least its # Min adj. A hyphen (-) is allowed only in a
+    must be at least its # Min adj. Adjustment seats to allocate must be at
+    least the sum of minima and, when all maxima are finite, no more than their
+    sum. A hyphen (-) is allowed only in a
     constituency # Max adj. cell, where it means unlimited. Thousands separators
     may be omitted; if used, they must match Settings and group digits in threes.
   </b-alert>
@@ -248,9 +270,17 @@
 <script>
 import { mapState,mapMutations,mapActions } from 'vuex';
 import ConstituencyVoteTable from "./components/ConstituencyVoteTable.vue";
+import DownloadNameDialog from "./components/DownloadNameDialog.vue";
+import IntegerInput from "./components/IntegerInput.vue";
 import NationalPartyVotes from "./components/NationalPartyVotes.vue";
 import PartyNamesTable from "./components/PartyNamesTable.vue";
 import RegionTable from "./components/RegionTable.vue";
+import {
+  canChooseSaveLocation,
+  chooseSaveLocation,
+  timestampedDownloadBasename,
+  validDownloadBasename,
+} from "./downloadName.js";
 import {
   addAdjustmentSeatMaximums,
   addConstituency,
@@ -270,6 +300,8 @@ import {
 export default {
   components: {
     ConstituencyVoteTable,
+    DownloadNameDialog,
+    IntegerInput,
     NationalPartyVotes,
     PartyNamesTable,
     RegionTable,
@@ -315,6 +347,7 @@ export default {
       ],
       uploadfile: null,
       prune_percent: 1,
+      downloadKind: null,
       show_party_names: false,
       show_max_adj_seats: false,
     };
@@ -406,7 +439,28 @@ export default {
       }
       this.show_party_names = true
     },
-    save: function () {
+    async openDownload(kind) {
+      this.downloadKind = kind
+      const basename = kind === "votes"
+        ? (this.vote_table.name.trim() || "votes")
+        : timestampedDownloadBasename("simulator")
+      const extension = kind === "votes" ? "xlsx" : "json"
+      if (canChooseSaveLocation() && validDownloadBasename(basename)) {
+        try {
+          const fileHandle = await chooseSaveLocation(basename, extension)
+          this.confirmDownload({fileHandle})
+          return
+        } catch (error) {
+          if (error.name === "AbortError") return
+        }
+      }
+      this.$refs.downloadNameDialog.open(basename, extension)
+    },
+    confirmDownload(destination) {
+      if (this.downloadKind === "votes") this.save(destination)
+      else this.saveAll(destination)
+    },
+    save: function (destination) {
       var filename = this.vote_table.name.replace('þ', 'th')
       var table = {...this.vote_table, name: filename}
       let promise = axios({
@@ -415,7 +469,7 @@ export default {
         data: { vote_table: table },
         responseType: "arraybuffer",
       });
-      this.downloadFile(promise)
+      this.downloadFile({promise, ...destination})
     },
     loadPreset: function (_, election_id) {
       this.$refs.modalpresetref.hide();

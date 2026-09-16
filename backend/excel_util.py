@@ -369,7 +369,8 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
     party_names_to_xlsx(workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
 
-def simulation_to_xlsx(results, filename, display_settings=None):
+def simulation_to_xlsx(results, filename, display_settings=None,
+                       include_histogram_sheets=False):
     """Write detailed information about a simulation to an xlsx file."""
     workbook = xlsxwriter.Workbook(filename)
     fmt = prepare_formats(workbook, display_settings)
@@ -664,65 +665,65 @@ def simulation_to_xlsx(results, filename, display_settings=None):
             col += len(parties) + (0 if no_total_column else 1)
         toprow += len(system_names)+1
 
-    # DISPARITY DATA
-    from numpy import c_
-    worksheet = workbook.add_worksheet("Disparity data")
-    nparty = len(parties) - 1
-    data = np.reshape(results["histogram_data"]["disparity_count"], (nsys, nparty))
-    toprow = 0
-    worksheet.write(toprow, 0, "Disparity", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 0, "Difference of Total seats of party minus its Reference allocation", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 2, "Frequencies", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 0, "System", fmt["h"])
-    worksheet.set_column(1,1,15)
-    worksheet.write(toprow, 1, "Disparity value", fmt["h_right"])
-    worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
-    row = toprow+1
-    for sys in range(nsys):
-        k1 = min(min(x.keys()) for x in data[sys])
-        k2 = max(max(x.keys()) for x in data[sys])
-        bins = range(k1, k2+1)
-        hist = np.zeros((k2 - k1 + 1, 0))
-        for p in range(nparty):
-            counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
-            hist = c_[hist, counts]
-        worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
-        worksheet.write_column(row, 1, bins, fmt["base"])
-        write_matrix(worksheet, row, 2, hist, fmt["base"])
-        row += len(bins) + 1
+    if include_histogram_sheets:
+        # DISPARITY DATA
+        from numpy import c_
+        worksheet = workbook.add_worksheet("Disparity data")
+        nparty = len(parties) - 1
+        data = np.reshape(results["histogram_data"]["disparity_count"], (nsys, nparty))
+        toprow = 0
+        worksheet.write(toprow, 0, "Disparity", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 0, "Difference of Total seats of party minus its Reference allocation", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 2, "Frequencies", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 0, "System", fmt["h"])
+        worksheet.set_column(1,1,15)
+        worksheet.write(toprow, 1, "Disparity value", fmt["h_right"])
+        worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
+        row = toprow+1
+        for sys in range(nsys):
+            k1 = min(min(x.keys()) for x in data[sys])
+            k2 = max(max(x.keys()) for x in data[sys])
+            bins = range(k1, k2+1)
+            hist = np.zeros((k2 - k1 + 1, 0))
+            for p in range(nparty):
+                counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
+                hist = c_[hist, counts]
+            worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
+            worksheet.write_column(row, 1, bins, fmt["base"])
+            write_matrix(worksheet, row, 2, hist, fmt["base"])
+            row += len(bins) + 1
 
-    # OVERHANG DATA
-    from numpy import c_
-    worksheet = workbook.add_worksheet("Overhang data")
-    nparty = len(parties) - 1
-    data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
-    toprow = 0
-    worksheet.write(toprow, 0, "Overhang", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 0, "Positive values of fixed seats of party minus its reference allocation", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 2, "Frequencies", fmt["h"])
-    toprow += 1
-    worksheet.write(toprow, 0, "System", fmt["h"])
-    worksheet.set_column(1,1,15)
-    worksheet.write(toprow, 1, "Overhang value", fmt["h_right"])
-    worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
-    row = toprow + 1
-    for sys in range(nsys):
-        k1 = min(min(x.keys()) for x in data[sys])
-        k2 = max(max(x.keys()) for x in data[sys])
-        bins = range(k1, k2+1)
-        hist = np.zeros((k2 - k1 + 1, 0))
-        for p in range(nparty):
-            counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
-            hist = c_[hist, counts]
-        worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
-        worksheet.write_column(row, 1, bins, fmt["base"])
-        write_matrix(worksheet, row, 2, hist, fmt["base"])
-        row += len(bins) + 1
+        # OVERHANG DATA
+        worksheet = workbook.add_worksheet("Overhang data")
+        nparty = len(parties) - 1
+        data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
+        toprow = 0
+        worksheet.write(toprow, 0, "Overhang", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 0, "Positive values of fixed seats of party minus its reference allocation", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 2, "Frequencies", fmt["h"])
+        toprow += 1
+        worksheet.write(toprow, 0, "System", fmt["h"])
+        worksheet.set_column(1,1,15)
+        worksheet.write(toprow, 1, "Overhang value", fmt["h_right"])
+        worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
+        row = toprow + 1
+        for sys in range(nsys):
+            k1 = min(min(x.keys()) for x in data[sys])
+            k2 = max(max(x.keys()) for x in data[sys])
+            bins = range(k1, k2+1)
+            hist = np.zeros((k2 - k1 + 1, 0))
+            for p in range(nparty):
+                counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
+                hist = c_[hist, counts]
+            worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
+            worksheet.write_column(row, 1, bins, fmt["base"])
+            write_matrix(worksheet, row, 2, hist, fmt["base"])
+            row += len(bins) + 1
 
     # SYSTEM SHEETS
     for r in range(len(results["systems"])):

@@ -6,7 +6,8 @@
       </b-col>
     </b-row>
     <div class="table-scroll">
-      <table v-if="showTable" class="votematrix party-names-table">
+      <table v-if="showTable" class="votematrix party-names-table"
+        v-grid-navigation="'vertical'">
         <thead>
           <tr>
             <th>Abbreviation</th>
@@ -24,11 +25,14 @@
               <input
                 v-model="voteTable.party_names[partyIndex]"
                 type="text"
+                :data-grid-row="partyIndex"
+                data-grid-column="0"
                 :size="Math.min(Math.max(voteTable.party_names[partyIndex].length + 1, 3), 50)"
                 />
             </td>
             <td class="displaycenter">
               <input type="checkbox" v-model="voteTable.independent_candidates[partyIndex]"
+                :data-grid-row="partyIndex" data-grid-column="1"
                 :aria-label="`${party}: independent candidate`" />
             </td>
           </tr>

@@ -2,20 +2,23 @@
   <div>
     <legend class="vote-table-section-heading">Regions</legend>
     <div class="table-scroll">
-      <table class="votematrix region-table">
+      <table class="votematrix region-table" v-grid-navigation>
         <thead v-if="voteTable.regions && voteTable.regions.length">
           <tr><th>Abbreviation</th><th>Name</th><th># Adj.</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="(region, index) in voteTable.regions" :key="index">
             <td><input type="text" :value="region.abbreviation"
+              :data-grid-row="index" data-grid-column="0"
               :aria-label="`Region ${index + 1}: abbreviation`"
               v-autowidth="{minWidth: '40px', maxWidth: '150px'}"
               @change="rename(index, $event)" /></td>
             <td><input type="text" v-model="region.name"
+              :data-grid-row="index" data-grid-column="1"
               :aria-label="`Region ${index + 1}: name`"
               v-autowidth="{minWidth: '80px', maxWidth: '350px'}" /></td>
             <td class="numerical"><IntegerInput v-model="region.num_adj_seats"
+              :data-grid-row="index" data-grid-column="2"
               :aria-label="`Region ${region.abbreviation}: adjustment seats`"
               max-width="100px" /></td>
             <td><b-button variant="link" size="sm" class="xbutton"

@@ -1,6 +1,11 @@
 <template>
 <div v-if="show_simulate">
   <h3>Simulation settings</h3>
+  <DownloadNameDialog
+    id="simulation-results-download-name"
+    ref="downloadNameDialog"
+    @confirm="saveSimulationResults"
+  />
   <SimulationSettings />
   <div style="text-align: center; margin-bottom: 0.7em;
               margin-left:16px; margin-right:16px">
@@ -66,7 +71,7 @@
         style="margin-left:0px"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Download simulation results to local Excel xlsx-file"
-        @click="saveSimulationResults">
+        @click="openDownload">
         Download Excel file
       </b-button>
     </b-container>
@@ -100,7 +105,7 @@
       :party_votes_specified="vote_table.party_vote_info.specified"
       :round="display_settings.fractional_digits">
     </SimResultMatrix>
-    <h4>Adjustment seats</h4>
+    <h4 class="mt-3">Adjustment seats</h4>
     <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'adj-seats-' + idx"
@@ -113,7 +118,7 @@
       :party_votes_specified="vote_table.party_vote_info.specified"
       :round="display_settings.fractional_digits">
     </SimResultMatrix>
-    <h4>Total seats</h4>
+    <h4 class="mt-3">Total seats</h4>
     <SimResultMatrix
       v-for="(system, idx) in results.data"
       :key="'total-seats-' + idx"
@@ -136,6 +141,12 @@ import SimResultMatrix from './components/SimResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './components/QualityMeasures.vue'
+import DownloadNameDialog from './components/DownloadNameDialog.vue'
+import {
+  canChooseSaveLocation,
+  chooseSaveLocation,
+  timestampedDownloadBasename,
+} from './downloadName.js'
 import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {
@@ -178,6 +189,7 @@ export default {
     SimResultMatrix,
     SimulationSettings,
     QualityMeasures,
+    DownloadNameDialog,
     // SimulationData,
   },
   methods: {
@@ -252,7 +264,20 @@ export default {
       });
     },
       
-    saveSimulationResults: function() {
+    async openDownload() {
+      const basename = timestampedDownloadBasename('simulation')
+      if (canChooseSaveLocation()) {
+        try {
+          const fileHandle = await chooseSaveLocation(basename, 'xlsx')
+          this.saveSimulationResults({fileHandle})
+          return
+        } catch (error) {
+          if (error.name === 'AbortError') return
+        }
+      }
+      this.$refs.downloadNameDialog.open(basename, 'xlsx')
+    },
+    saveSimulationResults: function(destination) {
       let promise = axios({
         method: "post",
         url: "api/simdownload/",
@@ -262,7 +287,7 @@ export default {
         },
         responseType: "arraybuffer",
       });
-      this.downloadFile(promise)
+      this.downloadFile({promise, ...destination})
     },
     usesPartyVotes: function() {
       return this.vote_table.party_vote_info.specified

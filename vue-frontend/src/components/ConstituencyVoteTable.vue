@@ -1,6 +1,6 @@
 <template>
   <div class="table-scroll">
-    <table class="votematrix">
+    <table class="votematrix" v-grid-navigation>
       <tbody>
         <tr>
           <th class="topleft"></th>
@@ -65,6 +65,8 @@
             <input
               v-model="voteTable.parties[partyIndex]"
               type="text"
+              data-grid-row="-1"
+              :data-grid-column="partyColumnStart + partyIndex"
               style="text-align: center"
               v-autowidth="{ maxWidth: '300px', minWidth: '25px' }"
               />
@@ -104,31 +106,41 @@
             <input
               v-model="constituency.name"
               type="text"
+              :data-grid-row="constituencyIndex"
+              data-grid-column="0"
               v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
               />
           </th>
           <td class="numerical" size="sm">
             <IntegerInput
               v-model="constituency.num_fixed_seats"
+              :data-grid-row="constituencyIndex"
+              data-grid-column="1"
               max-width="200px"
             />
           </td>
           <td class="numerical" size="sm">
             <IntegerInput
               v-model="constituency.num_adj_seats"
+              :data-grid-row="constituencyIndex"
+              data-grid-column="2"
               max-width="200px"
             />
           </td>
           <td v-if="hasMaximums" class="numerical" size="sm">
             <IntegerInput
               v-model="constituency.max_adj_seats"
+              :data-grid-row="constituencyIndex"
+              data-grid-column="3"
               allow-unlimited
               title="Use - for unlimited"
               max-width="200px"
             />
           </td>
           <td v-if="hasRegions">
-            <select v-model="constituency.region" :aria-label="`${constituency.name}: region`">
+            <select v-model="constituency.region" :aria-label="`${constituency.name}: region`"
+              :data-grid-row="constituencyIndex"
+              :data-grid-column="partyColumnStart - 1">
               <option value="" disabled></option>
               <option v-for="(region, index) in voteTable.regions" :key="index"
                 :value="region.abbreviation">{{ region.abbreviation }}</option>
@@ -141,6 +153,8 @@
             >
             <IntegerInput
               v-model="voteTable.votes[constituencyIndex][partyIndex]"
+              :data-grid-row="constituencyIndex"
+              :data-grid-column="partyColumnStart + partyIndex"
             />
           </td>
           <td v-if="hasPrunedVotes" class="displayright">
@@ -152,13 +166,8 @@
           <th class="displayleft">Total</th>
           <td class="displayright">{{ integer(voteSums.cseats) }}</td>
           <td class="displayright">{{ integer(voteSums.aseats) }}</td>
-          <td v-if="hasMaximums" class="numerical">
-            <IntegerInput
-              v-model="voteTable.max_total_adj_seats"
-              max-width="200px"
-              v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Maximum total number of adjustment seats"
-            />
+          <td v-if="hasMaximums" class="displayright">
+            {{ voteSums.maxAdjSeats === null ? "–" : integer(voteSums.maxAdjSeats) }}
           </td>
           <td v-if="hasRegions"></td>
           <td
@@ -213,7 +222,10 @@ export default {
   components: {IntegerInput},
   computed: {
     ...mapState(["display_settings"]),
-    hasRegions() { return this.voteTable.regions && this.voteTable.regions.length > 0 },
+    hasRegions() { return Boolean(this.voteTable.regions && this.voteTable.regions.length) },
+    partyColumnStart() {
+      return 3 + Number(this.hasMaximums) + Number(this.hasRegions)
+    },
   },
   props: {
     voteTable: {type: Object, required: true},

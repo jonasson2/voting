@@ -304,13 +304,22 @@ class DanishTest(unittest.TestCase):
             simulation_to_xlsx(web_result, path, {"fractional_digits": 2})
             book = load_workbook(path)
             self.assertIn("Party names", book.sheetnames)
-            self.assertIn("Overhang data", book.sheetnames)
+            self.assertNotIn("Disparity data", book.sheetnames)
+            self.assertNotIn("Overhang data", book.sheetnames)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
             self.assertTrue(any(
                 cell.number_format == "#,##0.00"
                 for sheet in book for row in sheet.iter_rows() for cell in row
             ))
+            book.close()
+
+            histogram_path = Path(directory) / "simulation-histograms.xlsx"
+            simulation_to_xlsx(
+                web_result, histogram_path, include_histogram_sheets=True)
+            book = load_workbook(histogram_path)
+            self.assertIn("Disparity data", book.sheetnames)
+            self.assertIn("Overhang data", book.sheetnames)
             book.close()
 
     def test_unsupported_configuration_errors(self):

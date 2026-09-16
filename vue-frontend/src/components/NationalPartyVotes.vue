@@ -12,7 +12,7 @@
       </b-col>
     </b-row>
     <div class="table-scroll">
-      <table class="votematrix">
+      <table class="votematrix" v-grid-navigation="'horizontal'">
         <tbody>
           <tr v-if="info.specified" size="sm">
             <th class="topleft"></th>
@@ -60,21 +60,26 @@
               <input
                 v-model="info.name"
                 type="text"
+                data-grid-row="0"
+                data-grid-column="0"
                 v-autowidth="{ maxWidth: '400px', minWidth: '25px' }"
                 />
             </th>
             <td class="numerical" size="sm">
-              <IntegerInput v-model="info.num_fixed_seats" max-width="200px" />
+              <IntegerInput v-model="info.num_fixed_seats" max-width="200px"
+                data-grid-row="0" data-grid-column="1" />
             </td>
             <td class="numerical" size="sm">
-              <IntegerInput v-model="info.num_adj_seats" max-width="200px" />
+              <IntegerInput v-model="info.num_adj_seats" max-width="200px"
+                data-grid-row="0" data-grid-column="2" />
             </td>
             <td
               v-for="(party, partyIndex) in voteTable.parties"
               :key="partyIndex"
               class="numerical"
               >
-              <IntegerInput v-model="info.votes[partyIndex]" />
+              <IntegerInput v-model="info.votes[partyIndex]"
+                data-grid-row="0" :data-grid-column="partyIndex + 3" />
             </td>
             <td v-if="hasPrunedVotes" class="displayright">{{ integer(info.pruned) }}</td>
             <td class="displayright">{{ integer(info.total) }}</td>
