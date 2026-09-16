@@ -42,4 +42,4 @@ Other possible future work:
 
 - Review numerical edge cases.
   Test zero-vote parties, zero-seat constituencies, exact thresholds, ties,
-  overhangs, and convergence failures.
+  excess seats, and convergence failures.

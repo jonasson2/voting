@@ -704,7 +704,7 @@ class CurrentApplicationTest(unittest.TestCase):
                     (votes, national), simulation.generate_simulated_votes(0))
                 simulation.run_and_collect_measures(votes, national, 0)
 
-    def test_swedish_switching_returns_an_overhang(self):
+    def test_swedish_switching_returns_excess_seat(self):
         allocation, steps = swedish_switching(
             [[1, 1], [24, 1]],
             [3, 3],

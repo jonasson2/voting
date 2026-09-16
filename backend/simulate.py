@@ -179,7 +179,7 @@ class Simulation():
         for election in self.reference_handler.elections:
             election.calculate_ref_seat_shares(self.sim_settings["scaling"])
             disparity, excess, shortage = self.calculate_party_disparity(election)
-            party_overhang = self.calculate_potential_overhang(election)
+            party_fixed_excess = self.calculate_potential_fixed_excess(election)
             neg_margins, neg_parties = \
                 self.calculate_negative_margins(election, election.ref_seat_shares)
             const_party_margins, cpm_counts = self.neg_margin_matrix(
@@ -194,7 +194,7 @@ class Simulation():
                 "party_disparity": disparity,
                 "party_excess": excess,
                 "party_shortage": shortage,
-                "party_overhang": party_overhang,
+                "party_fixed_excess": party_fixed_excess,
                 "neg_margins": const_party_margins,
                 "neg_margin_count": cpm_counts,
                 "ref_seat_shares": ids.tolist(),
@@ -309,7 +309,7 @@ class Simulation():
         for (i, election) in enumerate(self.election_handler.elections):
             nat_vote_percentages = [x / sum(election.nat_votes) for x in election.nat_votes]
             disparity, excess, shortage = self.calculate_party_disparity(election)
-            party_overhang = self.calculate_potential_overhang(election)
+            party_fixed_excess = self.calculate_potential_fixed_excess(election)
             self.stat["party_ref_seat_shares"][i].update(
                 election.total_ref_seat_shares)
             self.stat["nat_vote_percentages"][i].update(nat_vote_percentages)
@@ -318,10 +318,11 @@ class Simulation():
             self.stat["party_disparity"][i].update(disparity)
             self.stat["party_excess"][i].update(excess)
             self.stat["party_shortage"][i].update(shortage)
-            self.stat["party_overhang"][i].update(party_overhang)
+            self.stat["party_fixed_excess"][i].update(party_fixed_excess)
             for p in range(self.nparty):
                 self.stat["disparity_count"][i*self.nparty + p].update(disparity[p])
-                self.stat["overhang_count"][i*self.nparty + p].update(party_overhang[p])
+                self.stat["fixed_excess_count"][i*self.nparty + p].update(
+                    party_fixed_excess[p])
 
     def collect_general_measures(self):
         deviations = Collect()
@@ -343,8 +344,8 @@ class Simulation():
             deviations.add("excess", excess)
             deviations.add("shortage", shortage)
             deviations.add("disparity", disparity)
-            total_overhang = sum(self.calculate_potential_overhang(election))
-            deviations.add("total_overhang", total_overhang)
+            total_fixed_excess = sum(self.calculate_potential_fixed_excess(election))
+            deviations.add("total_fixed_excess", total_fixed_excess)
             for cmp_election in elections:
                 cmp_system = cmp_election.system
                 if cmp_system["compare_with"]:
@@ -376,11 +377,10 @@ class Simulation():
             shortage.append(max(0, -(result-alloc)))
         return disparity, excess, shortage
 
-    def calculate_potential_overhang(self, election):
-        overhang = [max(0, cs - rss) for (cs, rss) in
-                    zip(election.results['fixed_const_total'],
-                        election.results['ref_seat_alloc'])]
-        return overhang
+    def calculate_potential_fixed_excess(self, election):
+        return [max(0, fixed - reference) for fixed, reference in
+                zip(election.results['fixed_const_total'],
+                    election.results['ref_seat_alloc'])]
 
     def calculate_negative_margins(self, election, ref_seat_shares):
         seats = election.results["all_const_seats"]

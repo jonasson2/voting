@@ -4,7 +4,7 @@ Danish allocation discussion
 This note preserves the agreed Danish-law procedure and implementation plan.
 The implementation now includes regions, independent candidates, the Denmark
 preset, both allocation tables, and the 2026 mainland data. Tests cover the
-official 2026 allocations and the national 2022 overhang case. The statutory
+official 2026 allocations and the national 2022 excess-seat case. The statutory
 advance-allocation procedure remains deferred as specified below.
 
 Basic structure
@@ -61,7 +61,7 @@ and largest remainders. The available number is the total number of seats
 eligible-party votes enter the Hare quota, and the constituency seats already
 won by parties are not minimum allocations. Exact ties are decided by lot.
 
-### 4. Correction for overhang
+### 4. Correction for excess seats
 
 Let f[p] be party p's constituency seats and t[p] its national total from
 step 3. Keep f[p] fixed and recalculate t[p] as follows.
@@ -172,7 +172,7 @@ The agreed general pipeline has five stages:
 
 1. Allocate fixed seats in constituencies.
 2. Apportion total seats to parties.
-3. Apply any required overhang rule while determining feasible party totals.
+3. Apply any required excess-seat rule while determining feasible party totals.
 4. Prepare for adjustment-seat allocation.
 5. Allocate adjustment seats to constituency lists.
 
@@ -231,13 +231,13 @@ Add Denmark to the Election-law preset selector with these settings:
 * Seat specification: Refer to vote table.
 
 Selecting Danish preparation activates the regional eligibility test and
-Danish overhang procedure, following the existing pattern for Swedish
+Danish excess-seat procedure, following the existing pattern for Swedish
 preparation. Explain these associated rules in its tooltip. Only applying
 the election-law preset changes the other settings.
 
 ### 3. Allocation and results
 
-Keep Danish eligibility and overhang calculations in a small dedicated
+Keep Danish eligibility and excess-seat calculations in a small dedicated
 backend module called from the existing party-total calculation.
 
 For regional preparation, aggregate votes and fixed seats by region and
@@ -269,13 +269,13 @@ national totals and regional allocations for every election.
 
 Add a Danish data preparation script under data/denmark/, record sources in
 data/sources.txt, and add official election presets and expected results.
-Include the national 2022 totals to exercise its overhang case, alongside the
+Include the national 2022 totals to exercise its excess-seat case, alongside the
 complete newest-election data.
 
 Tests must cover:
 
 * File round trips, malformed metadata, pruning, and party/constituency edits.
-* All eligibility routes, independent votes, and overhang recalculations.
+* All eligibility routes, independent votes, and excess-seat recalculations.
 * Regional and national seat totals, constituency bounds, zero votes and ties.
 * Both step-by-step tables and their Excel exports.
 * Official Danish results, simulations and existing Nordic regressions.

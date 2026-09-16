@@ -18,7 +18,7 @@
   logical vote in generic adjustment methods, and remove forced allocation.
 - Apply the Norwegian everywhere-standing rule using positive votes as its
   proxy and use ordinary Sainte-Laguë when locating Norwegian adjustment seats.
-- Add Swedish national entitlement, overhang switching, and adjustment-seat
+- Add Swedish national entitlement, excess-seat switching, and adjustment-seat
   allocation.
 - Add election-law presets for Finland, Iceland, Norway, and Sweden.
 - Add the Finnish 2019 and 2023 parliamentary elections as vote-table presets.

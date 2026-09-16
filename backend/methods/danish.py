@@ -1,4 +1,4 @@
-"""Danish eligibility, overhang correction and regional preparation."""
+"""Danish eligibility, excess-seat correction and regional preparation."""
 import numpy as np
 
 from apportion import apportion1d_general
@@ -73,7 +73,7 @@ def party_totals(votes, fixed, eligible, total, rule, rule_type, rng, on_tie=Non
         t[capped] = original[capped]
         active[capped] = False
     if int(t.sum()) != total or (t < f).any():
-        raise ValueError("Danish overhang correction could not produce feasible party totals.")
+        raise ValueError("Danish excess-seat correction could not produce feasible party totals.")
     return t
 
 

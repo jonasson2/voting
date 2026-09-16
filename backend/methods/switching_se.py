@@ -14,7 +14,7 @@ def _eligible(shares, threshold):
 def switching(
         m_votes, v_desired_row_sums, v_desired_col_sums,
         m_prior_allocations, divisor_gen, **kwargs):
-    """Return overhang seats and reassign them within their constituencies."""
+    """Return excess seats and reassign them within their constituencies."""
     votes = np.asarray(m_votes, dtype=float)
     row_totals = np.asarray(v_desired_row_sums, dtype=int)
     party_totals = np.asarray(v_desired_col_sums, dtype=int)
@@ -56,7 +56,7 @@ def switching(
             removable = (allocation[:, p] > 0) & (row_totals >= 3)
             if not removable.any():
                 raise ValueError(
-                    f"No removable overhang seat exists for party {p}.")
+                    f"No removable excess seat exists for party {p}.")
             quotients = np.full(len(row_totals), np.inf)
             quotients[removable] = (
                 votes[removable, p] / divisors[allocation[removable, p] - 1]
@@ -132,4 +132,4 @@ def print_switching_table(rules, steps):
     ] for number, switch in enumerate(steps["switches"], start=1)]
     if not data:
         data = [["–", "–", "No switching required", "–", "–", "–"]]
-    return headers, data, "Swedish switching of overhang seats"
+    return headers, data, "Swedish switching of excess seats"

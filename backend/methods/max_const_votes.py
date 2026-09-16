@@ -17,7 +17,7 @@ def max_const_votes(
         national_fixed = np.asarray(national_fixed, dtype=int)
     deficits = targets - allocation.sum(axis=0) - national_fixed
     if (deficits < 0).any():
-        raise ValueError("Adjustment seats cannot resolve a party overhang.")
+        raise ValueError("Adjustment seats cannot resolve a party excess.")
 
     total_seats = int(kwargs.get(
         "num_adjustment_seats",

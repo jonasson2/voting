@@ -106,7 +106,7 @@
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
       :title="systems[systemidx].adjustment_preparation_method === 'danish-regions'
-        ? 'Danish preparation also applies the regional qualification test and Danish overhang correction. Independents receive fixed seats only. It then assigns each party\'s adjustment seats to regions using their specified totals.'
+        ? 'Danish preparation also applies the regional qualification test and Danish excess-seat correction. Independents receive fixed seats only. It then assigns each party\'s adjustment seats to regions using their specified totals.'
         : 'Method used to prepare the fixed-seat allocation and party totals for adjustment-seat allocation.'">
       <span>Preparation method</span>
       <b-form-select class="compact-select settings-method"

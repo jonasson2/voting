@@ -176,14 +176,14 @@ class DanishTest(unittest.TestCase):
             np.array([False, True]), 5, hare, "Quota", self.rng)
         np.testing.assert_array_equal(totals, [1, 4])
 
-    def test_overhang_and_original_entitlement_cap(self):
+    def test_excess_and_original_entitlement_cap(self):
         # Initial totals [1,2,6,1,10]. Removing overhung A would give B
         # three seats; cap B at its original two and recalculate again.
         totals = danish.party_totals(np.array([7, 24, 53, 11, 93]),
             np.array([2, 0, 4, 0, 8]), np.ones(5, bool), 20, hare, "Quota", self.rng)
         np.testing.assert_array_equal(totals, [2, 2, 5, 1, 10])
 
-    def test_official_2022_overhang(self):
+    def test_official_2022_excess(self):
         fixture = json.loads((DATA / "denmark/national-results_2022.json").read_text())
         totals = danish.party_totals(np.array(fixture["votes"]),
             np.array(fixture["fixed_seats"]), np.array(fixture["eligible"]),
@@ -240,6 +240,9 @@ class DanishTest(unittest.TestCase):
         result.analysis()
         web_result = result.get_result_web(False)
         self.assertEqual(len(web_result["parties"]), 12)
+        self.assertIn("total_fixed_excess", web_result["data"][0]["measures"])
+        self.assertIn("party_fixed_excess", web_result["party_data"][0])
+        self.assertIn("fixed_excess_count", web_result["histogram_data"])
         populated_groups = [
             group for group in web_result["vuedata"]["group_ids"]
             if web_result["vuedata"][group]
@@ -252,6 +255,7 @@ class DanishTest(unittest.TestCase):
             simulation_to_xlsx(web_result, path, {"fractional_digits": 2})
             book = load_workbook(path)
             self.assertIn("Party names", book.sheetnames)
+            self.assertIn("Fixed-seat excess data", book.sheetnames)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
             self.assertTrue(any(
