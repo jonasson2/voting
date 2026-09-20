@@ -142,11 +142,7 @@ import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './components/QualityMeasures.vue'
 import DownloadNameDialog from './components/DownloadNameDialog.vue'
-import {
-  canChooseSaveLocation,
-  chooseSaveLocation,
-  timestampedDownloadBasename,
-} from './downloadName.js'
+import { timestampedDownloadBasename } from './downloadName.js'
 import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {
@@ -264,17 +260,8 @@ export default {
       });
     },
       
-    async openDownload() {
+    openDownload() {
       const basename = timestampedDownloadBasename('simulation')
-      if (canChooseSaveLocation()) {
-        try {
-          const fileHandle = await chooseSaveLocation(basename, 'xlsx')
-          this.saveSimulationResults({fileHandle})
-          return
-        } catch (error) {
-          if (error.name === 'AbortError') return
-        }
-      }
       this.$refs.downloadNameDialog.open(basename, 'xlsx')
     },
     saveSimulationResults: function(destination) {

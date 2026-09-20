@@ -12,10 +12,13 @@ function normalizeSystem(system) {
     system.fixed_seat_national_threshold = 0
   }
   if (system.fixed_seat_threshold_choice === undefined) {
-    system.fixed_seat_threshold_choice = 0
+    system.fixed_seat_threshold_choice = 1
   }
   if (system.adjustment_preparation_method === undefined) {
     system.adjustment_preparation_method = 'none'
+  }
+  if (system.require_votes_in_all_constituencies === undefined) {
+    system.require_votes_in_all_constituencies = false
   }
   if (system.danish_special_rules === undefined) {
     system.danish_special_rules =
@@ -34,7 +37,7 @@ const store = new Vuex.Store({
       name: "Default Example",
       parties: ["A", "B"],
       votes: [
-        [1500, 2000],
+        [1800, 2000],
         [2500, 1700],
       ],
       pruned: [0, 0],
@@ -269,18 +272,17 @@ const store = new Vuex.Store({
     
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
+      context.state.results = []
       Vue.http.post('api/settings/upload/', payload.formData).then(
         response => {
           if (error(response)) {
             context.commit("serverError", response.body)
           } else {
-            if (payload.replace){
-              context.commit("deleteAllSystems")
-            }
-            let systems = response.data.systems
-            for (var i=0; i < systems.length; i++) {
-              context.commit("addSystem", systems[i])
-            }
+            const importedSystems = response.data.systems
+            const systems = payload.replace
+              ? importedSystems
+              : [...context.state.systems, ...importedSystems]
+            context.commit("updateSystems", systems)
             findNumbering(context.state, 0)
             context.commit("updateSimSettings", response.data.sim_settings);
             context.dispatch("recalc_sys_const")
@@ -328,6 +330,7 @@ const store = new Vuex.Store({
     
     calculate_results(context) {
       context.commit("setWaitingForData")
+      context.state.results = []
       Vue.http.post(
         'api/election/',
         {
@@ -421,7 +424,7 @@ const store = new Vuex.Store({
               })
             );
             link.remove();
-            URL.revokeObjectURL(blobUrl);
+            window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
           }
         },
         (response) => {

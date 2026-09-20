@@ -11,12 +11,15 @@ MODULE = runpy.run_path(str(HERE / "get-votes.py"))
 
 
 class DanishDataTests(unittest.TestCase):
-    def page(self, fixed_only=False):
-        headings = (["Parti", "Antal", "Pct.", "Kreds-<br>man-<br>dater", ""]
+    def page(self, fixed_only=False, votes_only=False):
+        headings = (["Parti", "Antal", "Pct."] if votes_only else
+                    ["Parti", "Antal", "Pct.", "Kreds-<br>man-<br>dater", ""]
                     if fixed_only else
                     ["Parti", "Antal", "Pct.", "Man-<br>dater",
                      "Kreds-<br>man-<br>dater", "Till\u00e6gs-<br>man-<br>dater"])
-        numbers = ["1.234", "100%", "2", ""] if fixed_only else ["1.234", "100%", "3", "2", "1"]
+        numbers = (["1.234", "100%"] if votes_only else
+                   ["1.234", "100%", "2", ""] if fixed_only else
+                   ["1.234", "100%", "3", "2", "1"])
         html = '<table><tr><td><table class="valgopg_tabel">'
         html += '<tr><td colspan="6">Stemmer</td></tr><tr>'
         html += "".join(f"<td>{h}</td>" for h in headings) + "</tr>"
@@ -37,6 +40,11 @@ class DanishDataTests(unittest.TestCase):
                 self.assertEqual(result["parties"]["A. Party"]["adjustment_seats"],
                                  0 if fixed_only else 1)
                 self.assertEqual(result["parties"][MODULE["INDEPENDENTS"]]["votes"], 0)
+
+    def test_vote_only_result_table(self):
+        result = MODULE["result"](self.page(votes_only=True), "Test", "test.htm")
+        self.assertEqual(result["parties"]["A. Party"]["votes"], 1234)
+        self.assertEqual(result["parties"]["A. Party"]["total_seats"], 0)
 
     def test_missing_votes_are_rejected(self):
         page = self.page()
@@ -63,7 +71,7 @@ class DanishDataTests(unittest.TestCase):
         self.assertEqual(sum(sum(map(int, r[5:])) for r in rows[4:14]), 3567625)
         for row, district in zip(rows[4:14], official["constituencies"]):
             self.assertEqual(row[0], district["name"])
-            self.assertEqual(row[2:5], ["0", "", district["region"]])
+            self.assertEqual(row[2:5], ["0", "-", district["region"]])
             self.assertEqual(sum(map(int, row[5:])), district["valid_votes"])
             self.assertEqual(sum(map(int, row[17:])),
                              district["parties"][MODULE["INDEPENDENTS"]]["votes"])
@@ -72,6 +80,19 @@ class DanishDataTests(unittest.TestCase):
             ["SS", "Sj\u00e6lland-Syddanmark", "14"],
             ["MN", "Midtjylland-Nordjylland", "14"],
         ])
+
+    def test_historical_vote_files_reconcile_with_recorded_results(self):
+        for year, votes in (("2019", 3531720), ("2022", 3533951)):
+            with self.subTest(year=year):
+                official = json.loads((HERE / f"official-results_{year}.json").read_text(
+                    encoding="utf-8"))
+                with (HERE.parent / f"denmark_{year}.csv").open(
+                        encoding="utf-8", newline="") as file:
+                    rows = list(csv.reader(file))
+                self.assertEqual(official["national"]["valid_votes"], votes)
+                self.assertEqual(sum(map(int, (row[1] for row in rows[4:14]))), 135)
+                self.assertEqual(sum(map(int, (row[2] for row in rows[-3:]))), 40)
+                self.assertEqual(sum(sum(map(int, row[5:])) for row in rows[4:14]), votes)
 
 
 if __name__ == "__main__":

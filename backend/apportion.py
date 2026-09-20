@@ -75,6 +75,7 @@ def apportion1d_general(
     threshold_seats=0,
     threshold_total=None,
     on_tie=None,
+    eligible=None,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -93,6 +94,8 @@ def apportion1d_general(
         - threshold_total: Optional complete vote total used as the denominator
                            for threshold_percent. Votes omitted from v_votes
                            are also retained in a quota-rule denominator.
+        - eligible: Optional boolean mask of parties allowed to receive seats
+                    beyond their prior allocations.
     Outputs:
         - allocations vector (list of int)
         - a generator that generates a sequence of seat allocations,
@@ -106,6 +109,46 @@ def apportion1d_general(
         else prior_allocations.copy() if isinstance(prior_allocations, np.ndarray)
         else np.array(prior_allocations)
     )
+    if eligible is not None:
+        eligible = np.asarray(eligible, dtype=bool)
+        if eligible.shape != (N,):
+            raise ValueError("Eligibility mask does not match the parties.")
+        indices = np.flatnonzero(eligible)
+        active_total = num_total_seats - int(allocations[~eligible].sum())
+        if active_total < int(allocations[eligible].sum()):
+            raise ValueError("Ineligible parties already exceed the available seats.")
+        if active_total > int(allocations[eligible].sum()) and not len(indices):
+            raise ValueError("No eligible party can receive the remaining seats.")
+
+        def remapped_tie(tied, winner, active_votes):
+            on_tie(
+                [int(indices[index]) for index in tied],
+                int(indices[winner]),
+                active_votes,
+            )
+
+        active_allocations, active_gen, active_last = apportion1d_general(
+            np.asarray(v_votes)[indices], active_total, allocations[indices], rule,
+            type_of_rule, threshold_percent, threshold_choice, threshold_seats,
+            threshold_total,
+            on_tie=remapped_tie if on_tie is not None else None)
+        allocations[indices] = active_allocations
+
+        def remapped_generator():
+            for seat in active_gen():
+                seat = seat.copy()
+                seat["idx"] = int(indices[seat["idx"]])
+                if "tied" in seat:
+                    seat["tied"] = [int(indices[index]) for index in seat["tied"]]
+                yield seat
+
+        if active_last is not None:
+            active_last = active_last.copy()
+            active_last["idx"] = int(indices[active_last["idx"]])
+            if "tied" in active_last:
+                active_last["tied"] = [
+                    int(indices[index]) for index in active_last["tied"]]
+        return allocations, remapped_generator, active_last
     votes = threshold_drop(
         v_votes,
         threshold = [

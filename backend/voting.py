@@ -386,13 +386,10 @@ class Election:
         choice = self.system["adj_threshold_choice"] if use_thresholds else 0
         seats = self.system["adjustment_threshold_seats"] if use_thresholds else 0
 
-        entitlement_votes = self.nat_votes
-        norwegian = self.system["adjustment_method"] == "norwegian-law"
-        if norwegian:
-            # Positive votes in every source constituency are the simulator's
-            # proxy for the Norwegian requirement to stand everywhere.
-            entitlement_votes = np.where(
-                self.party_stands_everywhere, self.nat_votes, 0)
+        standing_required = self.system["require_votes_in_all_constituencies"]
+        standing_eligible = (
+            self.party_stands_everywhere if standing_required
+            else np.ones(self.nparty, dtype=bool))
 
         fixed_allocations = np.array(self.results["fixed_grand_total"])
         on_tie = self.report_ties("Party totals", self.system["parties"])
@@ -404,6 +401,7 @@ class Election:
                 self.votes, self.results["fixed_const_seats"], self.independent_candidates,
                 self.region_groups, self.const_threshold_totals, threshold, seats, choice,
                 special_rules and use_thresholds)
+            eligible &= standing_eligible
             if special_rules:
                 self.desired_col_sums = danish.party_totals(
                     self.nat_votes, fixed_allocations, eligible, self.total_const_seats,
@@ -422,7 +420,8 @@ class Election:
                 self.nat_votes / self.nat_threshold_total
                 if self.nat_threshold_total else np.zeros_like(self.nat_votes)
             )
-            nationally_eligible = national_shares * 100 >= threshold
+            nationally_eligible = (
+                national_shares * 100 >= threshold) & standing_eligible
             protected_totals = np.where(
                 nationally_eligible, 0, fixed_allocations)
             seats_for_national_allocation = (
@@ -444,20 +443,8 @@ class Election:
             self.desired_col_sums = np.asarray(
                 national_allocation, dtype=int) + protected_totals
         else:
-            if (norwegian
-                and fixed_allocations.sum() < self.total_const_seats + nat_seats):
-                qualified_votes = threshold_drop(
-                    entitlement_votes,
-                    [choice, threshold, seats, fixed_allocations],
-                    threshold_total=self.nat_threshold_total,
-                )
-                if not any(qualified_votes):
-                    raise ValueError(
-                        "No party qualifies for Norwegian adjustment seats after "
-                        "applying the threshold and everywhere-standing rule.")
-
             self.desired_col_sums, self.adj_seat_gen, _ = apportion1d_general(
-                v_votes = entitlement_votes,
+                v_votes = self.nat_votes,
                 num_total_seats = self.total_const_seats + nat_seats,
                 prior_allocations = fixed_allocations,
                 rule = self.system.get_generator("adj_determine_divider"),
@@ -467,6 +454,7 @@ class Election:
                 threshold_seats = seats,
                 threshold_total = self.nat_threshold_total,
                 on_tie=on_tie,
+                eligible=standing_eligible if standing_required else None,
             )
 
         self.ref_seat_alloc, _, _ = apportion1d_general(

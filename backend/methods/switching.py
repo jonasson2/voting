@@ -1,6 +1,6 @@
-from apportion import apportion1d_general
 import numpy as np
-from copy import deepcopy
+from methods.provisional_allocation import allocate_provisionally
+from methods.switching_tables import print_initial_allocation
 
 def min_with_index(x, I=None):
     if I is None:
@@ -31,28 +31,22 @@ def switching(m_votes,
     max_party = np.array(v_desired_col_sums)
     num_constituencies = len(v_desired_row_sums)
     num_parties        = len(v_desired_col_sums)
-    if sum(max_party) < sum(desired_const):
-        raise ValueError(
-            "Party-seat totals are below the constituency-seat total.")
+    if (alloc_prior.sum(axis=1) > desired_const).any():
+        raise ValueError("Protected fixed seats exceed a constituency's seat total.")
+    if (alloc_prior.sum(axis=0) > max_party).any():
+        raise ValueError("Protected fixed seats exceed a party's seat target.")
 
     # CALCULATE DIVISORS
     N = max(max(desired_const), max(max_party)) + 1
     div_gen = divisor_gen()
     divisors = np.array([next(div_gen) for i in range(N + 1)])
+    if (not np.isfinite(divisors).all() or (divisors <= 0).any()
+            or (np.diff(divisors) < 0).any()):
+        raise ValueError("Switching requires positive, finite, nondecreasing divisors.")
     
     # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
-    alloc= np.zeros((num_constituencies, num_parties), int)
-    temp_votes = deepcopy(votes)
-    full = [p for p in range(num_parties) if sum(alloc_prior[:,p]) >= max_party[p]]
-    temp_votes[:,full] = 0
-    for c in range(num_constituencies):
-        alloc_const, _,_ = apportion1d_general(
-            v_votes = list(temp_votes[c,:]),
-            num_total_seats = desired_const[c],
-            prior_allocations = list(alloc_prior[c,:]),
-            rule = divisor_gen
-        )
-        alloc[c,:] = np.array(alloc_const)
+    alloc = allocate_provisionally(
+        votes, desired_const, max_party, alloc_prior, divisor_gen)
 
     # INFORMATION FOR FIRST STEP-BY-STEP DEMO TABLE
     initial_allocation = [{
@@ -63,9 +57,7 @@ def switching(m_votes,
 
     # WHILE SOME PARTIES HAVE TOO MANY SEATS DO SWITCHING
     switches = []
-    i = 0
     while True:
-        i += 1
         surplus = sum(alloc,0) > max_party
         if not any(surplus):
             break
@@ -87,29 +79,33 @@ def switching(m_votes,
             if any(S) and any(W):
                 (min_score, p) = min_with_index(score, S)
                 (max_score, q) = max_with_index(score, W)
-                if min_score >= max_score:  # This could be deleted
-                    C.append(c)
-                    P.append(p)
-                    Q.append(q)
-                    ratio.append(min_score/max_score)
+                # Provisional allocation establishes this ordering; removing
+                # surplus seats and adding deficit seats can only strengthen it.
+                if not min_score >= max_score:
+                    raise RuntimeError("Internal switching error: quotient ordering violated.")
+                C.append(c)
+                P.append(p)
+                Q.append(q)
+                ratio.append(min_score/max_score)
 
         # FIND THE SMALLEST RATIO AND SWITCH WITHIN THE CORRESPONDING CONSTITUENCY
         if not C:
-            # print('No surplus/wanting pair found')
-            # print('  surplus:', find(surplus))
-            # print('  wanting:', find(wanting))
-            break
-        else:
-            cmin = np.argmin(ratio)
-            alloc[C[cmin], P[cmin]] -= 1
-            alloc[C[cmin], Q[cmin]] += 1
-            # print(f'- switching parties {P[cmin]} and {Q[cmin]} in const. {C[cmin]})')
-            switches.append({
-                "constituency": C[cmin],
-                "from": P[cmin],
-                "to": Q[cmin],
-                "ratio": ratio[cmin]
-                })
+            raise RuntimeError("Internal switching error: no switch available for a surplus party.")
+        cmin = np.argmin(ratio)
+        alloc[C[cmin], P[cmin]] -= 1
+        alloc[C[cmin], Q[cmin]] += 1
+        switches.append({
+            "constituency": C[cmin],
+            "from": P[cmin],
+            "to": Q[cmin],
+            "ratio": ratio[cmin]
+            })
+
+    # Party targets can include seats reserved for national allocation.
+    if (not np.array_equal(alloc.sum(axis=1), desired_const)
+            or (alloc < alloc_prior).any()
+            or (alloc.sum(axis=0) > max_party).any()):
+        raise RuntimeError("Internal switching error: seat constraints violated.")
 
     # INFORMATION FOR SECOND STEP-BY-STEP DEMO TABLE
     steps = {
@@ -119,23 +115,10 @@ def switching(m_votes,
 
     stepbystep = {
         "data": steps,
-        "function": print_demo_table1,
-        "functions": [print_demo_table1, print_demo_table2],
+        "function": print_initial_allocation,
+        "functions": [print_initial_allocation, print_demo_table2],
     }
     return alloc, stepbystep
-
-def print_demo_table1(rules, steps):
-    sup_header = "Nationally apportioned vs. full constituency allocation"
-    headers = ["Party", "Nationally apportioned", "All as const. seats", "Off by"]
-    data = []
-    for party in steps["initial_allocation"]:
-        data.append([
-            rules["parties"][party["party"]],
-            party["goal"],
-            party["actual"],
-            party["actual"] - party["goal"],
-        ])
-    return headers, data, sup_header 
 
 def print_demo_table2(rules, steps):
     sup_header = "Switching of seats"

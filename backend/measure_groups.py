@@ -56,17 +56,17 @@ class MeasureGroups(dict):
         }
 
         self["toLists"] = {
-            "title": "– constituency lists",
+            "title": "",
             "rows": {
-                "sum_abs":     ("absolute values (Hare-quota)", ""),
-                "sum_sq":      ("squared values (Hare-quota)", ""),
-                "sum_pos":     ("pos. values scaled by reciprocal shares (D'Hondt)", ""),
-                "sum_neg":     ("neg. values scaled by reciprocal shares (Adams)", ""),
-                "sum_absshare": ("abs. values scaled by reciprocal share (Sainte-Laguë)", ""),
-                "sum_sqshare": ("sq.val. scaled by reciprocal shares (Sainte-Laguë)", ""),
-                "sum_sqseat":  ("sq.val. scaled by reciprocal seats (Hill-Huntington)", ""),
+                "sum_abs":     ("Absolute values (Hare quota)", ""),
+                "sum_sq":      ("Squared values (Hare quota)", ""),
+                "sum_pos":     ("Over-allocation per reference seat", ""),
+                "sum_neg":     ("Under-allocation per reference seat", ""),
+                "sum_absshare": ("Absolute values per reference seat", ""),
+                "sum_sqshare": ("Squared values per reference seat (Sainte-Laguë)", ""),
+                "sum_sqseat":  ("Squared values per allocated seat", ""),
             },
-            "footnote": "(single constituency minimizing method in brackets)",            
+            "footnote": "(single constituency minimizing methods in brackets)",
         }
 
         if party_votes_specified:
@@ -90,7 +90,7 @@ class MeasureGroups(dict):
             }
 
         self["toPartiesTotal"] = {
-            "title": "– parties overall" if party_votes_specified else "– party totals",
+            "title": "Party seat totals: allocated minus fractional reference",
             # overall,
             # altogeter, grand total
             "rows": {
@@ -106,7 +106,10 @@ class MeasureGroups(dict):
             "rows": {
                 "entropy_dhondt": ("D'Hondt entropy", ""),
                 "entropy_sainte_lague": ('Sainte-Laguë entropy', ""),
-                "min_seat_val":   ("Minimum reference seat share per seat", ""),
+                "max_overrepresentation": (
+                    "Greatest relative over-representation (D'Hondt)", ""),
+                "max_underrepresentation": (
+                    "Greatest relative under-representation (Adams)", ""),
                 "max_neg_margin": ("Maximum negative margin over constituencies",""),
                 "freq_neg_margin": ("Frequency of negative margin over constituencies",""),
                 "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
@@ -116,11 +119,12 @@ class MeasureGroups(dict):
                 "excess":         ("Total seat excess", ""),
                 "total_overhang": ("Potential overhang", ""),
                 #"shortage":       ("Shortage", "")
-            }
+            },
+            "footnote": "(single-constituency minimizing methods in brackets)",
         }
 
-        self["compTitle"] = {
-            "title": "Sum of absolute seat allocation differences over:",
+        self["cmpListTitle"] = {
+            "title": "Absolute seat differences summed over constituency lists",
             "onlyExcel": False,
             "rows": {}
         }
@@ -158,47 +162,54 @@ class MeasureGroups(dict):
             },
             "onlyExcel": True
         }
-        self["cmpSys"] = {
-            "title": "– compared with following electoral systems",
+        self["cmpList"] = {
+            "title": "",
             "rows": {}
         }
+        self["cmpPartyTitle"] = {
+            "title": "Absolute seat differences summed over parties",
+            "rows": {}
+        }
+        self["cmpParty"] = {
+            "title": "",
+            "rows": {}
+        }
+        if party_votes_specified:
+            self["cmpNationalDetails"] = {
+                "title": "Additional national-vote comparison details",
+                "rows": {},
+                "onlyExcel": True,
+            }
         self._add_systems(systems, party_votes_specified, nr)
 
     def _add_systems(self, systems, party_votes_specified, nr=0):
-        sysGroup = self["cmpSys"]["rows"]
-        firstcol = "Constituency lists"
+        list_group = self["cmpList"]["rows"]
+        party_group = self["cmpParty"]["rows"]
         for sys in systems:
-            p = "compare_with" in sys
-            if not p:
+            if "compare_with" not in sys:
                 raise ValueError
-            compare = sys["compare_with"]
             if sys["compare_with"]:
                 measure = "cmp_" + sys["name"] + "_const"
-                sysGroup[measure] = (firstcol, sys["name"])
-                firstcol = ""
-        firstcol="party constituency totals" if party_votes_specified else "party totals"
+                list_group[measure] = (sys["name"], "")
         for sys in systems:
             if sys["compare_with"]:
-                measure = "cmp_" + sys["name"] + "_tot"
-                sysGroup[measure] = (firstcol, sys["name"])
-                firstcol = ""
+                suffix = "grand" if party_votes_specified else "tot"
+                measure = "cmp_" + sys["name"] + "_" + suffix
+                party_group[measure] = (sys["name"], "")
         if party_votes_specified:
-            firstcol = "national lists"
+            details = self["cmpNationalDetails"]["rows"]
             for sys in systems:
                 if sys["compare_with"]:
-                    measure = "cmp_" + sys["name"] + "_nat"
-                    sysGroup[measure] = (firstcol, sys["name"])
-                    firstcol = ""
-            firstcol = "party grand totals"
-            for sys in systems:
-                if sys["compare_with"]:
-                    measure = "cmp_" + sys["name"] + "_grand"
-                    sysGroup[measure] = (firstcol, sys["name"])
-                    firstcol = ""
-        no_comparison_systems = not sysGroup
+                    name = sys["name"]
+                    details["cmp_" + name + "_tot"] = (
+                        "Party constituency totals", name)
+                    details["cmp_" + name + "_nat"] = (
+                        "National lists", name)
+        no_comparison_systems = not list_group
         if no_comparison_systems:
-            del self["cmpSys"]
-            del self["compTitle"]
+            for group in ("cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty",
+                          "cmpNationalDetails"):
+                self.pop(group, None)
             return
 
     def get_measures(self, group): # get measures from one group
@@ -218,14 +229,18 @@ headingType = {
     "toLists": "empty",
     "toPartiesInConst": "empty",
     "other":      "empty",
-    "compTitle":  "stats",
+    "cmpListTitle": "stats",
+    "cmpList":      "systems",
+    "cmpPartyTitle": "empty",
+    "cmpParty":      "empty",
     "seatSpec":   "systems",
     "expected":   "empty",
-    "cmpSys":     "empty"
+    "cmpNationalDetails": "empty"
 }
 
 def fractional_digits(group, stat):
-    if group in {"seatSpec", "expected", "cmpSys"} and stat in {"min", "max"}:
+    if group in {"seatSpec", "expected", "cmpList", "cmpParty",
+                 "cmpNationalDetails"} and stat in {"min", "max"}:
         return 0
     else:
         return 3

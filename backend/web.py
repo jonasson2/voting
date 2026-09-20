@@ -122,7 +122,8 @@ def api_settings_save():
             "constituency_threshold", "fixed_seat_national_threshold",
             "fixed_seat_threshold_choice",
             "adjustment_threshold", "adjustment_threshold_seats",
-            "adj_threshold_choice", "danish_special_rules",
+            "adj_threshold_choice", "require_votes_in_all_constituencies",
+            "danish_special_rules",
             "adjustment_preparation_method",
             "adjustment_method", #"adjustment_allocation_rule",
             "nat_seats"
@@ -247,6 +248,7 @@ def api_simulate():
         (votes, systems, sim_settings) = getparam("vote_table", "systems",
                                                   "sim_settings")
         votes = check_vote_table(votes)
+        sim_settings = check_simul_settings(sim_settings)
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)

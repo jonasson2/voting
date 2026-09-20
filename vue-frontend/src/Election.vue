@@ -17,10 +17,8 @@
     </b-button>
   </b-container>
   <b-tabs v-model="resultIndex" no-key-nav card>
-    <b-tab v-for="(system, activeTabIndex) in systems" :key="activeTabIndex">
-      <div slot="title">
-        {{system.name}}
-      </div>
+    <b-tab v-for="(system, activeTabIndex) in systems" :key="resultTabKey(system)"
+           :title="system.name">
       <template v-if = "results[activeTabIndex] == null">
         <b-alert :show="true">
           No solution exists.
@@ -73,9 +71,9 @@
         </b-container>
       </template>
     </b-tab>
-    <div slot="empty">
+    <template #empty>
       There are no electoral systems specified.
-    </div>
+    </template>
   </b-tabs>
 </div>
 <div  v-else-if="results.length == 0">
@@ -92,11 +90,7 @@
 import ResultMatrix from './components/ResultMatrix.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
 import DownloadNameDialog from './components/DownloadNameDialog.vue'
-import {
-  canChooseSaveLocation,
-  chooseSaveLocation,
-  timestampedDownloadBasename,
-} from './downloadName.js'
+import { timestampedDownloadBasename } from './downloadName.js'
 import { mapState, mapActions } from 'vuex';
 
 export default {
@@ -123,18 +117,19 @@ export default {
     ...mapActions([
       "downloadFile"
     ]),    
-    async openDownload() {
+    openDownload() {
       const basename = timestampedDownloadBasename('Election')
-      if (canChooseSaveLocation()) {
-        try {
-          const fileHandle = await chooseSaveLocation(basename, 'xlsx')
-          this.saveResults({fileHandle})
-          return
-        } catch (error) {
-          if (error.name === 'AbortError') return
-        }
-      }
       this.$refs.downloadNameDialog.open(basename, 'xlsx')
+    },
+    resultTabKey(system) {
+      return [
+        system.name,
+        system.primary_divider,
+        system.adj_determine_divider,
+        system.adjustment_preparation_method,
+        system.adjustment_method,
+        system.adj_alloc_divider,
+      ].join('|')
     },
     saveResults: function(destination) {
       let promise = axios({

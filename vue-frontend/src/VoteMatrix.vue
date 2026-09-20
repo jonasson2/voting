@@ -445,7 +445,8 @@ export default {
         ? (this.vote_table.name.trim() || "votes")
         : timestampedDownloadBasename("simulator")
       const extension = kind === "votes" ? "xlsx" : "json"
-      if (canChooseSaveLocation() && validDownloadBasename(basename)) {
+      if (kind === "all" && canChooseSaveLocation()
+          && validDownloadBasename(basename)) {
         try {
           const fileHandle = await chooseSaveLocation(basename, extension)
           this.confirmDownload({fileHandle})

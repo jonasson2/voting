@@ -1,5 +1,5 @@
 <template>
-<div v-if="show_systems && !waiting_for_data">
+<div v-show="show_systems && !waiting_for_data">
   <b-modal
     size="lg"
     id="modaluploadesettings"
@@ -21,8 +21,7 @@
       accept=".json"
       :state="Boolean(uploadfile)"
       placeholder="Choose a file..."
-      @input="$refs.modaluploadesettingsref.hide();
-              uploadSystems();"      
+      @input="uploadSystems"
       >
     </b-form-file>
     <template #modal-footer="{ cancel }">
@@ -298,9 +297,11 @@ export default {
       });
       this.downloadFile({promise, ...destination})
     },
-    uploadSystems: function() {
+    uploadSystems: function(file) {
+      if (!file) return
+      this.$refs.modaluploadesettingsref.hide()
       var formData = new FormData();
-      formData.append('file', this.uploadfile, this.uploadfile.name);
+      formData.append('file', file, file.name);
       this.uploadElectoralSystems({"formData":formData, "replace":this.replace})
     },
     deleteCurrentSystem() {

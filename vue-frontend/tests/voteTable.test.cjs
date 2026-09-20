@@ -217,11 +217,24 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
 
 test("result numbers use the selected separators and precision", async () => {
   const {
+    defaultDisplaySettings,
+    formatEstimateWithCi,
     formatNumber,
     formatNumberUnlessZero,
+    normalizeDisplaySettings,
     parseInteger,
     validIntegerEntry,
   } = await numberFormatModule()
+  assert.equal(defaultDisplaySettings().percentage_digits, 2)
+  assert.equal(normalizeDisplaySettings({}).percentage_digits, 2)
+  assert.equal(normalizeDisplaySettings({percentage_digits: 4}).percentage_digits, 4)
+  assert.equal(normalizeDisplaySettings({percentage_digits: 20}).percentage_digits, 10)
+  const voteShare = 100 * 4000 / 7700
+  assert.equal(formatNumber(voteShare, defaultDisplaySettings().percentage_digits,
+    defaultDisplaySettings()) + "%", "51.95%")
+  const fourDigits = normalizeDisplaySettings({percentage_digits: 4})
+  assert.equal(formatNumber(voteShare, fourDigits.percentage_digits,
+    fourDigits) + "%", "51.9481%")
   assert.equal(formatNumber(12345.6789, 3, {
     thousands_separator: ",",
     decimal_separator: ".",
@@ -239,6 +252,10 @@ test("result numbers use the selected separators and precision", async () => {
   assert.equal(formatNumberUnlessZero(0.0004, 3, {}), "")
   assert.equal(formatNumberUnlessZero(0.0006, 3, {}), "0.001")
   assert.equal(formatNumberUnlessZero(NaN, 3, {}), "–")
+  assert.equal(formatEstimateWithCi(0, 0, 3, {}), "")
+  assert.equal(formatEstimateWithCi(1.2344, 0.0004, 3, {}), "1.234 ± 0.000")
+  assert.equal(formatEstimateWithCi(0.0004, 0.0014, 3, {}), "0.000 ± 0.001")
+  assert.equal(formatEstimateWithCi(1.2344, null, 3, {}), "1.234")
   const comma = {thousands_separator: ",", decimal_separator: "."}
   const dot = {thousands_separator: ".", decimal_separator: ","}
   const space = {thousands_separator: " ", decimal_separator: ","}

@@ -301,15 +301,27 @@ class DanishTest(unittest.TestCase):
         self.assertIsInstance(displayed_measure["value"], float)
         with TemporaryDirectory() as directory:
             path = Path(directory) / "simulation.xlsx"
-            simulation_to_xlsx(web_result, path, {"fractional_digits": 2})
+            simulation_to_xlsx(web_result, path, {
+                "fractional_digits": 2, "percentage_digits": 4,
+            })
             book = load_workbook(path)
             self.assertIn("Party names", book.sheetnames)
             self.assertNotIn("Disparity data", book.sheetnames)
             self.assertNotIn("Overhang data", book.sheetnames)
+            quality_values = {
+                cell.value
+                for row in book["Quality measures"].iter_rows()
+                for cell in row
+            }
+            self.assertIn("Difference", quality_values)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
             self.assertTrue(any(
                 cell.number_format == "#,##0.00"
+                for sheet in book for row in sheet.iter_rows() for cell in row
+            ))
+            self.assertTrue(any(
+                cell.number_format == "#,##0.0000%"
                 for sheet in book for row in sheet.iter_rows() for cell in row
             ))
             book.close()

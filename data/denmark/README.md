@@ -1,21 +1,24 @@
 # Danish Election Data
 
-The 24 March 2026 mainland vote file is available in the simulator's presets.
-Select it in tab 1, then select the Denmark election-law preset in tab 2.
+The 5 June 2019, 1 November 2022, and 24 March 2026 mainland vote files are
+available in the simulator's presets. Select one in tab 1, then select the
+Denmark election-law preset in tab 2.
 Faroe Islands and Greenland are excluded.
 
 From the repository root:
 
 ```sh
-uv run --locked python data/denmark/get-votes.py 2026
+uv run --locked python data/denmark/get-votes.py 2022
 ```
 
 Add `--refresh` to download sources again. Downloads are retained in
-`raw/2026/` (ignored by Git), including the official allocation report.
-The script writes `data/denmark_2026.csv` and `official-results_2026.json`.
-The latter preserves official votes and fixed/adjustment seats nationally,
-by region, and by constituency for regression tests. Sources are listed
-in `data/sources.txt`.
+`raw/YEAR/` (ignored by Git), including the official allocation report when
+available.
+The script writes `data/denmark_YEAR.csv` and `official-results_YEAR.json`.
+The JSON snapshot preserves the downloaded official data. The 2019 and 2022
+result pages publish votes but not seat tables, so their constituency fixed-seat
+counts and regional adjustment-seat counts come from the linked official
+allocation reports. Sources are listed in `data/sources.txt`.
 
 ## Vote File Format
 
@@ -55,8 +58,10 @@ advance-allocation procedure remains deferred.
 
 The generator checks each constituency's valid-vote total, individual
 independent votes, and every party's votes and seats against the region and
-national totals. It also checks the 2026 counts of regions, constituencies,
-parties, independent candidates, votes and seats.
+national totals when the result pages publish seats. For 2019 and 2022, the
+official allocation report supplies fixed-seat counts by constituency and
+adjustment-seat counts by region. It also checks the counts of regions,
+constituencies, votes, fixed seats and adjustment seats.
 
 ```sh
 uv run --locked python -m unittest discover -s data/denmark -p 'test_*.py'

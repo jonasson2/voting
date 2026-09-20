@@ -1,6 +1,14 @@
-Sweden Riksdag presets (2014, 2018, 2022)
+Sweden Riksdag presets (2014, 2018, 2022, 2026)
 Generator: data/sweden/get-votes.py
 Run: uv run --locked python data/sweden/get-votes.py YEAR
+
+Sweden 2026 Riksdag final results
+https://resultat.val.se/data/resultat/val2026/RD_S.json
+https://www.val.se/valresultat-och-statistik/riksdags--region--och-kommunval/valresultat-2026
+The official final-results feed reports the eight separately listed parties in
+each constituency and a combined total for other registered parties. The
+generated file places that combined total in Pruned, retaining it for threshold
+denominators without representing it as a fictional party.
 
 Sweden 2022 Riksdag votes
 https://www.val.se/download/18.162047b519a91d05331197bd/1786611369096/slutligt-valresultat-riksdagen-jamforande-statistik-2018-2022.xlsx
@@ -16,7 +24,7 @@ https://www.val.se/valresultat-och-statistik/statistik-och-data/radata-fran-val-
 Sweden 2014 Riksdag final results
 https://historik.val.se/val/val2014/slutresultat/R/rike/index.html
 
-Sweden Riksdag fixed constituency seats, 1988-2026
+Sweden Riksdag fixed seats, 1988-2026
 https://www.val.se/download/18.4005a7d19dee20a8ea544/1778074856144/valkretsmandat-riksdag-1988-2026.xlsx
 
 Norway Storting presets (2017, 2021, 2025)
@@ -53,17 +61,25 @@ The generated Finland 2019 and 2023 files include all constituency-level
 candidate nominators and all 200 seats. Their D'Hondt allocations reproduce
 the official seat allocation in every constituency.
 
-Denmark Folketing election, 24 March 2026
+Denmark Folketing elections, 5 June 2019, 1 November 2022, and 24 March 2026
 Generator: data/denmark/get-votes.py
-Run: uv run --locked python data/denmark/get-votes.py 2026
-Vote file: data/denmark_2026.csv
-Official votes and seats: data/denmark/official-results_2026.json
+Run: uv run --locked python data/denmark/get-votes.py YEAR
+Vote files: data/denmark_2019.csv, data/denmark_2022.csv, data/denmark_2026.csv
+Official votes and seats: data/denmark/official-results_YEAR.json
 Format and checks: data/denmark/README.md
-All 12 parties and 6 independent candidates are retained, with original names
-and unmodified votes. The 10 constituencies sum to 3,567,625 valid votes,
-135 fixed seats and 40 adjustment seats. Regional adjustment totals are
-12 (Hovedstaden), 14 (Sjaelland-Syddanmark), 14 (Midtjylland-Nordjylland).
-The file is registered as a simulator preset, excluding Faroe Islands and Greenland.
+Each file retains original party and independent-candidate names and
+unmodified votes. They have 10 constituencies, 135 fixed seats and 40
+adjustment seats, and exclude Faroe Islands and Greenland.
+
+2019 results
+https://www.dst.dk/valg/Valg1684447/valgopg/valgopg.htm
+Seat allocation report:
+https://www.dst.dk/valg/Valg1684447/other/Folketingsvalg2019_v5.pdf
+
+2022 results
+https://www.dst.dk/valg/Valg1968094/valgopg/valgopg.htm
+Seat allocation report:
+https://www.dst.dk/valg/Valg1968094/other/Fordelingen-af-mandater-ved-FV2022.pdf
 
 Official final national votes and seats
 https://www.valg.im.dk/valg/folketingsvalg/resultater-fra-seneste-folketingsvalg

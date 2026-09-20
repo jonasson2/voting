@@ -25,7 +25,7 @@ Swedish sequence
 
 For Sweden, stages 1 and 2 must be separated differently:
 
-1. Allocate fixed constituency seats by modified Sainte-Lague (divisors
+1. Allocate fixed seats by modified Sainte-Lague (divisors
    1.2, 3, 5, ...), subject to the Swedish thresholds.
 
 2. Independently apportion all seats nationally among parties, from zero,
@@ -139,7 +139,7 @@ If the relevant constituency seat counts are proportional to constituency
 votes, the latter score is a common constant times votes[c,p] / divisor and
 therefore ranks lists exactly as the Swedish score. The analogous statement
 holds for the Icelandic method based on constituency seat shares. Norwegian
-law also has this equivalence if its fixed constituency seat counts are
+law also has this equivalence if its fixed-seat counts are
 proportional to constituency votes.
 
 Implementation plan

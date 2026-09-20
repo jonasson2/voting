@@ -3,9 +3,9 @@
   <table style="position:relative">
     <thead> 
       <tr>                                      <!-- STATISTICS HEADING -->
-        <th class="firstcol top"> {{group_titles["topLeft"]}} </th>
+        <th class="firstcol top quality-heading">{{group_titles["topLeft"]}}</th>
         <template v-for="stat in stats" :key="stat">
-          <th :colspan="nsys" class="top">
+          <th :colspan="statColumnCount(stat)" class="top">
             {{stat_headings[stat]}}
           </th>
         </template>
@@ -14,17 +14,15 @@
     <tbody>
       <template v-for="(id, index) in group_ids" :key="id">
         <template v-if="show[id]">
-          <tr v-if="headingType[id]=='stats'">
-            <td class="firstcol blank"></td>
-          </tr>
-          <tr>
+          <tr v-if="group_titles[id] || headingType[id]=='systems'">
             <th :class="groupclass(id)">
               {{group_titles[id]}}                     <!-- GROUP TITLE -->
             </th>
             <template v-if="headingType[id]=='systems'">
-              <template v-for="idx in nstat" :key="idx">
-                <template v-for="(sysname, s) in system_names" :key="s"> <!-- SYS HEADING -->
-                  <th :class="sysclass(s)">
+              <template v-for="stat in stats" :key="stat">
+                <template v-for="(sysname, s) in statColumnNames(stat)" :key="s">
+                  <th :class="sysclass(s, stat)"
+                      :title="columnTitle(stat, s)">
                     {{sysname}}
                   </th>
                 </template>
@@ -38,7 +36,7 @@
               </template>
             </template>
             <template v-else>                               <!-- NO HEADING -->
-              <th :colspan="nsys*nstat" class="gap"></th>
+              <th :colspan="totalDataColumns" class="gap"></th>
             </template>
           </tr>
           <tr v-for="(row, rowidx) in vuedata[id]"
@@ -47,15 +45,15 @@
               {{row["rowtitle"]}}
             </td>
             <template v-for="stat in stats" :key="stat">
-              <template v-for="s in nsys" :key="s">
-                <td :class="sysclass(s-1)">
-                  {{format(row[stat][s - 1])}}
+              <template v-for="(entry, s) in row[stat]" :key="s">
+                <td :class="sysclass(s, stat)">
+                  {{format(entry)}}
                 </td>
               </template>
             </template>
           </tr>
           <tr v-if="id in footnotes">
-            <td class="firstcol" :colspan="1 + nsys * nstat">
+            <td class="firstcol" :colspan="1 + totalDataColumns">
               {{footnotes[id]}}
             </td>
           </tr>
@@ -72,7 +70,7 @@
 
 <script>
 import { mapState } from "vuex"
-import { formatNumberUnlessZero } from "../numberFormat.js"
+import { formatEstimateWithCi } from "../numberFormat.js"
 
 export default {
   props: [
@@ -87,26 +85,39 @@ export default {
   ],
   computed: {
     ...mapState(["display_settings"]),
-    nstat: function() {return this.stats.length},
-    nsys:  function() {return this.system_names.length},
+    nsys: function() {return this.system_names.length},
+    totalDataColumns: function() {
+      return this.stats.reduce((total, stat) =>
+        total + this.statColumnCount(stat), 0)
+    },
     headingType: function() {return this.vuedata.headingType}
   },
   methods: {
     format(entry) {
       if (entry === null || typeof entry !== "object") return entry
       const digits = entry.integer ? 0 : this.display_settings.fractional_digits
-      const value = formatNumberUnlessZero(
-        entry.value, digits, this.display_settings)
-      const ci = entry.ci === null ? "" : formatNumberUnlessZero(
-        entry.ci, digits, this.display_settings)
-      if (value && ci) {
-        return value + " ± " + ci
-      }
-      if (ci) return "± " + ci
-      return value
+      return formatEstimateWithCi(
+        entry.value, entry.ci, digits, this.display_settings)
     },
-    sysclass: function(s) {
-      if (s==this.nsys-1) return "last"
+    statColumnCount(stat) {
+      return this.nsys + (
+        stat === "avg" && this.vuedata.has_paired_difference ? 1 : 0)
+    },
+    statColumnNames(stat) {
+      const names = [...this.system_names]
+      if (stat === "avg" && this.vuedata.has_paired_difference) {
+        names.splice(2, 0, "Difference")
+      }
+      return names
+    },
+    columnTitle(stat, index) {
+      if (stat === "avg" && this.vuedata.has_paired_difference && index === 2) {
+        return this.vuedata.difference_tooltip
+      }
+      return null
+    },
+    sysclass: function(s, stat) {
+      if (s==this.statColumnCount(stat)-1) return "last"
       else return "middle"
     },
     groupclass: function(id) {
@@ -138,6 +149,10 @@ th {
   font-weight:bold;
   background: #eee;
   text-align:center;
+}
+
+.quality-heading {
+  white-space: pre-line;
 }
 
 th.top {

@@ -1,0 +1,1428 @@
+{
+  "election_date": "2022-11-01",
+  "seat_allocation_source": "https://www.dst.dk/valg/Valg1968094/other/Fordelingen-af-mandater-ved-FV2022.pdf",
+  "national": {
+    "name": "Danmark",
+    "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgHL.htm",
+    "valid_votes": 3533951,
+    "parties": {
+      "A. Socialdemokratiet": {
+        "votes": 971995,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "B. Radikale Venstre": {
+        "votes": 133931,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "C. Det Konservative Folkeparti": {
+        "votes": 194820,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "D. Nye Borgerlige": {
+        "votes": 129524,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "F. SF - Socialistisk Folkeparti": {
+        "votes": 293186,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "I. Liberal Alliance": {
+        "votes": 278656,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "K. KD - Kristendemokraterne": {
+        "votes": 18276,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "M. Moderaterne": {
+        "votes": 327699,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "O. Dansk Folkeparti": {
+        "votes": 93428,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+        "votes": 31787,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "V. Venstre, Danmarks Liberale Parti": {
+        "votes": 470546,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "Æ. Danmarksdemokraterne - Inger Støjberg": {
+        "votes": 286796,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "Ø. Enhedslisten - De Rød-Grønne": {
+        "votes": 181452,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "Å. Alternativet": {
+        "votes": 117567,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "Uden for partierne": {
+        "votes": 4288,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      }
+    }
+  },
+  "regions": [
+    {
+      "name": "Hovedstaden",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgLand7.htm",
+      "valid_votes": 1072239,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 247864,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 63937,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 68022,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 28149,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 104993,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 90765,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 3481,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 111226,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 27373,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 18676,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 116618,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 35140,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 92420,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 62083,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 1492,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "H",
+      "num_adj_seats": 11
+    },
+    {
+      "name": "Sjælland-Syddanmark",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgLand8.htm",
+      "valid_votes": 1260905,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 380645,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 31536,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 60476,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 60642,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 101173,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 87007,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 5434,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 127216,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 42516,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 7306,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 172915,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 115805,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 41910,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 24735,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 1589,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "SS",
+      "num_adj_seats": 15
+    },
+    {
+      "name": "Midtjylland-Nordjylland",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgLand9.htm",
+      "valid_votes": 1200807,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 343486,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 38458,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 66322,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 40733,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 87020,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 100884,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 9361,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 89257,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 23539,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 5805,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 181013,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 135851,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 47122,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 30749,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 1207,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "MN",
+      "num_adj_seats": 14
+    }
+  ],
+  "constituencies": [
+    {
+      "name": "Københavns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor10.htm",
+      "valid_votes": 454670,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 86226,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 34031,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 22797,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 7512,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 52080,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 38204,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 971,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 42908,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 7072,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 10054,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 38319,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 8334,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 62611,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 42769,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 782,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Flemming Blicher": 600,
+        "Tom Gillesberg": 182
+      },
+      "num_fixed_seats": 17
+    },
+    {
+      "name": "Københavns Omegns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor11.htm",
+      "valid_votes": 301205,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 83264,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 15266,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 21778,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 8818,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 28681,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 24172,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 1129,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 32402,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 11026,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 6949,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 30791,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 11357,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 16188,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 8992,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 392,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Henrik Vendelbo Petersen": 81,
+        "Jovan Tasevski": 311
+      },
+      "num_fixed_seats": 11
+    },
+    {
+      "name": "Nordsjællands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor12.htm",
+      "valid_votes": 291643,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 69653,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 14389,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 22521,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 11290,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 22642,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 27497,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 878,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 34417,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 7725,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 1625,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 42873,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 13859,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 12342,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 9659,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 273,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Katjalivah Elleyhansen": 81,
+        "Jayseth Lotus Arrose Simonysano": 192
+      },
+      "num_fixed_seats": 10
+    },
+    {
+      "name": "Bornholms Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor13.htm",
+      "valid_votes": 24721,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 8721,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 251,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 926,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 529,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 1590,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 892,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 503,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 1499,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 1550,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 48,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 4635,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 1590,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 1279,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 663,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 45,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Charlotte Petersen": 45
+      },
+      "num_fixed_seats": 2
+    },
+    {
+      "name": "Sjællands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor14.htm",
+      "valid_votes": 519568,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 157580,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 12259,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 23560,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 22990,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 50778,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 34435,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 1260,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 56326,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 22384,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 2564,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 65433,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 41865,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 17107,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 10121,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 906,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {
+        "Lisa Sofia Larsson": 520,
+        "Rasmus Paludan": 386
+      },
+      "num_fixed_seats": 20
+    },
+    {
+      "name": "Fyns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor15.htm",
+      "valid_votes": 311415,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 101064,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 9305,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 16190,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 10873,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 25525,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 19992,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 1135,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 30825,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 8023,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 2958,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 36742,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 25486,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 14487,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 8476,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 334,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {
+        "Millah Kongsbach": 334
+      },
+      "num_fixed_seats": 12
+    },
+    {
+      "name": "Sydjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor16.htm",
+      "valid_votes": 429922,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 122001,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 9972,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 20726,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 26779,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 24870,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 32580,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 3039,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 40065,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 12109,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 1784,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 70740,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 48454,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 10316,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 6138,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 349,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {
+        "Kent Nielsen": 291,
+        "Kenneth Vestergaard": 58
+      },
+      "num_fixed_seats": 17
+    },
+    {
+      "name": "Østjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor17.htm",
+      "valid_votes": 506365,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 135497,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 23453,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 23637,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 17885,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 45361,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 49476,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 2723,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 43954,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 9908,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 4057,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 66351,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 35609,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 28798,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 19174,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 482,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {
+        "Jesper Antonsen": 390,
+        "Chresten H. Ibsen": 92
+      },
+      "num_fixed_seats": 18
+    },
+    {
+      "name": "Vestjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor18.htm",
+      "valid_votes": 324498,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 82187,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 6100,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 26395,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 10047,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 20715,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 25235,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 4995,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 22008,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 6514,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 767,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 62981,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 44086,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 7366,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 4731,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 371,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {
+        "Karen Predbjørn Klarbæk": 371
+      },
+      "num_fixed_seats": 13
+    },
+    {
+      "name": "Nordjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1968094/valgopg/valgopgStor19.htm",
+      "valid_votes": 369944,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 125802,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 8905,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 16290,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D. Nye Borgerlige": {
+          "votes": 12801,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 20944,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 26173,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. KD - Kristendemokraterne": {
+          "votes": 1643,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "M. Moderaterne": {
+          "votes": 23295,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 7117,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Q. Frie Grønne, Danmarks Nye Venstrefløjsparti": {
+          "votes": 981,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 51681,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Æ. Danmarksdemokraterne - Inger Støjberg": {
+          "votes": 56156,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 10958,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 6844,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 354,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {
+        "Jette Møller": 354
+      },
+      "num_fixed_seats": 15
+    }
+  ]
+}

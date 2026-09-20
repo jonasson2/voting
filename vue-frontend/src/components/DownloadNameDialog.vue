@@ -64,6 +64,7 @@ export default {
     },
     confirm() {
       if (this.validName) {
+        this.$refs.modal.hide()
         this.$emit("confirm", {
           filename: downloadFilename(this.basename, this.extension),
         })

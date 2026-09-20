@@ -31,10 +31,10 @@ def common_allocate(
 
         # DETERMINE CRITERION FOR EACH NON-FULL CONSTITUENCY
         criteria = np.zeros(len(openC))
-        last_score = np.zeros(len(openC))
+        has_score = np.zeros(len(openC), dtype=bool)
         for (k,c) in enumerate(openC):
             lp = find(openP==last_party[c])[0] if last_party[c] in openP else None
-            (p, criteria[k]) = compute_criteria(
+            (p, score) = compute_criteria(
                 votes[c,openP],
                 alloc_list[c,openP],
                 div,
@@ -44,20 +44,30 @@ def common_allocate(
                 npartyseats = total_party_seats[openP],
                 last_party = lp,
                 )
+            # A margin is undefined when the sole remaining party has no rival.
+            has_score[k] = score is not None
+            if score is not None:
+                criteria[k] = score
             party[c] = openP[p]
 
         # SELECT CONSTITUENCY AND PARTY WITH MAXIMUM CRITERION
-        maxC = openC[np.argmax(criteria)]
+        best = np.argmax(criteria)
+        maxC = openC[best]
         maxP = party[maxC]
+        previous_party = last_party[maxC]
         last_party[maxC] = maxP
         alloc_list[maxC, maxP] += 1
 
+        step_reason = nolast_reason if has_last and previous_party is None else reason
+        if not has_score[best]:
+            step_reason = "Only party with seats remaining"
+
         allocation_sequence.append({
             "const": maxC,
-            "last_party": last_party[c] if has_last else None,
+            "last_party": previous_party if has_last else None,
             "party": maxP,
-            "reason": nolast_reason if has_last and last_party[c] is None else reason,
-            "maximum": criteria.max()
+            "reason": step_reason,
+            "maximum": criteria[best] if has_score[best] else None
         })
         free_const_seats[maxC] -= 1
         free_party_seats[maxP] -= 1
@@ -88,7 +98,9 @@ def print_demo_table(rules, data):
     contents = []
     for alloc in alloc_seq:
         seat_number += 1
-        maximum = alloc["maximum"] if "maximum" in alloc else "N/A"
+        maximum = alloc.get("maximum")
+        if maximum is None:
+            maximum = "-"
         contents.append([
             seat_number,
             rules["constituencies"][alloc["const"]]["name"],

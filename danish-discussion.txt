@@ -10,7 +10,7 @@ The statutory advance-allocation procedure remains deferred as specified below.
 Basic structure
 ---------------
 
-The Danish part of the Folketing has 175 seats: 135 constituency seats and
+The Danish part of the Folketing has 175 seats: 135 fixed seats and
 40 compensatory seats. The four seats elected in the Faroe Islands and
 Greenland are outside this allocation.
 
@@ -29,9 +29,9 @@ The three regions are:
 Verified allocation procedure
 -----------------------------
 
-### 1. Allocation of constituency seats
+### 1. Allocation of fixed seats
 
-Allocate the fixed constituency seats separately in each constituency using
+Allocate the fixed seats separately in each constituency using
 d'Hondt divisors 1, 2, 3, and so on. Parties and independent candidates both
 participate. There is no electoral threshold at this stage. Exact quotient
 ties are decided by lot under Danish law.
@@ -41,10 +41,10 @@ ties are decided by lot under Danish law.
 An independent candidate is not eligible for compensatory seats. A party is
 eligible if it satisfies at least one of these conditions:
 
-1. It obtained at least one constituency seat.
+1. It obtained at least one fixed seat.
 2. In at least two of the three regions, its regional vote is at least the
    total number of valid votes in that region divided by the number of fixed
-   constituency seats in that region.
+   seats in that region.
 3. It obtained at least 2 percent of all valid votes nationally.
 
 For conditions 2 and 3, "all valid votes" includes votes for every party and
@@ -57,16 +57,16 @@ not thereby participate in the later allocation of compensatory seats.
 
 Allocate the available seats among the eligible parties using the Hare quota
 and largest remainders. The available number is the total number of seats
-(normally 175) minus constituency seats won by independent candidates. Only
-eligible-party votes enter the Hare quota, and the constituency seats already
+(normally 175) minus fixed seats won by independent candidates. Only
+eligible-party votes enter the Hare quota, and the fixed seats already
 won by parties are not minimum allocations. Exact ties are decided by lot.
 
 ### 4. Recalculation of party totals
 
 Section 77(4)-(5) describes a new calculation and, if needed, a new
-distribution. Constituency seats are not withdrawn.
+distribution. Fixed seats are not withdrawn.
 
-Let f[p] be party p's constituency seats and t[p] its national total from
+Let f[p] be party p's fixed seats and t[p] its national total from
 step 3. Keep f[p] fixed and recalculate t[p] as follows.
 
 a) If no party has f[p] > t[p], accept the step-3 totals and finish.

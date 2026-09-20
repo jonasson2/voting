@@ -87,7 +87,7 @@ def read_xlsx(filename):
 #         except Exception as e:
 #             print(row[1:3])
 #             raise Exception("Error loading constituency file: "
-#                             "constituency seats and adjustment seats "
+#                             "fixed seats and adjustment seats "
 #                             "must add to a nonzero number.")
 #         cons.append({
 #             "name": row[0],

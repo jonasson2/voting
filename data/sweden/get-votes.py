@@ -2,6 +2,7 @@
 import argparse
 import csv
 import io
+import json
 import re
 import ssl
 import sys
@@ -28,6 +29,9 @@ DETAILED_2018_URL = (
 FIXED_SEATS_URL = (
     "https://www.val.se/download/18.4005a7d19dee20a8ea544/1778074856144/"
     "valkretsmandat-riksdag-1988-2026.xlsx"
+)
+RESULTS_2026_URL = (
+    "https://resultat.val.se/data/resultat/val2026/RD_S.json"
 )
 RESULTS_2014_INDEX_URL = (
     "https://historik.val.se/val/val2014/slutresultat/R/rike/index.html"
@@ -334,6 +338,28 @@ def parse_2022_votes(fixed, total_seats):
     return parties, result_rows, labels
 
 
+def parse_2026_votes(fixed):
+    result = json.loads(download(RESULTS_2026_URL))
+    votes = OrderedDict()
+    labels = {}
+    pruned = {}
+    for constituency in result["valkretsar"]:
+        district = constituency["namn"]
+        votes[district] = OrderedDict()
+        pruned[district] = 0
+        for party in constituency["rosterPaverkaMandat"]["partiroster"]:
+            if party["visa"] == 0:
+                code = party["partiforkortning"]
+                votes[district][code] = party["antalRoster"]
+                labels[code] = party["partibeteckning"]
+            elif party["visa"] == 2:
+                pruned[district] += party["antalRoster"]
+    parties, result_rows = build_rows(votes, fixed, fixed)
+    for row in result_rows:
+        row["Pruned"] = pruned[row["Kjördæmi"]]
+    return parties, result_rows, labels
+
+
 def parse_2014_votes():
     index = download(RESULTS_2014_INDEX_URL).decode("iso-8859-1")
     link_parser = DistrictLinkParser()
@@ -394,6 +420,9 @@ def write_votes(year, out):
     if year == "2014":
         parties, rows, labels = parse_2014_votes()
         max_total_adj_seats = 39
+    elif year == "2026":
+        parties, rows, labels = parse_2026_votes(fixed_seats_by_year()[year])
+        max_total_adj_seats = 39
     else:
         parties, rows, labels = parse_recent_votes(year, fixed_seats_by_year())
         max_total_adj_seats = sum(row["adj"] for row in rows)
@@ -401,7 +430,10 @@ def write_votes(year, out):
         row["min_adj"] = 0
         row["max_adj"] = "-"
         del row["adj"]
+    has_pruned = year == "2026"
     fieldnames = ["Kjördæmi", "fixed", "min_adj", "max_adj", *parties]
+    if has_pruned:
+        fieldnames.append("Pruned")
     with open(out, "w", encoding="utf-8", newline="") as fd:
         writer = csv.DictWriter(fd, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
@@ -424,7 +456,7 @@ def write_votes(year, out):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("year", choices=["2014", "2018", "2022"])
+    parser.add_argument("year", choices=["2014", "2018", "2022", "2026"])
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
     out = args.out or Path(__file__).resolve().parent.parent / f"sweden_{args.year}.csv"

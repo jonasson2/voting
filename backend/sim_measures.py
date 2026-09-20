@@ -25,17 +25,29 @@ def add_vuedata(sim_result_dict, parallel):
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
     # print('party_votes_specified:', party_votes_specified)
     systems = sim_result_dict["systems"]
-    qm_topleft1 = "Seats minus fractional reference seat shares"
-    qm_topleft2 = "Sum over allocations to:"
+    qm_topleft1 = (
+        "Differences between allocated and fractional\n"
+        "reference seats, summed over constituency lists"
+    )
+    qm_topleft2 = ""
     groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     stats = list(STATISTICS_HEADINGS.keys())
     nsys = len(systems)
     nsim = sim_result_dict["iteration"]
+    paired_data = sim_result_dict.get("paired_data", {})
+    has_paired_difference = len(systems) >= 2
     vuedata = {}
     vuedata["stats"] = stats
     vuedata["stat_headings"] = STATISTICS_HEADINGS
     vuedata["headingType"] = headingType
     vuedata["system_names"] = [sys["name"] for sys in systems]
+    vuedata["has_paired_difference"] = has_paired_difference
+    if has_paired_difference:
+        first, second = vuedata["system_names"][:2]
+        vuedata["difference_tooltip"] = (
+            f"{first} minus {second}, calculated separately for each "
+            "simulated election."
+        )
     vuedata["group_ids"] = []
     vuedata["group_titles"] = {}
     vuedata["footnotes"] = {}
@@ -63,10 +75,27 @@ def add_vuedata(sim_result_dict, parallel):
                         "integer": fractional_digits(id, stat) == 0,
                         "ci": None,
                     }
-                    if stat == "avg" and entry != 0:
+                    if stat == "avg" and nsim > 0:
                         std = data[s]["measures"][measure]["std"]
                         display_value["ci"] = 1.96 * std / sqrt(nsim)
                     row[stat].append(display_value)
+                if stat == "avg" and has_paired_difference:
+                    paired = paired_data.get(measure)
+                    show_paired = id not in {
+                        "cmpList", "cmpParty", "cmpNationalDetails"
+                    }
+                    entry = (
+                        normalize_negative_zero(paired["avg"])
+                        if paired and show_paired else 0
+                    )
+                    ci = None
+                    if paired and show_paired and nsim > 0:
+                        ci = 1.96 * paired["std"] / sqrt(nsim)
+                    row[stat].insert(2, {
+                        "value": entry,
+                        "integer": False,
+                        "ci": ci,
+                    })
             vuedata[id].append(row)
     sim_result_dict["vuedata"] = vuedata
 

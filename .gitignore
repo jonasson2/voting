@@ -13,6 +13,7 @@ __pycache__/
 /doc/leiðbeiningar.docx
 /pardir/
 /tmp/
+/output/
 /backend/*.xlsx
 /.venv/
 /vue-frontend/node_modules

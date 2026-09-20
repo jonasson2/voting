@@ -156,8 +156,8 @@ class Simulation():
             for i in range(ns):
                 self.stat[measure][i] = Histogram()
         for measure in self.MEASURES:
-            self.stat[measure] = Running_stats(ns, parallel, measure)
-        extensions = ['const', 'tot']
+            shape = ns + (1 if ns >= 2 else 0)
+            self.stat[measure] = Running_stats(shape, parallel, measure)
         for measure in HISTOGRAM_MEASURES:
             self.stat[measure] = [None]*ns*np
             for i in range(ns*np):
@@ -167,13 +167,6 @@ class Simulation():
             for s in range(ns):
                 #store = measure=='party_disparity'
                 self.stat[measure][s] = Running_stats(np, parallel, measure)
-        if self.party_votes_specified:
-            extensions.extend(['nat', 'grand'])
-        for cmp_system in self.systems:
-            if cmp_system["compare_with"]:
-                for extension in extensions:
-                    measure = "cmp_" + cmp_system["name"] + "_" + extension
-                    self.stat[measure] = Running_stats(ns, parallel, measure)
 
     def run_initial_elections(self):
         for election in self.reference_handler.elections:
@@ -215,8 +208,6 @@ class Simulation():
         for i in range(self.sim_count):
             self.iteration = i + 1
             global_iteration = self.start_iteration + i
-            if tasknr==0:
-                print(f'iteration = {self.iteration}')
             votes, party_votes = self.generate_simulated_votes(global_iteration)
             self.run_and_collect_measures(
                 votes, party_votes, global_iteration)  # This allocates
@@ -356,7 +347,10 @@ class Simulation():
             self.specific_measures(election, deviations)
         for m in deviations.keys():
             if m in self.stat:
-                self.stat[m].update(deviations[m])
+                values = deviations[m]
+                if self.nsys >= 2:
+                    values = values + [values[0] - values[1]]
+                self.stat[m].update(values)
 
     def calculate_disparity(self, election):
         excess, shortage, disparity = 0, 0, 0
@@ -418,7 +412,14 @@ class Simulation():
 
     def specific_measures(self, election, deviations):
         (slope, corr) = self.bias(election)
-        deviations.add("min_seat_val", self.min_seat_val(election))
+        deviations.add(
+            "max_overrepresentation",
+            self.max_overrepresentation(election),
+        )
+        deviations.add(
+            "max_underrepresentation",
+            self.max_underrepresentation(election),
+        )
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
 
@@ -521,48 +522,32 @@ class Simulation():
             election.results['all_const_seats'], election.ref_seat_shares)
         return slope,corr
 
-    # Loosemore-Hanby
-    def sum_abs(self, election):
-        lh = sum([
-            abs(election.ref_seat_shares[c][p]
-                - election.results['all_const_seats'][c][p])
-            for p in range(self.nparty)
-            for c in range(election.nconst)
-        ])
-        return lh
+    # Minimized by D'Hondt in an unconstrained single-constituency allocation.
+    def max_overrepresentation(self, election):
+        ratios = []
+        for seats, references in zip(
+                election.results['all_const_seats'],
+                election.ref_seat_shares):
+            for seat, reference in zip(seats, references):
+                if seat == 0:
+                    continue
+                if reference == 0:
+                    raise RuntimeError(
+                        "Relative over-representation is undefined when a "
+                        "list with zero reference seats receives a seat.")
+                ratios.append(seat / reference)
+        return max(ratios, default=0)
 
-    # Minimized by Sainte Lague
-    def sum_sq(self, election):
-        ids = election.ref_seat_shares
-        stl = sum([
-            (ids[c][p] - election.results['all_const_seats'][c][p])**2/ids[c][p]
-            for p in range(self.nparty)
-            for c in range(election.nconst)
-            if ids[c][p] != 0
-        ])
-        return stl
-
-    # Maximized by d'Hondt
-    def min_seat_val(self, election):
-        ids = election.ref_seat_shares
-        dh_min = min([
-            ids[c][p]/float(election.results['all_const_seats'][c][p])
-            for p in range(self.nparty)
-            for c in range(election.nconst)
-            if election.results['all_const_seats'][c][p] != 0
-        ])
-        return dh_min
-
-    # Minimized by d'Hondt
-    def sum_pos(self, election):
-        ids = election.ref_seat_shares
-        dh_sum = sum([
-            max(0, ids[c][p] - election.results['all_const_seats'][c][p])/ids[c][p]
-            for p in range(self.nparty)
-            for c in range(election.nconst)
-            if ids[c][p] != 0
-        ])
-        return dh_sum
+    # Minimized by Adams in an unconstrained single-constituency allocation.
+    def max_underrepresentation(self, election):
+        return max((
+            max(0, (reference - seat) / reference)
+            for seats, references in zip(
+                election.results['all_const_seats'],
+                election.ref_seat_shares)
+            for seat, reference in zip(seats, references)
+            if reference != 0
+        ), default=0)
 
     def attributes(self):
         builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones
@@ -634,15 +619,6 @@ class Sim_result:
             for i in range(self.nsys):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
 
-        extensions = ['const', 'tot']
-        if self.party_votes_specified:
-            extensions.extend(['nat', 'grand'])
-        for cmp_system in self.systems:
-            if cmp_system["compare_with"]:
-                for extension in extensions:
-                    measure = "cmp_" + cmp_system["name"] + "_" + extension
-                    self.stat[measure].combine(sim_result.stat[measure])
-
     def analyze_vote_data(self):
         for m in VOTE_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
@@ -663,10 +639,15 @@ class Sim_result:
                 self.seat_data[i][m] = D
 
     def analyze_general(self):
+        self.paired_data = {}
         for m in self.MEASURES:
             dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
             for i in range(self.nsys):
                 self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
+            if self.nsys >= 2:
+                self.paired_data[m] = {
+                    stat: values[-1] for stat, values in dd.items()
+                }
 
         for m in PARTY_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
@@ -741,6 +722,7 @@ class Sim_result:
             "histogram_data":   self.histogram_data,
             "vote_table":       self.vote_table,
             "base_allocations": self.base_allocations,
+            "paired_data":      getattr(self, "paired_data", {}),
             "data":         [{
                 "name":           self.systems[sysnr]["name"],
                 "method":         self.systems[sysnr]["adjustment_method"],

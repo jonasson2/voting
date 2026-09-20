@@ -8,8 +8,10 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
+from zipfile import ZipFile
 
 import numpy as np
+from xlsxwriter import Workbook
 
 from apportion import apportion1d_general, threshold_drop
 from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER_RULES,
@@ -17,14 +19,16 @@ from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from excel_util import (fixed_seat_threshold_text, result_fractional_digits,
-                        result_number_format)
+                        result_number_format, result_percentage_digits,
+                        prepare_formats)
 from noweb import load_json, load_votes, votes_to_excel
 import noweb
 from par_util import parallel_dir
-from simulate import Simulation, SimulationSettings
+from simulate import Sim_result, Simulation, SimulationSettings
 from input_util import check_simul_settings, check_systems, normalize_system
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
+from methods.swedish_style_switching import switching as swedish_style_switching
 from table_util import entropy
 from vote_table import check_vote_table
 from voting import Election
@@ -71,7 +75,7 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertEqual(system['fixed_seat_threshold_choice'], 1)
         self.assertNotIn('fixed_seat_eligibility', system)
         self.assertEqual(normalize_system({})['fixed_seat_national_threshold'], 0)
-        self.assertEqual(normalize_system({})['fixed_seat_threshold_choice'], 0)
+        self.assertEqual(normalize_system({})['fixed_seat_threshold_choice'], 1)
         with self.assertRaisesRegex(ValueError, 'Unknown fixed-seat eligibility'):
             normalize_system({'fixed_seat_eligibility': 'invalid'})
 
@@ -91,10 +95,73 @@ class CurrentApplicationTest(unittest.TestCase):
     def test_result_excel_precision_setting(self):
         self.assertEqual(result_fractional_digits(None), 3)
         self.assertEqual(result_fractional_digits({'fractional_digits': 2}), 2)
+        self.assertEqual(result_percentage_digits(None), 2)
+        self.assertEqual(result_percentage_digits({'percentage_digits': 4}), 4)
         self.assertEqual(result_number_format(2), '#,##0.00')
         self.assertEqual(result_number_format(2, percentage=True), '#,##0.00%')
         with self.assertRaisesRegex(ValueError, 'between 0 and 10'):
             result_fractional_digits({'fractional_digits': 11})
+        with self.assertRaisesRegex(ValueError, 'between 0 and 10'):
+            result_percentage_digits({'percentage_digits': -1})
+        workbook = Workbook(BytesIO())
+        formats = prepare_formats(workbook, {
+            'fractional_digits': 1, 'percentage_digits': 4,
+        })
+        self.assertEqual(formats['cell'].num_format, '#,##0.0')
+        self.assertEqual(formats['percentages'].num_format, '#,##0.0000%')
+        self.assertEqual(formats['%'].num_format, '#,##0.0000%')
+        workbook.close()
+
+    def test_single_election_excel_percentage_precision(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-vote-percentage')
+        output = BytesIO()
+        ElectionHandler(table, [system], True).to_xlsx(
+            output, {'percentage_digits': 4})
+        with ZipFile(output) as workbook:
+            styles = workbook.read('xl/styles.xml').decode()
+        self.assertIn('#,##0.0000%', styles)
+
+    def test_single_election_excel_includes_vote_percentages_and_averages(self):
+        import openpyxl
+
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-vote-percentage')
+        handler = ElectionHandler(table, [system], True)
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'election.xlsx'
+            handler.to_xlsx(filename, {
+                'fractional_digits': 1,
+                'percentage_digits': 4,
+            })
+            workbook = openpyxl.load_workbook(filename, data_only=True)
+        worksheet = workbook.active
+        heading_rows = {
+            cell.value: cell.row
+            for cell in worksheet['A'] if cell.value in {'Votes', 'Total seats'}
+        }
+        vote_row = heading_rows['Votes']
+        total_seats_row = heading_rows['Total seats']
+
+        self.assertEqual(worksheet.cell(vote_row + 1, 5).value, 'Vote percentage')
+        self.assertEqual(worksheet.cell(vote_row + 5, 1).value, 'Vote percentage')
+        self.assertAlmostEqual(worksheet.cell(vote_row + 2, 5).value, 3800 / 8000)
+        self.assertAlmostEqual(worksheet.cell(vote_row + 5, 2).value, 4300 / 8000)
+        self.assertEqual(worksheet.cell(vote_row + 5, 5).value, 1)
+        self.assertEqual(worksheet.cell(vote_row + 2, 5).number_format, '#,##0.0000%')
+
+        self.assertEqual(
+            worksheet.cell(total_seats_row + 1, 5).value,
+            'Average votes/seat',
+        )
+        self.assertAlmostEqual(
+            worksheet.cell(total_seats_row + 2, 5).value,
+            worksheet.cell(vote_row + 2, 4).value
+            / worksheet.cell(total_seats_row + 2, 4).value,
+        )
+        self.assertEqual(worksheet.cell(total_seats_row + 2, 5).number_format,
+                         '#,##0.0')
+        workbook.close()
 
     def test_parallel_files_can_use_service_state_directory(self):
         with TemporaryDirectory() as directory:
@@ -319,7 +386,7 @@ class CurrentApplicationTest(unittest.TestCase):
                    if preset['Country'] == 'Sweden']
         self.assertEqual(
             [preset['Year'] for preset in swedish],
-            ['2014', '2018', '2022'],
+            ['2014', '2018', '2022', '2026'],
         )
         for preset in swedish:
             response = client.post(
@@ -417,7 +484,7 @@ class CurrentApplicationTest(unittest.TestCase):
             self.assertIsNotNone(settings['fixed_seat_national_threshold'])
         self.assertEqual(
             [settings['fixed_seat_threshold_choice'] for settings in presets.values()],
-            [0, 0, 0, 0, 0, 1, 1],
+            [1, 0, 0, 0, 0, 1, 1],
         )
 
         client = app.test_client()
@@ -469,6 +536,38 @@ class CurrentApplicationTest(unittest.TestCase):
         for measure, value in simulated.items():
             self.assertEqual(simulation.stat[measure].mean(), [value])
         self.assertNotIn('entropy', simulation.stat)
+
+    def test_greatest_relative_representation_measures_use_direct_formulas(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        settings = SimulationSettings()
+        settings.update(simulation_count=0, cpu_count=1)
+        simulation = Simulation(settings, [system], table)
+        simulation.run_and_collect_measures(table['votes'], None)
+        election = simulation.election_handler.elections[0]
+        expected = max(
+            seat / reference
+            for seat_row, reference_row in zip(
+                election.results['all_const_seats'],
+                election.ref_seat_shares)
+            for seat, reference in zip(seat_row, reference_row)
+            if seat
+        )
+        expected_under = max(
+            max(0, (reference - seat) / reference)
+            for seat_row, reference_row in zip(
+                election.results['all_const_seats'],
+                election.ref_seat_shares)
+            for seat, reference in zip(seat_row, reference_row)
+            if reference
+        )
+
+        self.assertAlmostEqual(
+            simulation.stat['max_overrepresentation'].mean()[0], expected)
+        self.assertAlmostEqual(
+            simulation.stat['max_underrepresentation'].mean()[0],
+            expected_under)
+        self.assertNotIn('min_seat_val', simulation.stat)
 
     def test_finnish_2015_matches_official_party_seat_totals(self):
         table = load_votes('../data/finland_2015.csv')
@@ -660,6 +759,21 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertFalse(display[-1][0].endswith('*'))
         self.assertFalse(display[-1][-1].endswith('*'))
 
+    def test_swedish_2026_matches_official_party_totals(self):
+        table = load_votes('../data/sweden_2026.csv')
+        election = ElectionHandler(
+            table, [self.make_swedish_system(table)], True).elections[0]
+        allocation = np.asarray(election.results['all_const_seats'])
+        self.assertEqual(
+            {party: int(seats) for party, seats in
+             zip(table['parties'], allocation.sum(axis=0)) if seats},
+            {
+                'M': 70, 'C': 25, 'L': 19, 'KD': 22,
+                'S': 99, 'V': 30, 'MP': 22, 'SD': 62,
+            },
+        )
+        self.assertEqual(sum(table['pruned']), 107_199)
+
     def test_swedish_system_runs_through_simulation_measures(self):
         table = load_votes('../data/sweden_2022.csv')
         settings = SimulationSettings()
@@ -727,10 +841,77 @@ class CurrentApplicationTest(unittest.TestCase):
                 actual.append(second_worker.generate_simulated_votes(2))
                 self.assertEqual(expected, actual)
 
-    def test_random_seed_validation(self):
+    def test_comparison_measures_are_combined_once_across_workers(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        systems = []
+        for name, divider in (("D'Hondt", 'dhondt'),
+                              ('Sainte-Laguë', 'sainte-lague')):
+            system = self.make_system(table, 'max-const-seat-share')
+            system['name'] = name
+            system['primary_divider'] = divider
+            system['adj_determine_divider'] = divider
+            system['adj_alloc_divider'] = divider
+            systems.append(system)
+
         settings = SimulationSettings()
-        settings['random_seed'] = ''
-        self.assertIsNone(check_simul_settings(settings)['random_seed'])
+        settings.update(random_seed=12345, simulation_count=9, cpu_count=2)
+
+        def run(count, start_iteration):
+            worker_settings = deepcopy(settings)
+            worker_settings['simulation_count'] = count
+            simulation = Simulation(
+                worker_settings, deepcopy(systems), deepcopy(table),
+                start_iteration=start_iteration)
+            simulation.simulate(tasknr=1)
+            return Sim_result(simulation.attributes())
+
+        uninterrupted = run(9, 0)
+        combined = run(4, 0)
+        combined.combine(run(5, 4))
+
+        comparison_measures = [
+            measure for measure in uninterrupted.MEASURES
+            if measure.startswith('cmp_')
+        ]
+        self.assertTrue(comparison_measures)
+        for measure in comparison_measures:
+            with self.subTest(measure=measure):
+                self.assertEqual(combined.stat[measure].n, 9)
+                np.testing.assert_allclose(
+                    combined.stat[measure].numpy_mean(),
+                    uninterrupted.stat[measure].numpy_mean(),
+                    atol=1e-12)
+                np.testing.assert_allclose(
+                    combined.stat[measure].numpy_std(),
+                    uninterrupted.stat[measure].numpy_std(),
+                    atol=1e-12)
+
+        for simulation in (uninterrupted, combined):
+            values = simulation.stat['sum_abs'].numpy_mean()
+            self.assertEqual(len(values), 3)
+            self.assertAlmostEqual(values[2], values[0] - values[1])
+
+        uninterrupted.analysis()
+        web_result = uninterrupted.get_result_web(False)
+        paired = web_result['paired_data']['sum_abs']
+        self.assertAlmostEqual(
+            paired['avg'],
+            web_result['data'][0]['measures']['sum_abs']['avg']
+            - web_result['data'][1]['measures']['sum_abs']['avg'],
+        )
+        displayed = web_result['vuedata']['toLists'][0]['avg']
+        self.assertEqual(len(displayed), 3)
+        self.assertAlmostEqual(displayed[2]['value'], paired['avg'])
+        self.assertIn(
+            "D'Hondt minus Sainte-Laguë",
+            web_result['vuedata']['difference_tooltip'],
+        )
+
+    def test_random_seed_validation(self):
+        for seed in ('', '-'):
+            settings = SimulationSettings()
+            settings['random_seed'] = seed
+            self.assertIsNone(check_simul_settings(settings)['random_seed'])
         settings = SimulationSettings()
         settings['random_seed'] = 123
         self.assertEqual(check_simul_settings(settings)['random_seed'], 123)
@@ -738,6 +919,38 @@ class CurrentApplicationTest(unittest.TestCase):
         settings['random_seed'] = 2**31
         with self.assertRaisesRegex(ValueError, 'Random seed'):
             check_simul_settings(settings)
+
+    def test_simulation_endpoint_accepts_cleared_random_seed(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        settings = SimulationSettings()
+        settings['random_seed'] = '-'
+        with patch.object(web, 'new_simulation', return_value='test-id') as start:
+            response = app.test_client().post('/api/simulate/', json={
+                'vote_table': table,
+                'systems': [system],
+                'sim_settings': settings,
+            })
+            self.assertEqual(response.get_json(), {'started': True, 'simid': 'test-id'})
+            self.assertIsNone(start.call_args.args[2]['random_seed'])
+
+            settings['random_seed'] = ''
+            response = app.test_client().post('/api/simulate/', json={
+                'vote_table': table,
+                'systems': [system],
+                'sim_settings': settings,
+            })
+            self.assertEqual(response.get_json(), {'started': True, 'simid': 'test-id'})
+            self.assertIsNone(start.call_args.args[2]['random_seed'])
+
+            settings['random_seed'] = 'not an integer'
+            response = app.test_client().post('/api/simulate/', json={
+                'vote_table': table,
+                'systems': [system],
+                'sim_settings': settings,
+            })
+            self.assertIn('Random seed must be an integer', response.get_json()['error'])
+            self.assertEqual(start.call_count, 2)
 
     def test_bulk_vote_generation_with_national_votes(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -775,6 +988,24 @@ class CurrentApplicationTest(unittest.TestCase):
         np.testing.assert_array_equal(allocation, [[0, 3], [3, 0]])
         np.testing.assert_array_equal(steps['party_totals'], [3, 3])
         self.assertEqual(len(steps['data']['switches']), 1)
+
+    def test_swedish_style_switching_protects_fixed_seats(self):
+        prior = np.array([[0, 0], [1, 0]], dtype=int)
+        allocation, steps = swedish_style_switching(
+            [[10, 0], [100, 0]], [1, 2], [2, 1], prior,
+            DIVIDER_RULES['sainte-lague'],
+        )
+        np.testing.assert_array_equal(allocation, [[0, 1], [2, 0]])
+        self.assertTrue(np.all(allocation >= prior))
+        self.assertEqual(len(steps['data']['switches']), 1)
+        self.assertEqual(steps['data']['switches'][0]['constituency'], 0)
+
+    def test_swedish_style_switching_rejects_fixed_seat_excess(self):
+        with self.assertRaisesRegex(ValueError, 'No removable excess seat'):
+            swedish_style_switching(
+                [[10, 1]], [2], [1, 1], [[2, 0]],
+                DIVIDER_RULES['sainte-lague'],
+            )
 
     def test_max_const_votes_respects_constituency_capacity(self):
         allocation, _ = max_const_votes(
@@ -996,6 +1227,7 @@ class CurrentApplicationTest(unittest.TestCase):
         }
         system = self.make_system(table, 'max-const-seat-share', threshold=0)
         system['constituency_threshold'] = 4
+        system['fixed_seat_threshold_choice'] = 0
         handler = ElectionHandler(table, [system], use_thresholds=True)
         allocation = handler.elections[0].results['fixed_const_seats'][0]
         self.assertEqual(allocation, [0, 100])
@@ -1141,7 +1373,7 @@ class CurrentApplicationTest(unittest.TestCase):
         np.testing.assert_array_equal(
             election.results['all_const_seats'], [[1, 0], [0, 1]])
 
-    def test_norwegian_parties_must_have_votes_in_every_constituency(self):
+    def test_parties_can_be_required_to_stand_in_every_constituency(self):
         table = {
             'name': 'Norwegian standing example',
             'parties': ['A', 'B'],
@@ -1160,10 +1392,14 @@ class CurrentApplicationTest(unittest.TestCase):
                 'pruned': 0,
             },
         }
-        system = self.make_system(table, 'norwegian-law', threshold=4)
-        system['primary_divider'] = 'nordic-1.4'
-        system['adj_determine_divider'] = 'nordic-1.4'
-        system['adj_alloc_divider'] = 'sainte-lague'
+        system = self.make_system(table, 'max-const-votes', threshold=4)
+        system['primary_divider'] = 'dhondt'
+        system['adj_determine_divider'] = 'dhondt'
+        system['adj_alloc_divider'] = 'dhondt'
+        unrestricted = ElectionHandler(table, [system], use_thresholds=True).elections[0]
+        np.testing.assert_array_equal(unrestricted.desired_col_sums, [2, 2])
+
+        system['require_votes_in_all_constituencies'] = True
         handler = ElectionHandler(table, [system], use_thresholds=True)
         election = handler.elections[0]
 
@@ -1171,10 +1407,15 @@ class CurrentApplicationTest(unittest.TestCase):
         np.testing.assert_array_equal(election.desired_col_sums, [3, 1])
         np.testing.assert_array_equal(election.results['all_const_total'], [3, 1])
 
-        # Candidacy comes from the source table and does not change when a
+        # Standing comes from the source table and does not change when a
         # simulated vote gives B positive votes in the second constituency.
         handler.run_elections(True, [[60, 100], [60, 50]])
         np.testing.assert_array_equal(election.desired_col_sums, [3, 1])
+
+    def test_norwegian_preset_requires_standing_everywhere(self):
+        presets = {preset['value']: preset['settings']
+                   for preset in ELECTION_LAW_PRESETS}
+        self.assertTrue(presets['norway']['require_votes_in_all_constituencies'])
 
     def test_national_threshold_totals_include_matching_pruned_votes(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -1189,9 +1430,9 @@ class CurrentApplicationTest(unittest.TestCase):
             'pruned': 400,
         }
         expected_totals = {
-            'totals': 8000,
+            'totals': 8300,
             'party_vote_info': 8400,
-            'average': 8200,
+            'average': 8350,
         }
         for basis, expected in expected_totals.items():
             with self.subTest(basis=basis):
@@ -1279,7 +1520,7 @@ class CurrentApplicationTest(unittest.TestCase):
         table['party_vote_basis'] = 'average'
         system = self.make_system(table, 'max-const-seat-share')
         handler = ElectionHandler(table, [system], use_thresholds=True)
-        self.assertEqual(handler.elections[0].nat_votes.tolist(), [4000, 3850])
+        self.assertEqual(handler.elections[0].nat_votes.tolist(), [4150, 3850])
 
     def test_party_vote_basis_applies_to_all_systems(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -1467,6 +1708,7 @@ class CurrentApplicationTest(unittest.TestCase):
             ('../data/norway_2025.csv', 'norwegian-law', 4),
             ('../data/iceland-2021.csv', 'max-const-seat-share', 0),
             ('../data/iceland-2021.csv', 'switching', 0),
+            ('../data/iceland-2021.csv', 'swedish-style-switching', 0),
             ('../data/iceland-2021.csv', 'alternating-scaling', 0),
         ]
         for filename, method, threshold in cases:
@@ -1486,3 +1728,9 @@ class CurrentApplicationTest(unittest.TestCase):
                     allocation.sum(axis=0).tolist(),
                     election.desired_col_sums.tolist(),
                 )
+                if method == 'swedish-style-switching':
+                    self.assertEqual(len(election.demo_tables), 2)
+                    self.assertEqual(
+                        election.demo_tables[1]['sup_header'],
+                        'Swedish-style switching of adjustment seats',
+                    )

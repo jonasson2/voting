@@ -1,15 +1,45 @@
 [
   {
+    "Name": "2 by 2 example",
+    "Country": "-",
+    "Year": "-",
+    "filename": "2-by-2-example.csv"
+  },
+  {
+    "Name": "Folketing (Denmark only)",
+    "Country": "Denmark",
+    "Year": "2019",
+    "filename": "denmark_2019.csv"
+  },
+  {
+    "Name": "Folketing (Denmark only)",
+    "Country": "Denmark",
+    "Year": "2022",
+    "filename": "denmark_2022.csv"
+  },
+  {
     "Name": "Folketing (Denmark only)",
     "Country": "Denmark",
     "Year": "2026",
     "filename": "denmark_2026.csv"
   },
   {
-    "Name": "2 by 2 example",
-    "Country": "-",
-    "Year": "-",
-    "filename": "2-by-2-example.csv"
+    "Name": "Eduskunta",
+    "Country": "Finland",
+    "Year": "2015",
+    "filename": "finland_2015.csv"
+  },
+  {
+    "Name": "Eduskunta",
+    "Country": "Finland",
+    "Year": "2019",
+    "filename": "finland_2019.csv"
+  },
+  {
+    "Name": "Eduskunta",
+    "Country": "Finland",
+    "Year": "2023",
+    "filename": "finland_2023.csv"
   },
   {
     "Name": "Alþingi (representative)",
@@ -72,24 +102,6 @@
     "filename": "icel-2024-mbl.csv"
   },
   {
-    "Name": "Eduskunta",
-    "Country": "Finland",
-    "Year": "2015",
-    "filename": "finland_2015.csv"
-  },
-  {
-    "Name": "Eduskunta",
-    "Country": "Finland",
-    "Year": "2019",
-    "filename": "finland_2019.csv"
-  },
-  {
-    "Name": "Eduskunta",
-    "Country": "Finland",
-    "Year": "2023",
-    "filename": "finland_2023.csv"
-  },
-  {
     "Name": "Stortinget",
     "Country": "Norway",
     "Year": "2017",
@@ -124,5 +136,11 @@
     "Country": "Sweden",
     "Year": "2022",
     "filename": "sweden_2022.csv"
+  },
+  {
+    "Name": "Riksdagen",
+    "Country": "Sweden",
+    "Year": "2026",
+    "filename": "sweden_2026.csv"
   }
 ]

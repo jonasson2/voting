@@ -11,7 +11,18 @@
       <label for="fractional-digits">Fractional digits in results</label>
       <b-form-input
         id="fractional-digits"
+        class="precision-input"
         v-model.number="fractionalDigits"
+        type="number"
+        min="0"
+        max="10"
+        step="1"
+      />
+      <label for="percentage-digits">Fractional digits in percentages</label>
+      <b-form-input
+        id="percentage-digits"
+        class="precision-input"
+        v-model.number="percentageDigits"
         type="number"
         min="0"
         max="10"
@@ -59,6 +70,17 @@ export default {
         })
       },
     },
+    percentageDigits: {
+      get() {
+        return this.display_settings.percentage_digits
+      },
+      set(value) {
+        this.updateDisplaySettings({
+          ...this.display_settings,
+          percentage_digits: value,
+        })
+      },
+    },
   },
   methods: mapMutations(["updateDisplaySettings"]),
 }
@@ -80,7 +102,7 @@ export default {
   margin: 0;
 }
 
-#fractional-digits {
+.precision-input {
   width: 5rem;
 }
 

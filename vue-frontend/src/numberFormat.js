@@ -9,6 +9,7 @@ export function defaultDisplaySettings() {
     thousands_separator: ",",
     decimal_separator: ".",
     fractional_digits: 3,
+    percentage_digits: 2,
   }
 }
 
@@ -21,10 +22,15 @@ export function normalizeDisplaySettings(settings = {}) {
   const fractionalDigits = Number.isInteger(requestedDigits)
     ? Math.min(10, Math.max(0, requestedDigits))
     : 3
+  const requestedPercentageDigits = Number(settings.percentage_digits)
+  const percentageDigits = Number.isInteger(requestedPercentageDigits)
+    ? Math.min(10, Math.max(0, requestedPercentageDigits))
+    : 2
   return {
     thousands_separator: separators.thousands,
     decimal_separator: separators.decimal,
     fractional_digits: fractionalDigits,
+    percentage_digits: percentageDigits,
   }
 }
 
@@ -49,6 +55,14 @@ export function formatNumberUnlessZero(value, digits, settings) {
   const precision = Math.min(10, Math.max(0, Number(digits)))
   if (Number.isFinite(number) && Number(number.toFixed(precision)) === 0) return ""
   return formatNumber(value, precision, settings)
+}
+
+export function formatEstimateWithCi(value, ci, digits, settings) {
+  if (ci === null) return formatNumberUnlessZero(value, digits, settings)
+  const displayedValue = formatNumberUnlessZero(value, digits, settings)
+  const displayedCi = formatNumberUnlessZero(ci, digits, settings)
+  if (!displayedValue && !displayedCi) return ""
+  return `${formatNumber(value, digits, settings)} ± ${formatNumber(ci, digits, settings)}`
 }
 
 function groupedIntegerDigits(text, settings) {

@@ -1,0 +1,19 @@
+Denmark 2019,fixed,min_adj,max_adj,region,A,B,C,D,E,F,I,K,O,P,V,Ø,Å,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10,U11,U12,U13
+Party names,,,,,Socialdemokratiet,Radikale Venstre,Det Konservative Folkeparti, Nye Borgerlige,Klaus Riskær Pedersen,SF - Socialistisk Folkeparti,Liberal Alliance,Kristendemokraterne,Dansk Folkeparti,Stram Kurs,"Venstre, Danmarks Liberale Parti",Enhedslisten - De Rød-Grønne,Alternativet,Tommy Schou Christesen,Tom Gillesberg,John Jørgensen,Pierre Tavares,John Erik Wagner,Christian B. Olesen,Mads Palsvig,Hans Frederik Brobjerg,Gert Lassen,Pinki Karin Yvonne Jensen,Michael Thomsen,Chresten H. Ibsen,Hans Schultz
+Independent candidates,,,,,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1
+Max adj seats,,,40,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Københavns Storkreds,16,0,-,H,77879,74135,23829,6417,4382,52176,11655,3268,19181,5717,67819,75935,29405,22,167,80,305,33,0,0,0,0,0,0,0,0
+Københavns Omegns Storkreds,11,0,-,H,79845,33638,28994,7144,2481,29101,7916,2930,25419,5914,53355,22400,9535,0,0,0,0,0,59,826,0,0,0,0,0,0
+Nordsjællands Storkreds,10,0,-,H,61801,32419,32368,9439,2753,19993,9581,3229,21734,4276,67742,16213,7846,0,0,0,0,0,0,0,23,259,0,0,0,0
+Bornholms Storkreds,2,0,-,H,8593,846,456,428,221,1091,248,1033,2626,481,6384,2052,824,0,0,0,0,0,0,0,0,0,0,0,0,0
+Sjællands Storkreds,20,0,-,SS,147057,30354,30449,13319,5329,45992,9289,4171,56697,14054,126419,27272,10305,0,0,0,0,0,0,0,0,0,162,0,0,0
+Fyns Storkreds,12,0,-,SS,94337,22793,19256,5926,2551,20961,5867,3453,27746,5919,73046,21182,9505,0,0,0,0,0,0,0,0,0,0,0,0,0
+Sydjyllands Storkreds,18,0,-,SS,113641,25551,22049,17825,3215,22469,9310,9496,54258,7869,124007,17773,7172,0,0,0,0,0,0,0,0,0,0,289,0,0
+Østjyllands Storkreds,18,0,-,MN,128108,49157,28431,9797,3674,40665,14157,10617,38889,7484,112358,35261,16915,0,0,0,0,0,0,0,0,0,0,0,489,60
+Vestjyllands Storkreds,13,0,-,MN,79550,17216,29934,5464,1930,20151,7206,17016,27229,5057,96659,11091,5503,0,0,0,0,0,0,0,0,0,0,0,0,0
+Nordjyllands Storkreds,15,0,-,MN,124071,18605,18099,7442,3064,19705,7041,5731,34734,6343,98372,15921,7268,0,0,0,0,0,0,0,0,0,0,0,0,0
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Regions,Name,adj,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+H,Hovedstaden,11,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SS,Sjælland-Syddanmark,15,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MN,Midtjylland-Nordjylland,14,,,,,,,,,,,,,,,,,,,,,,,,,,,,

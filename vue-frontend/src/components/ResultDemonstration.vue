@@ -46,7 +46,7 @@ export default {
         let number = parseFloat(value)
         if (!Number.isFinite(number)) return "–"
         return formatNumber(number * 100,
-          this.display_settings.fractional_digits, this.display_settings) + "%"
+          this.display_settings.percentage_digits, this.display_settings) + "%"
       }
       let n = parseInt(fmt)
       if (isNaN(n)) return value

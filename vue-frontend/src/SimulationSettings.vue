@@ -10,7 +10,7 @@
           <label for="simulation-count">Number of simulations</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-count" class="compact-entry-input" type="text"
-            v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
+            v-autowidth="{ maxWidth: '175px', minWidth: '88px' }"
             v-model.number="sim_settings.simulation_count"
             min="0"/>
           </span>
@@ -26,12 +26,14 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Optional integer seed for repeatable generated votes and random tie decisions. Leave blank for fresh random draws.">
+          title="Optional integer seed for repeatable generated votes and random tie decisions. Use - for fresh random draws.">
           <label for="simulation-random-seed">Random seed</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-random-seed" class="compact-entry-input" type="text"
-              v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
-              v-model.number="sim_settings.random_seed"/>
+              v-autowidth="{ maxWidth: '175px', minWidth: '88px' }"
+              v-model.number="randomSeedInput"
+              @focus="$event.target.select()"
+              @blur="restoreRandomSeed"/>
           </span>
         </div>
         <div class="simulation-setting-row"
@@ -93,7 +95,7 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Selecting No is equivalent to setting all percentage and fixed-seat thresholds in Electoral systems to zero, including for reference elections and comparison measures. Other eligibility rules still apply.">
+          title="Selecting No disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.">
           <label for="simulation-thresholds">Simulate with thresholds?</label>
           <b-form-select id="simulation-thresholds"
             class="compact-select simulation-threshold-select simulation-setting-control"
@@ -171,6 +173,14 @@ export default {
       'systems',
       'waiting_for_data'
     ]),
+    randomSeedInput: {
+      get() {
+        return this.sim_settings.random_seed == null ? '-' : this.sim_settings.random_seed
+      },
+      set(value) {
+        this.sim_settings.random_seed = value
+      },
+    },
     system_names: function() {
       let sysnames = this.systems.map(system => system.name)
       console.log("NAMES=", sysnames)
@@ -197,6 +207,12 @@ export default {
     }
   },
   methods: {
+    restoreRandomSeed() {
+      const seed = this.sim_settings.random_seed
+      if (typeof seed === 'string' && seed.trim() === '') {
+        this.sim_settings.random_seed = '-'
+      }
+    },
     // The following function should maybe be moved to startsimulation
     // to force listening to beforeunload if simulation has been run
     //...mapMutations(["setSimulateCreated"])

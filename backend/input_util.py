@@ -12,14 +12,16 @@ def normalize_system(system):
     legacy_eligibility = system.pop("fixed_seat_eligibility", None)
     if legacy_eligibility not in (None, "constituency", "national-or-constituency"):
         raise ValueError(f"Unknown fixed-seat eligibility rule: {legacy_eligibility}")
-    system.setdefault("fixed_seat_threshold_choice", 1 if (
-        legacy_eligibility == "national-or-constituency"
-        or system.get("fixed_seat_national_threshold") not in (None, "")) else 0)
+    system.setdefault(
+        "fixed_seat_threshold_choice",
+        1 if legacy_eligibility != "constituency" else 0,
+    )
     if "fixed_seat_national_threshold" not in system:
         system["fixed_seat_national_threshold"] = (
             system.get("adjustment_threshold", 0)
             if legacy_eligibility == "national-or-constituency" else 0)
     system.setdefault("adjustment_preparation_method", "none")
+    system.setdefault("require_votes_in_all_constituencies", False)
     system.setdefault("danish_special_rules",
                       system["adjustment_preparation_method"] == "danish-regions")
     system.setdefault("adj_preparation_divider", "sainte-lague")
@@ -72,6 +74,8 @@ def check_systems(electoral_systems):
             raise ValueError(
                 "National threshold for adjustment seats must be a number between 0 and 100%; blank is not allowed.")
         preparation_method = electoral_system["adjustment_preparation_method"]
+        if not isinstance(electoral_system["require_votes_in_all_constituencies"], bool):
+            raise ValueError("Standing in all constituencies must be Yes or No.")
         if not isinstance(electoral_system["danish_special_rules"], bool):
             raise ValueError("Danish special rules must be Yes or No.")
         if (electoral_system["danish_special_rules"]
@@ -138,7 +142,7 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
     seed = sim_settings.get("random_seed")
-    if seed in (None, ""):
+    if seed in (None, "", "-"):
         sim_settings["random_seed"] = None
     elif type(seed) is not int or not -(2**31) <= seed < 2**31:
         raise ValueError(

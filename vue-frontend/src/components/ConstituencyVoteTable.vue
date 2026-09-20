@@ -250,7 +250,8 @@ export default {
       if (!Number.isFinite(votes) || !Number.isFinite(total) || total <= 0) {
         return "–"
       }
-      return formatNumber(100 * votes / total, 1, this.display_settings) + "%"
+      return formatNumber(100 * votes / total,
+        this.display_settings.percentage_digits, this.display_settings) + "%"
     },
   },
 }

@@ -75,12 +75,16 @@ def vote_percentage(votes, alloc, div, **kwargs):
 def absolute_margin(votes, alloc, div, **_):
     quot = votes/div[alloc]
     party = np.argmax(quot)
+    if len(quot) == 1:
+        return party, None
     margin = (quot[party] - np.delete(quot, party)).min()
     return party, margin
 
 def relative_margin(votes, alloc, div, **_):
     quot = votes/div[alloc]
     party = np.argmax(quot)
+    if len(quot) == 1:
+        return party, None
     others = np.delete(quot, party)
     margin = 10000000 if others.min() == 0 else (quot[party]/others).min()
     return party, margin

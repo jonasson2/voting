@@ -1,0 +1,1337 @@
+{
+  "election_date": "2019-06-05",
+  "seat_allocation_source": "https://www.dst.dk/valg/Valg1684447/other/Folketingsvalg2019_v5.pdf",
+  "national": {
+    "name": "Danmark",
+    "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgHL.htm",
+    "valid_votes": 3531720,
+    "parties": {
+      "A. Socialdemokratiet": {
+        "votes": 914882,
+        "total_seats": 48,
+        "fixed_seats": 44,
+        "adjustment_seats": 4
+      },
+      "B. Radikale Venstre": {
+        "votes": 304714,
+        "total_seats": 16,
+        "fixed_seats": 12,
+        "adjustment_seats": 4
+      },
+      "C. Det Konservative Folkeparti": {
+        "votes": 233865,
+        "total_seats": 12,
+        "fixed_seats": 9,
+        "adjustment_seats": 3
+      },
+      "D.  Nye Borgerlige": {
+        "votes": 83201,
+        "total_seats": 4,
+        "fixed_seats": 0,
+        "adjustment_seats": 4
+      },
+      "E. Klaus Riskær Pedersen": {
+        "votes": 29600,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "F. SF - Socialistisk Folkeparti": {
+        "votes": 272304,
+        "total_seats": 14,
+        "fixed_seats": 12,
+        "adjustment_seats": 2
+      },
+      "I. Liberal Alliance": {
+        "votes": 82270,
+        "total_seats": 4,
+        "fixed_seats": 0,
+        "adjustment_seats": 4
+      },
+      "K. Kristendemokraterne": {
+        "votes": 60944,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "O. Dansk Folkeparti": {
+        "votes": 308513,
+        "total_seats": 16,
+        "fixed_seats": 11,
+        "adjustment_seats": 5
+      },
+      "P. Stram Kurs": {
+        "votes": 63114,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      },
+      "V. Venstre, Danmarks Liberale Parti": {
+        "votes": 826161,
+        "total_seats": 43,
+        "fixed_seats": 39,
+        "adjustment_seats": 4
+      },
+      "Ø. Enhedslisten - De Rød-Grønne": {
+        "votes": 245100,
+        "total_seats": 13,
+        "fixed_seats": 7,
+        "adjustment_seats": 6
+      },
+      "Å. Alternativet": {
+        "votes": 104278,
+        "total_seats": 5,
+        "fixed_seats": 1,
+        "adjustment_seats": 4
+      },
+      "Uden for partierne": {
+        "votes": 2774,
+        "total_seats": 0,
+        "fixed_seats": 0,
+        "adjustment_seats": 0
+      }
+    }
+  },
+  "regions": [
+    {
+      "name": "Hovedstaden",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgLand7.htm",
+      "valid_votes": 1076921,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 228118,
+          "total_seats": 11,
+          "fixed_seats": 11,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 141038,
+          "total_seats": 7,
+          "fixed_seats": 5,
+          "adjustment_seats": 2
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 85647,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 23428,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 9837,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 102361,
+          "total_seats": 5,
+          "fixed_seats": 4,
+          "adjustment_seats": 1
+        },
+        "I. Liberal Alliance": {
+          "votes": 29400,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 10460,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 68960,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 16388,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 195300,
+          "total_seats": 10,
+          "fixed_seats": 9,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 116600,
+          "total_seats": 6,
+          "fixed_seats": 4,
+          "adjustment_seats": 2
+        },
+        "Å. Alternativet": {
+          "votes": 47610,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 1774,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "H",
+      "num_adj_seats": 11
+    },
+    {
+      "name": "Sjælland-Syddanmark",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgLand8.htm",
+      "valid_votes": 1268335,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 355035,
+          "total_seats": 19,
+          "fixed_seats": 17,
+          "adjustment_seats": 2
+        },
+        "B. Radikale Venstre": {
+          "votes": 78698,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 71754,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 37070,
+          "total_seats": 2,
+          "fixed_seats": 0,
+          "adjustment_seats": 2
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 11095,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 89422,
+          "total_seats": 5,
+          "fixed_seats": 4,
+          "adjustment_seats": 1
+        },
+        "I. Liberal Alliance": {
+          "votes": 24466,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 17120,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 138701,
+          "total_seats": 8,
+          "fixed_seats": 6,
+          "adjustment_seats": 2
+        },
+        "P. Stram Kurs": {
+          "votes": 27842,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 323472,
+          "total_seats": 17,
+          "fixed_seats": 15,
+          "adjustment_seats": 2
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 66227,
+          "total_seats": 4,
+          "fixed_seats": 2,
+          "adjustment_seats": 2
+        },
+        "Å. Alternativet": {
+          "votes": 26982,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 451,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "SS",
+      "num_adj_seats": 15
+    },
+    {
+      "name": "Midtjylland-Nordjylland",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgLand9.htm",
+      "valid_votes": 1186464,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 331729,
+          "total_seats": 18,
+          "fixed_seats": 16,
+          "adjustment_seats": 2
+        },
+        "B. Radikale Venstre": {
+          "votes": 84978,
+          "total_seats": 5,
+          "fixed_seats": 4,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 76464,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 22703,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 8668,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 80521,
+          "total_seats": 4,
+          "fixed_seats": 4,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 28404,
+          "total_seats": 2,
+          "fixed_seats": 0,
+          "adjustment_seats": 2
+        },
+        "K. Kristendemokraterne": {
+          "votes": 33364,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 100852,
+          "total_seats": 5,
+          "fixed_seats": 3,
+          "adjustment_seats": 2
+        },
+        "P. Stram Kurs": {
+          "votes": 18884,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 307389,
+          "total_seats": 16,
+          "fixed_seats": 15,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 62273,
+          "total_seats": 3,
+          "fixed_seats": 1,
+          "adjustment_seats": 2
+        },
+        "Å. Alternativet": {
+          "votes": 29686,
+          "total_seats": 2,
+          "fixed_seats": 0,
+          "adjustment_seats": 2
+        },
+        "Uden for partierne": {
+          "votes": 549,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "abbreviation": "MN",
+      "num_adj_seats": 14
+    }
+  ],
+  "constituencies": [
+    {
+      "name": "Københavns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor10.htm",
+      "valid_votes": 452405,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 77879,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 74135,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 23829,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 6417,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 4382,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 52176,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "I. Liberal Alliance": {
+          "votes": 11655,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 3268,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 19181,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 5717,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 67819,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 75935,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 29405,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 607,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Tommy Schou Christesen": 22,
+        "Tom Gillesberg": 167,
+        "John Jørgensen": 80,
+        "Pierre Tavares": 305,
+        "John Erik Wagner": 33
+      },
+      "num_fixed_seats": 16
+    },
+    {
+      "name": "Københavns Omegns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor11.htm",
+      "valid_votes": 309557,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 79845,
+          "total_seats": 4,
+          "fixed_seats": 4,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 33638,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 28994,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 7144,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 2481,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 29101,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 7916,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 2930,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 25419,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "P. Stram Kurs": {
+          "votes": 5914,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 53355,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 22400,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 9535,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 885,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Christian B. Olesen": 59,
+        "Mads Palsvig": 826
+      },
+      "num_fixed_seats": 11
+    },
+    {
+      "name": "Nordsjællands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor12.htm",
+      "valid_votes": 289676,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 61801,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 32419,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 32368,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 9439,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 2753,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 19993,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 9581,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 3229,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 21734,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "P. Stram Kurs": {
+          "votes": 4276,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 67742,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 16213,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 7846,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 282,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {
+        "Hans Frederik Brobjerg": 23,
+        "Gert Lassen": 259
+      },
+      "num_fixed_seats": 10
+    },
+    {
+      "name": "Bornholms Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor13.htm",
+      "valid_votes": 25283,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 8593,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 846,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 456,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 428,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 221,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 1091,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 248,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 1033,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 2626,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "P. Stram Kurs": {
+          "votes": 481,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 6384,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 2052,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 824,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 0,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "H",
+      "independent_candidates": {},
+      "num_fixed_seats": 2
+    },
+    {
+      "name": "Sjællands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor14.htm",
+      "valid_votes": 520869,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 147057,
+          "total_seats": 8,
+          "fixed_seats": 7,
+          "adjustment_seats": 1
+        },
+        "B. Radikale Venstre": {
+          "votes": 30354,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 30449,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 13319,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 5329,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 45992,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "I. Liberal Alliance": {
+          "votes": 9289,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 4171,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 56697,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 14054,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 126419,
+          "total_seats": 7,
+          "fixed_seats": 6,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 27272,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 10305,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 162,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {
+        "Pinki Karin Yvonne Jensen": 162
+      },
+      "num_fixed_seats": 20
+    },
+    {
+      "name": "Fyns Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor15.htm",
+      "valid_votes": 312542,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 94337,
+          "total_seats": 5,
+          "fixed_seats": 4,
+          "adjustment_seats": 1
+        },
+        "B. Radikale Venstre": {
+          "votes": 22793,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 19256,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 5926,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 2551,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 20961,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 5867,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 3453,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 27746,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 5919,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 73046,
+          "total_seats": 4,
+          "fixed_seats": 3,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 21182,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 9505,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 0,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {},
+      "num_fixed_seats": 12
+    },
+    {
+      "name": "Sydjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor16.htm",
+      "valid_votes": 434924,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 113641,
+          "total_seats": 6,
+          "fixed_seats": 6,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 25551,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 22049,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 17825,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 3215,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 22469,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 9310,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 9496,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 54258,
+          "total_seats": 3,
+          "fixed_seats": 3,
+          "adjustment_seats": 0
+        },
+        "P. Stram Kurs": {
+          "votes": 7869,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 124007,
+          "total_seats": 6,
+          "fixed_seats": 6,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 17773,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 7172,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 289,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "SS",
+      "independent_candidates": {
+        "Michael Thomsen": 289
+      },
+      "num_fixed_seats": 18
+    },
+    {
+      "name": "Østjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor17.htm",
+      "valid_votes": 496062,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 128108,
+          "total_seats": 7,
+          "fixed_seats": 6,
+          "adjustment_seats": 1
+        },
+        "B. Radikale Venstre": {
+          "votes": 49157,
+          "total_seats": 3,
+          "fixed_seats": 2,
+          "adjustment_seats": 1
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 28431,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 9797,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 3674,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 40665,
+          "total_seats": 2,
+          "fixed_seats": 2,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 14157,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 10617,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 38889,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 7484,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 112358,
+          "total_seats": 6,
+          "fixed_seats": 5,
+          "adjustment_seats": 1
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 35261,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "Å. Alternativet": {
+          "votes": 16915,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 549,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {
+        "Chresten H. Ibsen": 489,
+        "Hans Schultz": 60
+      },
+      "num_fixed_seats": 18
+    },
+    {
+      "name": "Vestjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor18.htm",
+      "valid_votes": 324006,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 79550,
+          "total_seats": 4,
+          "fixed_seats": 4,
+          "adjustment_seats": 0
+        },
+        "B. Radikale Venstre": {
+          "votes": 17216,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 29934,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 5464,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 1930,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 20151,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 7206,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "K. Kristendemokraterne": {
+          "votes": 17016,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 27229,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "P. Stram Kurs": {
+          "votes": 5057,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 96659,
+          "total_seats": 5,
+          "fixed_seats": 5,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 11091,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 5503,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "Uden for partierne": {
+          "votes": 0,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {},
+      "num_fixed_seats": 13
+    },
+    {
+      "name": "Nordjyllands Storkreds",
+      "source": "https://www.dst.dk/valg/Valg1684447/valgopg/valgopgStor19.htm",
+      "valid_votes": 366396,
+      "parties": {
+        "A. Socialdemokratiet": {
+          "votes": 124071,
+          "total_seats": 7,
+          "fixed_seats": 6,
+          "adjustment_seats": 1
+        },
+        "B. Radikale Venstre": {
+          "votes": 18605,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "C. Det Konservative Folkeparti": {
+          "votes": 18099,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "D.  Nye Borgerlige": {
+          "votes": 7442,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "E. Klaus Riskær Pedersen": {
+          "votes": 3064,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "F. SF - Socialistisk Folkeparti": {
+          "votes": 19705,
+          "total_seats": 1,
+          "fixed_seats": 1,
+          "adjustment_seats": 0
+        },
+        "I. Liberal Alliance": {
+          "votes": 7041,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "K. Kristendemokraterne": {
+          "votes": 5731,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "O. Dansk Folkeparti": {
+          "votes": 34734,
+          "total_seats": 2,
+          "fixed_seats": 1,
+          "adjustment_seats": 1
+        },
+        "P. Stram Kurs": {
+          "votes": 6343,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        },
+        "V. Venstre, Danmarks Liberale Parti": {
+          "votes": 98372,
+          "total_seats": 5,
+          "fixed_seats": 5,
+          "adjustment_seats": 0
+        },
+        "Ø. Enhedslisten - De Rød-Grønne": {
+          "votes": 15921,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Å. Alternativet": {
+          "votes": 7268,
+          "total_seats": 1,
+          "fixed_seats": 0,
+          "adjustment_seats": 1
+        },
+        "Uden for partierne": {
+          "votes": 0,
+          "total_seats": 0,
+          "fixed_seats": 0,
+          "adjustment_seats": 0
+        }
+      },
+      "region": "MN",
+      "independent_candidates": {},
+      "num_fixed_seats": 15
+    }
+  ]
+}

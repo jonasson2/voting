@@ -21,7 +21,7 @@
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
     title="Information on how to allocate fixed seats to lists in each constituency, and national fixed seats if present">
-    Allocation of fixed seats
+    Allocation of fixed seats in the constituencies
   </legend>
   <div class="settings-row">
     <label class="settings-field"
@@ -115,7 +115,18 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Yes: Apply the Danish two-region qualification and recalculate party totals under section 77 of the Danish Parliamentary Elections Act when fixed seats exceed provisional entitlements. No: Retain fixed seats and apportion the remaining seats using the selected rule and the national and fixed-seat qualifications above.">
+      title="Yes: a party must have positive votes in every constituency to qualify for further seats. A party that does not qualify retains its fixed seats.">
+      <span>Stand in all constituencies</span>
+      <b-form-select class="compact-select settings-yes-no"
+        v-model="systems[systemidx].require_votes_in_all_constituencies"
+        :options="[{ value: false, text: 'No' }, { value: true, text: 'Yes' }]"/>
+    </label>
+  </div>
+
+  <div class="settings-row">
+    <label class="settings-field"
+      v-b-tooltip.hover.bottom.v-primary.ds500
+      title="Yes: A party also qualifies if, in at least two regions, its votes equal or exceed the region's average number of votes per fixed seat. Recalculate party totals under section 77 of the Danish Parliamentary Elections Act when fixed seats exceed provisional entitlements. No: Retain fixed seats and apportion the remaining seats using the selected rule and the qualifications above.">
       <span>Danish special rules</span>
       <b-form-select class="compact-select settings-yes-no"
         v-model="systems[systemidx].danish_special_rules"
@@ -132,7 +143,7 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Swedish switching: Reallocates constituency seats that exceed parties’ national entitlements. Danish allocation to regions: Distributes each party’s adjustment-seat entitlement among regions, respecting each region’s seat total.">
+      title="Swedish switching: Reallocates fixed seats that exceed parties’ national entitlements. Danish allocation to regions: Distributes each party’s adjustment-seat entitlement among regions, respecting each region’s seat total.">
       <span>Preparation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_preparation_method"

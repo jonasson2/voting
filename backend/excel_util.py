@@ -33,6 +33,8 @@ def adjustment_qualification_text(system):
     text = (str(system["adjustment_threshold"]) + "% " +
             ("or " if system["adj_threshold_choice"] else "and ") +
             str(system["adjustment_threshold_seats"]) + " fixed seat(s)")
+    if system["require_votes_in_all_constituencies"]:
+        text += "; must stand in all constituencies"
     if system["adjustment_preparation_method"] == "danish-regions":
         text += ("; Danish special rules: " +
                  ("Yes" if system["danish_special_rules"] else "No"))
@@ -46,6 +48,13 @@ def result_fractional_digits(display_settings=None):
     return value
 
 
+def result_percentage_digits(display_settings=None):
+    value = (display_settings or {}).get("percentage_digits", 2)
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10:
+        raise ValueError("Percentage digits must be an integer between 0 and 10")
+    return value
+
+
 def result_number_format(fractional_digits, percentage=False):
     decimals = "." + "0" * fractional_digits if fractional_digits else ""
     return "#,##0" + decimals + ("%" if percentage else "")
@@ -53,7 +62,9 @@ def result_number_format(fractional_digits, percentage=False):
 
 def prepare_formats(workbook, display_settings=None):
     fractional_digits = result_fractional_digits(display_settings)
+    percentage_digits = result_percentage_digits(display_settings)
     result_format = result_number_format(fractional_digits)
+    percentage_format = result_number_format(percentage_digits, True)
     formats = {}
     formats["cell"] = workbook.add_format()
     formats["cell"].set_align('right')
@@ -76,17 +87,17 @@ def prepare_formats(workbook, display_settings=None):
     formats["right"].set_align('right')
 
     formats["percentages"] = workbook.add_format()
-    formats["percentages"].set_num_format('0.0%')
+    formats["percentages"].set_num_format(percentage_format)
 
     formats["neg-margins"] = workbook.add_format()
-    formats["neg-margins"].set_num_format('0.00%')
+    formats["neg-margins"].set_num_format(percentage_format)
 
     formats["left-pct1"] = workbook.add_format()
-    formats["left-pct1"].set_num_format('0.0%')
+    formats["left-pct1"].set_num_format(percentage_format)
     formats["left-pct1"].set_align('left')
 
     formats["threshold"] = workbook.add_format()
-    formats["threshold"].set_num_format('0.0%')
+    formats["threshold"].set_num_format(percentage_format)
     formats["threshold"].set_align('center')
 
     formats["h"] = workbook.add_format()
@@ -151,7 +162,7 @@ def prepare_formats(workbook, display_settings=None):
 
     formats["%"] = workbook.add_format()
     formats["%"].set_align('center')
-    formats["%"].set_num_format(result_number_format(fractional_digits, True))
+    formats["%"].set_num_format(percentage_format)
     
     return formats
 
@@ -172,11 +183,11 @@ def write_matrix(worksheet, startrow, startcol,
             value = int(value) if isPosInt(value) else value
             worksheet.write(startrow+c, startcol+len(matrix[c])-1, value, totalsformat)
 
-def cell_width(x, fmt, fractional_digits=3):
+def cell_width(x, fmt, fractional_digits=3, percentage_digits=2):
     if isinstance(x,str): n = len(x)
     elif fmt == '1':      n = len(f'{x:,.1f}')
     elif fmt == '3':      n = len(f'{x:,.{fractional_digits}f}')
-    elif fmt == '%':      n = len(f'{x:,.{fractional_digits}%}')
+    elif fmt == '%':      n = len(f'{x:,.{percentage_digits}%}')
     elif fmt == 'votes':  n = len(f'{x:,.0f}')
     else:                 n = 10
     return n
@@ -188,6 +199,7 @@ def demo_table_to_xlsx(
         fmt,
         demo_table,
         fractional_digits=3,
+        percentage_digits=2,
 ):
     headers = demo_table["headers"]
     steps = demo_table["steps"]
@@ -210,7 +222,8 @@ def demo_table_to_xlsx(
                 stp = stp.replace('\n', ',  ')
             elif np.isinf(stp):
                 stp = "N/A"
-            width[j] = max(width[j], cell_width(stp, f, fractional_digits))
+            width[j] = max(width[j], cell_width(
+                stp, f, fractional_digits, percentage_digits))
             worksheet.write(row, col + j, stp, fmt[f])
         row += 1
     for j in range(len(headers)):
@@ -235,13 +248,16 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
     """
     workbook = xlsxwriter.Workbook(filename)
     fractional_digits = result_fractional_digits(display_settings)
+    percentage_digits = result_percentage_digits(display_settings)
     fmt = prepare_formats(workbook, display_settings)
 
     def draw_block(worksheet, row, col,
         heading, xheaders, yheaders,
         matrix,
         topleft="",
-        cformat=fmt["cell"]
+        cformat=fmt["cell"],
+        right_column=None,
+        bottom_row=None,
     ):
         if heading.endswith("percentages"):
             cformat = fmt["percentages"]
@@ -252,7 +268,17 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
         write_matrix(worksheet, row+2, col+1, matrix,
                      format = cformat,
                      display_zeros = False)
-        return row + len(matrix) + 3
+        if right_column:
+            header, values, value_format = right_column
+            worksheet.write(row + 1, col + len(xheaders) + 1, header, fmt["center"])
+            worksheet.write_column(row + 2, col + len(xheaders) + 1,
+                                   values, value_format)
+        if bottom_row:
+            header, values, value_format = bottom_row
+            worksheet.write(row + len(matrix) + 2, col, header, fmt["basic"])
+            worksheet.write_row(row + len(matrix) + 2, col + 1,
+                                values, value_format)
+        return row + len(matrix) + 3 + bool(bottom_row)
 
     for election in elections:
         result = election.get_result_excel()
@@ -318,18 +344,29 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
             cformat=fmt["base"]
         )
 
-        vote_yheaders = copy(yheaders)
-        if vote_yheaders[-1] == 'Grand total':
-            vote_yheaders.pop()
+        vote_matrix = result["results"]["votes"]
+        total_votes = vote_matrix[-1][-1]
+        party_vote_percentages = [
+            value / total_votes if total_votes else 0
+            for value in vote_matrix[-1]
+        ]
+        constituency_vote_percentages = [
+            row[-1] / total_votes if total_votes else 0
+            for row in vote_matrix
+        ]
         row = draw_block(
             worksheet,
             row=row,
             col=col,
             heading="Votes",
             xheaders=parties,
-            yheaders = vote_yheaders,
-            matrix = result["results"]["votes"],
-            cformat=fmt["base"]
+            yheaders=yheaders,
+            matrix=vote_matrix,
+            cformat=fmt["base"],
+            right_column=("Vote percentage", constituency_vote_percentages,
+                          fmt["percentages"]),
+            bottom_row=("Vote percentage", party_vote_percentages + [1],
+                        fmt["percentages"]),
         )
 
         row = draw_block(worksheet, row=row, col=col,
@@ -344,7 +381,15 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
 
         row = draw_block(worksheet, row=row, col=col,
             heading="Total seats", xheaders=parties, yheaders=yheaders,
-            matrix = result["results"]["all"], cformat=fmt["base"]
+            matrix=result["results"]["all"], cformat=fmt["base"],
+            right_column=(
+                "Average votes/seat",
+                [
+                    votes[-1] / seats[-1] if seats[-1] else None
+                    for votes, seats in zip(vote_matrix, result["results"]["all"])
+                ],
+                fmt["cell"],
+            ),
         )
 
         for label, key in (
@@ -355,7 +400,7 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
             row += 1
 
         row = 0
-        col = len(parties) + 1
+        col = len(parties) + 2
         worksheet.set_column(1, col-1, 10)
 
         worksheet.write(row, col,
@@ -364,7 +409,8 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
         )
         for demo_table in result["demo_tables"]:
            col = demo_table_to_xlsx(
-               worksheet, row + 1, col, fmt, demo_table, fractional_digits)
+               worksheet, row + 1, col, fmt, demo_table,
+               fractional_digits, percentage_digits)
 
     party_names_to_xlsx(workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
@@ -486,8 +532,22 @@ def simulation_to_xlsx(results, filename, display_settings=None,
     party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
     data = results["data"]
     systems = results["systems"]
-    qm_topleft1 = "Seats minus fractional reference seat shares"
-    qm_topleft2 = "Sum over allocations to:"
+    paired_data = results.get("paired_data", {})
+    has_paired_difference = len(systems) >= 2
+    paired_stats = {"avg", "lo95", "hi95"}
+    paired_excluded_groups = {"cmpList", "cmpParty", "cmpNationalDetails"}
+
+    def statistic_column_names(stat):
+        names = [system["name"] for system in systems]
+        if has_paired_difference and stat in paired_stats:
+            names.insert(2, "Difference")
+        return names
+
+    qm_topleft1 = (
+        "Differences between allocated and fractional reference seats, "
+        "summed over constituency lists"
+    )
+    qm_topleft2 = ""
     groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
     edata = {}
     edata["stats"] = EXCEL_HEADINGS.keys()
@@ -498,9 +558,16 @@ def simulation_to_xlsx(results, filename, display_settings=None,
         for (measure, _) in group["rows"].items():
             row = {}
             for stat in edata["stats"]:
-                row[stat] = []
-                for s in range(len(systems)):
-                    row[stat].append(data[s]["measures"][measure][stat])
+                values = [
+                    system["measures"][measure][stat] for system in data
+                ]
+                if has_paired_difference and stat in paired_stats:
+                    difference = (
+                        paired_data[measure][stat]
+                        if id not in paired_excluded_groups else None
+                    )
+                    values.insert(2, difference)
+                row[stat] = values
             edata[id].append(row)
 
     # QUALITY MEASURES
@@ -521,9 +588,10 @@ def simulation_to_xlsx(results, filename, display_settings=None,
 
     for stat in edata["stats"]:
         worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["h"])
-        worksheet.set_column(c,c+len(results["systems"])-1,11)
-        for system in results["systems"]:
-            worksheet.write(toprow+1,c,system["name"],fmt["h_center"])
+        column_names = statistic_column_names(stat)
+        worksheet.set_column(c, c + len(column_names) - 1, 11)
+        for name in column_names:
+            worksheet.write(toprow+1,c,name,fmt["h_center"])
             c += 1
         worksheet.set_column(c,c,3)
         c += 1
@@ -532,14 +600,17 @@ def simulation_to_xlsx(results, filename, display_settings=None,
     toprow += 2
 
     for (id, group) in groups.items():
-        worksheet.write(toprow,c,group["title"],fmt["h"])
-        toprow += 1
+        if group["title"]:
+            worksheet.write(toprow,c,group["title"],fmt["h"])
+            toprow += 1
         worksheet.write_column(toprow,c,
                                [val[0] for (_, val) in group["rows"].items()])
         worksheet.write_column(toprow,c+1,
                                [val[1] for (_, val) in group["rows"].items()])
         for stat in edata["stats"]:
-            if stat in ["min","max"] and id in ["seatSpec","expected","cmpSys"]:
+            if stat in ["min", "max"] and id in {
+                    "seatSpec", "expected", "cmpList", "cmpParty",
+                    "cmpNationalDetails"}:
                 write_matrix(worksheet, toprow, c+2,
                              [row[stat] for row in edata[id]],
                              format = fmt["base"],
@@ -549,7 +620,7 @@ def simulation_to_xlsx(results, filename, display_settings=None,
                              [row[stat] for row in edata[id]],
                              format = fmt["cell"],
                              display_zeros = True)
-            c += len(results["systems"]) + 1
+            c += len(statistic_column_names(stat)) + 1
         nrows = len(group["rows"])
         toprow += nrows + 1 if nrows > 0 else 0
         c = 0

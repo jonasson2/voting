@@ -1,0 +1,19 @@
+Denmark 2022,fixed,min_adj,max_adj,region,A,B,C,D,F,I,K,M,O,Q,V,Æ,Ø,Å,U1,U2,U3,U4,U5,U6,U7,U8,U9,U10,U11,U12,U13,U14,U15,U16
+Party names,,,,,Socialdemokratiet,Radikale Venstre,Det Konservative Folkeparti,Nye Borgerlige,SF - Socialistisk Folkeparti,Liberal Alliance,KD - Kristendemokraterne,Moderaterne,Dansk Folkeparti,"Frie Grønne, Danmarks Nye Venstrefløjsparti","Venstre, Danmarks Liberale Parti",Danmarksdemokraterne - Inger Støjberg,Enhedslisten - De Rød-Grønne,Alternativet,Flemming Blicher,Tom Gillesberg,Henrik Vendelbo Petersen,Jovan Tasevski,Katjalivah Elleyhansen,Jayseth Lotus Arrose Simonysano,Charlotte Petersen,Lisa Sofia Larsson,Rasmus Paludan,Millah Kongsbach,Kent Nielsen,Kenneth Vestergaard,Jesper Antonsen,Chresten H. Ibsen,Karen Predbjørn Klarbæk,Jette Møller
+Independent candidates,,,,,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+Max adj seats,,,40,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Københavns Storkreds,17,0,-,H,86226,34031,22797,7512,52080,38204,971,42908,7072,10054,38319,8334,62611,42769,600,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Københavns Omegns Storkreds,11,0,-,H,83264,15266,21778,8818,28681,24172,1129,32402,11026,6949,30791,11357,16188,8992,0,0,81,311,0,0,0,0,0,0,0,0,0,0,0,0
+Nordsjællands Storkreds,10,0,-,H,69653,14389,22521,11290,22642,27497,878,34417,7725,1625,42873,13859,12342,9659,0,0,0,0,81,192,0,0,0,0,0,0,0,0,0,0
+Bornholms Storkreds,2,0,-,H,8721,251,926,529,1590,892,503,1499,1550,48,4635,1590,1279,663,0,0,0,0,0,0,45,0,0,0,0,0,0,0,0,0
+Sjællands Storkreds,20,0,-,SS,157580,12259,23560,22990,50778,34435,1260,56326,22384,2564,65433,41865,17107,10121,0,0,0,0,0,0,0,520,386,0,0,0,0,0,0,0
+Fyns Storkreds,12,0,-,SS,101064,9305,16190,10873,25525,19992,1135,30825,8023,2958,36742,25486,14487,8476,0,0,0,0,0,0,0,0,0,334,0,0,0,0,0,0
+Sydjyllands Storkreds,17,0,-,SS,122001,9972,20726,26779,24870,32580,3039,40065,12109,1784,70740,48454,10316,6138,0,0,0,0,0,0,0,0,0,0,291,58,0,0,0,0
+Østjyllands Storkreds,18,0,-,MN,135497,23453,23637,17885,45361,49476,2723,43954,9908,4057,66351,35609,28798,19174,0,0,0,0,0,0,0,0,0,0,0,0,390,92,0,0
+Vestjyllands Storkreds,13,0,-,MN,82187,6100,26395,10047,20715,25235,4995,22008,6514,767,62981,44086,7366,4731,0,0,0,0,0,0,0,0,0,0,0,0,0,0,371,0
+Nordjyllands Storkreds,15,0,-,MN,125802,8905,16290,12801,20944,26173,1643,23295,7117,981,51681,56156,10958,6844,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,354
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Regions,Name,adj,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+H,Hovedstaden,11,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+SS,Sjælland-Syddanmark,15,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+MN,Midtjylland-Nordjylland,14,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

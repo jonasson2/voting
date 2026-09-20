@@ -25,6 +25,7 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
 from methods.switching_se import switching as switching_se
+from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.max_const_votes import max_const_votes
 from methods.danish import prepare_regions
 from methods.adjustment_as_fixed import adjustment_as_fixed
@@ -78,11 +79,12 @@ DEFAULT_ELECTION_SETTINGS = {
     "primary_divider": "dhondt",
     "constituency_threshold": 0,
     "fixed_seat_national_threshold": 0,
-    "fixed_seat_threshold_choice": 0,
+    "fixed_seat_threshold_choice": 1,
     "adj_determine_divider": "dhondt",
     "adjustment_threshold": 0,
     "adjustment_threshold_seats": 0,
     "adj_threshold_choice": 1,
+    "require_votes_in_all_constituencies": False,
     "danish_special_rules": False,
     "adjustment_preparation_method": "none",
     "adj_preparation_divider": "sainte-lague",
@@ -175,6 +177,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
+            "require_votes_in_all_constituencies": True,
             "danish_special_rules": False,
             "adjustment_preparation_method": "none",
             "adj_preparation_divider": "sainte-lague",
@@ -241,6 +244,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
     # = max-relative-margin með absolute mun
     {"value": "switching",                 "text": "Switching of seats"},
+    {"value": "swedish-style-switching", "text": "Swedish-style switching"},
     {"value": "max-const-votes",           "text": "Maximum constituency votes"},
     {"value": "alternating-scaling",       "text": "Optimal divisor method"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
@@ -266,6 +270,7 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
+    "swedish-style-switching":   ("sccc", "clss33"),
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     #"gurobi":                    "",
@@ -348,6 +353,7 @@ ADJUSTMENT_METHODS = {
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,
+    "swedish-style-switching":   swedish_style_switching,
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     # "gurobi":                    gurobi_optimal,

@@ -11,12 +11,56 @@ from pathlib import Path
 
 
 HERE = Path(__file__).resolve().parent
-BASE_URL = "https://www.dst.dk/valg/Valg2546527/valgopg/"
-REPORT_URL = (
-    "https://www.valg.im.dk/Media/639117581241830159/"
-    "Danmarks%20Statistiks%20opgrelse%20af%20folketingsvalget%20den%2024."
-    "%20marts%202026.pdf"
-)
+ELECTIONS = {
+    "2019": {
+        "base_url": "https://www.dst.dk/valg/Valg1684447/valgopg/",
+        "date": "2019-06-05",
+        "seat_allocation_url": (
+            "https://www.dst.dk/valg/Valg1684447/other/Folketingsvalg2019_v5.pdf"),
+        "fixed_seats": {
+            "Københavns Storkreds": 16,
+            "Københavns Omegns Storkreds": 11,
+            "Nordsjællands Storkreds": 10,
+            "Bornholms Storkreds": 2,
+            "Sjællands Storkreds": 20,
+            "Fyns Storkreds": 12,
+            "Sydjyllands Storkreds": 18,
+            "Østjyllands Storkreds": 18,
+            "Vestjyllands Storkreds": 13,
+            "Nordjyllands Storkreds": 15,
+        },
+        "region_adjustment_seats": {"H": 11, "SS": 15, "MN": 14},
+    },
+    "2022": {
+        "base_url": "https://www.dst.dk/valg/Valg1968094/valgopg/",
+        "date": "2022-11-01",
+        "seat_allocation_url": (
+            "https://www.dst.dk/valg/Valg1968094/other/"
+            "Fordelingen-af-mandater-ved-FV2022.pdf"),
+        "fixed_seats": {
+            "Københavns Storkreds": 17,
+            "Københavns Omegns Storkreds": 11,
+            "Nordsjællands Storkreds": 10,
+            "Bornholms Storkreds": 2,
+            "Sjællands Storkreds": 20,
+            "Fyns Storkreds": 12,
+            "Sydjyllands Storkreds": 17,
+            "Østjyllands Storkreds": 18,
+            "Vestjyllands Storkreds": 13,
+            "Nordjyllands Storkreds": 15,
+        },
+        "region_adjustment_seats": {"H": 11, "SS": 15, "MN": 14},
+    },
+    "2026": {
+        "base_url": "https://www.dst.dk/valg/Valg2546527/valgopg/",
+        "date": "2026-03-24",
+        "report_url": (
+            "https://www.valg.im.dk/Media/639117581241830159/"
+            "Danmarks%20Statistiks%20opgrelse%20af%20folketingsvalget%20den%2024."
+            "%20marts%202026.pdf"
+        ),
+    },
+}
 REGION_CODES = ["H", "SS", "MN"]
 INDEPENDENTS = "Uden for partierne"
 VALID_VOTES = "I alt gyldige stemmer"
@@ -85,12 +129,12 @@ def download(url, path, refresh=False):
     return path.read_bytes()
 
 
-def load_page(filename, refresh):
-    content = download(BASE_URL + filename, HERE / "raw/2026" / filename, refresh)
+def load_page(base_url, raw_directory, filename, refresh):
+    content = download(base_url + filename, raw_directory / filename, refresh)
     return ResultPage(content.decode("utf-8-sig"))
 
 
-def result(page, name, filename):
+def result(page, name, filename, base_url=""):
     parties = {}
     valid_votes = None
     if not page.tables:
@@ -98,7 +142,9 @@ def result(page, name, filename):
     headers = ["".join(c["text"].split()).replace("-", "")
                for c in page.tables[0][1]]
     fixed_only = headers == ["Parti", "Antal", "Pct.", "Kredsmandater", ""]
-    if not fixed_only and headers != [
+    votes_only = (headers[:3] == ["Parti", "Antal", "Pct."]
+                  and not any(headers[3:]))
+    if not fixed_only and not votes_only and headers != [
             "Parti", "Antal", "Pct.", "Mandater", "Kredsmandater", "Till\u00e6gsmandater"]:
         raise ValueError(f"Unknown result-table headings in {filename}: {headers}")
     for row in page.tables[0]:
@@ -107,16 +153,19 @@ def result(page, name, filename):
             continue
         if cells[0] == VALID_VOTES:
             valid_votes = integer(cells[1])
-        if len(cells) != len(headers):
+        result_columns = 3 if votes_only else len(headers)
+        if len(cells) < result_columns or any(cells[result_columns:]):
             continue
+        cells = cells[:result_columns]
         label = cells[0]
         if label in parties:
             raise ValueError(f"Duplicate party {label} in {filename}")
         parties[label] = {
             "votes": integer(cells[1]),
-            "total_seats": integer(cells[3]),
-            "fixed_seats": integer(cells[3] if fixed_only else cells[4]),
-            "adjustment_seats": 0 if fixed_only else integer(cells[5]),
+            "total_seats": 0 if votes_only else integer(cells[3]),
+            "fixed_seats": 0 if votes_only else integer(
+                cells[3] if fixed_only else cells[4]),
+            "adjustment_seats": 0 if votes_only or fixed_only else integer(cells[5]),
         }
         seats = parties[label]
         if seats["total_seats"] != seats["fixed_seats"] + seats["adjustment_seats"]:
@@ -126,7 +175,7 @@ def result(page, name, filename):
     })
     if valid_votes is None or sum(p["votes"] for p in parties.values()) != valid_votes:
         raise ValueError(f"Votes do not sum to valid votes in {filename}")
-    return {"name": name, "source": BASE_URL + filename,
+    return {"name": name, "source": base_url + filename,
             "valid_votes": valid_votes, "parties": parties}
 
 
@@ -135,12 +184,12 @@ def independent_candidates(page, district):
     if len(page.tables) != 2:
         raise ValueError(f"Expected party and candidate tables in {district['name']}")
     for row in page.tables[1]:
-        if (len(row) == 2 and row[0]["class"] == "vaelgeropg_parti"
-                and row[1]["text"].strip()):
+        values = [cell["text"].strip() for cell in row[1:] if cell["text"].strip()]
+        if row[0]["class"] == "vaelgeropg_parti" and values:
             name = row[0]["text"].strip()
             if name in candidates:
                 raise ValueError(f"Duplicate independent candidate: {name}")
-            candidates[name] = integer(row[1]["text"])
+            candidates[name] = integer(values[-1])
     official = district["parties"][INDEPENDENTS]
     if sum(candidates.values()) != official["votes"]:
         raise ValueError(f"Independent votes do not reconcile in {district['name']}")
@@ -162,24 +211,29 @@ def reconcile(parent, children):
                     f"{parent['name']}: {party} {field}: {actual} != {expected}")
 
 
-def collect(refresh=False):
-    index = load_page("valgopg.htm", refresh)
-    national = result(load_page("valgopgHL.htm", refresh), "Danmark", "valgopgHL.htm")
+def collect(year, refresh=False):
+    election = ELECTIONS[year]
+    base_url = election["base_url"]
+    raw_directory = HERE / "raw" / year
+    index = load_page(base_url, raw_directory, "valgopg.htm", refresh)
+    national = result(
+        load_page(base_url, raw_directory, "valgopgHL.htm", refresh),
+        "Danmark", "valgopgHL.htm", base_url)
     region_links = [(url, name) for url, name in index.links.items()
                     if re.fullmatch(r"valgopgLand\d+\.htm", url)]
     if len(region_links) != 3:
         raise ValueError("Expected three Danish regions")
     regions, districts = [], []
     for code, (filename, name) in zip(REGION_CODES, region_links):
-        page = load_page(filename, refresh)
-        region = result(page, name, filename)
+        page = load_page(base_url, raw_directory, filename, refresh)
+        region = result(page, name, filename, base_url)
         region["abbreviation"] = code
         region_districts = []
         for filename, name in page.links.items():
             if not re.fullmatch(r"valgopgStor\d+\.htm", filename):
                 continue
-            district_page = load_page(filename, refresh)
-            district = result(district_page, name, filename)
+            district_page = load_page(base_url, raw_directory, filename, refresh)
+            district = result(district_page, name, filename, base_url)
             district["region"] = code
             district["independent_candidates"] = independent_candidates(
                 district_page, district)
@@ -189,47 +243,64 @@ def collect(refresh=False):
         reconcile(region, region_districts)
         regions.append(region)
         districts.extend(region_districts)
+    if "fixed_seats" in election:
+        for district in districts:
+            district["num_fixed_seats"] = election["fixed_seats"][district["name"]]
+        for region in regions:
+            region["num_adj_seats"] = election["region_adjustment_seats"][
+                region["abbreviation"]]
     reconcile(national, regions)
     if len({d["source"] for d in districts}) != 10:
         raise ValueError("Expected ten distinct constituencies")
-    if national["valid_votes"] != 3567625:
-        raise ValueError("Unexpected 2026 national valid-vote count")
-    if sum(p["fixed_seats"] for p in national["parties"].values()) != 135:
+    fixed_count = sum(
+        district.get("num_fixed_seats", sum(
+            party["fixed_seats"] for party in district["parties"].values()))
+        for district in districts)
+    adjustment_count = sum(
+        region.get("num_adj_seats", sum(
+            party["adjustment_seats"] for party in region["parties"].values()))
+        for region in regions)
+    if fixed_count != 135:
         raise ValueError("Expected 135 fixed seats")
-    if sum(p["adjustment_seats"] for p in national["parties"].values()) != 40:
+    if adjustment_count != 40:
         raise ValueError("Expected 40 adjustment seats")
-    if sum(len(d["independent_candidates"]) for d in districts) != 6:
-        raise ValueError("Expected six independent candidates")
-    return {"election_date": "2026-03-24", "national": national,
+    return {"election_date": election["date"],
+            "seat_allocation_source": election.get("seat_allocation_url"),
+            "national": national,
             "regions": regions, "constituencies": districts}
 
 
 def write_votes(official, output):
     party_labels = [p for p in official["national"]["parties"] if p != INDEPENDENTS]
-    if len(party_labels) != 12:
-        raise ValueError("Expected twelve parties")
     parties = [label.split(". ", 1) for label in party_labels]
     independent = [(d["name"], name) for d in official["constituencies"]
                    for name in d["independent_candidates"]]
     abbreviations = [p[0] for p in parties] + [f"U{i+1}" for i in range(len(independent))]
     names = [p[1] for p in parties] + [name for _, name in independent]
-    header = ["Denmark 2026", "fixed", "min_adj", "max_adj", "region", *abbreviations]
+    year = official["election_date"][:4]
+    max_adjustment = sum(
+        region.get("num_adj_seats", sum(
+            party["adjustment_seats"] for party in region["parties"].values()))
+        for region in official["regions"])
+    header = [f"Denmark {year}", "fixed", "min_adj", "max_adj", "region", *abbreviations]
     rows = [header,
             ["Party names", "", "", "", "", *names],
             ["Independent candidates", "", "", "", "",
              *([0] * len(parties)), *([1] * len(independent))],
-            ["Max adj seats", "", "", 40]]
+            ["Max adj seats", "", "", max_adjustment]]
     for district in official["constituencies"]:
         votes = [district["parties"][label]["votes"] for label in party_labels]
         votes += [district["independent_candidates"].get(name, 0)
                   if district["name"] == home else 0 for home, name in independent]
         if sum(votes) != district["valid_votes"]:
             raise ValueError(f"Output vote total differs in {district['name']}")
-        fixed = sum(p["fixed_seats"] for p in district["parties"].values())
+        fixed = district.get("num_fixed_seats", sum(
+            party["fixed_seats"] for party in district["parties"].values()))
         rows.append([district["name"], fixed, 0, "-", district["region"], *votes])
     rows.extend([[], ["Regions", "Name", "adj"]])
     for region in official["regions"]:
-        adjustment = sum(p["adjustment_seats"] for p in region["parties"].values())
+        adjustment = region.get("num_adj_seats", sum(
+            party["adjustment_seats"] for party in region["parties"].values()))
         rows.append([region["abbreviation"], region["name"], adjustment])
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as file:
@@ -244,17 +315,25 @@ def write_votes(official, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("year", choices=["2026"])
+    parser.add_argument("year", choices=sorted(ELECTIONS))
     parser.add_argument("--refresh", action="store_true", help="Download cached sources again")
-    parser.add_argument("--out", type=Path, default=HERE.parent / "denmark_2026.csv")
+    parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    official = collect(args.refresh)
-    download(REPORT_URL, HERE / "raw/2026/official-calculation.pdf", args.refresh)
-    write_votes(official, args.out)
-    expected = HERE / "official-results_2026.json"
+    output = args.out or HERE.parent / f"denmark_{args.year}.csv"
+    official = collect(args.year, args.refresh)
+    report_url = ELECTIONS[args.year].get("report_url")
+    if report_url:
+        download(report_url, HERE / "raw" / args.year / "official-calculation.pdf",
+                 args.refresh)
+    seat_allocation_url = ELECTIONS[args.year].get("seat_allocation_url")
+    if seat_allocation_url:
+        download(seat_allocation_url, HERE / "raw" / args.year / "seat-allocation.pdf",
+                 args.refresh)
+    write_votes(official, output)
+    expected = HERE / f"official-results_{args.year}.json"
     expected.write_text(json.dumps(official, ensure_ascii=False, indent=2) + "\n",
                         encoding="utf-8")
-    print(f"Wrote {args.out}")
+    print(f"Wrote {output}")
     print(f"Wrote {expected}")
     print(f"Verified {official['national']['valid_votes']:,} votes, 135 fixed seats and 40 adjustment seats")
     print("Regional and constituency totals match the official national result")

@@ -178,7 +178,7 @@ class TieTest(unittest.TestCase):
             'candidates': ['North: A', 'North: B'], 'selected': 'North: A',
         }])
         election.rng = make_rng(42)
-        with patch('methods.adjustment_as_fixed.remap',
+        with patch('methods.provisional_allocation.remap',
                    side_effect=AssertionError('Unneeded reporting map')):
             election.assign_seats()
         self.assertEqual(election.tie_report.events, [])
