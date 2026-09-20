@@ -467,6 +467,7 @@ function findNumbering(state, asi) {
   let num = []
   for (var i=0; i < n; i++) {
     if (n > 1 && i > 0 && i == asi) num.push(-2)
+    if (i == asi) num.push(-3)
     num.push(i)
     if (n > 1 && i < n-1 && i == asi) num.push(-1)
   }

@@ -242,708 +242,144 @@ def party_names_to_xlsx(workbook, fmt, parties, party_names):
         worksheet.write_row(row, 0, [party, name], fmt["basic"])
 
 
-def elections_to_xlsx(elections, filename, party_names=None, display_settings=None):
-    """Write detailed information about an election with a single vote table
-    but multiple electoral systems, to an xlsx file.
-    """
-    workbook = xlsxwriter.Workbook(filename)
-    fractional_digits = result_fractional_digits(display_settings)
-    percentage_digits = result_percentage_digits(display_settings)
-    fmt = prepare_formats(workbook, display_settings)
+def _draw_election_block(
+        worksheet, fmt, row, col, heading, xheaders, yheaders, matrix,
+        topleft="", cell_format=None, right_column=None, bottom_row=None):
+    cell_format = cell_format or fmt["cell"]
+    if heading.endswith("percentages"):
+        cell_format = fmt["percentages"]
+    worksheet.write(row, col, heading, fmt["h"])
+    worksheet.write(row + 1, col, topleft, fmt["basic"])
+    worksheet.write_row(row + 1, col + 1, xheaders, fmt["center"])
+    worksheet.write_column(row + 2, col, yheaders, fmt["basic"])
+    write_matrix(
+        worksheet, row + 2, col + 1, matrix,
+        format=cell_format, display_zeros=False)
+    if right_column:
+        header, values, value_format = right_column
+        worksheet.write(
+            row + 1, col + len(xheaders) + 1, header, fmt["center"])
+        worksheet.write_column(
+            row + 2, col + len(xheaders) + 1, values, value_format)
+    if bottom_row:
+        header, values, value_format = bottom_row
+        worksheet.write(row + len(matrix) + 2, col, header, fmt["basic"])
+        worksheet.write_row(
+            row + len(matrix) + 2, col + 1, values, value_format)
+    return row + len(matrix) + 3 + bool(bottom_row)
 
-    def draw_block(worksheet, row, col,
-        heading, xheaders, yheaders,
-        matrix,
-        topleft="",
-        cformat=fmt["cell"],
-        right_column=None,
-        bottom_row=None,
-    ):
-        if heading.endswith("percentages"):
-            cformat = fmt["percentages"]
-        worksheet.write(row, col, heading, fmt["h"])
-        worksheet.write(row+1, col, topleft, fmt["basic"])
-        worksheet.write_row(row+1, col+1, xheaders, fmt["center"])
-        worksheet.write_column(row+2, col, yheaders, fmt["basic"])
-        write_matrix(worksheet, row+2, col+1, matrix,
-                     format = cformat,
-                     display_zeros = False)
-        if right_column:
-            header, values, value_format = right_column
-            worksheet.write(row + 1, col + len(xheaders) + 1, header, fmt["center"])
-            worksheet.write_column(row + 2, col + len(xheaders) + 1,
-                                   values, value_format)
-        if bottom_row:
-            header, values, value_format = bottom_row
-            worksheet.write(row + len(matrix) + 2, col, header, fmt["basic"])
-            worksheet.write_row(row + len(matrix) + 2, col + 1,
-                                values, value_format)
-        return row + len(matrix) + 3 + bool(bottom_row)
 
-    for election in elections:
-        result = election.get_result_excel()
-        system = result["system"]
-        sheet_name = system["name"]
-        worksheet = workbook.add_worksheet(sheet_name[:31])
-        worksheet.set_column(0, 0, 31)
-        parties = system["parties"] + ["Total"]
-        now = datetime.now().strftime('%Y-%m-%d %H:%M')
-        info = [
-            ["Date:",
-             now,
-             "basic"
-             ],
-            ["Vote table:",
-             result["vote_table_name"],
-             "basic"
-             ],
-            ["Electoral system:",
-             system["name"],
-             "basic"],
-            ["Rule for allocating fixed seats:",
-             DRN[system["primary_divider"]],
-             "basic"
-             ],
-            ["Fixed-seat thresholds:",
-             fixed_seat_threshold_text(system),
-             "basic"
-             ],
-            ["Rule for apportioning adjustment seats:",
-             DRN[system["adj_determine_divider"]],
-             "basic"
-             ],
-            ["Threshold for adjustment seats:",
-             adjustment_qualification_text(system),
-             "basic"
-            ],
-            ["Rule for allocating adjustment seats:",
-             DRN[system["adj_alloc_divider"]],
-             "basic"
-             ],
-            ["Method for allocating adjustment seats:",
-             AMN[system["adjustment_method"]],
-             "basic"
-             ]
-        ]
-        row = 0
-        col = 0
-        #Basic info
-        for group in info:
-            (title,item,format) = group
-            worksheet.write(row, col, title, fmt["h"])
-            worksheet.write(row, col+1, item, fmt[format])
-            row += 1
+def _election_information(result):
+    system = result["system"]
+    return [
+        ("Date:", datetime.now().strftime('%Y-%m-%d %H:%M')),
+        ("Vote table:", result["vote_table_name"]),
+        ("Electoral system:", system["name"]),
+        ("Rule for allocating fixed seats:", DRN[system["primary_divider"]]),
+        ("Fixed-seat thresholds:", fixed_seat_threshold_text(system)),
+        ("Rule for apportioning adjustment seats:",
+         DRN[system["adj_determine_divider"]]),
+        ("Threshold for adjustment seats:",
+         adjustment_qualification_text(system)),
+        ("Rule for allocating adjustment seats:",
+         DRN[system["adj_alloc_divider"]]),
+        ("Method for allocating adjustment seats:",
+         AMN[system["adjustment_method"]]),
+    ]
+
+
+def _vote_percentages(vote_matrix):
+    total = vote_matrix[-1][-1]
+    parties = [value / total if total else 0 for value in vote_matrix[-1]]
+    constituencies = [row[-1] / total if total else 0 for row in vote_matrix]
+    return parties, constituencies
+
+
+def _write_election_sheet(
+        workbook, fmt, result, fractional_digits, percentage_digits):
+    system = result["system"]
+    worksheet = workbook.add_worksheet(system["name"][:31])
+    worksheet.set_column(0, 0, 31)
+    parties = system["parties"] + ["Total"]
+    row = 0
+    for title, item in _election_information(result):
+        worksheet.write(row, 0, title, fmt["h"])
+        worksheet.write(row, 1, item, fmt["basic"])
+        row += 1
+    row += 1
+
+    results = result["results"]
+    yheaders = results["row_names"]
+    row = _draw_election_block(
+        worksheet, fmt, row, 0, "Required number of seats",
+        ["Const.", "Adj.", "Total"], yheaders, results["seats"],
+        cell_format=fmt["base"])
+    vote_matrix = results["votes"]
+    party_percentages, constituency_percentages = _vote_percentages(vote_matrix)
+    row = _draw_election_block(
+        worksheet, fmt, row, 0, "Votes", parties, yheaders, vote_matrix,
+        cell_format=fmt["base"],
+        right_column=(
+            "Vote percentage", constituency_percentages, fmt["percentages"]),
+        bottom_row=(
+            "Vote percentage", party_percentages + [1], fmt["percentages"]))
+    for heading, key in (
+            ("Fixed seats", "fix"),
+            ("Adjustment seats", "adj")):
+        row = _draw_election_block(
+            worksheet, fmt, row, 0, heading, parties, yheaders,
+            results[key], cell_format=fmt["base"])
+    row = _draw_election_block(
+        worksheet, fmt, row, 0, "Total seats", parties, yheaders,
+        results["all"], cell_format=fmt["base"],
+        right_column=(
+            "Average votes/seat",
+            [votes[-1] / seats[-1] if seats[-1] else None
+             for votes, seats in zip(vote_matrix, results["all"])],
+            fmt["cell"]))
+    for label, key in (
+            ("D'Hondt entropy:", "entropy_dhondt"),
+            ("Sainte-Laguë entropy:", "entropy_sainte_lague")):
+        worksheet.write(row, 0, label, fmt["h"])
+        worksheet.write(row, 1, result[key], fmt["cell"])
         row += 1
 
-        yheaders = result["results"]["row_names"]
-        row = draw_block(worksheet, row=row, col=col,
-            heading = "Required number of seats",
-            xheaders = ["Const.", "Adj.", "Total"],
-            yheaders = yheaders,
-            matrix = result["results"]["seats"],
-            cformat=fmt["base"]
-        )
+    column = len(parties) + 2
+    worksheet.set_column(1, column - 1, 10)
+    worksheet.write(
+        0, column, "Allocation of adjustment seats step-by-step", fmt["h"])
+    for demo_table in result["demo_tables"]:
+        column = demo_table_to_xlsx(
+            worksheet, 1, column, fmt, demo_table,
+            fractional_digits, percentage_digits)
 
-        vote_matrix = result["results"]["votes"]
-        total_votes = vote_matrix[-1][-1]
-        party_vote_percentages = [
-            value / total_votes if total_votes else 0
-            for value in vote_matrix[-1]
-        ]
-        constituency_vote_percentages = [
-            row[-1] / total_votes if total_votes else 0
-            for row in vote_matrix
-        ]
-        row = draw_block(
-            worksheet,
-            row=row,
-            col=col,
-            heading="Votes",
-            xheaders=parties,
-            yheaders=yheaders,
-            matrix=vote_matrix,
-            cformat=fmt["base"],
-            right_column=("Vote percentage", constituency_vote_percentages,
-                          fmt["percentages"]),
-            bottom_row=("Vote percentage", party_vote_percentages + [1],
-                        fmt["percentages"]),
-        )
 
-        row = draw_block(worksheet, row=row, col=col,
-            heading = "Fixed seats", xheaders=parties, yheaders=yheaders,
-            matrix = result["results"]["fix"], cformat=fmt["base"]
-        )
-
-        row = draw_block(worksheet, row=row, col=col,
-            heading="Adjustment seats", xheaders=parties, yheaders=yheaders,
-            matrix = result["results"]["adj"], cformat=fmt["base"]
-        )
-
-        row = draw_block(worksheet, row=row, col=col,
-            heading="Total seats", xheaders=parties, yheaders=yheaders,
-            matrix=result["results"]["all"], cformat=fmt["base"],
-            right_column=(
-                "Average votes/seat",
-                [
-                    votes[-1] / seats[-1] if seats[-1] else None
-                    for votes, seats in zip(vote_matrix, result["results"]["all"])
-                ],
-                fmt["cell"],
-            ),
-        )
-
-        for label, key in (
-                ("D'Hondt entropy:", "entropy_dhondt"),
-                ("Sainte-Laguë entropy:", "entropy_sainte_lague")):
-            worksheet.write(row, col, label, fmt["h"])
-            worksheet.write(row, col+1, result[key], fmt["cell"])
-            row += 1
-
-        row = 0
-        col = len(parties) + 2
-        worksheet.set_column(1, col-1, 10)
-
-        worksheet.write(row, col,
-            "Allocation of adjustment seats step-by-step",
-            fmt["h"]
-        )
-        for demo_table in result["demo_tables"]:
-           col = demo_table_to_xlsx(
-               worksheet, row + 1, col, fmt, demo_table,
-               fractional_digits, percentage_digits)
-
-    party_names_to_xlsx(workbook, fmt, elections[0].system["parties"], party_names)
+def elections_to_xlsx(elections, filename, party_names=None, display_settings=None):
+    """Write one vote table evaluated under multiple electoral systems."""
+    workbook = xlsxwriter.Workbook(filename)
+    fmt = prepare_formats(workbook, display_settings)
+    fractional_digits = result_fractional_digits(display_settings)
+    percentage_digits = result_percentage_digits(display_settings)
+    for election in elections:
+        _write_election_sheet(
+            workbook, fmt, election.get_result_excel(),
+            fractional_digits, percentage_digits)
+    party_names_to_xlsx(
+        workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
 
 def simulation_to_xlsx(results, filename, display_settings=None,
                        include_histogram_sheets=False):
     """Write detailed information about a simulation to an xlsx file."""
-    workbook = xlsxwriter.Workbook(filename)
-    fmt = prepare_formats(workbook, display_settings)
+    from simulation_excel import SimulationWorkbook
 
-    def draw_sim_block(worksheet, row, col, heading, data, abbreviation, setTotal="hide"):
-        cformat = fmt['sim'] if abbreviation in {'avg', 'std'} else fmt['base']
-        if heading.endswith("percentages"):
-            cformat = fmt["percentages"]
-        elif heading.startswith("Reference seat"):
-            cformat = fmt["sim"]
-            #totalsformat = fmt["base"]
-        elif heading == "Votes":
-            cformat = fmt["base"]
-        if setTotal=="hide":
-            data = [r[:-1] for r in data]
-            totalsformat = None
-        else:
-            totalsformat = fmt["base"] if setTotal == "integer" else cformat
-        write_matrix(worksheet, row, col, data,
-                     format = cformat,
-                     display_zeros = True,
-                     totalsformat = totalsformat)
+    SimulationWorkbook(
+        results,
+        filename,
+        display_settings,
+        include_histogram_sheets,
+    ).write()
 
-    gen_method = GMN[results["sim_settings"]["gen_method"]]
-    sim_settings = [
-        {"label": "Number of simulations",
-         "data": results["iteration"]},
-        {"label": "Random seed",
-         "data": results["sim_settings"].get("random_seed", "")},
-        {"label": "Generating method",
-         "data": results["sim_settings"]["gen_method"]},
-        {"label": "Relative standard deviation for list votes",
-         "data": results["sim_settings"]["const_rsd"]},
-        {"label": "Correlation between list votes within each party",
-         "data": results["sim_settings"]["const_corr"]},
-        {"label": "Relative standard deviation for national party votes",
-         "data": results["sim_settings"]["party_vote_rsd"]},
-        {"label": "Correlation between list votes and national party votes",
-         "data": results["sim_settings"]["party_vote_corr"]},
-        {"label": "Thresholds used",
-         "data": "yes" if results["sim_settings"]["use_thresholds"] else "no"},
-        {"label": "Scaling of votes for fractional reference seat shares",
-         "data": SCALING_NAMES[results["sim_settings"]["scaling"]]},
-    ]
-
-    # COMMON SETTINGS
-    worksheet = workbook.add_worksheet("Common settings")
-    c1 = 0
-    c2 = c1 + 1
-    row = 0
-    worksheet.set_column(c1, c1, 43)
-    worksheet.set_column(c2, c2, 43)
-    worksheet.write(row, c1, "Date:", fmt["h"])
-    worksheet.write(row, c2, datetime.now(), fmt["time"])
-    total_votes = (
-        sum(sum(row) for row in results["vote_table"]["votes"])
-        + sum(results["vote_table"].get("pruned", []))
-    )
-    total_party_votes = results["vote_table"]["party_vote_info"]["total"]
-    fixed_seats = sum(
-        c["num_fixed_seats"] for c in results["vote_table"]["constituencies"])
-    adj_seats = sum(
-        c["num_adj_seats"] for c in results["vote_table"]["constituencies"])
-    row += 2
-    worksheet.write(row, c1, "Source votes and seats", fmt["h"])
-    row += 1
-    worksheet.write(row, c1, "Votes-and-seats table", fmt["basic"])
-    worksheet.write(row, c2, results["vote_table"]["name"], fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Number of constituencies", fmt["basic"])
-    worksheet.write(row, c2, len(results["vote_table"]["constituencies"]), fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Number of parties", fmt["basic"])
-    worksheet.write(row, c2, len(results["vote_table"]["parties"]), fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Total number of const. seats", fmt["basic"])
-    worksheet.write(row, c2, fixed_seats, fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Total number of adj. seats", fmt["basic"])
-    worksheet.write(row, c2, adj_seats, fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Total number of const. votes", fmt["basic"])
-    worksheet.write(row, c2, total_votes, fmt["basic"])
-    row += 1
-    worksheet.write(row, c1, "Total number of national party votes", fmt["basic"])
-    worksheet.write(row, c2, total_party_votes, fmt["basic"])
-
-    row += 2
-    worksheet.write(row, c1, "Simulation settings", fmt["h"])
-    for setting in sim_settings:
-        row += 1
-        worksheet.write(row, c1, setting["label"], fmt["basic"])
-        worksheet.write(row, c2, setting["data"], fmt["basic"])
-    
-    tables = [
-        {"abbr": "v",   "total": True,  "heading": "Votes"             },
-        {"abbr": "vp",  "total": False, "heading": "Vote percentages"},
-        {"abbr": "rss", "total": True,  "heading": "Reference seat shares"},
-        {"abbr": "cs",  "total": True,  "heading": "Fixed seats"},
-        {"abbr": "as",  "total": True,  "heading": "Adjustment seats"},
-        {"abbr": "ts",  "total": True,  "heading": "Total seats"},
-        {"abbr": "tsp", "total": False, "heading": "Total seat percentages"},
-        {"abbr": "nmp", "total": True,  "heading": "Negative margin percentages"},
-        {"abbr": "nmc", "total": True,  "heading": "Negative margin frequency"}
-    ]
-    base_const_names = [c["name"] for c in results["vote_table"]["constituencies"]]
-    base_const_names.append("Total")
-    if results['vote_table']['party_vote_info']['specified']:
-        base_const_names.append(results['vote_table']['party_vote_info']['name'])
-        base_const_names.append('Grand total')
-
-    #Measures
-    party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
-    data = results["data"]
-    systems = results["systems"]
-    paired_data = results.get("paired_data", {})
-    has_paired_difference = len(systems) >= 2
-    paired_stats = {"avg", "lo95", "hi95"}
-    paired_excluded_groups = {"cmpList", "cmpParty", "cmpNationalDetails"}
-
-    def statistic_column_names(stat):
-        names = [system["name"] for system in systems]
-        if has_paired_difference and stat in paired_stats:
-            names.insert(2, "Difference")
-        return names
-
-    qm_topleft1 = (
-        "Differences between allocated and fractional reference seats, "
-        "summed over constituency lists"
-    )
-    qm_topleft2 = ""
-    groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
-    edata = {}
-    edata["stats"] = EXCEL_HEADINGS.keys()
-    edata["stat_headings"] = EXCEL_HEADINGS
-
-    for (id, group) in groups.items():
-        edata[id] = []
-        for (measure, _) in group["rows"].items():
-            row = {}
-            for stat in edata["stats"]:
-                values = [
-                    system["measures"][measure][stat] for system in data
-                ]
-                if has_paired_difference and stat in paired_stats:
-                    difference = (
-                        paired_data[measure][stat]
-                        if id not in paired_excluded_groups else None
-                    )
-                    values.insert(2, difference)
-                row[stat] = values
-            edata[id].append(row)
-
-    # QUALITY MEASURES
-    worksheet = workbook.add_worksheet("Quality measures")
-    worksheet.freeze_panes(4,2)
-    toprow = 0
-    c = 0
-    worksheet.write(toprow,c,"QUALITY MEASURES",fmt["h"])
-    toprow += 1
-    worksheet.write(toprow,c,"Votes-and-seats table:",fmt["h"])
-    worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
-    toprow += 1
-    worksheet.set_column(c,c,20)
-    worksheet.write(toprow+1,c,qm_topleft1,fmt["h"])
-    c += 1
-    worksheet.set_column(c,c,25)
-    c += 1
-
-    for stat in edata["stats"]:
-        worksheet.write(toprow,c,edata["stat_headings"][stat],fmt["h"])
-        column_names = statistic_column_names(stat)
-        worksheet.set_column(c, c + len(column_names) - 1, 11)
-        for name in column_names:
-            worksheet.write(toprow+1,c,name,fmt["h_center"])
-            c += 1
-        worksheet.set_column(c,c,3)
-        c += 1
-
-    c = 0
-    toprow += 2
-
-    for (id, group) in groups.items():
-        if group["title"]:
-            worksheet.write(toprow,c,group["title"],fmt["h"])
-            toprow += 1
-        worksheet.write_column(toprow,c,
-                               [val[0] for (_, val) in group["rows"].items()])
-        worksheet.write_column(toprow,c+1,
-                               [val[1] for (_, val) in group["rows"].items()])
-        for stat in edata["stats"]:
-            if stat in ["min", "max"] and id in {
-                    "seatSpec", "expected", "cmpList", "cmpParty",
-                    "cmpNationalDetails"}:
-                write_matrix(worksheet, toprow, c+2,
-                             [row[stat] for row in edata[id]],
-                             format = fmt["base"],
-                             display_zeros = True)
-            else:
-                write_matrix(worksheet,toprow,c+2,
-                             [row[stat] for row in edata[id]],
-                             format = fmt["cell"],
-                             display_zeros = True)
-            c += len(statistic_column_names(stat)) + 1
-        nrows = len(group["rows"])
-        toprow += nrows + 1 if nrows > 0 else 0
-        c = 0
-
-    #   ALLOCATION SUMMARY
-    nsys = len(results["systems"])
-    nat_base_vote_percentages = []
-    for system in results["systems"]:
-        if system["seat_spec_options"]["party"] == 'totals':
-            nat_votes = [sum(x) for x in zip(*results["vote_table"]["votes"])]
-        elif system["seat_spec_options"]["party"] ==  'party_vote_info':
-            nat_votes = results["vote_table"]["party_vote_info"]['votes']
-        else:
-            assert (system["seat_spec_options"]["party"] == "average")
-            total = [sum(x) for x in zip(*results["vote_table"]["votes"])]
-            nat = results["vote_table"]["party_vote_info"]['votes']
-            nat_votes = [(x + y) / 2 for (x, y) in zip(total, nat)]
-        nat_base_vote_percentages.append([x/sum(nat_votes) for x in nat_votes])
-
-    data_matrix = {
-        "base": {
-            "vp":  nat_base_vote_percentages,
-            "rss": [results["base_allocations"][r]["ref_seat_shares"][-1] for r in range(nsys)],
-            "ts":  [results["base_allocations"][r]["total_seats"][-1] for r in range(nsys)],
-            "ra":  [add_total(results["base_allocations"][r]["ref_seat_alloc"]) for r in range(nsys)],
-            "dis": [results["base_allocations"][r]["party_disparity"] for r in range(nsys)],
-            "ovh": [results["base_allocations"][r]["party_overhang"] for r in range(nsys)],
-            "exs": [results["base_allocations"][r]["party_excess"] for r in range(nsys)],
-            "sht": [results["base_allocations"][r]["party_shortage"] for r in range(nsys)],
-
-        }
-    }
-    party_measures = results["party_data"]
-    for stat in STATISTICS_HEADINGS.keys():
-        data_matrix[stat] = {
-            "vp":  [party_measures[r]['nat_vote_percentages'][stat] for r in range(nsys)],
-            "rss": [add_total(party_measures[r]['party_ref_seat_shares'][stat]) for r in range(nsys)],
-            "ts":  [add_total(party_measures[r]['party_total_seats'][stat]) for r in range(nsys)],
-            "ra":  [add_total(party_measures[r]['ref_seat_alloc'][stat]) for r in range(nsys)],
-            "dis": [party_measures[r]['party_disparity'][stat] for r in range(nsys)],
-            "ovh": [party_measures[r]['party_overhang'][stat] for r in range(nsys)],
-            "exs": [party_measures[r]['party_excess'][stat] for r in range(nsys)],
-            "sht": [party_measures[r]['party_shortage'][stat] for r in range(nsys)]
-        }
-
-    parties = results["systems"][0]["parties"] + ["Total"]
-    system_names = [sys["name"] for sys in results["systems"]]
-
-    # ALLOCATION SUMMARY
-    worksheet = workbook.add_worksheet("Allocation summary")
-    worksheet.freeze_panes(5,2)
-    toprow = 0
-    c = 0
-    worksheet.write(toprow,c,"ALLOCATION SUMMARY",fmt["h"])
-    toprow += 1
-    worksheet.write(toprow,c,"Votes-and-seats table:",fmt["h"])
-    worksheet.write(toprow, c+1, results["vote_table"]["name"], fmt["basic"])
-    toprow += 1
-    worksheet.set_column(c,c,20)
-    c += 1
-    worksheet.set_column(c,c,25)    
-    worksheet.write(toprow+1,c,"Electoral system",fmt["h"])
-    toprow += 1
-
-    summary_tables = [
-        {"abbr": "vp", "heading": "Vote percentages"},
-        {"abbr": "rss", "heading": "Total reference seat shares"},
-        {"abbr": "ts", "heading": "Total seats"},
-        {"abbr": "ra", "heading": "Reference allocations"},
-        {"abbr": "dis", "heading": "Disparity (excess if positive/deficiency if negative)"},
-        {"abbr": "ovh", "heading": "Potential overhang"},
-        {"abbr": "exs", "heading": "Excess (Positive disparity only)"},
-        {"abbr": "sht", "heading": "Shortage (Negative disparity only)"}
-    ]
-    col = 2
-    for table in summary_tables:
-        no_total_column = table["heading"].endswith(("percentages", "overhang")) or \
-            table["heading"].startswith(('Disparity', 'Excess', 'Shortage'))
-        worksheet.write(toprow, col, table["heading"], fmt["h"])
-        worksheet.write_row(
-            toprow + 1,
-            col,
-            parties[:-1] if no_total_column else parties,
-            fmt["h_center"])
-        col += len(parties) + (0 if no_total_column else 1)
-        worksheet.set_column(col - 1, col - 1, 3)
-
-    toprow += 2
-
-    #ELECTION TABLES
-    categories = [
-        {"abbr": "base", "heading": "Values based on source votes"},
-        {"abbr": "avg",  "heading": "Avg. simulated values"},
-        {"abbr": "min",  "heading": "Minimum values"},
-        {"abbr": "max",  "heading": "Maximum values"},
-        {"abbr": "std",  "heading": "Standard deviations"}
-    ]
-    for category in categories:
-        skip_total = category["abbr"] in ["std", "min", "max"]
-        worksheet.write(toprow, 0, category["heading"], fmt["h"])
-        worksheet.write_column(toprow, 1, system_names, fmt["basic"])
-        col = 2
-        for table in summary_tables:
-            no_total_column = table["heading"].endswith("percentages") or \
-             table["heading"].startswith(('Potential', 'Disparity', 'Excess', 'Shortage'))
-            setTotal = ("hide" if skip_total and not no_total_column else "show")
-            draw_sim_block(worksheet, row=toprow, col=col,
-                heading = table["heading"],
-                data = data_matrix[category["abbr"]][table["abbr"]],
-                abbreviation = category["abbr"],
-                setTotal = setTotal
-            )
-            col += len(parties) + (0 if no_total_column else 1)
-        toprow += len(system_names)+1
-
-    if include_histogram_sheets:
-        # DISPARITY DATA
-        from numpy import c_
-        worksheet = workbook.add_worksheet("Disparity data")
-        nparty = len(parties) - 1
-        data = np.reshape(results["histogram_data"]["disparity_count"], (nsys, nparty))
-        toprow = 0
-        worksheet.write(toprow, 0, "Disparity", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 0, "Difference of Total seats of party minus its Reference allocation", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 2, "Frequencies", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 0, "System", fmt["h"])
-        worksheet.set_column(1,1,15)
-        worksheet.write(toprow, 1, "Disparity value", fmt["h_right"])
-        worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
-        row = toprow+1
-        for sys in range(nsys):
-            k1 = min(min(x.keys()) for x in data[sys])
-            k2 = max(max(x.keys()) for x in data[sys])
-            bins = range(k1, k2+1)
-            hist = np.zeros((k2 - k1 + 1, 0))
-            for p in range(nparty):
-                counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
-                hist = c_[hist, counts]
-            worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
-            worksheet.write_column(row, 1, bins, fmt["base"])
-            write_matrix(worksheet, row, 2, hist, fmt["base"])
-            row += len(bins) + 1
-
-        # OVERHANG DATA
-        worksheet = workbook.add_worksheet("Overhang data")
-        nparty = len(parties) - 1
-        data = np.reshape(results["histogram_data"]["overhang_count"], (nsys, nparty))
-        toprow = 0
-        worksheet.write(toprow, 0, "Overhang", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 0, "Positive values of fixed seats of party minus its reference allocation", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 2, "Frequencies", fmt["h"])
-        toprow += 1
-        worksheet.write(toprow, 0, "System", fmt["h"])
-        worksheet.set_column(1,1,15)
-        worksheet.write(toprow, 1, "Overhang value", fmt["h_right"])
-        worksheet.write_row(toprow, 2, parties[:-1], fmt["h_center"])
-        row = toprow + 1
-        for sys in range(nsys):
-            k1 = min(min(x.keys()) for x in data[sys])
-            k2 = max(max(x.keys()) for x in data[sys])
-            bins = range(k1, k2+1)
-            hist = np.zeros((k2 - k1 + 1, 0))
-            for p in range(nparty):
-                counts = [data[sys][p][k] if k in data[sys][p] else 0 for k in range(k1,k2+1)]
-                hist = c_[hist, counts]
-            worksheet.write(row, 0, systems[sys]["name"], fmt["basic"])
-            worksheet.write_column(row, 1, bins, fmt["base"])
-            write_matrix(worksheet, row, 2, hist, fmt["base"])
-            row += len(bins) + 1
-
-    # SYSTEM SHEETS
-    for r in range(len(results["systems"])):
-        sheet_name = results["systems"][r]["name"]
-        combined = results["systems"][r]["seat_spec_options"]["const"] == 'one_const'
-        worksheet = workbook.add_worksheet(sheet_name[:31])
-        worksheet.freeze_panes(10, 2)
-        parties = results["systems"][r]["parties"] + ["Total"]
-        xtd_votes = add_totals(results["vote_table"]["votes"])
-        party_votes_specified = results["vote_table"]["party_vote_info"]["specified"]
-        if party_votes_specified:
-            xtd_votes.append(add_total(results["vote_table"]["party_vote_info"]["votes"]))
-        xtd_percentages = find_percentages(xtd_votes)
-        data_matrix = {
-            "base": {
-                "v": xtd_votes,
-                "vp": xtd_percentages,
-                "rss": results["base_allocations"][r]["ref_seat_shares"],
-                "cs": results["base_allocations"][r]["fixed_seats"],
-                "as": results["base_allocations"][r]["adj_seats"],
-                "ts": results["base_allocations"][r]["total_seats"],
-                "tsp": results["base_allocations"][r]["total_seat_percentages"],
-                "nmp": results["base_allocations"][r]["neg_margins"],
-                "nmc": results["base_allocations"][r]["neg_margin_count"]
-            }
-        }
-        seat_measures = results["data"][r]["seat_measures"]
-        k_votes = -1 if combined else len(results["vote_data"][r]["sim_votes"][stat])
-        k_seats = -1 if combined else len(seat_measures["fixed_seats"]["avg"])
-
-        for stat in STATISTICS_HEADINGS.keys():
-            data_matrix[stat] = {
-                "v": results["vote_data"][r]["sim_votes"][stat][:k_votes],
-                "vp": results["vote_data"][r]["sim_vote_percentages"][stat][:k_votes],
-                "rss": results["data"][r]["seat_measures"]["ref_seat_shares"][stat][
-                       :k_seats],
-                "cs": seat_measures["fixed_seats"][stat][:k_seats],
-                "as": seat_measures["adj_seats"][stat][:k_seats],
-                "ts": seat_measures["total_seats"][stat][:k_seats],
-                "tsp": seat_measures["total_seat_percentages"][stat][:k_seats],
-                    "nmp": results["vote_data"][r]["neg_margin"][stat],
-                "nmc": results["vote_data"][r]["neg_margin_count"][stat],
-            }
-        alloc_info = [{
-            "left_span": 2, "center_span": 2, "right_span": 1, "info": [
-                {"label": "Allocation of fixed seats:",
-                 "rule": DRN[results["systems"][r]["primary_divider"]],
-                 "threshold": fixed_seat_threshold_text(results["systems"][r])},
-                {"label": "Apportionment of adjustment seats to parties:",
-                 "rule": DRN[results["systems"][r]["adj_determine_divider"]],
-                 "threshold": adjustment_qualification_text(results["systems"][r])},
-                {"label": "Allocation of adjustment seats to lists:",
-                 "rule": DRN[results["systems"][r]["adj_alloc_divider"]],
-                 "threshold": None}
-            ]
-        }, {
-            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
-                {"label": "Allocation method for adjustment seats:",
-                 "rule": AMN[results["systems"][r]["adjustment_method"]]}
-            ]
-        },{
-            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
-                {"label": "Specification of seat numbers:",
-                 "rule": SCONST[results["systems"][r]["seat_spec_options"]["const"]]}
-            ]
-        },{
-            "left_span": 2, "center_span": 2, "right_span": 0, "info": [
-                {"label": "Votes used as basis:",
-                 "rule": SPARTY[results["systems"][r]["seat_spec_options"]["party"]]}
-            ]
-        }]
-
-        toprow = 0
-        c1 = 0
-        c2 = c1 + 1
-        worksheet.set_row_pixels(0, 25)
-        worksheet.set_column(c1, c1, 25)
-        worksheet.set_column(c2, c2, 20)
-        worksheet.write(toprow, c1, "Electoral system:", fmt["h"])
-        worksheet.write(toprow, c2, results["systems"][r]["name"], fmt["basic"])
-        toprow += 1
-        worksheet.write(toprow, c1, "Votes-and-seats table:", fmt["h"])
-        worksheet.write(toprow, c2, results["vote_table"]["name"], fmt["basic"])
-        toprow += 1
-        worksheet.write(toprow, c2 + 1, "Rule", fmt["h"])
-        worksheet.write(toprow, c2 + 3, "Threshold", fmt["h"])
-
-        toprow += 1
-        for group in alloc_info:
-            c2 = c1 + group["left_span"]
-            c3 = c2 + group["center_span"]
-            for info in group["info"]:
-                worksheet.write(toprow, c1, info["label"], fmt["h"])
-                worksheet.write(toprow, c2, info["rule"], fmt["basic"])
-                if group["right_span"] > 0:
-                    worksheet.write(toprow, c3, info["threshold"],
-                                    fmt["basic"])
-                toprow += 1
-
-        toprow += 1
-        worksheet.set_row_pixels(toprow, 25)
-        worksheet.write(toprow, c1, "Simulation results", fmt["h"])
-
-        col = 2
-        for table in tables:
-            worksheet.write(toprow, col, table["heading"], fmt["h"])
-            worksheet.write_row(
-                toprow + 1,
-                col,
-                parties if table["total"] else parties[:-1],
-                fmt["h_center"])
-            col += len(parties)
-            if table["total"]: col += 1
-            worksheet.set_column(col - 1, col - 1, 3)
-
-        toprow += 2
-
-        worksheet.set_column(2, len(parties) + 1, 10)
-
-        # Election tables
-        for category in categories:
-            worksheet.write(toprow, 0, category["heading"], fmt["h"])
-            worksheet.write_column(toprow, 1, base_const_names, fmt["basic"])
-            col = 2
-            row = toprow
-            if category['abbr'] != "base" and combined: row += len(base_const_names)-1
-            for table in tables:
-                #is_refseatshare_table = table["heading"].startswith("Reference")
-                setTotal = (
-                    "hide" if not table["total"] else
-                    "show")
-
-                draw_sim_block(worksheet, row=row, col=col,
-                               heading=table["heading"],
-                               data=data_matrix[category["abbr"]][table["abbr"]],
-                               abbreviation=category["abbr"],
-                               setTotal=setTotal
-                               )
-                col += len(parties)
-                if table["total"]:
-                    col += 1
-            toprow += len(base_const_names) + 1
-    party_names_to_xlsx(
-        workbook,
-        fmt,
-        results["vote_table"]["parties"],
-        results["vote_table"].get("party_names"),
-    )
-    workbook.close()
 
 def votes_to_xlsx(votes, party_vote_info, filename):
     workbook = xlsxwriter.Workbook(filename)

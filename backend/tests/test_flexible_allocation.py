@@ -52,7 +52,7 @@ class FlexibleAllocationTest(unittest.TestCase):
         np.testing.assert_array_equal(votes, [[10, 9], [100, 10]])
 
     def test_exact_bounds_skip_the_flexible_pass(self):
-        with patch("common_flex_allocate.common_flex_allocate") as flexible:
+        with patch("allocate_pool.allocate_pool") as flexible:
             allocation, demo = self.allocate(min_adj_seats=[1, 1], max_adj_seats=[1, 1])
         flexible.assert_not_called()
         np.testing.assert_array_equal(allocation.sum(axis=1), [1, 1])

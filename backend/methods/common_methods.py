@@ -1,14 +1,14 @@
 # coding:utf-8
 import numpy as np
 from common_allocate import common_allocate
-from common_flex_allocate import allocate_with_bounds, next_quotient
+from allocate_pool import next_quotient
 from operator import itemgetter as get
 
 def max_const_vote_percentage(*args, **kwargs):
     heading = "Const. vote score percentage"
     reason = "Max over all lists"
-    return allocate_with_bounds(*args, vote_percentage, heading, reason,
-                                flex_scores=vote_percentage_scores, **kwargs)
+    return common_allocate(*args, vote_percentage, heading, reason,
+                           flex_scores=vote_percentage_scores, **kwargs)
 
 def max_const_seat_share(*args, **kwargs):
     # print('in max_const_seat_share')

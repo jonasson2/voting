@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -85,9 +86,17 @@ def _normalise_rows(rows):
     return normalised
 
 
-def _parse_vote_table(rows, filename):
-    rows = _normalise_rows(rows)
-    header = rows.pop(0)
+@dataclass(frozen=True)
+class _TableLayout:
+    has_maximum: bool
+    region_column: int | None
+    party_start: int
+    party_end: int
+    has_pruned: bool
+
+
+def _parse_header(header):
+    """Validate headings and return the party columns and optional layout."""
 
     if _text(header[1]).lower() not in {"fixed", "cons"}:
         raise VoteTableFormatError(
@@ -118,85 +127,120 @@ def _parse_vote_table(rows, filename):
         raise VoteTableFormatError("The vote file contains no parties")
     if not all(isinstance(party, str) and party.strip() for party in parties):
         raise VoteTableFormatError("Party abbreviations must be non-blank text")
-    parties = [party.strip() for party in parties]
+    layout = _TableLayout(
+        has_maximum=has_maximum,
+        region_column=region_column,
+        party_start=party_start,
+        party_end=party_end,
+        has_pruned=has_pruned,
+    )
+    return [party.strip() for party in parties], layout
 
-    party_names = None
-    independent_candidates = None
-    maximum_total = None
-    seen_metadata = set()
-    while rows:
-        row_name = _text(rows[0][0]).lower()
-        if row_name not in {"party names", "independent candidates", "max adj seats"}:
-            break
-        if row_name in seen_metadata:
-            raise VoteTableFormatError(f'Duplicate metadata row "{rows[0][0]}"')
-        seen_metadata.add(row_name)
-        row = rows.pop(0)
 
-        if row_name in {"party names", "independent candidates"}:
-            if any(not _is_blank(value) for value in row[1:party_start]):
-                raise VoteTableFormatError(f"{row[0]} row must have blank seat and region cells")
-            if has_pruned and not _is_blank(row[-1]):
-                raise VoteTableFormatError(
-                    f"{row[0]} row must have a blank pruned-votes cell"
-                )
-            if row_name == "party names":
-                names = [_text(value) for value in row[party_start:party_end]]
-                party_names = names if any(names) else None
-            else:
-                flags = [_nonnegative_int(value, "Independent candidate flag")
-                         for value in row[party_start:party_end]]
-                if any(flag not in (0, 1) for flag in flags):
-                    raise VoteTableFormatError("Independent candidate flags must be 0 or 1")
-                independent_candidates = [bool(flag) for flag in flags]
-        else:
-            if not has_maximum:
-                raise VoteTableFormatError(
-                    "Max adj seats row requires min_adj and max_adj columns"
-                )
-            if any(not _is_blank(value) for value in row[1:3]):
-                raise VoteTableFormatError(
-                    "Max adj seats row must have blank fixed and minimum-seat cells"
-                )
-            maximum_total = _nonnegative_int(row[3], "Max adj seats")
-            if region_column is not None and not _is_blank(row[region_column]):
-                raise VoteTableFormatError("Max adj seats row must have a blank region cell")
-            if any(not _is_blank(value) for value in row[party_start:party_end]):
-                raise VoteTableFormatError(
-                    "Max adj seats row must have blank party-vote cells"
-                )
-            if has_pruned and not _is_blank(row[-1]):
-                raise VoteTableFormatError(
-                    "Max adj seats row must have a blank pruned-votes cell"
-                )
-
-    if has_maximum and maximum_total is None:
+def _metadata_values(row, layout):
+    if any(not _is_blank(value) for value in row[1:layout.party_start]):
         raise VoteTableFormatError(
-            "Min_adj and max_adj columns require a Max adj seats row"
-        )
+            f"{row[0]} row must have blank seat and region cells")
+    if layout.has_pruned and not _is_blank(row[-1]):
+        raise VoteTableFormatError(
+            f"{row[0]} row must have a blank pruned-votes cell")
+    return row[layout.party_start:layout.party_end]
+
+
+def _parse_maximum_total(row, layout):
+    if not layout.has_maximum:
+        raise VoteTableFormatError(
+            "Max adj seats row requires min_adj and max_adj columns")
+    if any(not _is_blank(value) for value in row[1:3]):
+        raise VoteTableFormatError(
+            "Max adj seats row must have blank fixed and minimum-seat cells")
+    if (layout.region_column is not None
+            and not _is_blank(row[layout.region_column])):
+        raise VoteTableFormatError(
+            "Max adj seats row must have a blank region cell")
+    if any(not _is_blank(value)
+           for value in row[layout.party_start:layout.party_end]):
+        raise VoteTableFormatError(
+            "Max adj seats row must have blank party-vote cells")
+    if layout.has_pruned and not _is_blank(row[-1]):
+        raise VoteTableFormatError(
+            "Max adj seats row must have a blank pruned-votes cell")
+    return _nonnegative_int(row[3], "Max adj seats")
+
+
+def _parse_metadata(rows, layout):
+    metadata = {
+        "party_names": None,
+        "independent_candidates": None,
+        "maximum_total": None,
+    }
+    seen = set()
+    valid_names = {"party names", "independent candidates", "max adj seats"}
+    while rows and _text(rows[0][0]).lower() in valid_names:
+        row = rows.pop(0)
+        row_name = _text(row[0]).lower()
+        if row_name in seen:
+            raise VoteTableFormatError(f'Duplicate metadata row "{row[0]}"')
+        seen.add(row_name)
+
+        if row_name == "party names":
+            names = [_text(value) for value in _metadata_values(row, layout)]
+            metadata["party_names"] = names if any(names) else None
+        elif row_name == "independent candidates":
+            flags = [
+                _nonnegative_int(value, "Independent candidate flag")
+                for value in _metadata_values(row, layout)
+            ]
+            if any(flag not in (0, 1) for flag in flags):
+                raise VoteTableFormatError(
+                    "Independent candidate flags must be 0 or 1")
+            metadata["independent_candidates"] = [bool(flag) for flag in flags]
+        else:
+            metadata["maximum_total"] = _parse_maximum_total(row, layout)
+
+    if layout.has_maximum and metadata["maximum_total"] is None:
+        raise VoteTableFormatError(
+            "Min_adj and max_adj columns require a Max adj seats row")
+    return metadata
+
+
+def _parse_region_footer(footer):
+    if (not footer or [_text(value).lower() for value in footer[0][:3]]
+            != ["regions", "name", "adj"]
+            or any(not _is_blank(value) for value in footer[0][3:])):
+        raise VoteTableFormatError(
+            'The region table heading must be "Regions,Name,adj"')
+    regions = []
+    for row in footer[1:]:
+        if any(not _is_blank(value) for value in row[3:]):
+            raise VoteTableFormatError(
+                "Region rows must have blank cells after their seat count")
+        regions.append({
+            "abbreviation": _text(row[0]),
+            "name": _text(row[1]),
+            "num_adj_seats": _nonnegative_int(
+                row[2], "Regional adjustment seats"),
+        })
+    if not regions:
+        raise VoteTableFormatError("The Regions table is empty")
+    return regions
+
+
+def _split_data_rows(rows, layout):
+    """Separate constituency rows from optional national or region rows."""
 
     separators = [
         index for index, row in enumerate(rows)
         if all(_is_blank(value) for value in row)
     ]
     regions = []
-    if region_column is not None:
+    if layout.region_column is not None:
         if len(separators) != 1:
-            raise VoteTableFormatError("A region column requires a Regions table after one blank row")
+            raise VoteTableFormatError(
+                "A region column requires a Regions table after one blank row")
         split = separators[0]
         constituency_rows = rows[:split]
-        footer = rows[split + 1:]
-        if (not footer or [_text(value).lower() for value in footer[0][:3]]
-                != ["regions", "name", "adj"]
-                or any(not _is_blank(value) for value in footer[0][3:])):
-            raise VoteTableFormatError('The region table heading must be "Regions,Name,adj"')
-        for row in footer[1:]:
-            if any(not _is_blank(value) for value in row[3:]):
-                raise VoteTableFormatError("Region rows must have blank cells after their seat count")
-            regions.append({"abbreviation": _text(row[0]), "name": _text(row[1]),
-                            "num_adj_seats": _nonnegative_int(row[2], "Regional adjustment seats")})
-        if not regions:
-            raise VoteTableFormatError("The Regions table is empty")
+        regions = _parse_region_footer(rows[split + 1:])
         national_row = None
     elif separators:
         if len(separators) != 1 or separators[0] != len(rows) - 2:
@@ -211,16 +255,18 @@ def _parse_vote_table(rows, filename):
 
     if not constituency_rows:
         raise VoteTableFormatError("The vote file contains no constituencies")
+    return constituency_rows, national_row, regions
 
+
+def _parse_constituency_rows(rows, layout):
     constituencies = []
     votes = []
     pruned = []
-    for row_number, row in enumerate(constituency_rows, start=2):
+    for row_number, row in enumerate(rows, start=2):
         name = _text(row[0])
         if not name:
             raise VoteTableFormatError(
-                f"Constituency name is blank in row {row_number}"
-            )
+                f"Constituency name is blank in row {row_number}")
         fixed = _nonnegative_int(row[1], f"Fixed seats in {name}")
         minimum = _nonnegative_int(row[2], f"Adjustment seats in {name}")
         constituency = {
@@ -228,26 +274,65 @@ def _parse_vote_table(rows, filename):
             "num_fixed_seats": fixed,
             "num_adj_seats": minimum,
         }
-        if has_maximum:
+        if layout.has_maximum:
             maximum = _maximum_adj_seats(
-                row[3], f"Maximum adjustment seats in {name}"
-            )
+                row[3], f"Maximum adjustment seats in {name}")
             if maximum is not None and maximum < minimum:
                 raise VoteTableFormatError(
-                    f"Maximum adjustment seats in {name} may not be below the minimum"
-                )
+                    f"Maximum adjustment seats in {name} may not be below the minimum")
             constituency["max_adj_seats"] = maximum
-        if region_column is not None:
-            constituency["region"] = _text(row[region_column])
+        if layout.region_column is not None:
+            constituency["region"] = _text(row[layout.region_column])
         constituencies.append(constituency)
         votes.append([
             _nonnegative_int(value, f"Votes in row {row_number}")
-            for value in row[party_start:party_end]
+            for value in row[layout.party_start:layout.party_end]
         ])
         pruned.append(
             _nonnegative_int(row[-1], f"Pruned votes in {name}")
-            if has_pruned else 0
+            if layout.has_pruned else 0
         )
+    return constituencies, votes, pruned
+
+
+def _parse_national_votes(row, layout):
+    if row is None:
+        return empty_party_vote_info()
+    name = _text(row[0])
+    if not name:
+        raise VoteTableFormatError("The national party vote name is blank")
+    if layout.has_maximum and not _is_blank(row[3]):
+        raise VoteTableFormatError(
+            "The national party vote row must have a blank max_adj cell")
+    votes = [
+        _nonnegative_int(value, "National party votes")
+        for value in row[layout.party_start:layout.party_end]
+    ]
+    pruned = (
+        _nonnegative_int(row[-1], "National pruned votes")
+        if layout.has_pruned else 0
+    )
+    return {
+        "name": name,
+        "num_fixed_seats": _nonnegative_int(
+            row[1], "National fixed seats"),
+        "num_adj_seats": _nonnegative_int(
+            row[2], "National adjustment seats"),
+        "votes": votes,
+        "specified": True,
+        "total": sum(votes) + pruned,
+        "pruned": pruned,
+    }
+
+
+def _parse_vote_table(rows, filename):
+    rows = _normalise_rows(rows)
+    header = rows.pop(0)
+    parties, layout = _parse_header(header)
+    metadata = _parse_metadata(rows, layout)
+    constituency_rows, national_row, regions = _split_data_rows(rows, layout)
+    constituencies, votes, pruned = _parse_constituency_rows(
+        constituency_rows, layout)
 
     result = {
         "name": (_text(header[0])
@@ -256,46 +341,16 @@ def _parse_vote_table(rows, filename):
         "votes": votes,
         "pruned": pruned,
         "constituencies": constituencies,
-        "party_vote_info": empty_party_vote_info(),
+        "party_vote_info": _parse_national_votes(national_row, layout),
     }
-    if party_names:
-        result["party_names"] = party_names
-    if independent_candidates is not None:
-        result["independent_candidates"] = independent_candidates
+    if metadata["party_names"]:
+        result["party_names"] = metadata["party_names"]
+    if metadata["independent_candidates"] is not None:
+        result["independent_candidates"] = metadata["independent_candidates"]
     if regions:
         result["regions"] = regions
-    if has_maximum:
-        result["max_total_adj_seats"] = maximum_total
-
-    if national_row is not None:
-        name = _text(national_row[0])
-        if not name:
-            raise VoteTableFormatError("The national party vote name is blank")
-        if has_maximum and not _is_blank(national_row[3]):
-            raise VoteTableFormatError(
-                "The national party vote row must have a blank max_adj cell"
-            )
-        national_votes = [
-            _nonnegative_int(value, "National party votes")
-            for value in national_row[party_start:party_end]
-        ]
-        national_pruned = (
-            _nonnegative_int(national_row[-1], "National pruned votes")
-            if has_pruned else 0
-        )
-        result["party_vote_info"] = {
-            "name": name,
-            "num_fixed_seats": _nonnegative_int(
-                national_row[1], "National fixed seats"
-            ),
-            "num_adj_seats": _nonnegative_int(
-                national_row[2], "National adjustment seats"
-            ),
-            "votes": national_votes,
-            "specified": True,
-            "total": sum(national_votes) + national_pruned,
-            "pruned": national_pruned,
-        }
+    if layout.has_maximum:
+        result["max_total_adj_seats"] = metadata["maximum_total"]
     return result
 
 
@@ -315,11 +370,7 @@ def _require_nonnegative_int(value, description):
         raise ValueError(f"{description} may not be negative.")
 
 
-def check_vote_table(vote_table):
-    if not isinstance(vote_table, dict):
-        raise TypeError("The vote table must be an object.")
-    table = deepcopy(vote_table)
-
+def _normalize_table_labels(table):
     name = table.get("name")
     if not isinstance(name, str) or not name.strip():
         raise ValueError("The vote table name must be non-blank text.")
@@ -331,13 +382,13 @@ def check_vote_table(vote_table):
                        for party in parties)):
         raise ValueError("The party list must contain non-blank text.")
     table["parties"] = [party.strip() for party in parties]
-    num_parties = len(parties)
-
     constituencies = table.get("constituencies")
     if not isinstance(constituencies, list) or not constituencies:
         raise ValueError("The vote table must contain constituencies.")
-    num_constituencies = len(constituencies)
+    return len(parties), len(constituencies)
 
+
+def _validate_vote_matrix(table, num_parties, num_constituencies):
     votes = table.get("votes")
     if not isinstance(votes, list) or len(votes) != num_constituencies:
         raise ValueError("The vote table does not match the constituency list.")
@@ -347,6 +398,8 @@ def check_vote_table(vote_table):
         for value in row:
             _require_nonnegative_int(value, "Votes")
 
+
+def _normalize_party_metadata(table, num_parties):
     party_names = table.get("party_names")
     flags = table.get("independent_candidates")
     if flags is not None and (
@@ -364,64 +417,74 @@ def check_vote_table(vote_table):
         else:
             table.pop("party_names", None)
 
+
+def _normalize_pruned_votes(table, num_constituencies):
     pruned = table.setdefault("pruned", [0] * num_constituencies)
     if not isinstance(pruned, list) or len(pruned) != num_constituencies:
         raise ValueError("The pruned vote totals do not match the constituencies.")
     for value in pruned:
         _require_nonnegative_int(value, "Pruned votes")
 
+
+def _normalize_constituency(constituency, has_maximum):
+    if not isinstance(constituency, dict):
+        raise TypeError("Each constituency must be an object.")
+    constituency_name = constituency.get("name")
+    if not isinstance(constituency_name, str) or not constituency_name.strip():
+        raise ValueError("Constituency names must be non-blank text.")
+    constituency["name"] = constituency_name.strip()
+    if "num_fixed_seats" not in constituency and "num_const_seats" in constituency:
+        constituency["num_fixed_seats"] = constituency.pop("num_const_seats")
+    for key, description in (
+        ("num_fixed_seats", "Fixed seats"),
+        ("num_adj_seats", "Adjustment seats"),
+    ):
+        if key not in constituency:
+            raise KeyError(
+                f"Missing {description.lower()} for {constituency_name}.")
+        _require_nonnegative_int(constituency[key], description)
+    if not has_maximum:
+        return
+    if "max_adj_seats" not in constituency:
+        raise KeyError(
+            f"Missing maximum adjustment seats for {constituency_name}.")
+    maximum = constituency["max_adj_seats"]
+    if maximum == "-":
+        maximum = None
+        constituency["max_adj_seats"] = None
+    if maximum is not None:
+        _require_nonnegative_int(maximum, "Maximum adjustment seats")
+        if maximum < constituency["num_adj_seats"]:
+            raise ValueError(
+                "Maximum adjustment seats may not be below the minimum.")
+
+
+def _normalize_constituencies(table):
     has_maximum = "max_total_adj_seats" in table
+    constituencies = table["constituencies"]
     for constituency in constituencies:
-        if not isinstance(constituency, dict):
-            raise TypeError("Each constituency must be an object.")
-        constituency_name = constituency.get("name")
-        if not isinstance(constituency_name, str) or not constituency_name.strip():
-            raise ValueError("Constituency names must be non-blank text.")
-        constituency["name"] = constituency_name.strip()
-        if "num_fixed_seats" not in constituency and "num_const_seats" in constituency:
-            constituency["num_fixed_seats"] = constituency.pop("num_const_seats")
-        for key, description in (
-            ("num_fixed_seats", "Fixed seats"),
-            ("num_adj_seats", "Adjustment seats"),
-        ):
-            if key not in constituency:
-                raise KeyError(f"Missing {description.lower()} for {constituency_name}.")
-            _require_nonnegative_int(constituency[key], description)
-        if has_maximum:
-            if "max_adj_seats" not in constituency:
-                raise KeyError(
-                    f"Missing maximum adjustment seats for {constituency_name}."
-                )
-            maximum = constituency["max_adj_seats"]
-            if maximum == "-":
-                maximum = None
-                constituency["max_adj_seats"] = None
-            if maximum is not None:
-                _require_nonnegative_int(maximum, "Maximum adjustment seats")
-                if maximum < constituency["num_adj_seats"]:
-                    raise ValueError(
-                        "Maximum adjustment seats may not be below the minimum."
-                    )
+        _normalize_constituency(constituency, has_maximum)
+    if not has_maximum:
+        return
 
-    if has_maximum:
-        maximum_total = table["max_total_adj_seats"]
-        _require_nonnegative_int(maximum_total, "Maximum total adjustment seats")
-        minimum_total = sum(
-            constituency["num_adj_seats"] for constituency in constituencies
-        )
-        if maximum_total < minimum_total:
-            raise ValueError(
-                "Maximum total adjustment seats may not be below the minimum total."
-            )
-        finite_maxima = [
-            constituency["max_adj_seats"] for constituency in constituencies
-        ]
-        if (all(maximum is not None for maximum in finite_maxima)
-                and maximum_total > sum(finite_maxima)):
-            raise ValueError(
-                "Maximum total adjustment seats exceeds constituency maxima."
-            )
+    maximum_total = table["max_total_adj_seats"]
+    _require_nonnegative_int(maximum_total, "Maximum total adjustment seats")
+    minimum_total = sum(
+        constituency["num_adj_seats"] for constituency in constituencies
+    )
+    if maximum_total < minimum_total:
+        raise ValueError(
+            "Maximum total adjustment seats may not be below the minimum total.")
+    finite_maxima = [
+        constituency["max_adj_seats"] for constituency in constituencies
+    ]
+    if (all(maximum is not None for maximum in finite_maxima)
+            and maximum_total > sum(finite_maxima)):
+        raise ValueError(
+            "Maximum total adjustment seats exceeds constituency maxima.")
 
+
+def _normalize_party_vote_info(table, num_parties):
     if "party_votes" in table:
         table["party_vote_info"] = table.pop("party_votes")
     party_vote_info = table.get("party_vote_info")
@@ -430,12 +493,9 @@ def check_vote_table(vote_table):
         table["party_vote_info"] = party_vote_info
     if not isinstance(party_vote_info, dict):
         raise TypeError("National party vote information must be an object.")
-    party_vote_info.setdefault("pruned", 0)
-    party_vote_info.setdefault("specified", False)
-    party_vote_info.setdefault("name", "–")
-    party_vote_info.setdefault("num_fixed_seats", 0)
-    party_vote_info.setdefault("num_adj_seats", 0)
-    party_vote_info.setdefault("votes", [])
+    defaults = empty_party_vote_info()
+    for key, value in defaults.items():
+        party_vote_info.setdefault(key, value)
     if type(party_vote_info["specified"]) is not bool:
         raise TypeError("The national party vote specified flag must be boolean.")
     national_name = party_vote_info["name"]
@@ -444,31 +504,45 @@ def check_vote_table(vote_table):
     if party_vote_info["specified"] and not national_name.strip():
         raise ValueError("The national party vote name must be non-blank text.")
     party_vote_info["name"] = national_name.strip()
-    _require_nonnegative_int(party_vote_info["num_fixed_seats"],
-                             "National fixed seats")
-    _require_nonnegative_int(party_vote_info["num_adj_seats"],
-                             "National adjustment seats")
-    _require_nonnegative_int(party_vote_info["pruned"], "National pruned votes")
+    _require_nonnegative_int(
+        party_vote_info["num_fixed_seats"], "National fixed seats")
+    _require_nonnegative_int(
+        party_vote_info["num_adj_seats"], "National adjustment seats")
+    _require_nonnegative_int(
+        party_vote_info["pruned"], "National pruned votes")
     national_votes = party_vote_info["votes"]
     if party_vote_info["specified"]:
         if not isinstance(national_votes, list) or len(national_votes) != num_parties:
             raise ValueError("National party votes do not match the party list.")
         for value in national_votes:
             _require_nonnegative_int(value, "National party votes")
-        party_vote_info["total"] = (
-            sum(national_votes) + party_vote_info["pruned"]
-        )
+        party_vote_info["total"] = sum(national_votes) + party_vote_info["pruned"]
     else:
         party_vote_info["votes"] = []
         party_vote_info["total"] = 0
+    return party_vote_info
 
+
+def _normalize_party_vote_basis(table, party_vote_info):
     valid_bases = {"totals", "party_vote_info", "average"}
     basis = table.get("party_vote_basis", "totals")
     if basis not in valid_bases:
         raise ValueError(f"Unknown party vote basis: {basis}")
     table["party_vote_basis"] = (
-        basis if party_vote_info["specified"] else "totals"
-    )
+        basis if party_vote_info["specified"] else "totals")
+
+
+def check_vote_table(vote_table):
+    if not isinstance(vote_table, dict):
+        raise TypeError("The vote table must be an object.")
+    table = deepcopy(vote_table)
+    num_parties, num_constituencies = _normalize_table_labels(table)
+    _validate_vote_matrix(table, num_parties, num_constituencies)
+    _normalize_party_metadata(table, num_parties)
+    _normalize_pruned_votes(table, num_constituencies)
+    _normalize_constituencies(table)
+    party_vote_info = _normalize_party_vote_info(table, num_parties)
+    _normalize_party_vote_basis(table, party_vote_info)
     check_regions(table)
     return table
 

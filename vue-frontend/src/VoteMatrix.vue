@@ -472,46 +472,32 @@ export default {
       });
       this.downloadFile({promise, ...destination})
     },
+    async loadVoteTable(url, payload) {
+      this.setWaitingForData()
+      try {
+        const response = await this.$http.post(url, payload)
+        if (!response.body || response.body.error) {
+          this.serverError(response.body)
+          return
+        }
+        this.updateVoteTable(response.data)
+        this.show_party_names = false
+      } catch (response) {
+        this.serverError(response.status)
+      } finally {
+        this.clearWaitingForData()
+      }
+    },
     loadPreset: function (_, election_id) {
       this.$refs.modalpresetref.hide();
-      this.setWaitingForData()
-      this.$http.post("api/presets/load/", {election_id: election_id }).then(
-        (response) => {
-          if (!response.body || response.body.error) {
-            this.serverError(response.body) 
-          } else {
-            this.updateVoteTable(response.data)
-            this.show_party_names = false
-          }
-          this.clearWaitingForData()
-        },
-        (response) => {
-          this.serverError(response.status)
-          this.clearWaitingForData()
-        }
-      )
+      this.loadVoteTable("api/presets/load/", {election_id: election_id})
     },
     loadVotes: function(file) {
       if (!file) return
       this.$refs.modaluploadref.hide()
-      this.setWaitingForData()
       var formData = new FormData();
       formData.append("file", file, file.name);
-      this.$http.post("api/votes/upload/", formData).then(
-        (response) => {
-          if (!response.body || response.body.error) {
-            this.serverError(response.body) 
-          } else {
-            this.updateVoteTable(response.data)
-            this.show_party_names = false
-          }
-          this.clearWaitingForData()
-        },
-        (response) => {
-          this.serverError(response.status)
-          this.clearWaitingForData()
-        }
-      )
+      this.loadVoteTable("api/votes/upload/", formData)
     },
     loadAll: function(file) {
       if (!file) return

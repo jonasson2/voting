@@ -66,6 +66,15 @@ class CurrentApplicationTest(unittest.TestCase):
         response = app.test_client().post('/api/capabilities/', json=[])
         self.assertTrue(response.get_json()['election_system']['compare_with'])
 
+    def test_electoral_system_names_cannot_be_blank(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        for name in (None, '', '   '):
+            with self.subTest(name=name):
+                system['name'] = name
+                with self.assertRaisesRegex(ValueError, 'cannot be blank'):
+                    check_systems([system])
+
     def test_legacy_fixed_seat_eligibility_is_normalized(self):
         system = normalize_system({
             'adjustment_threshold': 4,

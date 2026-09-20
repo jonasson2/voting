@@ -42,6 +42,13 @@ def check_input(data, sections):
             raise KeyError(f"Missing data ('{section}')")
     return data
 
+def check_system_names(electoral_systems):
+    for system in electoral_systems:
+        name = system.get("name") if isinstance(system, dict) else None
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Electoral system names cannot be blank.")
+    return electoral_systems
+
 def check_systems(electoral_systems):
     """Checks election systems constituency input, and translates empty cells to 0
 
@@ -52,6 +59,7 @@ def check_systems(electoral_systems):
     """
     if not electoral_systems:
         raise ValueError("Must have at least one electoral system.")
+    check_system_names(electoral_systems)
     electoral_systems = [e for e in electoral_systems if e["name"] != "Monge"]
     # Monge is iffy and thus removed
     for electoral_system in electoral_systems:

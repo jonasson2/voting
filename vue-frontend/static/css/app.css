@@ -205,6 +205,8 @@ th {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 6px;
+  max-width: 100%;
+  width: fit-content;
 }
 
 .simulation-setting-row label {
@@ -452,6 +454,15 @@ measures {
   font-size: 18px;
   font-weight: 600;
   line-height: 0.75;
+}
+
+.nav-tabs .nav-link.system-delete-tab {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.system-delete-symbol {
+  font-weight: 400;
 }
 
 .votematrix button.split-adjustment-button {

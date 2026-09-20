@@ -1,9 +1,10 @@
-from common_flex_allocate import allocate_with_bounds, next_quotient, quotient_scores
+from common_allocate import common_allocate
+from allocate_pool import next_quotient, quotient_scores
 
 
 def max_const_votes(*args, **kwargs):
     """Meet constituency minima, then allocate the bounded pool by next quotient."""
-    allocation, demo = allocate_with_bounds(
+    allocation, demo = common_allocate(
         *args, next_quotient, "Vote score", "Maximum over all eligible lists",
         vote_floor=None, flex_scores=quotient_scores, **kwargs)
     return allocation, {"data": demo["data"]["sequence"], "function": print_demo_table}

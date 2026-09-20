@@ -7,7 +7,7 @@ from par_util import read_sim_status, read_sim_error
 from electionHandler import ElectionHandler
 from util import load_votes_from_excel
 from util import remove_blank_rows, correct_deprecated
-from input_util import check_simul_settings, normalize_system
+from input_util import check_simul_settings, check_system_names, normalize_system
 from vote_table import check_vote_table, process_vote_table
 from simulate import Simulation, Sim_result
 from excel_util import simulation_to_xlsx, votes_to_xlsx
@@ -51,6 +51,7 @@ def load_json(f):
     assert "systems" in file_content
     file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
     assert type(file_content["systems"]) == list
+    check_system_names(file_content["systems"])
     file_content = correct_deprecated(file_content)
     return file_content
 

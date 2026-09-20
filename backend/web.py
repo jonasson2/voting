@@ -8,7 +8,7 @@ from traceback import format_exc
 import dictionaries, simulate
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
-from input_util import check_simul_settings
+from input_util import check_simul_settings, check_system_names
 from util import get_cpu_counts
 from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election
@@ -116,6 +116,7 @@ def api_update_constituencies():
 def api_settings_save():
     try:
         (systems, sim_settings) = getparam("systems", "sim_settings")
+        check_system_names(systems)
         keys = [
             "name", "seat_spec_options", "constituencies",
             "compare_with",
@@ -176,6 +177,7 @@ def api_votes_save_all():
         param = getparam(*param_list)
         contents = dict(zip(param_list, param))
         contents["vote_table"] = check_vote_table(contents["vote_table"])
+        check_system_names(contents["systems"])
         tmpfilename = tempfile.mktemp(prefix='simulator-')
         with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
             json.dump(contents, jsonfile, ensure_ascii=False, indent=2)

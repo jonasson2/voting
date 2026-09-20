@@ -19,11 +19,9 @@ að tæmandi lýsingu á sænsku kosningalögunum.
 6. Búa til annað kerfi á sömu gögnum og bera sænsku aðferðina saman við aðra
    aðferð við staðsetningu jöfnunarsæta, til dæmis *Maximum constituency vote
    percentage*.
+7. Benda á að til að fá dæmi þar sem "Swedish switchint" skipti raunverulega á
+   einhverjum sætum megi beita 2018+ lögum á kosningarnar frá 2014.
 
 Kaflinn ætti að halda sama stutta og tilraunamiðaða sniði og 2×2 dæmið. Ekki
 þarf að útskýra alla stærðfræðina þar; ítarleg lýsing á úthlutunarreglum á
 heima í sérstöku stærðfræðiskjali.
-
-Áður en kaflinn er skrifaður þarf sænska gagnataflan að innihalda smáflokkana,
-en ekki vera þegar stytt, svo að skrefið um *Prune small parties* sé raunverulegur
-hluti tilraunarinnar.

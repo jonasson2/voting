@@ -18,41 +18,82 @@ def combine_titles(titles, last_column1):
 def normalize_negative_zero(value):
     return 0 if -1e-8 < value < 0 else value
 
+
+def _system_display_value(data, system_index, measure, stat, group, nsim):
+    value = normalize_negative_zero(
+        data[system_index]["measures"][measure][stat])
+    result = {
+        "value": value,
+        "integer": fractional_digits(group, stat) == 0,
+        "ci": None,
+    }
+    if stat == "avg" and nsim > 0:
+        std = data[system_index]["measures"][measure]["std"]
+        result["ci"] = 1.96 * std / sqrt(nsim)
+    return result
+
+
+def _paired_display_value(paired_data, measure, group, nsim):
+    paired = paired_data.get(measure)
+    show = group not in {"cmpList", "cmpParty", "cmpNationalDetails"}
+    value = normalize_negative_zero(paired["avg"]) if paired and show else 0
+    ci = (
+        1.96 * paired["std"] / sqrt(nsim)
+        if paired and show and nsim > 0 else None
+    )
+    return {"value": value, "integer": False, "ci": ci}
+
+
+def _measure_row(data, systems, paired_data, group, measure, title, nsim):
+    row = {"rowtitle": title}
+    has_paired_difference = len(systems) >= 2
+    for stat in STATISTICS_HEADINGS:
+        row[stat] = [
+            _system_display_value(data, index, measure, stat, group, nsim)
+            for index in range(len(systems))
+        ]
+        if stat == "avg" and has_paired_difference:
+            row[stat].insert(
+                2, _paired_display_value(paired_data, measure, group, nsim))
+    return row
+
+
+def _vue_data_header(systems):
+    names = [system["name"] for system in systems]
+    result = {
+        "stats": list(STATISTICS_HEADINGS),
+        "stat_headings": STATISTICS_HEADINGS,
+        "headingType": headingType,
+        "system_names": names,
+        "has_paired_difference": len(systems) >= 2,
+        "group_ids": [],
+        "group_titles": {
+            "topLeft": (
+                "Differences between allocated and fractional\n"
+                "reference seats, summed over constituency lists"
+            )
+        },
+        "footnotes": {},
+        "show": {},
+    }
+    if len(systems) >= 2:
+        result["difference_tooltip"] = (
+            f"{names[0]} minus {names[1]}, calculated separately for each "
+            "simulated election."
+        )
+    return result
+
+
 def add_vuedata(sim_result_dict, parallel):
     data = sim_result_dict["data"]
     if not data:
         return
     party_votes_specified = sim_result_dict["vote_table"]["party_vote_info"]["specified"]
-    # print('party_votes_specified:', party_votes_specified)
     systems = sim_result_dict["systems"]
-    qm_topleft1 = (
-        "Differences between allocated and fractional\n"
-        "reference seats, summed over constituency lists"
-    )
-    qm_topleft2 = ""
-    groups = MeasureGroups(systems, party_votes_specified, qm_topleft2)
-    stats = list(STATISTICS_HEADINGS.keys())
-    nsys = len(systems)
+    groups = MeasureGroups(systems, party_votes_specified, "")
     nsim = sim_result_dict["iteration"]
     paired_data = sim_result_dict.get("paired_data", {})
-    has_paired_difference = len(systems) >= 2
-    vuedata = {}
-    vuedata["stats"] = stats
-    vuedata["stat_headings"] = STATISTICS_HEADINGS
-    vuedata["headingType"] = headingType
-    vuedata["system_names"] = [sys["name"] for sys in systems]
-    vuedata["has_paired_difference"] = has_paired_difference
-    if has_paired_difference:
-        first, second = vuedata["system_names"][:2]
-        vuedata["difference_tooltip"] = (
-            f"{first} minus {second}, calculated separately for each "
-            "simulated election."
-        )
-    vuedata["group_ids"] = []
-    vuedata["group_titles"] = {}
-    vuedata["footnotes"] = {}
-    vuedata["show"] = {}
-    vuedata["group_titles"]["topLeft"] = qm_topleft1
+    vuedata = _vue_data_header(systems)
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
@@ -63,40 +104,8 @@ def add_vuedata(sim_result_dict, parallel):
         vuedata["show"][id] = not ("onlyExcel" in group and group["onlyExcel"])
         for (measure, titles) in group["rows"].items():
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
-            row = {"rowtitle": rowtitle}
-            for stat in stats:
-                row[stat] = []
-                for s in range(len(systems)):
-                    #print('stat:', stat, ', measures:', data[s]["measures"].keys())
-                    entry = normalize_negative_zero(
-                        data[s]["measures"][measure][stat])
-                    display_value = {
-                        "value": entry,
-                        "integer": fractional_digits(id, stat) == 0,
-                        "ci": None,
-                    }
-                    if stat == "avg" and nsim > 0:
-                        std = data[s]["measures"][measure]["std"]
-                        display_value["ci"] = 1.96 * std / sqrt(nsim)
-                    row[stat].append(display_value)
-                if stat == "avg" and has_paired_difference:
-                    paired = paired_data.get(measure)
-                    show_paired = id not in {
-                        "cmpList", "cmpParty", "cmpNationalDetails"
-                    }
-                    entry = (
-                        normalize_negative_zero(paired["avg"])
-                        if paired and show_paired else 0
-                    )
-                    ci = None
-                    if paired and show_paired and nsim > 0:
-                        ci = 1.96 * paired["std"] / sqrt(nsim)
-                    row[stat].insert(2, {
-                        "value": entry,
-                        "integer": False,
-                        "ci": ci,
-                    })
-            vuedata[id].append(row)
+            vuedata[id].append(_measure_row(
+                data, systems, paired_data, id, measure, rowtitle, nsim))
     sim_result_dict["vuedata"] = vuedata
 
 # Statistic ids are an array in                        vuedata["stats"]

@@ -94,51 +94,69 @@
       </b-button>
     </b-button-group>
   </b-button-toolbar>
-  <b-tabs v-if="!adding_system" v-model="activeTabIndex" no-key-nav card>
-    <b-tab v-for="(sysidx,idx) in system_numbering" :key="idx" @click="reorder(sysidx,idx)">
+  <b-tabs
+    v-if="!adding_system"
+    :key="`${systems.length}:${activeSystemIndex}`"
+    v-model="activeTabIndex"
+    no-key-nav
+    card
+    >
+    <b-tab
+      v-for="sysidx in system_numbering"
+      :key="sysidx"
+      :title-link-class="sysidx == -3 ? 'system-delete-tab' : null"
+      @click="handleTabClick(sysidx)"
+      >
       <template v-if="sysidx==-2" #title>
-        ←
+        <span
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Reorder systems"
+          >←</span>
       </template>
       <template v-else-if="sysidx==-1" #title>
-        →
-      </template>
-      <template v-else v-slot:title>
-        {{systems[sysidx].name}}
-      </template>
-      <b-form-group
-        label-for="input-horizontal"
-        label-cols="auto"
-        label="System name"
-        >
-        <b-form-input
-          class="pt-0 pb-0"
-          style="font-weight:bold; margin-top:-4px; font-size:110%; width:100%;"
-          v-model="systems[activeSystemIndex].name"
-          v-autowidth="{ maxWidth: '500px', minWidth: '1px' }"
+        <span
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Enter electoral system name"
-          />
-      </b-form-group>
-      <b-alert :show="showAlert()">
-      All system names should be unique
-      </b-alert>
-      <ElectionSettings
-        :systemidx="activeSystemIndex"
-        :capabilities="capabilities"
-        :adding_system="adding_system"
+          title="Reorder systems"
+          >→</span>
+      </template>
+      <template v-else-if="sysidx==-3" #title>
+        <span
+          class="system-delete-symbol"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Remove selected electoral system"
+          >X</span>
+      </template>
+      <template v-else #title>
+        {{systemName(sysidx)}}
+      </template>
+      <template v-if="systems[sysidx]">
+        <b-form-group
+          label-for="input-horizontal"
+          label-cols="auto"
+          label="System name"
+          >
+          <b-form-input
+            class="pt-0 pb-0"
+            style="font-weight:bold; margin-top:-4px; font-size:110%; width:100%;"
+            v-model="systems[sysidx].name"
+            :state="systemNameState(sysidx)"
+            required
+            v-autowidth="{ maxWidth: '500px', minWidth: '1px' }"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Enter electoral system name"
+            />
+        </b-form-group>
+        <b-alert :show="Boolean(systemNameError)">
+        {{systemNameError}}
+        </b-alert>
+        <ElectionSettings
+          :systemidx="sysidx"
+          :capabilities="capabilities"
+          :adding_system="adding_system"
         >
-      </ElectionSettings>
+        </ElectionSettings>
+      </template>
     </b-tab>
-    <template #tabs-start>
-      <b-button
-        size="sm"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Remove selected electoral system"
-        @click="deleteCurrentSystem"
-        >
-        <b>X</b>
-      </b-button>
-    </template>
     <template #tabs-end>
       <b-button
         size="sm"
@@ -184,13 +202,9 @@ export default {
     ]),
     activeTabIndex: {
       get() {
-        let asi = this.activeSystemIndex        
-        return asi == 0 ? asi : asi + 1
+        return this.system_numbering.indexOf(this.activeSystemIndex)
       },
-      set(val) {
-        null
-        //this.setActiveTabIndex(val)
-      }
+      set() {}
     },
     activeSystemIndex: {
       get() {
@@ -199,6 +213,16 @@ export default {
       set(val) {
         this.setActiveSystemIndex(val)
       }
+    },
+    systemNameError() {
+      const names = this.systems.map(system => system.name)
+      if (names.some(name => typeof name !== "string" || !name.trim())) {
+        return "Electoral system names cannot be blank"
+      }
+      if (new Set(names).size !== names.length) {
+        return "All system names should be unique"
+      }
+      return ""
     },
     tabCount: function() {
       return this.system_numbering.length
@@ -258,15 +282,21 @@ export default {
     setReplace: function(status) {
       this.replace = status
     },
+    systemName(sysidx) {
+      return this.systems[sysidx] ? this.systems[sysidx].name : ""
+    },
+    systemNameState(sysidx) {
+      const name = this.systemName(sysidx)
+      return typeof name === "string" && name.trim() ? null : false
+    },
+    handleTabClick(sysidx) {
+      if (sysidx == -3) this.deleteCurrentSystem()
+      else this.reorder(sysidx)
+    },
     swap(a,i) {
       [a[i], a[i+1]] = [a[i+1], a[i]]
     },
-    reorder(sysidx,idx) {
-      console.log("in reorderx<")
-      console.log("idx", idx)
-      console.log("sysidx", sysidx)
-      console.log("activeTabIndex", this.activeTabIndex)
-      console.log("activeSystemIndex", this.activeSystemIndex)
+    reorder(sysidx) {
       let asi = this.activeSystemIndex
       if (sysidx == asi)
         return
@@ -282,7 +312,6 @@ export default {
         asi = sysidx
       this.activeSystemIndex = asi
       this.newNumbering(this.activeSystemIndex)
-      console.log("new activeSystemIndex", this.activeSystemIndex)
     },
     saveSettings: function (destination) {
       let promise;
@@ -344,10 +373,6 @@ export default {
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
       this.uploadAll(formData)
-    },
-    showAlert: function() {
-      let names = this.systems.map(({ name }) => name)
-      return new Set(names).size !== names.length
     },
   },
   created: function () {
