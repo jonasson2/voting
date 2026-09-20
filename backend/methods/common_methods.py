@@ -1,56 +1,65 @@
 # coding:utf-8
 import numpy as np
 from common_allocate import common_allocate
+from common_flex_allocate import allocate_with_bounds, next_quotient
 from operator import itemgetter as get
 
-def max_const_vote_percentage(*args, **_):
+def max_const_vote_percentage(*args, **kwargs):
     heading = "Const. vote score percentage"
     reason = "Max over all lists"
-    return common_allocate(*args, vote_percentage, heading, reason)
+    return allocate_with_bounds(*args, vote_percentage, heading, reason,
+                                flex_scores=vote_percentage_scores, **kwargs)
 
-def max_const_seat_share(*args, **_):
+def max_const_seat_share(*args, **kwargs):
     # print('in max_const_seat_share')
     heading = "Const. seat share score"
     reason = "Max over all lists"
-    return common_allocate(*args, seat_share, heading, reason)
+    return common_allocate(*args, seat_share, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def seats_p_unbounded(*args, **_):
+def seats_p_unbounded(*args, **kwargs):
     # print('in seats_p_unbounded')
     heading = "Seat share score"
     reason = "Max over all lists"
-    return common_allocate(*args, seat_share, heading, reason)
+    return common_allocate(*args, seat_share, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def nearest_to_previous(*args, last=None, **_):
+def nearest_to_previous(*args, last=None, **kwargs):
     heading = "Score/ratio of scores"
     reason = "Maximum ratio of previous in to next in score"
     nolast_reason = "No fixed seat, thus using maximum score"
     return common_allocate(*args, nearest_to_prev_ratio, heading, reason,
-                           last=last, nolast_reason=nolast_reason)
+                           last=last, nolast_reason=nolast_reason, **kwargs)
     
-def relative_superiority(*args, **_):
+def relative_superiority(*args, **kwargs):
     reason = "Max ratio of next-in vote score to first substitute vote score"
     heading = "Superiority ratio"
-    return common_allocate(*args, superiority_full, heading, reason)
+    return common_allocate(*args, superiority_full, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def max_absolute_margin(*args, **_):
+def max_absolute_margin(*args, **kwargs):
     reason = "Max next-in and next-but-one-in vote score difference"
     heading = "Margin"
-    return common_allocate(*args, absolute_margin, heading, reason)
+    return common_allocate(*args, absolute_margin, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def max_relative_margin(*args, **_):
+def max_relative_margin(*args, **kwargs):
     reason = "Max next-in and next-but-one-in vote score ratio"
     heading = "Relative margin"
-    return common_allocate(*args, relative_margin, heading, reason)
+    return common_allocate(*args, relative_margin, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def rel_sup_medium(*args, **_):
+def rel_sup_medium(*args, **kwargs):
     reason = "Max ratio of next-in vote score to computed substitute vote score"
     heading = "Superiority ratio"
-    return common_allocate(*args, superiority_medium, heading, reason)
+    return common_allocate(*args, superiority_medium, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
-def rel_sup_simple(*args, **_):
+def rel_sup_simple(*args, **kwargs):
     reason = "Max ratio of next-in vote score to computed substitute vote score"
     heading = "Superiority ratio"
-    return common_allocate(*args, superiority_simple, heading, reason)
+    return common_allocate(*args, superiority_simple, heading, reason,
+                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
 
 def rel_sup_next(*args, **_):
     pass
@@ -67,10 +76,11 @@ def nearest_to_prev_ratio(votes, alloc, div, **kwargs):
     return party, ratio[party]
 
 def vote_percentage(votes, alloc, div, **kwargs):
-    votesum = kwargs["votesum"]
-    pct = votes/votesum/div[alloc]
-    party = np.argmax(pct)
-    return party, pct[party]
+    return next_quotient(votes / kwargs["votesum"], alloc, div)
+
+
+def vote_percentage_scores(votes, alloc, div, *, votesums):
+    return votes / votesums[:, None] / div[alloc]
 
 def absolute_margin(votes, alloc, div, **_):
     quot = votes/div[alloc]

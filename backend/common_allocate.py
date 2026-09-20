@@ -1,6 +1,25 @@
 #coding:utf-8
 import numpy as np
 from numpy import flatnonzero as find
+from ties import select_tied
+
+
+def allocation_step(scores, votes, allocation, divisors, rng=None, on_tie=None):
+    """Select among all best list scores and record the pre-allocation quotient."""
+    maximum = scores.max()
+    if not np.isfinite(maximum):
+        raise ValueError("No eligible party-constituency pair can receive the remaining seats.")
+    tied = np.flatnonzero(scores == maximum)
+    winner = select_tied(tied, maximum, on_tie, rng=rng)
+    c, p = np.unravel_index(winner, scores.shape)
+    divisor = float(divisors[allocation[c, p]])
+    return {
+        "constituency": int(c), "party": int(p),
+        "maximum": float(maximum), "votes": float(votes[c, p]),
+        "divisor": divisor, "quotient": float(votes[c, p] / divisor),
+        "tie": bool(len(tied) > 1),
+        "lot": bool(len(tied) > 1 and rng is not None),
+    }
 
 def common_allocate(
         votes, total_const_seats, total_party_seats, prior_alloc, div_gen,
@@ -8,12 +27,22 @@ def common_allocate(
 
     # PREPARE WORK ARRAYS
     # Generic methods treat every constituency-party cell as available.
-    votes = np.maximum(np.asarray(votes, dtype=float), 1)
+    votes = np.asarray(votes, dtype=float)
+    vote_floor = kwargs.get("vote_floor", 1)
+    if vote_floor is not None:
+        votes = np.maximum(votes, vote_floor)
     nconst = len(total_const_seats)
-    alloc_list = prior_alloc.copy()
-    free_const_seats = total_const_seats - alloc_list.sum(1)
+    alloc_list = np.asarray(prior_alloc, dtype=int).copy()
+    total_party_seats = np.asarray(total_party_seats, dtype=int)
+    national_fixed = kwargs.get("nat_prior_allocations")
+    if national_fixed is not None:
+        total_party_seats = total_party_seats - np.asarray(national_fixed, dtype=int)
+    free_const_seats = np.asarray(total_const_seats) - alloc_list.sum(1)
     free_party_seats = total_party_seats - alloc_list.sum(0)
-    party = -np.ones(nconst, int)
+    if (free_const_seats < 0).any() or (free_party_seats < 0).any():
+        raise ValueError("Allocation targets are below the seats already allocated.")
+    if free_party_seats.sum() < free_const_seats.sum():
+        raise ValueError("Party deficits are smaller than the adjustment-seat total.")
     has_last = last is not None
 
     # CALCULATE DIVISORS
@@ -30,49 +59,50 @@ def common_allocate(
         openP = find(free_party_seats > 0)
 
         # DETERMINE CRITERION FOR EACH NON-FULL CONSTITUENCY
-        criteria = np.zeros(len(openC))
-        has_score = np.zeros(len(openC), dtype=bool)
-        for (k,c) in enumerate(openC):
-            lp = find(openP==last_party[c])[0] if last_party[c] in openP else None
+        scores = np.full(votes.shape, -np.inf)
+        has_score = np.zeros(nconst, dtype=bool)
+        for c in openC:
+            parties = openP
+            if kwargs.get("exclude_zero_votes"):
+                parties = parties[votes[c, parties] > 0]
+            if not len(parties):
+                continue
+            lp = find(parties==last_party[c])[0] if last_party[c] in parties else None
             (p, score) = compute_criteria(
-                votes[c,openP],
-                alloc_list[c,openP],
+                votes[c,parties],
+                alloc_list[c,parties],
                 div,
                 votesum = votesum[c],
                 nfree = free_const_seats[c],
                 totconstseats = total_const_seats[c],
-                npartyseats = total_party_seats[openP],
+                npartyseats = total_party_seats[parties],
                 last_party = lp,
                 )
             # A margin is undefined when the sole remaining party has no rival.
-            has_score[k] = score is not None
-            if score is not None:
-                criteria[k] = score
-            party[c] = openP[p]
+            # Criteria may return all tied parties, or one deterministic winner.
+            has_score[c] = score is not None
+            scores[c, parties[p]] = score if score is not None else 0
 
         # SELECT CONSTITUENCY AND PARTY WITH MAXIMUM CRITERION
-        best = np.argmax(criteria)
-        maxC = openC[best]
-        maxP = party[maxC]
+        step = allocation_step(scores, votes, alloc_list, div,
+                               kwargs.get("rng"), kwargs.get("on_tie"))
+        maxC, maxP = step["constituency"], step["party"]
         previous_party = last_party[maxC]
         last_party[maxC] = maxP
         alloc_list[maxC, maxP] += 1
 
         step_reason = nolast_reason if has_last and previous_party is None else reason
-        if not has_score[best]:
+        if not has_score[maxC]:
             step_reason = "Only party with seats remaining"
 
-        allocation_sequence.append({
-            "const": maxC,
+        step.update({
             "last_party": previous_party if has_last else None,
-            "party": maxP,
             "reason": step_reason,
-            "maximum": criteria[best] if has_score[best] else None
+            "maximum": step["maximum"] if has_score[maxC] else None,
         })
+        allocation_sequence.append(step)
         free_const_seats[maxC] -= 1
         free_party_seats[maxP] -= 1
-        #print(free_const_seats) #Todo
-        #print(free_party_seats)
         assert all(free_const_seats >= 0)
         assert all(free_party_seats >= 0)
 
@@ -103,14 +133,15 @@ def print_demo_table(rules, data):
             maximum = "-"
         contents.append([
             seat_number,
-            rules["constituencies"][alloc["const"]]["name"],
+            rules["constituencies"][alloc["constituency"]]["name"],
             rules["parties"][alloc["party"]],
             alloc["reason"],
             maximum,
         ])
         if has_last:
             last_party_no = alloc["last_party"]
-            last_party = "N/A" if last_party_no < 0 else rules["parties"][last_party_no]
+            last_party = ("N/A" if last_party_no is None or last_party_no < 0
+                          else rules["parties"][last_party_no])
             contents[-1].insert(3, last_party)
 
     return headers, contents, None

@@ -360,7 +360,7 @@ ADJUSTMENT_METHODS = {
     # "monge": monge,
 }
 
-FLEXIBLE_ADJUSTMENT_METHODS = {"max-const-votes"}
+FLEXIBLE_ADJUSTMENT_METHODS = {"max-const-votes", "max-const-vote-percentage"}
 
 USE_THRESHOLDS = [
     {"value": False, "text": "no"},

@@ -17,7 +17,7 @@ from methods.norwegian_law import norwegian_apportionment
 from methods.switching_se import switching
 from randomness import make_rng, random_uniform
 from simulate import Simulation, SimulationSettings
-from ties import TieReport, select
+from ties import TieReport, select, select_tied
 from vote_table import check_vote_table, process_vote_table
 from web import app
 
@@ -97,14 +97,14 @@ class TieTest(unittest.TestCase):
             self.assertEqual(select([100, 100]), 0)
             self.assertEqual(select([200, 100, 100], minimum=True), 1)
 
-    def test_max_const_votes_searches_ties_once_per_seat(self):
+    def test_max_const_votes_selects_and_reports_ties_once_per_seat(self):
         report = TieReport()
-        with patch('methods.max_const_votes.np.flatnonzero', wraps=np.flatnonzero) as find:
+        with patch('common_allocate.select_tied', wraps=select_tied) as choose:
             allocated, demo = max_const_votes(
                 [[100, 100]], [1], [1, 1], [[0, 0]], dhondt_gen,
                 min_adj_seats=[1], max_adj_seats=[1],
                 on_tie=report.reporter('Adjustment seats', ['A', 'B']))
-            self.assertEqual(find.call_count, 1)
+            self.assertEqual(choose.call_count, 1)
         np.testing.assert_array_equal(allocated, [[1, 0]])
         self.assertTrue(demo['data'][0]['tie'])
         self.assertFalse(demo['data'][0]['lot'])

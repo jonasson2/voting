@@ -263,12 +263,13 @@ class Election:
         party_vote_info = self.party_vote_info
         self.use_thresholds = use_thresholds
         method_name = self.system["adjustment_method"]
-        if (self.has_flexible_adj_seats
+        if (self.num_adjustment_seats > int(self.min_adj_seats.sum())
                 and method_name not in FLEXIBLE_ADJUSTMENT_METHODS):
             raise ValueError(
                 f'Adjustment-seat method "{method_name}" does not support '
-                "constituency ranges; all adjustment-seat minimums and "
-                "maximums must be equal.")
+                "constituency ranges with a remaining seat pool; it requires "
+                "a predetermined final seat count in each constituency. "
+                "Use Maximum constituency votes or Maximum constituency vote percentage.")
         self.total_const_seats = (
             int(self.fixed_row_sums.sum()) + self.num_adjustment_seats)
         self.set_national_votes()

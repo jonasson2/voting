@@ -1055,7 +1055,7 @@ class CurrentApplicationTest(unittest.TestCase):
         table['constituencies'][1]['max_adj_seats'] = None
         table['max_total_adj_seats'] = 6
         for method in ADJUSTMENT_METHODS:
-            if method == 'max-const-votes':
+            if method in ('max-const-votes', 'max-const-vote-percentage'):
                 continue
             with self.subTest(method=method):
                 system = self.make_system(table, method)
