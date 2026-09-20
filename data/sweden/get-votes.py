@@ -31,8 +31,10 @@ FIXED_SEATS_URL = (
     "valkretsmandat-riksdag-1988-2026.xlsx"
 )
 RESULTS_2026_URL = (
-    "https://resultat.val.se/data/resultat/val2026/RD_S.json"
+    "https://resultat.val.se/resultatfiler/val2026/s/rd/"
+    "Val_2026_slutlig_00_RD.zip"
 )
+RESULTS_2026_FILE = "Val_2026_slutlig_mandatfordelning_00_RD.json"
 RESULTS_2014_INDEX_URL = (
     "https://historik.val.se/val/val2014/slutresultat/R/rike/index.html"
 )
@@ -339,24 +341,30 @@ def parse_2022_votes(fixed, total_seats):
 
 
 def parse_2026_votes(fixed):
-    result = json.loads(download(RESULTS_2026_URL))
+    with zipfile.ZipFile(io.BytesIO(download(RESULTS_2026_URL))) as archive:
+        result = json.loads(archive.read(RESULTS_2026_FILE))
     votes = OrderedDict()
     labels = {}
-    pruned = {}
-    for constituency in result["valkretsar"]:
-        district = constituency["namn"]
+    party_codes = {}
+    used = set()
+    for constituency in result["valomrade"]["valkretsLista"]:
+        district = constituency["namnValkrets"]
         votes[district] = OrderedDict()
-        pruned[district] = 0
-        for party in constituency["rosterPaverkaMandat"]["partiroster"]:
-            if party["visa"] == 0:
-                code = party["partiforkortning"]
-                votes[district][code] = party["antalRoster"]
-                labels[code] = party["partibeteckning"]
-            elif party["visa"] == 2:
-                pruned[district] += party["antalRoster"]
+        parties = constituency["rostfordelning"]["rosterPaverkaMandat"]["partiRoster"]
+        for party in parties:
+            party_id = party["partikod"]
+            if party_id not in party_codes:
+                preferred = party.get("partiforkortning")
+                code = (
+                    preferred
+                    if preferred and preferred not in used
+                    else short_party_name(party["partibeteckning"], used)
+                )
+                used.add(code)
+                party_codes[party_id] = code
+                labels[code] = party["partibeteckning"].strip()
+            votes[district][party_codes[party_id]] = party["antalRoster"]
     parties, result_rows = build_rows(votes, fixed, fixed)
-    for row in result_rows:
-        row["Pruned"] = pruned[row["Kjördæmi"]]
     return parties, result_rows, labels
 
 
@@ -430,10 +438,7 @@ def write_votes(year, out):
         row["min_adj"] = 0
         row["max_adj"] = "-"
         del row["adj"]
-    has_pruned = year == "2026"
     fieldnames = ["Kjördæmi", "fixed", "min_adj", "max_adj", *parties]
-    if has_pruned:
-        fieldnames.append("Pruned")
     with open(out, "w", encoding="utf-8", newline="") as fd:
         writer = csv.DictWriter(fd, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()

@@ -761,6 +761,9 @@ class CurrentApplicationTest(unittest.TestCase):
 
     def test_swedish_2026_matches_official_party_totals(self):
         table = load_votes('../data/sweden_2026.csv')
+        self.assertGreater(len(table['parties']), 8)
+        self.assertEqual(sum(table['pruned']), 0)
+        self.assertEqual(np.asarray(table['votes'])[:, 8:].sum(), 107_199)
         election = ElectionHandler(
             table, [self.make_swedish_system(table)], True).elections[0]
         allocation = np.asarray(election.results['all_const_seats'])
@@ -772,7 +775,6 @@ class CurrentApplicationTest(unittest.TestCase):
                 'S': 99, 'V': 30, 'MP': 22, 'SD': 62,
             },
         )
-        self.assertEqual(sum(table['pruned']), 107_199)
 
     def test_swedish_system_runs_through_simulation_measures(self):
         table = load_votes('../data/sweden_2022.csv')

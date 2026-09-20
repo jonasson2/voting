@@ -6,3 +6,119 @@ S        Arbetarepartiet-Socialdemokraterna
 V        Vänsterpartiet
 MP       Miljöpartiet de gröna
 SD       Sverigedemokraterna
+9SB      99 Svarta ballonger
+AAAP     ANTI-AUKTORITÄRA AKTIONS PARTIET
+AFS      Alternativ för Sverige
+AMO      AMORISTERNA
+ANARKIST ANARKISTERNA
+AP       AI partiet
+APP      Anti-partiet Partiet
+AS       Ambition Sverige
+AS2      Alternativ Sanning
+BARNDEMO BarnDemokraterna
+CIVIS    CIVIS
+CSIS     Common sense in Sweden
+DD       Direktdemokraterna
+DFR      Demokrati, Folk och Religion (DFR)
+DP       Djurvänners Parti
+DSP      Det sunda partiet
+EBS      Ett Bra Sverige
+EF       EVOLT FOLKHANSA
+EKORREPA Ekorrepartiet
+EML      Ett modernt land
+ENH      Enhet
+EP       Enad Politik
+EP2      Evelinas parti
+EP3      Elbira partiet
+ER       Enad Röst
+ES       Enade Sverige
+EVA      En Vis Avskaffar Asylrätten!
+FAB      För Allas Bästa
+FF       FAMILJENS FRIHET
+FOD      Fred och demokrati
+FOF      FREDS OCH FRIHETSPARTIER
+FOLK     Folklistan
+FOLKRÅDE Folkrådet
+FP       Fria Partiet
+FREDSPAR Fredspartiet
+FRIDSLAG FRIDSLAGET
+FS       Företaget Sverige
+FT       FramtidsTro
+FV       Fritt val
+FW       Fria Wermland
+GS       Gemensam Säkerhet
+HDK      Högerpartiet de konservativa
+HUMANKAP Humankapitalisterna
+HV       Hampans vänner
+JESUS    JESUS
+JH       Jonathan Hemph
+JMEÄ     Johannespartiet med extra älg
+K        Kommunistiska Partiet
+KA       Kalle Ankapartiet
+KF       Kristna Frihetspartiet
+KLP      Klassiskt liberala partiet
+KOMPASS  Kompass
+KP       Kunskapsdemokratiska Partiet
+KS       koalitionsbyggarna.se
+KVp      Kristna Värdepartiet
+Kn       Knapptryckarna
+LIBERTAR Libertarianerna
+LPo      Landsbygdspartiet Oberoende
+MD       MoD - Mänskliga rättigheter och Demokrati
+MED      Medborgerlig Samling
+MP2      Multidimensionella Partiet
+NA       Ny Allians
+NATURIST Naturistpartiet
+NEUTRALI NEUTRALITET
+NMR      Nordiska motståndsrörelsen
+NR       NY REFORM
+O        O
+OKP      Ond Kyckling Partiet
+ORIGO    Origo
+PAU      Partiet Arkitekturupproret
+PAX      Pax
+PEDO     Politiskt Erövrande Demokratiska Organisationen
+PENSIONS Pensionspartiet
+PF       Partiet Folkomröstning
+PNy      Partiet Nyans
+PP       Piratpartiet
+PP2      PARTY PEOPLE
+PRESIDEN Presidency
+PRJ      PRJ -Partiet för Rättvisa och Jämställdhet
+PROGRESS Progress
+PROXYPAR Proxypartiet
+PV       Partiet Vändpunkt
+RD       Resurs Demokrati
+REVOLUTI Revolutionspartiet
+RIKET    Riket
+RN       RegleraAI.nu
+RYMDRAKE Rymdraketerna
+SD2      Samlade Demokrater
+SF       Solens Frihetsparti
+SFU      Svensk-Finska Unionspartiet
+SHP      Sekulära Humanistiska Partiet
+SID      SVERIGES INTELLEKTUELLA DEMOKRATER
+SIV      Sverige i valsamverkan
+SKOGSFOL Skogsfolket
+SKP      SKP KOMMUNISTERNA
+SNDP     Sveriges Nationella Demokratiska Parti
+SOCIALIS Socialistpartiet
+SOCIALLI Socialliberalerna
+SOL      Sveriges Oberoende Ledamöter
+SS       Stjärnpartiet Sverige
+SYMPARTI SYMPARTIET
+SÄKERHET Säkerhetspartiet
+TIDÖ     Tidö
+TRP      TRYGGHETSPARTIET
+UPPRORSD Upprorsdemokraterna
+VALSAMVE Valsamverkanspartiet
+VIKING   Viking
+VINDARNA Vindarna
+VINNINGS Vinningspartiet
+VS       Venstre Sverige
+Vi       Visionpartiet
+Volt     Volt
+WT       WILLY TIGER
+YD       YN Demokraterna
+aip      ansvarsfull intelligens i politiken
+ÖrP      Örebropartiet
