@@ -3,6 +3,7 @@
 import numpy as np
 
 from apportion import apportion1d_general
+from common_allocate import allocation_step
 from ties import remap
 
 
@@ -28,3 +29,36 @@ def allocate_provisionally(votes, row_totals, party_totals, prior,
                     if on_tie is not None else None),
         )
     return allocation
+
+
+def divisor_values(divisor_gen, count):
+    """Return validated divisor values through the requested seat count."""
+    generator = divisor_gen()
+    divisors = np.array([next(generator) for _ in range(count + 1)])
+    if (not np.isfinite(divisors).all() or (divisors <= 0).any()
+            or (np.diff(divisors) < 0).any()):
+        raise ValueError(
+            "Switching requires positive, finite, nondecreasing divisors.")
+    return divisors
+
+
+def allocate_bounded_provisionally(
+        votes, minimum_rows, row_limits, party_targets, prior,
+        divisor_gen, remaining, *, rng=None, on_tie=None):
+    """Allocate row minima, then provisionally fill a shared seat pool."""
+    votes = np.asarray(votes, dtype=float)
+    row_limits = np.asarray(row_limits, dtype=int)
+    party_targets = np.asarray(party_targets, dtype=int)
+    allocation = allocate_provisionally(
+        votes, minimum_rows, party_targets, prior, divisor_gen, on_tie)
+    count = max(int(row_limits.max()), int(party_targets.max())) + 1
+    divisors = divisor_values(divisor_gen, count)
+    available = np.asarray(prior, dtype=int).sum(axis=0) < party_targets
+    for _ in range(remaining):
+        scores = votes / divisors[allocation]
+        scores[allocation.sum(axis=1) >= row_limits, :] = -np.inf
+        scores[:, ~available] = -np.inf
+        step = allocation_step(
+            scores, votes, allocation, divisors, rng, on_tie)
+        allocation[step["constituency"], step["party"]] += 1
+    return allocation, divisors

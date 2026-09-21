@@ -6,6 +6,16 @@ const Vue = require('vue')
 const {renderToString} = require('@vue/server-renderer')
 const {parse, compileTemplate} = require('@vue/compiler-sfc')
 
+test('all step-by-step demonstration tables are rendered', () => {
+  const filename = resolve(__dirname, '../src/Election.vue')
+  const {descriptor} = parse(readFileSync(filename, 'utf8'))
+  assert.match(
+    descriptor.template.content,
+    /v-for="\(table, demoIndex\) in results\[activeTabIndex\]\.demo_tables"/,
+  )
+  assert.match(descriptor.template.content, /:table="table"/)
+})
+
 test('each election result appears under its own named tab', async () => {
   const filename = resolve(__dirname, '../src/Election.vue')
   const {descriptor} = parse(readFileSync(filename, 'utf8'))

@@ -4,6 +4,34 @@ from numpy import flatnonzero as find
 from ties import select_tied
 
 
+def prepare_adjustment_bounds(base, row_targets, options):
+    """Validate adjustment-seat bounds and return finite row capacities."""
+    base = np.asarray(base, dtype=int)
+    minimums = np.asarray(
+        options.get("min_adj_seats", np.asarray(row_targets) - base),
+        dtype=int,
+    )
+    total = int(options.get("num_adjustment_seats", minimums.sum()))
+    maxima = options.get("max_adj_seats", minimums)
+    if len(minimums) != len(base) or len(maxima) != len(base):
+        raise ValueError("Adjustment-seat bounds do not match the constituencies.")
+    if (minimums < 0).any():
+        raise ValueError("Adjustment-seat minimums must be non-negative.")
+    if total < int(minimums.sum()):
+        raise ValueError("Constituency minimums exceed the adjustment-seat total.")
+    if any(maximum is not None and maximum < minimum
+           for minimum, maximum in zip(minimums, maxima)):
+        raise ValueError(
+            "An adjustment-seat maximum is below its constituency minimum.")
+    capacity = np.array([
+        total if maximum is None else maximum for maximum in maxima
+    ], dtype=int)
+    if int(capacity.sum()) < total:
+        raise ValueError(
+            "Constituency maxima prevent allocation of all adjustment seats.")
+    return minimums, total, capacity
+
+
 def allocation_step(scores, votes, allocation, divisors, rng=None, on_tie=None):
     """Select among all best list scores and record the pre-allocation quotient."""
     maximum = scores.max()
@@ -125,28 +153,8 @@ def common_allocate(
         votes = np.maximum(votes, vote_floor)
     prior = np.asarray(prior_alloc, dtype=int)
     base = prior.sum(axis=1)
-    minimums = np.asarray(
-        kwargs.get("min_adj_seats", np.asarray(row_targets) - base),
-        dtype=int,
-    )
-    total = int(kwargs.get("num_adjustment_seats", minimums.sum()))
-    maxima = kwargs.get("max_adj_seats", minimums)
-    if len(minimums) != len(base) or len(maxima) != len(base):
-        raise ValueError("Adjustment-seat bounds do not match the constituencies.")
-    if (minimums < 0).any():
-        raise ValueError("Adjustment-seat minimums must be non-negative.")
-    if total < int(minimums.sum()):
-        raise ValueError("Constituency minimums exceed the adjustment-seat total.")
-    if any(maximum is not None and maximum < minimum
-           for minimum, maximum in zip(minimums, maxima)):
-        raise ValueError(
-            "An adjustment-seat maximum is below its constituency minimum.")
-    capacity = np.array([
-        total if maximum is None else maximum for maximum in maxima
-    ], dtype=int)
-    if int(capacity.sum()) < total:
-        raise ValueError(
-            "Constituency maxima prevent allocation of all adjustment seats.")
+    minimums, total, capacity = prepare_adjustment_bounds(
+        base, row_targets, kwargs)
 
     targets = np.asarray(party_targets, dtype=int)
     national_fixed = kwargs.get("nat_prior_allocations")

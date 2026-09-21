@@ -8,10 +8,12 @@ import numpy as np
 from openpyxl import load_workbook
 
 from division_rules import dhondt_gen
-from electionHandler import ElectionHandler
+from electionHandler import (
+    ElectionHandler, adjustment_seat_info, update_constituencies)
 from electionSystem import ElectionSystem
 from methods.common_methods import max_const_vote_percentage
 from methods.max_const_votes import max_const_votes
+from methods.swedish_style_switching import switching as swedish_style_switching
 from noweb import load_votes
 from randomness import make_rng
 from simulate import Simulation, SimulationSettings
@@ -149,6 +151,79 @@ class FlexibleAllocationTest(unittest.TestCase):
         system["adjustment_method"] = method
         return table, system
 
+    def test_adams_seat_specification_fixes_the_adjustment_seat_distribution(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        table["constituencies"][0].update(num_fixed_seats=4, num_adj_seats=1)
+        table["constituencies"][1].update(num_fixed_seats=1, num_adj_seats=0)
+        table["votes"] = [[60, 40], [50, 40]]
+        table["pruned"] = [0, 0]
+        system = ElectionSystem()
+        system["seat_spec_options"]["const"] = "adams"
+
+        constituencies, _ = update_constituencies(table, [system])
+        derived = constituencies[0]
+
+        self.assertEqual(
+            [(c["num_fixed_seats"], c["num_adj_seats"]) for c in derived],
+            [(4, 0), (1, 1)],
+        )
+        self.assertEqual(
+            adjustment_seat_info(table, derived, "adams"),
+            {"total": 1, "min_per_const": [0, 1],
+             "max_per_const": [0, 1]},
+        )
+
+    def test_adams_seat_specification_includes_pruned_votes(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        table["constituencies"][0].update(num_fixed_seats=2, num_adj_seats=1)
+        table["constituencies"][1].update(num_fixed_seats=1, num_adj_seats=1)
+        table["votes"] = [[60, 40], [50, 40]]
+        table["pruned"] = [0, 200]
+        system = ElectionSystem()
+        system["seat_spec_options"]["const"] = "adams"
+
+        constituencies, _ = update_constituencies(table, [system])
+
+        self.assertEqual(
+            [c["num_adj_seats"] for c in constituencies[0]], [0, 2])
+
+    def test_adams_seat_specification_accepts_swedish_flexible_source(self):
+        table = load_votes("../data/sweden_2022.csv")
+        system = ElectionSystem()
+        system.copy_info_from_votes(table)
+        system["seat_spec_options"]["const"] = "adams"
+
+        handler = ElectionHandler(table, [system], True)
+        election = handler.elections[0]
+
+        self.assertEqual(sum(election.min_adj_seats), 39)
+        self.assertEqual(election.max_adj_seats, list(election.min_adj_seats))
+        self.assertEqual(
+            [c["num_fixed_seats"] for c in election.system["constituencies"]],
+            [c["num_fixed_seats"] for c in table["constituencies"]],
+        )
+
+    def test_adams_seat_specification_rejects_too_few_initial_seats(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        for constituency in table["constituencies"]:
+            constituency.update(num_fixed_seats=0, num_adj_seats=0)
+        table["constituencies"][0]["num_adj_seats"] = 1
+        system = ElectionSystem()
+        system["seat_spec_options"]["const"] = "adams"
+
+        with self.assertRaisesRegex(ValueError, "every positive-vote constituency"):
+            update_constituencies(table, [system])
+
+    def test_adams_seat_specification_rejects_an_empty_vote_table(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        table["votes"] = [[0, 0], [0, 0]]
+        table["pruned"] = [0, 0]
+        system = ElectionSystem()
+        system["seat_spec_options"]["const"] = "adams"
+
+        with self.assertRaisesRegex(ValueError, "vote totals are zero"):
+            update_constituencies(table, [system])
+
     def test_single_election_step_table_and_excel_show_both_passes(self):
         for method in ("max-const-votes", "max-const-vote-percentage"):
             table, system = self.table_and_system(method)
@@ -173,6 +248,100 @@ class FlexibleAllocationTest(unittest.TestCase):
         table["max_total_adj_seats"] = 1
         election = ElectionHandler(table, [system], True).elections[0]
         np.testing.assert_array_equal(np.asarray(election.results["adj_const_seats"]).sum(axis=1), [1, 0])
+
+    def test_switching_supports_a_flexible_adjustment_seat_pool(self):
+        table, system = self.table_and_system("switching")
+
+        election = ElectionHandler(table, [system], True).elections[0]
+        added = np.asarray(election.results["adj_const_seats"]).sum(axis=1)
+
+        self.assertEqual(int(added.sum()), 4)
+        self.assertEqual(int(added[0]), 1)
+        self.assertTrue(np.all(
+            np.asarray(election.results["all_const_total"])
+            <= election.desired_col_sums))
+
+    def test_swedish_style_switching_reallocates_from_a_shared_pool(self):
+        allocation, demo = swedish_style_switching(
+            [[120, 90], [100, 1]], [0, 0], [1, 1],
+            np.zeros((2, 2), int), dhondt_gen,
+            num_adjustment_seats=2,
+            min_adj_seats=[0, 0],
+            max_adj_seats=[2, 2],
+        )
+
+        np.testing.assert_array_equal(allocation, [[1, 1], [0, 0]])
+        self.assertEqual(demo["data"]["removals"][0]["constituency"], 1)
+        self.assertEqual(demo["data"]["reallocations"][0]["constituency"], 0)
+        self.assertEqual(len(demo["functions"]), 3)
+
+    def test_swedish_style_switching_restores_minima_and_observes_maxima(self):
+        cases = [
+            ([0, 1], [2, 2], [1, 1]),
+            ([0, 0], [1, 2], [1, 1]),
+        ]
+        for minimums, maxima, expected_rows in cases:
+            with self.subTest(minimums=minimums, maxima=maxima):
+                allocation, _ = swedish_style_switching(
+                    [[120, 90], [100, 1]], [0, 0], [1, 1],
+                    np.zeros((2, 2), int), dhondt_gen,
+                    num_adjustment_seats=2,
+                    min_adj_seats=minimums,
+                    max_adj_seats=maxima,
+                )
+                np.testing.assert_array_equal(
+                    allocation.sum(axis=1), expected_rows)
+                np.testing.assert_array_equal(allocation.sum(axis=0), [1, 1])
+
+    def test_swedish_style_switching_never_returns_a_protected_fixed_seat(self):
+        prior = np.array([[1, 0], [0, 0]])
+        allocation, demo = swedish_style_switching(
+            [[1, 50], [120, 1]], [1, 0], [2, 1], prior, dhondt_gen,
+            num_adjustment_seats=2,
+            min_adj_seats=[0, 0],
+            max_adj_seats=[2, 2],
+        )
+
+        self.assertTrue(np.all(allocation >= prior))
+        np.testing.assert_array_equal(allocation.sum(axis=0), [2, 1])
+        self.assertEqual(demo["data"]["removals"][0]["constituency"], 1)
+
+    def test_swedish_style_switching_supports_flexible_handler_input(self):
+        table, system = self.table_and_system("swedish-style-switching")
+
+        election = ElectionHandler(table, [system], True).elections[0]
+        added = np.asarray(election.results["adj_const_seats"]).sum(axis=1)
+
+        self.assertEqual(int(added.sum()), 4)
+        self.assertGreaterEqual(int(added[0]), 1)
+        self.assertEqual(len(election.demo_tables), 3)
+
+    def test_swedish_style_dense_positive_cases_finish_within_bounds(self):
+        rng = np.random.default_rng(193)
+        for _ in range(40):
+            prior = rng.integers(0, 3, size=(3, 4))
+            witness = rng.integers(0, 4, size=(3, 4))
+            if not witness.any():
+                witness[0, 0] = 1
+            added_rows = witness.sum(axis=1)
+            minimums = np.maximum(0, added_rows - 1)
+            maxima = added_rows + 1
+            targets = (prior + witness).sum(axis=0)
+            allocation, _ = swedish_style_switching(
+                rng.uniform(1, 100, size=prior.shape),
+                prior.sum(axis=1) + minimums,
+                targets,
+                prior,
+                dhondt_gen,
+                num_adjustment_seats=int(added_rows.sum()),
+                min_adj_seats=minimums,
+                max_adj_seats=maxima,
+            )
+            added = allocation.sum(axis=1) - prior.sum(axis=1)
+            self.assertTrue(np.all(allocation >= prior))
+            self.assertTrue(np.all(added >= minimums))
+            self.assertTrue(np.all(added <= maxima))
+            np.testing.assert_array_equal(allocation.sum(axis=0), targets)
 
     def test_simulation_observes_bounds_and_is_reproducible(self):
         table, system = self.table_and_system()

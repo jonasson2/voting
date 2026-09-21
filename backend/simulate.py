@@ -76,6 +76,23 @@ def simulation_vote_table(source, minimum_one=False):
     return table
 
 
+def normalize_constituency_votes(votes, reference_votes):
+    """Preserve each constituency's source total after varying party shares."""
+    votes = np.asarray(votes, dtype=float)
+    reference_totals = np.asarray(reference_votes, dtype=float).sum(axis=1)
+    generated_totals = votes.sum(axis=1)
+    if np.any((generated_totals == 0) & (reference_totals != 0)):
+        raise ValueError(
+            "Generated constituency votes cannot be normalized from zero.")
+    factors = np.divide(
+        reference_totals,
+        generated_totals,
+        out=np.zeros_like(reference_totals),
+        where=generated_totals != 0,
+    )
+    return (votes * factors[:, None]).tolist()
+
+
 class Simulation():
     # Simulate a set of elections in a single thread
     def __init__(self, sim_settings, systems, vote_table, nr=0, start_iteration=0):
@@ -252,6 +269,8 @@ class Simulation():
                 party_votes = None
         if self.danish_simulation:
             votes = np.maximum(votes, 1).tolist()
+        votes = normalize_constituency_votes(
+            votes, self.election_handler.votes)
         return votes, party_votes
 
     def run_and_collect_measures(self, votes, party_votes, iteration=None):
@@ -420,8 +439,24 @@ class Simulation():
             "max_underrepresentation",
             self.max_underrepresentation(election),
         )
+        deviations.add(
+            "geographical_displacement",
+            self.geographical_seat_displacement(election),
+        )
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
+
+    @staticmethod
+    def geographical_seat_displacement(election):
+        """Return seats displaced from a vote-proportional geography."""
+        constituency_votes = (
+            election.votes.sum(axis=1) + np.asarray(election.pruned_votes))
+        total_votes = constituency_votes.sum()
+        if total_votes == 0:
+            return 0
+        seats = np.asarray(election.final_row_sums)
+        reference = seats.sum() * constituency_votes / total_votes
+        return np.abs(seats - reference).sum() / 2
 
     def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:

@@ -1,5 +1,6 @@
 from electionSystem import ElectionSystem
-from electionSystem import set_one_const, set_const_adj, set_const_fixed
+from electionSystem import (set_one_const, set_const_adj, set_const_adj_adams,
+                            set_const_fixed)
 from electionSystem import set_nat_seats, set_nat_seats_adj, set_nat_seats_fixed
 from electionSystem import set_custom, set_copy
 from voting import Election
@@ -51,7 +52,8 @@ class ElectionHandler:
                                 regions=vote_table.get("regions"),
                                 independent_candidates=vote_table.get("independent_candidates"),
                                 adjustment_seat_info=adjustment_seat_info(
-                                    vote_table, constituencies))
+                                    vote_table, constituencies,
+                                    system["seat_spec_options"]["const"]))
             self.elections.append(election)
 
     def to_xlsx(self, filename, display_settings=None):
@@ -74,6 +76,7 @@ def update_constituencies(vote_table, systems):
             const = set_const_adj(voteconst) 
             if opt=="all_adj":
                 nat = set_nat_seats_adj(vote_table["party_vote_info"])
+        elif opt=="adams":     const = set_const_adj_adams(vote_table)
         elif opt=="one_const": const = set_one_const(voteconst)
         elif opt=="refer":     const = set_copy(voteconst)
         elif opt=="custom":
@@ -87,9 +90,15 @@ def update_constituencies(vote_table, systems):
     return (constituencies, nat_seats)
 
 
-def adjustment_seat_info(vote_table, constituencies):
+def adjustment_seat_info(vote_table, constituencies, seat_specification):
     """Return the exact total and constituency bounds for adjustment seats."""
     minimums = [constituency["num_adj_seats"] for constituency in constituencies]
+    if seat_specification == "adams":
+        return {
+            "total": sum(minimums),
+            "min_per_const": minimums,
+            "max_per_const": minimums.copy(),
+        }
     if "max_total_adj_seats" not in vote_table:
         return {
             "total": sum(minimums),

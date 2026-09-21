@@ -8,6 +8,12 @@ from util import disp
 from copy import deepcopy
 from math import sqrt
 
+
+NO_PAIRED_DIFFERENCE_GROUPS = {
+    "cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty",
+    "cmpNationalDetails",
+}
+
 def combine_titles(titles, last_column1):
     (column1, column2) = titles
     if not column1:
@@ -46,7 +52,8 @@ def _paired_display_value(paired_data, measure, group, nsim):
 
 def _measure_row(data, systems, paired_data, group, measure, title, nsim):
     row = {"rowtitle": title}
-    has_paired_difference = len(systems) >= 2
+    has_paired_difference = (
+        len(systems) >= 2 and group not in NO_PAIRED_DIFFERENCE_GROUPS)
     for stat in STATISTICS_HEADINGS:
         row[stat] = [
             _system_display_value(data, index, measure, stat, group, nsim)
@@ -66,6 +73,8 @@ def _vue_data_header(systems):
         "headingType": headingType,
         "system_names": names,
         "has_paired_difference": len(systems) >= 2,
+        "groups_without_paired_difference": sorted(
+            NO_PAIRED_DIFFERENCE_GROUPS),
         "group_ids": [],
         "group_titles": {
             "topLeft": (

@@ -38,9 +38,8 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Distribution used to simulate votes of each list, with the
-                 specified relative SD and the source votes as 
-                 expected values">
+          title="Distribution used to vary list support before each
+                 constituency is rescaled to its source vote total.">
           <label for="simulation-distribution">Generating distribution</label>
           <b-form-select id="simulation-distribution"
             class="compact-select simulation-distribution-select simulation-setting-control"
@@ -49,7 +48,8 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Standard deviation of simulated votes divided by their mean.
+          title="Relative standard deviation of list-vote draws before each
+                 constituency is rescaled to its source vote total.
                  Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
                  0–0.577 (uniform).">
           <label for="simulation-const-rsd">Relative standard deviation for list votes</label>
@@ -61,8 +61,9 @@
         </div>
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Correlation between list votes within each party,
-                 use only with lognormal distribution, else 0 is used.">
+          title="Correlation used to generate list-vote draws within each
+                 party before constituency totals are rescaled. Use only
+                 with lognormal distribution; otherwise 0 is used.">
           <label for="simulation-const-corr">Correlation between list votes within each party</label>
           <span class="simulation-setting-control compact-entry">
             <input id="simulation-const-corr" class="compact-entry-input" type="text"

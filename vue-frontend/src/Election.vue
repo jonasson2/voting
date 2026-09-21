@@ -56,15 +56,13 @@
             <h4>Seat allocation step-by-step</h4>
           </b-row>          
           <b-row>
-            <b-col auto class="result-demo-column">
+            <b-col
+              v-for="(table, demoIndex) in results[activeTabIndex].demo_tables"
+              :key="demoIndex"
+              auto
+              class="result-demo-column">
               <ResultDemonstration
-                :table="results[activeTabIndex].demo_tables[0]">
-              </ResultDemonstration>
-            </b-col>
-            <b-col auto class="result-demo-column"
-                   v-if="results[activeTabIndex].demo_tables.length > 1">
-              <ResultDemonstration
-                :table="results[activeTabIndex].demo_tables[1]">
+                :table="table">
               </ResultDemonstration>
             </b-col>
           </b-row>

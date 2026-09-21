@@ -1,6 +1,8 @@
 from copy import copy, deepcopy
 #from system import System
 #from util import load_constituencies
+from apportion import apportion1d_general
+from division_rules import adams_gen
 from util import remove_prefix
 from dictionaries import DEFAULT_ELECTION_SETTINGS, DIVIDER_RULES, QUOTA_RULES
 class ElectionSystem(dict):
@@ -108,6 +110,45 @@ def set_const_fixed(constituencies):
         const["num_fixed_seats"] += const["num_adj_seats"]
         const["num_adj_seats"] = 0
     return all_fixed
+
+def set_const_adj_adams(vote_table):
+    """Fix the adjustment-seat distribution using constrained Adams."""
+    constituencies = copyconst(vote_table["constituencies"])
+    pruned = vote_table.get("pruned", [0] * len(constituencies))
+    votes = [sum(row) + pruned[c]
+             for c, row in enumerate(vote_table["votes"])]
+    fixed = [constituency["num_fixed_seats"]
+             for constituency in constituencies]
+    num_adjustment_seats = vote_table.get(
+        "max_total_adj_seats",
+        sum(constituency["num_adj_seats"]
+            for constituency in constituencies),
+    )
+
+    if num_adjustment_seats and not any(votes):
+        raise ValueError(
+            "Adjustment seats cannot be distributed when all constituency "
+            "vote totals are zero.")
+
+    # Under Adams, every positive-vote constituency starts with one seat.
+    prior = fixed.copy()
+    empty = [c for c, (vote, seats) in enumerate(zip(votes, prior))
+             if vote > 0 and seats == 0]
+    if len(empty) > num_adjustment_seats:
+        raise ValueError(
+            "Adams allocation requires an adjustment seat for every "
+            "positive-vote constituency with no fixed seats.")
+    for c in empty:
+        prior[c] = 1
+
+    total_seats = sum(fixed) + num_adjustment_seats
+    allocation, _, _ = apportion1d_general(
+        votes, total_seats, prior, adams_gen)
+    for constituency, fixed_seats, total in zip(
+            constituencies, fixed, allocation):
+        constituency["num_adj_seats"] = int(total) - fixed_seats
+        constituency.pop("max_adj_seats", None)
+    return constituencies
 
 def set_copy(constituencies):
     refer = copyconst(constituencies)

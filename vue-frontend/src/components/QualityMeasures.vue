@@ -20,9 +20,9 @@
             </th>
             <template v-if="headingType[id]=='systems'">
               <template v-for="stat in stats" :key="stat">
-                <template v-for="(sysname, s) in statColumnNames(stat)" :key="s">
-                  <th :class="sysclass(s, stat)"
-                      :title="columnTitle(stat, s)">
+                <template v-for="(sysname, s) in statColumnNames(stat, id)" :key="s">
+                  <th :class="sysclass(s, stat, id)"
+                      :title="columnTitle(stat, s, id)">
                     {{sysname}}
                   </th>
                 </template>
@@ -30,7 +30,7 @@
             </template>
             <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
               <template v-for="stat in stats" :key="stat">
-                <th :colspan="nsys" class="top">
+                <th :colspan="statColumnCount(stat, id)" class="top">
                   {{stat_headings[stat]}}
                 </th>
               </template>
@@ -46,7 +46,7 @@
             </td>
             <template v-for="stat in stats" :key="stat">
               <template v-for="(entry, s) in row[stat]" :key="s">
-                <td :class="sysclass(s, stat)">
+                <td :class="sysclass(s, stat, id)">
                   {{format(entry)}}
                 </td>
               </template>
@@ -99,25 +99,29 @@ export default {
       return formatEstimateWithCi(
         entry.value, entry.ci, digits, this.display_settings)
     },
-    statColumnCount(stat) {
-      return this.nsys + (
-        stat === "avg" && this.vuedata.has_paired_difference ? 1 : 0)
+    groupHasPairedDifference(stat, groupId) {
+      return stat === "avg" && this.vuedata.has_paired_difference &&
+        !this.vuedata.groups_without_paired_difference?.includes(groupId)
     },
-    statColumnNames(stat) {
+    statColumnCount(stat, groupId=null) {
+      return this.nsys + (
+        this.groupHasPairedDifference(stat, groupId) ? 1 : 0)
+    },
+    statColumnNames(stat, groupId) {
       const names = [...this.system_names]
-      if (stat === "avg" && this.vuedata.has_paired_difference) {
+      if (this.groupHasPairedDifference(stat, groupId)) {
         names.splice(2, 0, "Difference")
       }
       return names
     },
-    columnTitle(stat, index) {
-      if (stat === "avg" && this.vuedata.has_paired_difference && index === 2) {
+    columnTitle(stat, index, groupId) {
+      if (this.groupHasPairedDifference(stat, groupId) && index === 2) {
         return this.vuedata.difference_tooltip
       }
       return null
     },
-    sysclass: function(s, stat) {
-      if (s==this.statColumnCount(stat)-1) return "last"
+    sysclass: function(s, stat, groupId) {
+      if (s==this.statColumnCount(stat, groupId)-1) return "last"
       else return "middle"
     },
     groupclass: function(id) {

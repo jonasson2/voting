@@ -5,14 +5,13 @@ import numpy as np
 from ties import remap, select
 
 
-def reassign_excess(votes, initial, party_totals, divisor_gen, *,
-                    removable_floor, eligible, removable_rows,
-                    on_tie=None, rng=None):
+def remove_excess(votes, initial, party_totals, divisor_gen, *,
+                  removable_floor, removable_rows, on_tie=None, rng=None):
+    """Remove each party's weakest seats above its target and protected floor."""
     votes = np.asarray(votes, dtype=float)
     allocation = np.asarray(initial, dtype=int).copy()
     party_totals = np.asarray(party_totals, dtype=int)
     floor = np.asarray(removable_floor, dtype=int)
-    eligible = np.asarray(eligible, dtype=bool)
     removable_rows = np.asarray(removable_rows, dtype=bool)
     if int(party_totals.sum()) < int(allocation.sum()):
         raise ValueError("Party-seat totals are below the constituency-seat total.")
@@ -23,7 +22,7 @@ def reassign_excess(votes, initial, party_totals, divisor_gen, *,
     divisors = np.array([
         next(generator) for _ in range(int(party_totals.sum()) + 1)
     ], dtype=float)
-    vacancies = []
+    removals = []
     for p in np.flatnonzero(allocation.sum(axis=0) > party_totals):
         excess = int(allocation[:, p].sum() - party_totals[p])
         for _ in range(excess):
@@ -42,11 +41,32 @@ def reassign_excess(votes, initial, party_totals, divisor_gen, *,
             )
             removal_quotient = float(quotients[c])
             allocation[c, p] -= 1
-            vacancies.append({
+            removals.append({
                 "constituency": c,
                 "from": int(p),
                 "removal_quotient": removal_quotient,
             })
+    return allocation, removals
+
+
+def reassign_excess(votes, initial, party_totals, divisor_gen, *,
+                    removable_floor, eligible, removable_rows,
+                    on_tie=None, rng=None):
+    votes = np.asarray(votes, dtype=float)
+    party_totals = np.asarray(party_totals, dtype=int)
+    eligible = np.asarray(eligible, dtype=bool)
+    allocation, vacancies = remove_excess(
+        votes, initial, party_totals, divisor_gen,
+        removable_floor=removable_floor,
+        removable_rows=removable_rows,
+        on_tie=on_tie,
+        rng=rng,
+    )
+
+    generator = divisor_gen()
+    divisors = np.array([
+        next(generator) for _ in range(int(party_totals.sum()) + 1)
+    ], dtype=float)
 
     switches = []
     while vacancies:

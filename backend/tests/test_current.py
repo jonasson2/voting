@@ -15,7 +15,8 @@ from xlsxwriter import Workbook
 
 from apportion import apportion1d_general, threshold_drop
 from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER_RULES,
-                          ELECTION_LAW_PRESETS, QUOTA_RULES)
+                          ELECTION_LAW_PRESETS, FLEXIBLE_ADJUSTMENT_METHODS,
+                          QUOTA_RULES)
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from excel_util import (fixed_seat_threshold_text, result_fractional_digits,
@@ -852,6 +853,22 @@ class CurrentApplicationTest(unittest.TestCase):
                 actual.append(second_worker.generate_simulated_votes(2))
                 self.assertEqual(expected, actual)
 
+    def test_generated_votes_preserve_constituency_totals(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        reference_totals = np.asarray(table['votes']).sum(axis=1)
+        settings = SimulationSettings()
+        settings.update(random_seed=24680, cpu_count=1)
+
+        for distribution in ('log-normal', 'uniform', 'gamma', 'beta'):
+            with self.subTest(distribution=distribution):
+                settings['gen_method'] = distribution
+                system = self.make_system(table, 'max-const-seat-share')
+                simulation = Simulation(settings, [system], table)
+                votes, _ = simulation.generate_simulated_votes(0)
+
+                np.testing.assert_allclose(
+                    np.asarray(votes).sum(axis=1), reference_totals)
+
     def test_comparison_measures_are_combined_once_across_workers(self):
         table = load_votes('../data/2-by-2-example.csv')
         systems = []
@@ -917,6 +934,27 @@ class CurrentApplicationTest(unittest.TestCase):
             "D'Hondt minus Sainte-Laguë",
             web_result['vuedata']['difference_tooltip'],
         )
+        for group in ('cmpList', 'cmpParty'):
+            self.assertIn(
+                group,
+                web_result['vuedata']['groups_without_paired_difference'],
+            )
+            self.assertTrue(web_result['vuedata'][group])
+            self.assertTrue(all(
+                len(row['avg']) == len(systems)
+                for row in web_result['vuedata'][group]
+            ))
+
+    def test_geographical_seat_displacement_includes_pruned_votes(self):
+        election = SimpleNamespace(
+            votes=np.array([[60, 40], [50, 40]]),
+            pruned_votes=np.array([100, 10]),
+            final_row_sums=np.array([3, 3]),
+        )
+
+        displacement = Simulation.geographical_seat_displacement(election)
+
+        self.assertAlmostEqual(displacement, 1)
 
     def test_random_seed_validation(self):
         for seed in ('', '-'):
@@ -1066,7 +1104,7 @@ class CurrentApplicationTest(unittest.TestCase):
         table['constituencies'][1]['max_adj_seats'] = None
         table['max_total_adj_seats'] = 6
         for method in ADJUSTMENT_METHODS:
-            if method in ('max-const-votes', 'max-const-vote-percentage'):
+            if method in FLEXIBLE_ADJUSTMENT_METHODS:
                 continue
             with self.subTest(method=method):
                 system = self.make_system(table, method)
