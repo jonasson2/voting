@@ -13,8 +13,8 @@ def adjustment_as_fixed(m_votes,
 
     votes = np.maximum(np.asarray(m_votes, dtype=float), 1)
     alloc = allocate_provisionally(
-        votes, v_desired_row_sums, v_desired_col_sums,
-        m_prior_allocations, divisor_gen, kwargs.get("on_tie"))
+        votes, v_desired_row_sums, m_prior_allocations,
+        divisor_gen, kwargs.get("on_tie"))
     stepbystep = {
         "data": [],
         "function": []

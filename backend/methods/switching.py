@@ -68,7 +68,7 @@ def switching_fixed(m_votes,
     
     # ALLOCATE ADJUSTMENT SEATS AS IF THEY WERE FIXED SEATS
     alloc = allocate_provisionally(
-        votes, desired_const, max_party, alloc_prior, divisor_gen)
+        votes, desired_const, alloc_prior, divisor_gen)
 
     # INFORMATION FOR FIRST STEP-BY-STEP DEMO TABLE
     initial_allocation = [{
@@ -211,7 +211,7 @@ def switching_with_bounds(m_votes, v_desired_row_sums, v_desired_col_sums,
         raise ValueError("Party deficits are smaller than the adjustment-seat total.")
 
     initial, divisors = allocate_bounded_provisionally(
-        votes, base + minimums, base + capacity, party_targets, prior,
+        votes, base + minimums, base + capacity, prior,
         divisor_gen, total - int(minimums.sum()),
         rng=kwargs.get("rng"), on_tie=kwargs.get("on_tie"))
     allocation, switches = _switch_globally(

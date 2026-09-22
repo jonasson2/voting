@@ -32,6 +32,16 @@ class SwitchingTest(unittest.TestCase):
         np.testing.assert_array_equal(allocation.sum(axis=1), [3, 3])
         np.testing.assert_array_equal(allocation.sum(axis=0), [2, 4])
 
+    def test_provisional_allocation_can_exceed_party_target_before_switching(self):
+        allocation, demo = switching(
+            [[100, 80]], [3], [1, 2], [[1, 0]],
+            DIVIDER_RULES['dhondt'])
+
+        initial = demo['data']['initial_allocation']
+        self.assertEqual([party['actual'] for party in initial], [2, 1])
+        self.assertEqual(len(demo['data']['switches']), 1)
+        np.testing.assert_array_equal(allocation, [[1, 2]])
+
     def test_flexible_switching_uses_the_best_cross_constituency_ratio(self):
         prior = np.array([[1, 0], [0, 1]])
         allocation, demo = switching(

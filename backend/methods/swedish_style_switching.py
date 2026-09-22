@@ -35,7 +35,7 @@ def switching_fixed(m_votes, v_desired_row_sums, v_desired_col_sums,
     prior = np.asarray(m_prior_allocations, dtype=int)
     party_totals = np.asarray(v_desired_col_sums, dtype=int)
     initial = allocate_provisionally(
-        votes, v_desired_row_sums, party_totals, prior, divisor_gen,
+        votes, v_desired_row_sums, prior, divisor_gen,
         kwargs.get("on_tie"))
     allocation, switches = reassign_excess(
         votes, initial, party_totals, divisor_gen,
@@ -75,7 +75,7 @@ def switching_with_bounds(m_votes, v_desired_row_sums, v_desired_col_sums,
         raise ValueError("Party deficits are smaller than the adjustment-seat total.")
 
     initial, _ = allocate_bounded_provisionally(
-        votes, base + minimums, base + capacity, party_totals, prior,
+        votes, base + minimums, base + capacity, prior,
         divisor_gen, total - int(minimums.sum()),
         rng=kwargs.get("rng"), on_tie=kwargs.get("on_tie"))
     reduced, removals = remove_excess(
