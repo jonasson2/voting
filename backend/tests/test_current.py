@@ -49,8 +49,7 @@ class CurrentApplicationTest(unittest.TestCase):
         system = self.make_system(table, 'max-const-votes', threshold=4)
         system['primary_divider'] = divider
         system['adj_determine_divider'] = divider
-        system['adjustment_preparation_method'] = 'switching_se'
-        system['adj_preparation_divider'] = divider
+        system['special_rules'] = 'swedish'
         system['adj_alloc_divider'] = 'sainte-lague'
         system['constituency_threshold'] = 12
         system['fixed_seat_national_threshold'] = 4
@@ -465,23 +464,30 @@ class CurrentApplicationTest(unittest.TestCase):
             ('norwegian-law', 4, 'nordic-1.4', 'sainte-lague'),
         )
         self.assertEqual(
+            (presets['denmark']['special_rules'],
+             presets['denmark']['regional_adjustment_method'],
+             presets['denmark']['regional_adjustment_divider'],
+             presets['denmark']['adjustment_method'],
+             presets['denmark']['adj_alloc_divider']),
+            ('danish', 'max-const-votes', 'sainte-lague',
+             'max-const-votes', 'danish'),
+        )
+        self.assertEqual(
             (presets['sweden-2014']['constituency_threshold'],
              presets['sweden-2014']['fixed_seat_national_threshold'],
-             presets['sweden-2014']['adjustment_preparation_method'],
-             presets['sweden-2014']['adj_preparation_divider'],
+             presets['sweden-2014']['special_rules'],
              presets['sweden-2014']['adjustment_method'],
              presets['sweden-2014']['constituency_seat_specification']),
-            (12, 4, 'none', 'nordic-1.4',
+            (12, 4, 'none',
              'max-const-votes', 'refer'),
         )
         self.assertEqual(
             (presets['sweden-2018']['constituency_threshold'],
              presets['sweden-2018']['fixed_seat_national_threshold'],
-             presets['sweden-2018']['adjustment_preparation_method'],
-             presets['sweden-2018']['adj_preparation_divider'],
+             presets['sweden-2018']['special_rules'],
              presets['sweden-2018']['adjustment_method'],
              presets['sweden-2018']['constituency_seat_specification']),
-            (12, 4, 'switching_se', 'nordic-1.2',
+            (12, 4, 'swedish',
              'max-const-votes', 'refer'),
         )
         forbidden = {
@@ -499,14 +505,31 @@ class CurrentApplicationTest(unittest.TestCase):
 
         client = app.test_client()
         response = client.post('/api/capabilities/', json={})
+        capabilities = response.get_json()['capabilities']
         self.assertEqual(
-            response.get_json()['capabilities']['election_law_presets'],
+            capabilities['election_law_presets'],
             ELECTION_LAW_PRESETS,
+        )
+        self.assertEqual(
+            {method['value'] for method in capabilities['regional_adjustment_methods']},
+            {
+                'max-const-votes', 'max-const-vote-percentage',
+                'max-const-seat-share', 'switching',
+                'swedish-style-switching', 'optimal-lp',
+            },
         )
 
     def test_swedish_divisor_starts_at_1_2(self):
         generator = DIVIDER_RULES['nordic-1.2']()
         self.assertEqual([next(generator) for _ in range(4)], [1.2, 3, 5, 7])
+
+    def test_capabilities_identify_flexible_adjustment_methods(self):
+        response = app.test_client().post('/api/capabilities/', json={})
+        self.assertEqual(
+            response.get_json()['capabilities'][
+                'flexible_adjustment_methods'],
+            sorted(FLEXIBLE_ADJUSTMENT_METHODS),
+        )
 
     def test_entropy_uses_fixed_dhondt_and_sainte_lague_rules(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -695,7 +718,7 @@ class CurrentApplicationTest(unittest.TestCase):
                 'S': 113, 'V': 21, 'MP': 25, 'SD': 49,
             },
         )
-        self.assertIsNone(election.preparation_stepbystep)
+        self.assertIsNone(election.special_rules_stepbystep)
 
     def test_swedish_2022_matches_official_seat_margins(self):
         table = load_votes('../data/sweden_2022.csv')
@@ -1619,7 +1642,7 @@ class CurrentApplicationTest(unittest.TestCase):
             loaded = load_json(filename)
         self.assertEqual(loaded['vote_table']['party_vote_basis'], 'average')
 
-    def test_settings_download_preserves_adjustment_preparation(self):
+    def test_settings_download_preserves_special_rules(self):
         table = load_votes('../data/sweden_2018.csv')
         system = self.make_swedish_system(table)
         system['compare_with'] = False
@@ -1635,13 +1658,13 @@ class CurrentApplicationTest(unittest.TestCase):
         })
         saved = json.loads(response.data)
         saved_system = saved['e_settings'][0]
+        self.assertEqual(saved_system['special_rules'], 'swedish')
         self.assertEqual(
-            saved_system['adjustment_preparation_method'], 'switching_se')
+            saved_system['regional_adjustment_method'], 'max-const-votes')
         self.assertEqual(
-            saved_system['adjustment_preparation_rule'], 'nordic-1.2')
+            saved_system['regional_adjustment_rule'], 'sainte-lague')
         self.assertEqual(
             saved_system['fixed_seat_national_threshold'], 4)
-        self.assertEqual(saved_system['danish_special_rules'], False)
         self.assertEqual(
             saved_system['adjustment_threshold_seats'],
             system['adjustment_threshold_seats'])

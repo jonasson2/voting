@@ -9,7 +9,7 @@ from division_rules import dhondt_gen, hare, sainte_lague_gen
 from dictionaries import ELECTION_LAW_PRESETS
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
-from methods import danish
+from methods import danish, regional
 from methods.alternating_scaling import apportion_orig
 from methods.icelandic_law import icelandic_apportionment
 from methods.max_const_votes import max_const_votes
@@ -242,7 +242,7 @@ class TieTest(unittest.TestCase):
         np.testing.assert_array_equal(totals, [0, 1, 0])
         self.assertEqual(report.events[0]['candidates'], ['B', 'C'])
         report = TieReport()
-        allocated, demo = danish.allocate_regions(
+        allocated, demo = regional.allocate_within_regions(
             np.full((3, 2), 100), np.zeros((3, 2), int), np.array([[1, 1], [1, 0]]),
             [{'abbreviation': 'R1', 'num_adj_seats': 2}, {'abbreviation': 'R2', 'num_adj_seats': 1}],
             [np.array([0, 2]), np.array([1])], np.zeros(3, int), [None] * 3,

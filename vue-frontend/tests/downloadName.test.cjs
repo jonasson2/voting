@@ -9,10 +9,17 @@ async function downloadNameModule() {
 }
 
 test("download names retain Unicode and the required file extension", async () => {
-  const {downloadFilename, validDownloadBasename} = await downloadNameModule()
+  const {
+    downloadBasename,
+    downloadFilename,
+    validDownloadBasename,
+  } = await downloadNameModule()
   assert.equal(validDownloadBasename("Ísland 2024"), true)
   assert.equal(downloadFilename(" Ísland 2024 ", "xlsx"), "Ísland 2024.xlsx")
   assert.equal(downloadFilename("votes.XLSX", "xlsx"), "votes.XLSX")
+  assert.equal(downloadBasename(" votes.json ", "json"), "votes")
+  assert.equal(downloadBasename("votes.JSON", "json"), "votes")
+  assert.equal(downloadBasename("votes", "json"), "votes")
   for (const name of ["", "  ", ".", "..", "a/b", "a\\b", "a:b"]) {
     assert.equal(validDownloadBasename(name), false)
   }

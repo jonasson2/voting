@@ -2,8 +2,9 @@ import math
 
 from dictionaries import (
     ADJUSTMENT_METHODS,
-    ADJUSTMENT_PREPARATION_METHODS,
     DIVIDER_RULES,
+    REGIONAL_ADJUSTMENT_METHODS,
+    SPECIAL_RULE_NAMES,
 )
 
 
@@ -20,11 +21,10 @@ def normalize_system(system):
         system["fixed_seat_national_threshold"] = (
             system.get("adjustment_threshold", 0)
             if legacy_eligibility == "national-or-constituency" else 0)
-    system.setdefault("adjustment_preparation_method", "none")
     system.setdefault("require_votes_in_all_constituencies", False)
-    system.setdefault("danish_special_rules",
-                      system["adjustment_preparation_method"] == "danish-regions")
-    system.setdefault("adj_preparation_divider", "sainte-lague")
+    system.setdefault("special_rules", "none")
+    system.setdefault("regional_adjustment_method", "max-const-votes")
+    system.setdefault("regional_adjustment_divider", "sainte-lague")
     system.setdefault("compare_with", True)
     return system
 
@@ -81,23 +81,20 @@ def check_systems(electoral_systems):
                 or not 0 <= adjustment_threshold <= 100):
             raise ValueError(
                 "National threshold for adjustment seats must be a number between 0 and 100%; blank is not allowed.")
-        preparation_method = electoral_system["adjustment_preparation_method"]
         if not isinstance(electoral_system["require_votes_in_all_constituencies"], bool):
             raise ValueError("Standing in all constituencies must be Yes or No.")
-        if not isinstance(electoral_system["danish_special_rules"], bool):
-            raise ValueError("Danish special rules must be Yes or No.")
-        if (electoral_system["danish_special_rules"]
-                and preparation_method != "danish-regions"):
+        special_rules = electoral_system["special_rules"]
+        if special_rules not in {
+                item["value"] for item in SPECIAL_RULE_NAMES}:
+            raise ValueError(f"Unknown special rules: {special_rules}")
+        regional_method = electoral_system["regional_adjustment_method"]
+        if regional_method not in REGIONAL_ADJUSTMENT_METHODS:
             raise ValueError(
-                "Danish special rules require Danish regional preparation.")
-        if (preparation_method != "none"
-                and preparation_method not in ADJUSTMENT_PREPARATION_METHODS):
+                f"Unknown regional adjustment-seat method: {regional_method}")
+        regional_divider = electoral_system["regional_adjustment_divider"]
+        if regional_divider not in DIVIDER_RULES:
             raise ValueError(
-                f"Unknown adjustment-seat preparation method: {preparation_method}")
-        preparation_divider = electoral_system["adj_preparation_divider"]
-        if preparation_divider not in DIVIDER_RULES:
-            raise ValueError(
-                f"Unknown adjustment-seat preparation rule: {preparation_divider}")
+                f"Unknown regional adjustment-seat rule: {regional_divider}")
         adjustment_method = electoral_system["adjustment_method"]
         if adjustment_method not in ADJUSTMENT_METHODS:
             raise ValueError(

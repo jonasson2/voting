@@ -27,7 +27,7 @@ class SimulationThresholdTest(unittest.TestCase):
                 for system in run_systems:
                     system.update(dict.fromkeys(THRESHOLDS, 0))
                     system['fixed_seat_national_threshold'] = 0
-                    system['danish_special_rules'] = False
+                    system['special_rules'] = 'none'
             run_settings = deepcopy(settings)
             run_settings['use_thresholds'] = use_thresholds
             simulation = Simulation(run_settings, run_systems, deepcopy(table))

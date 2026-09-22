@@ -35,9 +35,8 @@ def adjustment_qualification_text(system):
             str(system["adjustment_threshold_seats"]) + " fixed seat(s)")
     if system["require_votes_in_all_constituencies"]:
         text += "; must stand in all constituencies"
-    if system["adjustment_preparation_method"] == "danish-regions":
-        text += ("; Danish special rules: " +
-                 ("Yes" if system["danish_special_rules"] else "No"))
+    if system["special_rules"] != "none":
+        text += "; special rules: " + system["special_rules"].title()
     return text
 
 

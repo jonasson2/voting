@@ -115,8 +115,9 @@
             >
             <b-form-radio
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Adjust the vote shares so that they sum to the total number of seats for
-                     each constituency and each party (scale both rows and columns of vote table)"
+              title="Recommended default. Fractional reference seats satisfy both important
+                     margins: each constituency receives its specified seat total, and each
+                     party its nationally proportional entitlement."
               value="both"
               >
               {{scaling_name("both")}}

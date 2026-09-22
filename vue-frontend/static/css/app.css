@@ -175,6 +175,8 @@ th {
 .compact-select.settings-rule { width: 280px; }
 .compact-select.settings-vote-basis { width: 220px; }
 .compact-select.settings-method { width: 400px; }
+.compact-select.settings-special-rules { width: 100px; }
+.compact-select.settings-preparation-method { width: 260px; }
 .compact-select.settings-preset { width: 220px; }
 .compact-select.settings-threshold-choice { width: 62px; }
 .compact-select.settings-yes-no { width: 70px; }

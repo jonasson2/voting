@@ -126,41 +126,42 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Yes: A party also qualifies if, in at least two regions, its votes equal or exceed the region's average number of votes per fixed seat. Recalculate party totals under section 77 of the Danish Parliamentary Elections Act when fixed seats exceed provisional entitlements. No: Retain fixed seats and apportion the remaining seats using the selected rule and the qualifications above.">
-      <span>Danish special rules</span>
-      <b-form-select class="compact-select settings-yes-no"
-        v-model="systems[systemidx].danish_special_rules"
-        :options="[{ value: false, text: 'No' }, { value: true, text: 'Yes' }]"/>
+      title="None: Use the selected rule and qualification settings without country-specific modifications. Danish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions, and apply the statutory recalculation when fixed seats exceed provisional entitlements. Swedish: Apportion national party totals from zero, then reallocate fixed seats that exceed those entitlements.">
+      <span>Special rules</span>
+      <b-form-select class="compact-select settings-special-rules"
+        v-model="systems[systemidx].special_rules"
+        :options="capabilities.special_rules"/>
     </label>
   </div>
 
-  <!-- PREPARATION FOR ADJUSTMENT SEAT ALLOCATION -->
-  <legend class="settings-heading"
-    v-b-tooltip.hover.top.v-primary.ds500
-    title="Optional operation performed before adjustment seats are allocated to lists">
-    Prepare for adjustment-seat allocation
-  </legend>
-  <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Swedish switching: Reallocates fixed seats that exceed parties’ national entitlements. Danish allocation to regions: Distributes each party’s adjustment-seat entitlement among regions, respecting each region’s seat total.">
-      <span>Preparation method</span>
-      <b-form-select class="compact-select settings-method"
-        v-model="systems[systemidx].adjustment_preparation_method"
-        :options="capabilities.adjustment_preparation_methods"/>
-    </label>
-  </div>
-  <div class="settings-row"
-       v-if="systems[systemidx].adjustment_preparation_method != 'none'">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used by the preparation method.">
-      <span>Rule</span>
-      <b-form-select class="compact-select settings-rule"
-        v-model="systems[systemidx].adj_preparation_divider"
-        :options="capabilities.divider_rules"/>
-    </label>
-  </div>
+  <!-- REGIONAL ADJUSTMENT SEAT ALLOCATION -->
+  <template v-if="hasRegions">
+    <legend class="settings-heading"
+      v-b-tooltip.hover.top.v-primary.ds500
+      title="Distributes parties’ national adjustment-seat entitlements among regions while respecting each region’s seat total.">
+      Regional allocation of adjustment seats
+    </legend>
+    <div class="settings-row">
+      <label class="settings-field"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Method used to allocate each party’s adjustment seats among regions.">
+        <span>Allocation method</span>
+        <b-form-select class="compact-select settings-method"
+          v-model="systems[systemidx].regional_adjustment_method"
+          :options="capabilities.regional_adjustment_methods"/>
+      </label>
+    </div>
+    <div class="settings-row">
+      <label class="settings-field"
+        v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Formula used for the regional allocation.">
+        <span>Rule</span>
+        <b-form-select class="compact-select settings-rule"
+          v-model="systems[systemidx].regional_adjustment_divider"
+          :options="capabilities.divider_rules"/>
+      </label>
+    </div>
+  </template>
 
   <!-- ADJUSTMENT SEAT ALLOCATION -->
   <legend class="settings-heading"
@@ -175,7 +176,7 @@
       <span>Allocation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_method"
-        :options="capabilities.adjustment_methods"/>
+        :options="adjustmentMethodOptions"/>
     </label>
   </div>
   <div class="settings-row">
@@ -294,6 +295,7 @@
 
 <script>
 import { mapState, mapMutations, mapActions } from 'vuex';
+import { flexibleAdjustmentMethodOptions } from './voteTable.js';
 export default {
   data: function() {
     return {
@@ -312,6 +314,17 @@ export default {
         this.setConstSpecOption({"opt": val, "idx": this.systemidx})
         this.recalc_sys_const()
       }
+    },
+    adjustmentMethodOptions() {
+      return flexibleAdjustmentMethodOptions(
+        this.vote_table,
+        this.capabilities.adjustment_methods || [],
+        this.capabilities.flexible_adjustment_methods,
+      )
+    },
+    hasRegions() {
+      return Array.isArray(this.vote_table.regions) &&
+        this.vote_table.regions.length > 0
     },
     election_law_preset: {
       get() {

@@ -27,9 +27,9 @@ def load_json(f):
         file_content["systems"] = file_content["e_settings"]
         del file_content["e_settings"]
     for system in file_content["systems"]:
-        if "adjustment_preparation_rule" in system:
-            system["adj_preparation_divider"] = system.pop(
-                "adjustment_preparation_rule")
+        if "regional_adjustment_rule" in system:
+            system["regional_adjustment_divider"] = system.pop(
+                "regional_adjustment_rule")
         if "adj_threshold_choice" not in system:
             system["adj_threshold_choice"] = 0
             system["adjustment_threshold_seats"] = 0

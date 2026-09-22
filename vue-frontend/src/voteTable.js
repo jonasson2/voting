@@ -118,6 +118,38 @@ export function validConstituencySeats(table) {
     || table.max_total_adj_seats <= sumNumbers(maxima)
 }
 
+export function hasFlexibleAdjustmentPool(table) {
+  if (!isNonnegativeInteger(table.max_total_adj_seats)
+      || !table.constituencies.every(constituency =>
+        isNonnegativeInteger(constituency.num_adj_seats))) return false
+
+  const minimumTotal = sumNumbers(
+    table.constituencies.map(constituency => constituency.num_adj_seats)
+  )
+  return table.max_total_adj_seats > minimumTotal
+}
+
+export function hasIncompatibleFlexibleAdjustmentMethod(
+  table, systems, flexibleMethods
+) {
+  return hasFlexibleAdjustmentPool(table)
+    && Array.isArray(flexibleMethods)
+    && Array.isArray(systems)
+    && systems.some(system =>
+      !flexibleMethods.includes(system.adjustment_method))
+}
+
+export function flexibleAdjustmentMethodOptions(
+  table, options, flexibleMethods
+) {
+  if (!hasFlexibleAdjustmentPool(table)
+      || !Array.isArray(flexibleMethods)) return options
+  return options.map(option => ({
+    ...option,
+    disabled: !flexibleMethods.includes(option.value),
+  }))
+}
+
 export function validVotes(table) {
   return Array.isArray(table.votes)
     && Array.isArray(table.pruned)

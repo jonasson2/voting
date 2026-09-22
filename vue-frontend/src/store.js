@@ -14,18 +14,15 @@ function normalizeSystem(system) {
   if (system.fixed_seat_threshold_choice === undefined) {
     system.fixed_seat_threshold_choice = 1
   }
-  if (system.adjustment_preparation_method === undefined) {
-    system.adjustment_preparation_method = 'none'
-  }
+  if (system.special_rules === undefined) system.special_rules = 'none'
   if (system.require_votes_in_all_constituencies === undefined) {
     system.require_votes_in_all_constituencies = false
   }
-  if (system.danish_special_rules === undefined) {
-    system.danish_special_rules =
-      system.adjustment_preparation_method === 'danish-regions'
+  if (system.regional_adjustment_method === undefined) {
+    system.regional_adjustment_method = 'max-const-votes'
   }
-  if (system.adj_preparation_divider === undefined) {
-    system.adj_preparation_divider = 'sainte-lague'
+  if (system.regional_adjustment_divider === undefined) {
+    system.regional_adjustment_divider = 'sainte-lague'
   }
   return system
 }
@@ -69,6 +66,7 @@ const store = new Vuex.Store({
     activeSystemIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
     display_settings: defaultDisplaySettings(),
+    all_filename: "",
     sim_capabilities: {},
     results: [],
     server_error: "",
@@ -117,16 +115,15 @@ const store = new Vuex.Store({
       if (idx > 0) {
         system.primary_divider = state.systems[idx-1].primary_divider
         system.adj_determine_divider = state.systems[idx-1].adj_determine_divider
-        system.adjustment_preparation_method =
-          state.systems[idx-1].adjustment_preparation_method
-        system.adj_preparation_divider =
-          state.systems[idx-1].adj_preparation_divider
+        system.special_rules = state.systems[idx-1].special_rules
+        system.regional_adjustment_method =
+          state.systems[idx-1].regional_adjustment_method
+        system.regional_adjustment_divider =
+          state.systems[idx-1].regional_adjustment_divider
         system.adj_alloc_divider = state.systems[idx-1].adj_alloc_divider
         system.adjustment_threshold = state.systems[idx-1].adjustment_threshold
         system.adjustment_threshold_seats = state.systems[idx-1].adjustment_threshold_seats
         system.adj_threshold_choice = state.systems[idx-1].adj_threshold_choice
-        system.danish_special_rules =
-          state.systems[idx-1].danish_special_rules
         system.constituency_threshold = state.systems[idx-1].constituency_threshold
         system.fixed_seat_national_threshold =
           state.systems[idx-1].fixed_seat_national_threshold
@@ -168,6 +165,10 @@ const store = new Vuex.Store({
 
     updateDisplaySettings(state, settings) {
       state.display_settings = normalizeDisplaySettings(settings)
+    },
+
+    setAllFilename(state, filename) {
+      state.all_filename = filename
     },
 
     setWaitingForData(state) { state.waiting_for_data = true },
@@ -294,7 +295,7 @@ const store = new Vuex.Store({
         }
       )
     },
-    uploadAll: function (context, formData) {
+    uploadAll: function (context, {formData, filename}) {
       context.commit("setWaitingForData")
       Vue.http.post("api/uploadall/", formData).then(
         (response) => {
@@ -305,6 +306,7 @@ const store = new Vuex.Store({
             context.commit("updateVoteTable", response.data.vote_table)
             context.commit("updateSystems", response.data.systems)
             context.commit("updateSimSettings", response.data.sim_settings)
+            context.commit("setAllFilename", filename || "")
             findNumbering(context.state, 0)
             context.commit("clearWaitingForData")
           }

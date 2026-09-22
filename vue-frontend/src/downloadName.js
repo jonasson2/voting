@@ -11,6 +11,13 @@ export function downloadFilename(basename, extension) {
     ? name : name + suffix
 }
 
+export function downloadBasename(filename, extension) {
+  const name = String(filename ?? "").trim()
+  const suffix = `.${extension}`
+  return name.toLowerCase().endsWith(suffix.toLowerCase())
+    ? name.slice(0, -suffix.length) : name
+}
+
 export function canChooseSaveLocation() {
   return typeof window !== "undefined"
     && typeof window.showSaveFilePicker === "function"

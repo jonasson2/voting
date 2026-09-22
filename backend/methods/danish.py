@@ -1,4 +1,4 @@
-"""Danish eligibility, party-total recalculation and regional preparation."""
+"""Danish fixed-seat, eligibility and party-total rules."""
 import numpy as np
 
 from apportion import apportion1d_general
@@ -105,71 +105,3 @@ def party_totals_from_fixed(votes, fixed, eligible, total, rule, rule_type,
         on_tie=remap(on_tie, indices))
     totals[indices] = allocation
     return totals
-
-
-def region_groups(constituencies, regions):
-    return [np.array([c for c, const in enumerate(constituencies)
-                      if const.get("region") == region["abbreviation"]], dtype=int)
-            for region in regions]
-
-
-def prepare_regions(votes, fixed, totals, regions, groups, divisor_gen, rng, on_tie=None):
-    regional_votes = np.array([votes[group].sum(axis=0) for group in groups])
-    regional_fixed = np.array([fixed[group].sum(axis=0) for group in groups])
-    seats = [region["num_adj_seats"] for region in regions]
-    try:
-        allocated, demo = max_const_votes(
-            regional_votes, regional_fixed.sum(axis=1) + seats, totals,
-            regional_fixed, divisor_gen, num_adjustment_seats=sum(seats),
-            min_adj_seats=seats, max_adj_seats=seats,
-            exclude_zero_votes=True, rng=rng, on_tie=on_tie)
-    except ValueError as error:
-        raise ValueError(
-            "Danish regional allocation cannot fill the entitlements with the "
-            "available votes. The statutory advance-allocation procedure is "
-            "not implemented.") from error
-    for step in demo["data"]:
-        step["region"] = regions[step["constituency"]]["abbreviation"]
-    demo["function"] = regional_demo
-    return allocated, demo
-
-
-def allocate_regions(votes, fixed, regional_totals, regions, groups,
-                     minimums, maxima, divisor_gen, rng, on_tie=None):
-    allocated = fixed.copy()
-    steps = []
-    for r, (region, group) in enumerate(zip(regions, groups)):
-        local, demo = max_const_votes(
-            votes[group], fixed[group].sum(axis=1) + minimums[group],
-            regional_totals[r], fixed[group], divisor_gen,
-            num_adjustment_seats=region["num_adj_seats"],
-            min_adj_seats=minimums[group], max_adj_seats=[maxima[c] for c in group],
-            exclude_zero_votes=True, rng=rng,
-            on_tie=remap(on_tie, (group[:, None] * votes.shape[1]
-                                 + np.arange(votes.shape[1])).ravel())
-            if on_tie is not None else None)
-        if not np.array_equal(local.sum(axis=0), regional_totals[r]):
-            raise RuntimeError("Danish constituency allocation missed its regional party totals.")
-        allocated[group] = local
-        for step in demo["data"]:
-            step["constituency"] = int(group[step["constituency"]])
-            step["region"] = region["abbreviation"]
-        steps.extend(demo["data"])
-    return allocated, {"data": steps, "function": constituency_demo, "format": "cllscc3l"}
-
-
-def regional_demo(system, steps):
-    headers = ["Adjustment seat #", "Region", "Party", "Votes", "Divisor", "Vote score", "Tie"]
-    rows = [[i, step["region"], system["parties"][step["party"]],
-             step["votes"], step["divisor"], step["quotient"],
-             "Lot" if step["lot"] else "First in table" if step["tie"] else ""]
-            for i, step in enumerate(steps, 1)]
-    return headers, rows, "Allocation of adjustment seats to regions"
-
-
-def constituency_demo(system, steps):
-    headers, rows, _ = regional_demo(system, steps)
-    headers.insert(2, "Constituency")
-    for row, step in zip(rows, steps):
-        row.insert(2, system["constituencies"][step["constituency"]]["name"])
-    return headers, rows, "Allocation of adjustment seats to constituencies"

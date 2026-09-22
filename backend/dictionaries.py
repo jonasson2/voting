@@ -24,10 +24,9 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.farthest_from_next import farthest_from_next
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
-from methods.switching_se import switching as switching_se
 from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.max_const_votes import max_const_votes
-from methods.danish import prepare_regions
+from methods.optimal_lp import optimal_lp
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_cpu_count
@@ -85,9 +84,9 @@ DEFAULT_ELECTION_SETTINGS = {
     "adjustment_threshold_seats": 0,
     "adj_threshold_choice": 1,
     "require_votes_in_all_constituencies": False,
-    "danish_special_rules": False,
-    "adjustment_preparation_method": "none",
-    "adj_preparation_divider": "sainte-lague",
+    "special_rules": "none",
+    "regional_adjustment_method": "max-const-votes",
+    "regional_adjustment_divider": "sainte-lague",
     "adjustment_method": "max-const-seat-share",
     "adj_alloc_divider": "dhondt",
 }
@@ -114,9 +113,9 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 2,
             "adjustment_threshold_seats": 1,
             "adj_threshold_choice": 1,
-            "danish_special_rules": True,
-            "adjustment_preparation_method": "danish-regions",
-            "adj_preparation_divider": "sainte-lague",
+            "special_rules": "danish",
+            "regional_adjustment_method": "max-const-votes",
+            "regional_adjustment_divider": "sainte-lague",
             "adjustment_method": "max-const-votes",
             "adj_alloc_divider": "danish",
             "constituency_seat_specification": "refer",
@@ -135,9 +134,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 0,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "danish_special_rules": False,
-            "adjustment_preparation_method": "none",
-            "adj_preparation_divider": "sainte-lague",
+            "special_rules": "none",
             "adjustment_method": "adjustment-as-fixed",
             "adj_alloc_divider": "dhondt",
             "constituency_seat_specification": "refer",
@@ -156,9 +153,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 5,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "danish_special_rules": False,
-            "adjustment_preparation_method": "none",
-            "adj_preparation_divider": "sainte-lague",
+            "special_rules": "none",
             "adjustment_method": "icelandic-law",
             "adj_alloc_divider": "dhondt",
             "constituency_seat_specification": "refer",
@@ -178,9 +173,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
             "require_votes_in_all_constituencies": True,
-            "danish_special_rules": False,
-            "adjustment_preparation_method": "none",
-            "adj_preparation_divider": "sainte-lague",
+            "special_rules": "none",
             "adjustment_method": "norwegian-law",
             "adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
@@ -198,9 +191,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "danish_special_rules": False,
-            "adjustment_preparation_method": "none",
-            "adj_preparation_divider": "nordic-1.4",
+            "special_rules": "none",
             "adjustment_method": "max-const-votes",
             "adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
@@ -219,9 +210,7 @@ ELECTION_LAW_PRESETS = [
             "adjustment_threshold": 4,
             "adjustment_threshold_seats": 0,
             "adj_threshold_choice": 1,
-            "danish_special_rules": False,
-            "adjustment_preparation_method": "switching_se",
-            "adj_preparation_divider": "nordic-1.2",
+            "special_rules": "swedish",
             "adjustment_method": "max-const-votes",
             "adj_alloc_divider": "sainte-lague",
             "constituency_seat_specification": "refer",
@@ -246,14 +235,25 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "swedish-style-switching", "text": "Swedish-style switching"},
     {"value": "max-const-votes",           "text": "Maximum constituency votes"},
-    {"value": "alternating-scaling",       "text": "Optimal divisor method"},
+    {"value": "alternating-scaling",       "text": "Alternating scaling"},
+    {"value": "optimal-lp",                "text": "Optimal LP"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 
-ADJUSTMENT_PREPARATION_METHOD_NAMES = [
+SPECIAL_RULE_NAMES = [
     {"value": "none", "text": "None"},
-    {"value": "switching_se", "text": "Swedish switching"},
-    {"value": "danish-regions", "text": "Danish allocation to regions"},
+    {"value": "danish", "text": "Danish"},
+    {"value": "swedish", "text": "Swedish"},
+]
+
+REGIONAL_ADJUSTMENT_METHOD_NAMES = [
+    {"value": "max-const-votes", "text": "Maximum regional votes"},
+    {"value": "max-const-vote-percentage",
+     "text": "Maximum regional vote percentage"},
+    {"value": "max-const-seat-share", "text": "Maximum regional seat share"},
+    {"value": "switching", "text": "Switching of seats"},
+    {"value": "swedish-style-switching", "text": "Swedish-style switching"},
+    {"value": "optimal-lp", "text": "Optimal LP"},
 ]
 
 DEMO_TABLE_FORMATS = {
@@ -273,6 +273,7 @@ DEMO_TABLE_FORMATS = {
     "swedish-style-switching":   ("sccc", "clss33"),
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
+    "optimal-lp":                "",
     #"gurobi":                    "",
     }
 # s = special, center if all party names are less than 2 chars, else left
@@ -295,16 +296,6 @@ SEAT_SPECIFICATION_OPTIONS = {
         {"value": "party_vote_info", "text": "National party votes"},
         {"value": "average", "text": "Average of both"},
     ]
-}
-
-ADJUSTMENT_PREPARATION_METHODS = {
-    "switching_se": switching_se,
-    "danish-regions": prepare_regions,
-}
-
-ADJUSTMENT_PREPARATION_DEMO_TABLE_FORMATS = {
-    "switching_se": "clss33",
-    "danish-regions": "clscc3l",
 }
 
 GENERATING_METHOD_NAMES = [
@@ -357,13 +348,19 @@ ADJUSTMENT_METHODS = {
     "swedish-style-switching":   swedish_style_switching,
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
+    "optimal-lp":                optimal_lp,
     # "gurobi":                    gurobi_optimal,
     # "monge": monge,
 }
 
+REGIONAL_ADJUSTMENT_METHODS = {
+    item["value"]: ADJUSTMENT_METHODS[item["value"]]
+    for item in REGIONAL_ADJUSTMENT_METHOD_NAMES
+}
+
 FLEXIBLE_ADJUSTMENT_METHODS = {
     "max-const-votes", "max-const-vote-percentage", "switching",
-    "swedish-style-switching"}
+    "swedish-style-switching", "optimal-lp"}
 
 USE_THRESHOLDS = [
     {"value": False, "text": "no"},

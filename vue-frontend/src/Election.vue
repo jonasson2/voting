@@ -124,7 +124,9 @@ export default {
         system.name,
         system.primary_divider,
         system.adj_determine_divider,
-        system.adjustment_preparation_method,
+        system.special_rules,
+        system.regional_adjustment_method,
+        system.regional_adjustment_divider,
         system.adjustment_method,
         system.adj_alloc_divider,
       ].join('|')

@@ -102,10 +102,8 @@ class Simulation():
         self.random_seed = sim_settings.get("random_seed")
         self.start_iteration = start_iteration
         self.next_global_iteration = start_iteration
-        self.danish_simulation = any(
-            system.get("adjustment_preparation_method") == "danish-regions"
-            for system in systems)
-        vote_table = simulation_vote_table(vote_table, self.danish_simulation)
+        self.regional_simulation = bool(vote_table.get("regions"))
+        vote_table = simulation_vote_table(vote_table, self.regional_simulation)
         self.vote_table = vote_table
         self.reference_handler = ElectionHandler(vote_table, systems, use_thresholds)
         self.election_handler = ElectionHandler(vote_table, systems, use_thresholds)
@@ -267,7 +265,7 @@ class Simulation():
                     self.party_vote_rsd, self.distribution, rng)[0]
             else:
                 party_votes = None
-        if self.danish_simulation:
+        if self.regional_simulation:
             votes = np.maximum(votes, 1).tolist()
         votes = normalize_constituency_votes(
             votes, self.election_handler.votes)
@@ -461,10 +459,11 @@ class Simulation():
     def other_seat_spec_measures(self, election, system, deviations):
         for measure in ["dev_all_adj", "dev_all_fixed", "one_const"]:
             option = remove_prefix(measure, "dev_")
-            preparation = system.get("adjustment_preparation_method", "none")
-            if preparation != "none" or election.has_flexible_adj_seats:
-                # These counterfactual layouts do not define how a preparation
-                # stage or constituency seat ranges should be changed.
+            special_rules = system.get("special_rules", "none")
+            if (special_rules != "none" or election.has_regions
+                    or election.has_flexible_adj_seats):
+                # These counterfactual layouts do not define how special rules,
+                # regions or constituency seat ranges should be changed.
                 self.add_deviation(
                     election, election, measure, deviations)
                 continue

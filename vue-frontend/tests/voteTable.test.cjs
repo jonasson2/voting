@@ -130,6 +130,42 @@ test("a hyphen represents an unlimited constituency adjustment-seat maximum", as
   assert.equal(validConstituencySeats(table), false)
 })
 
+test("flexible seat pools require compatible adjustment methods", async () => {
+  const {
+    flexibleAdjustmentMethodOptions,
+    hasIncompatibleFlexibleAdjustmentMethod,
+  } = await voteTableModule()
+  const table = exampleTable()
+  table.max_total_adj_seats = 0
+  table.constituencies[0].max_adj_seats = 2
+  const systems = [{adjustment_method: "fixed-only"}]
+  const flexibleMethods = ["flexible"]
+
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(
+    table, systems, flexibleMethods), false)
+
+  table.max_total_adj_seats = 1
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(
+    table, systems, flexibleMethods), true)
+
+  systems[0].adjustment_method = "flexible"
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(
+    table, systems, flexibleMethods), false)
+
+  const options = [
+    {value: "fixed-only", text: "Fixed only"},
+    {value: "flexible", text: "Flexible"},
+  ]
+  assert.deepEqual(
+    flexibleAdjustmentMethodOptions(table, options, flexibleMethods),
+    [
+      {value: "fixed-only", text: "Fixed only", disabled: true},
+      {value: "flexible", text: "Flexible", disabled: false},
+    ],
+  )
+  assert.equal("disabled" in options[0], false)
+})
+
 test("the maximum-seat column total sums finite maxima and shows unlimited otherwise", async () => {
   const {calculateVoteSums} = await voteTableModule()
   const table = exampleTable()

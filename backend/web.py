@@ -124,8 +124,8 @@ def api_settings_save():
             "fixed_seat_threshold_choice",
             "adjustment_threshold", "adjustment_threshold_seats",
             "adj_threshold_choice", "require_votes_in_all_constituencies",
-            "danish_special_rules",
-            "adjustment_preparation_method",
+            "special_rules",
+            "regional_adjustment_method",
             "adjustment_method", #"adjustment_allocation_rule",
             "nat_seats"
         ]
@@ -136,8 +136,8 @@ def api_settings_save():
             item = {key: system[key] for key in keys}
             item["constituency_allocation_rule"] = system["primary_divider"]
             item["adjustment_division_rule"] = system["adj_determine_divider"]
-            item["adjustment_preparation_rule"] = \
-                system["adj_preparation_divider"]
+            item["regional_adjustment_rule"] = \
+                system["regional_adjustment_divider"]
             item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
             item["nat_seats"] = system["nat_seats"]
             electoral_system_list.append(item)
@@ -285,8 +285,11 @@ def api_capabilities():
                 "divider_rules": dictionaries.DIVIDER_RULE_NAMES,
                 "cpu_counts": get_cpu_counts(),
                 "adjustment_methods": dictionaries.ADJUSTMENT_METHOD_NAMES,
-                "adjustment_preparation_methods":
-                    dictionaries.ADJUSTMENT_PREPARATION_METHOD_NAMES,
+                "flexible_adjustment_methods": sorted(
+                    dictionaries.FLEXIBLE_ADJUSTMENT_METHODS),
+                "special_rules": dictionaries.SPECIAL_RULE_NAMES,
+                "regional_adjustment_methods":
+                    dictionaries.REGIONAL_ADJUSTMENT_METHOD_NAMES,
                 "election_law_presets": dictionaries.ELECTION_LAW_PRESETS,
                 "generating_methods": dictionaries.GENERATING_METHOD_NAMES,
                 "seat_spec_options": dictionaries.SEAT_SPECIFICATION_OPTIONS,

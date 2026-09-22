@@ -101,7 +101,7 @@
         title="Upload votes and seat table from local Excel or CSV file"
         v-b-modal.modalupload
         >
-        Upload from file
+        Upload
       </b-button>
     </b-button-group>
     <b-button-group class="mx-1 mb-10">
@@ -231,6 +231,11 @@
     constituency # Max adj. cell, where it means unlimited. Thousands separators
     may be omitted; if used, they must match Settings and group digits in threes.
   </b-alert>
+  <b-alert :show="hasIncompatibleFlexibleMethod">
+    Flexible adjustment-seat totals cannot be used with one or more selected
+    allocation methods. Choose a compatible method in the Electoral systems
+    tab, or use fixed constituency totals.
+  </b-alert>
   <b-alert :show="checkVoteInput()==false">
     Votes must be non-negative integers. Thousands separators may be omitted; if
     used, they must match Settings and group digits in threes.
@@ -278,6 +283,8 @@ import RegionTable from "./components/RegionTable.vue";
 import {
   canChooseSaveLocation,
   chooseSaveLocation,
+  downloadBasename,
+  downloadFilename,
   timestampedDownloadBasename,
   validDownloadBasename,
 } from "./downloadName.js";
@@ -290,6 +297,7 @@ import {
   removeAdjustmentSeatMaximums,
   removeConstituency,
   removeParty,
+  hasIncompatibleFlexibleAdjustmentMethod,
   validConstituencySeats,
   validNationalVotes,
   validVoteTableLabels,
@@ -312,6 +320,8 @@ export default {
       'vote_sums',
       'waiting_for_data',
       'sim_capabilities',
+      'systems',
+      'all_filename',
     ]),
     partyVoteBasisOptions() {
       return this.sim_capabilities.seat_spec_options
@@ -330,6 +340,13 @@ export default {
     regionsError() { return regionError(this.vote_table) },
     hasMaxAdjustmentSeats() {
       return this.show_max_adj_seats
+    },
+    hasIncompatibleFlexibleMethod() {
+      return hasIncompatibleFlexibleAdjustmentMethod(
+        this.vote_table,
+        this.systems,
+        this.sim_capabilities.flexible_adjustment_methods,
+      )
     },
     showPartyNameTable() {
       return this.hasPartyNames || (this.vote_table.independent_candidates || []).some(Boolean)
@@ -443,7 +460,8 @@ export default {
       this.downloadKind = kind
       const basename = kind === "votes"
         ? (this.vote_table.name.trim() || "votes")
-        : timestampedDownloadBasename("simulator")
+        : (downloadBasename(this.all_filename, "json")
+          || timestampedDownloadBasename("simulator"))
       const extension = kind === "votes" ? "xlsx" : "json"
       if (kind === "all" && canChooseSaveLocation()
           && validDownloadBasename(basename)) {
@@ -454,6 +472,10 @@ export default {
         } catch (error) {
           if (error.name === "AbortError") return
         }
+      }
+      if (kind === "all" && this.all_filename) {
+        this.confirmDownload({filename: downloadFilename(basename, extension)})
+        return
       }
       this.$refs.downloadNameDialog.open(basename, extension)
     },
@@ -504,7 +526,7 @@ export default {
       this.$refs.modaluploadallref.hide()
       var formData = new FormData();
       formData.append("file", file, file.name);
-      this.uploadAll(formData)
+      this.uploadAll({formData, filename: file.name})
     },
     checkVoteSeats: function() {
       return validConstituencySeats(this.vote_table)

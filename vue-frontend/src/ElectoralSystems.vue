@@ -182,6 +182,8 @@ import ElectionSettings from './ElectionSettings.vue'
 import {
   canChooseSaveLocation,
   chooseSaveLocation,
+  downloadBasename,
+  downloadFilename,
   timestampedDownloadBasename,
 } from './downloadName.js'
 import { mapState, mapMutations, mapActions } from 'vuex';
@@ -198,7 +200,8 @@ export default {
       'systems',
       'system_numbering',
       'show_systems',
-      'waiting_for_data'
+      'waiting_for_data',
+      'all_filename',
     ]),
     activeTabIndex: {
       get() {
@@ -244,7 +247,6 @@ export default {
     ...mapMutations([
       "addSystem",
       "addSysConst",
-      "updateSimSettings",
       "deleteSystem",
       "deleteAllSystems",
       "setWaitingForData",
@@ -263,7 +265,10 @@ export default {
     async openDownload(kind) {
       this.downloadKind = kind
       const prefix = kind === 'settings' ? 'electoral-systems' : 'simulator'
-      const basename = timestampedDownloadBasename(prefix)
+      const basename = kind === 'all'
+        ? (downloadBasename(this.all_filename, 'json')
+          || timestampedDownloadBasename(prefix))
+        : timestampedDownloadBasename(prefix)
       if (canChooseSaveLocation()) {
         try {
           const fileHandle = await chooseSaveLocation(basename, 'json')
@@ -272,6 +277,10 @@ export default {
         } catch (error) {
           if (error.name === 'AbortError') return
         }
+      }
+      if (kind === 'all' && this.all_filename) {
+        this.confirmDownload({filename: downloadFilename(basename, 'json')})
+        return
       }
       this.$refs.downloadNameDialog.open(basename, 'json')
     },
@@ -355,7 +364,6 @@ export default {
           }
           this.capabilities = r.capabilities;
           this.addSystem(r.election_system)
-          this.updateSimSettings(r.sim_settings)
           this.$store.dispatch("recalc_sys_const")
           this.$nextTick(()=>{
             this.created = true
@@ -372,7 +380,7 @@ export default {
     loadAll: function() {
       var formData = new FormData();
       formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.uploadAll(formData)
+      this.uploadAll({formData, filename: this.uploadfile.name})
     },
   },
   created: function () {

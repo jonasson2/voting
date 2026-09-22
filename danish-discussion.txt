@@ -171,22 +171,16 @@ receive adjustment seats.
 Electoral-system pipeline
 -------------------------
 
-The agreed general pipeline has five stages:
+The general pipeline has four stages:
 
 1. Allocate fixed seats in constituencies.
-2. Apportion total seats to parties.
-3. Recalculate party totals if fixed-seat counts exceed initial entitlements.
-4. Prepare for adjustment-seat allocation.
-5. Allocate adjustment seats to constituency lists.
-
-The fourth tab-2 heading is "Prepare for adjustment-seat allocation" and the
-fifth is "Allocation of adjustment seats to lists".
-
-For ordinary existing systems, stage 4 is "Not applicable". For Sweden,
-stage 4 performs Swedish switching. For Denmark, stage 4 will allocate each
-party's compensatory-seat entitlement among the three regions. Stage 5 will
-then place those seats in the constituencies while observing the region
-totals.
+2. Apportion total seats to parties, applying any selected national special
+   rules. The Danish rules include the statutory recalculation; the Swedish
+   rules include subsequent reallocation of excess fixed seats.
+3. If regions are present, allocate each party's adjustment-seat entitlement
+   among regions.
+4. Allocate adjustment seats to constituency lists, observing any regional
+   totals.
 
 There must be only one adjustment-seat allocator. The former secondary or
 "additional" allocator has been removed. The primary allocator must either

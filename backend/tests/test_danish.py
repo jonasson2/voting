@@ -10,11 +10,15 @@ from unittest.mock import patch
 import numpy as np
 from openpyxl import load_workbook
 
-from dictionaries import ELECTION_LAW_PRESETS
+from dictionaries import (
+    ELECTION_LAW_PRESETS,
+    FLEXIBLE_ADJUSTMENT_METHODS,
+    REGIONAL_ADJUSTMENT_METHODS,
+)
 from division_rules import dhondt_gen, hare, sainte_lague_gen
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
-from methods import danish
+from methods import danish, regional
 from noweb import load_votes, votes_to_excel
 from randomness import make_rng
 from simulate import Simulation, SimulationSettings, simulation_vote_table
@@ -79,6 +83,48 @@ class DanishTest(unittest.TestCase):
             for table in election.demo_tables:
                 self.assertIn(table["sup_header"], strings)
             book.close()
+
+    def test_all_flexible_methods_allocate_within_regions(self):
+        settings = SimulationSettings()
+        settings.update(simulation_count=1, cpu_count=1, random_seed=123)
+        for method in sorted(FLEXIBLE_ADJUSTMENT_METHODS):
+            with self.subTest(method=method):
+                system = system_for(self.table)
+                system["adjustment_method"] = method
+                simulation = Simulation(settings, [system], deepcopy(self.table))
+                simulation.simulate()
+                election = simulation.election_handler.elections[0]
+                self.assertEqual(sum(election.results["all_const_total"]), 175)
+                for group, regional_totals in zip(
+                        election.region_groups, election.region_party_totals):
+                    np.testing.assert_array_equal(
+                        np.asarray(
+                            election.results["all_const_seats"]
+                        )[group].sum(axis=0),
+                        regional_totals)
+
+    def test_all_regional_methods_satisfy_region_and_party_totals(self):
+        for method in sorted(REGIONAL_ADJUSTMENT_METHODS):
+            with self.subTest(method=method):
+                system = system_for(self.table)
+                system["regional_adjustment_method"] = method
+                election = ElectionHandler(
+                    deepcopy(self.table), [system], True).elections[0]
+                np.testing.assert_array_equal(
+                    election.region_party_totals.sum(axis=0),
+                    election.desired_col_sums,
+                )
+                np.testing.assert_array_equal(
+                    election.region_party_totals.sum(axis=1),
+                    [
+                        np.asarray(
+                            election.results["fixed_const_seats"]
+                        )[group].sum()
+                        + region["num_adj_seats"]
+                        for group, region in zip(
+                            election.region_groups, election.regions)
+                    ],
+                )
 
     def test_vote_excel_and_json_round_trips(self):
         with TemporaryDirectory() as directory:
@@ -175,26 +221,27 @@ class DanishTest(unittest.TestCase):
         self.assertFalse(eligible[1])
         self.assertTrue(eligible[0])  # The fixed-seat route still applies.
 
-    def test_special_rules_setting_controls_both_danish_procedures(self):
+    def test_special_rules_setting_selects_danish_procedures(self):
         from input_util import check_systems
 
         system = system_for(self.table)
-        self.assertTrue(system["danish_special_rules"])
-        for enabled in (True, False):
-            system["danish_special_rules"] = enabled
+        self.assertEqual(system["special_rules"], "danish")
+        for rules in ("danish", "none"):
+            system["special_rules"] = rules
             with (patch("voting.danish.eligible_parties", wraps=danish.eligible_parties) as eligibility,
                   patch("voting.danish.party_totals", wraps=danish.party_totals) as statutory,
                   patch("voting.danish.party_totals_from_fixed",
                         wraps=danish.party_totals_from_fixed) as from_fixed):
                 election = ElectionHandler(self.table, [system], True).elections[0]
-            self.assertEqual(eligibility.call_args.args[-1], enabled)
+            enabled = rules == "danish"
+            self.assertEqual(eligibility.call_count, int(enabled))
             self.assertEqual(statutory.call_count, int(enabled))
-            self.assertEqual(from_fixed.call_count, int(not enabled))
-            if not enabled:
+            self.assertEqual(from_fixed.call_count, 0)
+            if rules == "none":
                 self.assertTrue(np.all(
                     election.desired_col_sums >= election.results["fixed_grand_total"]))
-        with self.assertRaisesRegex(ValueError, "Yes or No"):
-            system["danish_special_rules"] = "No"
+        with self.assertRaisesRegex(ValueError, "Unknown special rules"):
+            system["special_rules"] = "unknown"
             check_systems([system])
 
     def test_independent_can_win_only_one_fixed_seat(self):
@@ -241,7 +288,7 @@ class DanishTest(unittest.TestCase):
 
     def test_zero_vote_regional_dead_end_is_explicit(self):
         with self.assertRaisesRegex(ValueError, "advance-allocation"):
-            danish.prepare_regions(np.array([[10, 0], [0, 10]]), np.zeros((2, 2), int),
+            regional.allocate_to_regions(np.array([[10, 0], [0, 10]]), np.zeros((2, 2), int),
                 [2, 0], [{"abbreviation": "H", "num_adj_seats": 1},
                          {"abbreviation": "SS", "num_adj_seats": 1}],
                 [np.array([0]), np.array([1])], sainte_lague_gen, self.rng)
@@ -249,7 +296,7 @@ class DanishTest(unittest.TestCase):
     def test_ties_are_reproducible_lots(self):
         results = []
         for _ in range(2):
-            allocation, demo = danish.prepare_regions(np.array([[10, 10]]),
+            allocation, demo = regional.allocate_to_regions(np.array([[10, 10]]),
                 np.zeros((1, 2), int), [1, 1], [{"abbreviation": "H", "num_adj_seats": 2}],
                 [np.array([0])], sainte_lague_gen, make_rng(42))
             self.assertTrue(demo["data"][0]["lot"])
@@ -336,8 +383,9 @@ class DanishTest(unittest.TestCase):
 
     def test_unsupported_configuration_errors(self):
         system = system_for(self.table)
-        system["adjustment_method"] = "switching"
-        with self.assertRaisesRegex(ValueError, "requires Maximum"):
+        system["adjustment_method"] = "max-const-seat-share"
+        with self.assertRaisesRegex(
+                ValueError, "does not support constituency ranges"):
             ElectionHandler(self.table, [system], True)
         table = deepcopy(self.table)
         table.pop("regions")
