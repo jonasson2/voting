@@ -127,6 +127,7 @@ class TieTest(unittest.TestCase):
             np.testing.assert_array_equal(seats, [1, 0])
             self.assertEqual(report.events[0]['candidates'], ['A', 'B'])
             self.assertEqual(report.events[0]['selected'], 'A')
+            self.assertEqual(report.events[0]['scores'], [100])
 
     def test_no_report_for_unallocated_next_seat_or_near_tie(self):
         for votes, count in [([100, 50], 1), ([100, 100.0000001], 1)]:
@@ -140,6 +141,7 @@ class TieTest(unittest.TestCase):
         apportion1d_general([100, 100], 10, [], dhondt_gen,
                             on_tie=report.reporter('Fixed seats', ['A', 'B']))
         self.assertEqual(len(report.events), 1)
+        self.assertEqual(report.events[0]['scores'], [100, 50, 100 / 3, 25, 20])
 
     def test_single_election_api_reports_and_resets_ties(self):
         table = self.table(['Example,fixed,adj,A,B', 'North,1,0,100,100'])
@@ -150,6 +152,7 @@ class TieTest(unittest.TestCase):
             again = client.post('/api/election/', json=payload).get_json()
         self.assertEqual(first, again)
         self.assertEqual(first['results'][0]['ties'][0]['selected'], 'A')
+        self.assertEqual(first['results'][0]['ties'][0]['scores'], [100])
         election = ElectionHandler(table, [system], True).elections[0]
         election.set_votes([[101, 100]])
         election.assign_seats()
@@ -176,6 +179,7 @@ class TieTest(unittest.TestCase):
         self.assertEqual(election.get_result_web()['ties'], [{
             'stage': 'Adjustment seats',
             'candidates': ['North: A', 'North: B'], 'selected': 'North: A',
+            'scores': [100],
         }])
         election.rng = make_rng(42)
         with patch('methods.provisional_allocation.remap',
@@ -194,6 +198,7 @@ class TieTest(unittest.TestCase):
         self.assertEqual(election.get_result_web()['ties'], [{
             'stage': 'Adjustment-seat party order',
             'candidates': ['B', 'C'], 'selected': 'B',
+            'scores': [100],
         }])
         election.rng = make_rng(42)
         with patch('methods.icelandic_law.remap',

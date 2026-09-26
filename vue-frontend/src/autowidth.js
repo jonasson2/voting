@@ -39,7 +39,15 @@ function update(el, binding) {
   el.style.boxSizing = "content-box"
   el.style.maxWidth = options.maxWidth
   el.style.minWidth = options.minWidth
-  el.style.width = `${measuredText(el, value) + options.comfortZone + 2}px`
+  let width = measuredText(el, value) + options.comfortZone + 2
+  el.style.width = `${width}px`
+  // Native inputs can need a pixel more than canvas reports, especially after
+  // an edited integer gains its thousands separator again on blur.
+  const overflow = el.scrollWidth - el.clientWidth
+  if (overflow > 0) {
+    width += overflow
+    el.style.width = `${width}px`
+  }
   el.autowidthCacheKey = cacheKey
 }
 

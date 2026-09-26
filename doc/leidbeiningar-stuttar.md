@@ -42,7 +42,7 @@ fylgja meðaltöl og staðalfrávik yfir allar hermanirnar og með þeim má m.a
 
 ## Dæmi 1: tvö kjördæmi og tveir flokkar
 
-Á *Source votes and seats* velurðu *Use preset* og síðan *Default example*.
+Á *Source votes and seats* velurðu *Use preset* og síðan *2 by 2 example*.
 Þar eru þessi grunnatkvæði og sæti:
 
 | Kjördæmi | Föst sæti | Jöfnunarsæti | A | B |
@@ -50,7 +50,8 @@ fylgja meðaltöl og staðalfrávik yfir allar hermanirnar og með þeim má m.a
 | I        | 10        | 2           | 1800 | 2000 |
 | II       | 10        | 3           | 2500 | 1700 |
 
-Alls eru því tvö kjördæmi, tveir flokkar, 25 sæti, og 8000 atkvæði.
+Alls eru því tvö kjördæmi, tveir flokkar, 25 sæti, og 8000 atkvæði. Halda má
+þessum gögnum óbreyttum í allri fyrstu tilrauninni.
 
 Í *Electoral systems* gefurðu kerfinu nafnið *D'Hondt*. Bættu síðan við öðru
 kerfi með *+*, gefðu því nafnið *Sainte-Laguë* og veldu *Sainte-Laguë* í
@@ -63,21 +64,7 @@ Opnaðu svo *Single election* og skoðaðu bæði kerfin. Bæði gefa A 13 sæti
 og 8 í kjördæmi II; B fær 7 og 5. Með Sainte-Laguë fær A hins vegar 6 og 7
 sæti og B fær 6 í hvoru kjördæmi.
 
-Prófum nú að breyta atkvæðum A í kjördæmi I úr 1800 í 1500 á *Source votes
-and seats* og skoðum aftur *Single election*. Undir D'Hondt birtist
-viðvörunin **Tied allocation scores** og línan *Fixed seats in I: A; B.
-Selected: A.* Við úthlutun fasta sætisins númer sex eru úthlutunartölurnar jafnar:
-1500/3 = 2000/4 = 500. Forritið velur þann flokk sem kemur fyrr í töflunni,
-hér A. Viðvörunin minnir á að hlutkesti í raunverulegum kosningum gæti gefið
-aðra niðurstöðu. Í þessu tilviki breytist þó aðeins röð úthlutunar: hinn
-flokkurinn fær sjöunda sætið og endanleg sætaskipting verður sú sama hvor sem
-er valinn fyrst. Jafntefli um síðasta sæti getur hins vegar breytt
-sætaskiptingunni.
-
-Breytum atkvæðum A í kjördæmi I aftur í 1800 áður en við höldum áfram, svo
-hermunin hér á eftir byggist á upphaflegu grunnatkvæðunum.
-
-Næst optnum við *Simulated elections* og hermum 5000 kosningar út frá sömu
+Næst opnum við *Simulated elections* og hermum 5000 kosningar út frá sömu
 grunnatkvæðum og berum kerfin tvö saman. Setjum upphafsgildi slembitölugjafans
 (*random seed*) í 123 svo hægt sé að endurtaka tilraunina og notum að öðru leyti
 sjálfgefnar hermunarstillingar. Þá eru atkvæðin lognormaldreifð, með
@@ -99,6 +86,15 @@ Til dæmis er umframúthlutun á hvert viðmiðunarsæti 0,088 með D'Hondt en 0
 með Sainte-Laguë og paraði munurinn -0,005 ± 0,001; þar stendur D'Hondt-aðferðin
 sig betur, og hún stendur sig líka betur í mestu hlutfallslegu umframúthlutun
 (*Greatest relative over-representation*).
+
+Prófum loks að breyta atkvæðum A í kjördæmi I úr 1800 í 1200 *Single election*.
+Undir D'Hondt birtist viðvörunin **Tied allocation scores** ásamt nánari
+útlistun. Fyrsta jafnteflið er þegar í kjördæmi I þegar deilt er í atkvæði A með
+3 og B með 5 (bæði gefur 400), og hin jafnteflin þegar summur flokkanna eru
+reiknaðar; það kemur ekki á óvart því báðir flokkar eru með nákvæmlega helming
+atkvæðanna. Hermirinn gefur A síðasta sætið en í raun gæti það allt eins lent
+hjá B þegar varpað væri hlutkesti. Breytum atkvæðum A í kjördæmi I aftur 1800
+áður en haldið er áfram.
 
 ## Dæmi 2: íslensku kosningarnar 2024
 
@@ -190,59 +186,36 @@ share*, 1,76 fyrir *Switching* og 1,15 fyrir *Rel-sup-simple*. Þetta segir söm
 sögu og óreiðustigið: *Rel-sup-simple* er næst bestu úthlutuninni, síðan kemur
 *Switching*, þá *Max seat share* og loks *Iceland*.
 
-## Gamalt:
+========================== Kominn hingað =====================================
+Hér dettur mér í huga að halda áfram á þessa leið:
 
-Stillingin *Simulate with thresholds?* skiptir máli við samanburð kerfa með
-þröskulda. Valið *No* gerir kleift að skoða kerfin án stökka sem verða
-þegar flokkur fer yfir eða undir þröskuld. Það slekkur á þröskuldum og öðrum
-hæfisskilyrðum flokka, nema *Stand in all constituencies*. Niðurstöðurnar
-lýsa þá ekki lengur kerfunum með öllum upphaflegum skilyrðum þeirra.
+Taka þriðja dæmið sem er Noregur 2025, og kynna þar til sögu atriði sem ekki hafa
+verið nefnd enn:
 
-Helstu niðurstöður sjást á vefsíðunni. *Download Excel file* á
-niðurstöðuflipunum gefur ítarlegri töflur til skoðunar og frekari úrvinnslu. Til
-dæmis má finna viðmiðunarsætishlutina í Excel-skrá hermunar. Í *Settings* má
-velja talnasnið og fjölda aukastafa; það breytir framsetningu en ekki
-útreikningunum.
+- Hermun án þröskulda. Ég prófaði t.d. sjálfgefið kerfi og setti báða "National
+thresholds" 4%, seed 123 og hermunarstaðalfrávik 0.75. Þá fæst með þröskuldum
+efstu tvö staðalfrávikin í hermun 2.39 og 7.49 en án þeirra 2.02 og 4.34. 
+- segja frá Download Excel
+- Settings
+- Download og Upload
+- Etv. sýna dæmi um fjölgun jöfnunarsæta og hvernig þá næst betri jöfnuður milli
+  kjördæma
+- Sýna næmni
 
-## Eigin gögn og aðrar tilraunir
+Koma svo með kafla sem nefnir ýmsa fídusa sem enn hafa ekki verið nefndir:
+- National party votes
+- Aðrar hermunarstillingar: Vote scaling, aðrar dreifingar, fylgni, #CPUs og
+  möguleiki á að sleppa óreiðureikningum (sparar smá tíma). Etv. nefna Stop
+  simulation og tímann sem hermun tekur?
+- Flex jöfnunarsæti, nefna að þau komi við sögu í Svíðþjóð og Danmörku (ég hafði
+  reyndar hugsað mér að taka dæmið um Svíþjóð, segja að þeirra aðferð sé
+  sjálfkrafa sú sama og optimal, en benda á að það sé á kostnað "Geographical
+  seat displacement" sem er hærra en ef maður festir jöfnunarsætin með
+  "Distribute adjustment seats by Adams í "Alternative specification of fixed
+  and adjustment seats" [var aðeins að hugsa um að hafa stutt dæmi um Svíðþjóð
+  þar sem þetta er gert?]. 
+- Nefna "All fixed" og "All adjustment"?
+  
+Læt þetta duga. 
 
-Atkvæðatöflunni má breyta beint eða lesa hana úr Excel- eða CSV-skrá með
-*Upload from file*. Auðveld leið til að útbúa eigin skrá er að hlaða niður
-atkvæðatöflu úr herminum, breyta henni og hlaða henni inn aftur. Þá þarf ekki
-að smíða skráarsniðið frá grunni.
-
-## Vista, hlaða inn og halda áfram
-
-Til að varðveita tilraun er yfirleitt best að nota *Download all*. Það vistar
-atkvæðatöfluna, öll skilgreind kosningakerfi og hermunarstillingarnar í einni
-JSON-skrá. Með *Upload all* má síðar hlaða þessum forsendum inn aftur eða
-flytja þær á aðra tölvu. Hermunarniðurstöðurnar sjálfar fylgja ekki með.
-
-Einnig má vista einstaka hluta:
-
-- *Atkvæði og sætaskipan:* *Download* á *Source votes and seats* vistar
-  Excel-skrá. Hún er lesin með *Upload from file*.
-- *Kerfi og hermunarstillingar, án atkvæða:* *Download* á *Electoral
-  systems* vistar JSON-skrá. *Upload* kemur í stað núverandi kerfa;
-  *Append from file* bætir kerfum við þau sem fyrir eru.
-- *Reiknaðar niðurstöður:* *Download Excel file* á *Single election* eða
-  *Simulated elections*. Þessar skrár eru ætlaðar til skoðunar og úrvinnslu,
-  ekki til að endurhlaða tilrauninni.
-
-Ef þú vilt varðveita bæði forsendur og niðurstöður skaltu því sækja bæði
-JSON-skrána með *Download all* og viðeigandi Excel-skrá með niðurstöðum.
-Skráðu einnig hvaða útgáfa hermisins var notuð. Tilgreint upphafsgildi
-slembitölugjafans (*random seed*) auðveldar að endurtaka keyrsluna með sömu
-gögnum og stillingum.
-
-## Þegar lengra er haldið
-
-Veldu ákveðna spurningu fyrir hverja tilraun: Viltu bæta hlutfallslega
-skiptingu milli flokka, dreifingu sæta innan flokka eða stöðugleika gagnvart
-litlum atkvæðabreytingum? Breyttu einu atriði í senn þegar þú vilt rekja áhrif
-þess og haltu öðrum forsendum föstum.
-
-Prófaðu síðan fleiri grunnúrslit og mismikla dreifingu atkvæða. Eitt dæmi eða
-einn mælikvarði nægir sjaldnast til að meta kerfi. Við túlkun óreiðu og annarra
-gæðamælikvarða skiptir máli hvaða viðmið og skorður liggja að baki: besta
-niðurstaðan samkvæmt einu viðmiði þarf ekki að vera sú besta samkvæmt öðru.
+Kristján

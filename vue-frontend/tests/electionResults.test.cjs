@@ -32,9 +32,13 @@ test('each election result appears under its own named tab', async () => {
     render: new Function('Vue', code)(Vue),
     data: () => ({
       systems: [{name: "D'Hondt"}, {name: 'Sainte-Laguë'}],
-      results: [[[5, 7], [8, 5]], [[6, 6], [7, 6]]].map(values => ({
-        display_results: values, demo_tables: [{}], ties: [],
-      })),
+      results: [
+        {display_results: [[5, 7], [8, 5]], demo_tables: [{}], ties: [{
+          stage: 'Party totals', candidates: ['A', 'B'], selected: 'A',
+          scores: [400, 200],
+        }]},
+        {display_results: [[6, 6], [7, 6]], demo_tables: [{}], ties: []},
+      ],
       vote_table: {parties: ['A', 'B'], party_vote_info: {specified: false}},
       resultIndex: 0,
     }),
@@ -42,6 +46,7 @@ test('each election result appears under its own named tab', async () => {
       openDownload() {},
       saveResults() {},
       resultTabKey(system) { return system.name },
+      formatTieScore(score) { return String(score) },
     },
   })
   // Shallow rendering checks the real template's tab titles and slot wiring.
@@ -72,6 +77,7 @@ test('each election result appears under its own named tab', async () => {
   const panels = html.split('<section>').slice(1).map(part => part.split('</section>')[0])
   assert.equal(panels.length, 2)
   assert.match(panels[0], /<pre[^>]*>\[\[5,7\],\[8,5\]\]<\/pre>/)
+  assert.match(panels[0], /Tied scores:\s*400; 200\./)
   assert.match(panels[1], /<pre[^>]*>\[\[6,6\],\[7,6\]\]<\/pre>/)
   assert.doesNotMatch(html, /There are no electoral systems specified/)
 })

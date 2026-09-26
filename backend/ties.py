@@ -46,13 +46,19 @@ class TieReport:
         self.events = []
 
     def reporter(self, stage, labels):
-        def report(tied, winner, _score):
+        def report(tied, winner, score):
             event = {
                 "stage": stage,
                 "candidates": [labels[int(i)] for i in tied],
                 "selected": labels[winner],
+                "scores": [score],
             }
             # The same candidates may tie at several quotients or recalculations.
-            if event not in self.events:
+            previous = next((previous for previous in self.events
+                             if all(previous[key] == event[key]
+                                    for key in ("stage", "candidates", "selected"))), None)
+            if previous is None:
                 self.events.append(event)
+            elif score not in previous["scores"]:
+                previous["scores"].append(score)
         return report

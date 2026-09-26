@@ -53,3 +53,39 @@ test("auto-width measures text without DOM mirrors and caches unchanged values",
   assert.equal(element.style.width, "52px")
   assert.equal(measurements, 2)
 })
+
+test("auto-width restores enough room after formatting an edited integer", async (t) => {
+  global.document = {
+    createElement() {
+      return {getContext() { return {
+        font: "",
+        measureText(text) { return {width: text.length * 10} },
+      } }}
+    },
+  }
+  global.window = {
+    getComputedStyle() {
+      return {font: "12px monospace", letterSpacing: "0px", textTransform: "none"}
+    },
+  }
+  t.after(() => {
+    delete global.document
+    delete global.window
+  })
+
+  const directive = await autowidthDirective()
+  const element = {value: "1,200", placeholder: "", style: {}}
+  Object.defineProperties(element, {
+    clientWidth: {get() { return Math.round(parseFloat(element.style.width) + 4) }},
+    scrollWidth: {get() {
+      return Math.max(element.clientWidth, element.value === "1,200" ? 57 : 47)
+    }},
+  })
+  const binding = {value: {minWidth: "25px", maxWidth: "100px"}}
+
+  for (const value of ["1,200", "1200", "1,200", "1200", "1,200"]) {
+    element.value = value
+    directive.updated(element, binding)
+    assert.ok(element.clientWidth >= element.scrollWidth, value)
+  }
+})

@@ -48,6 +48,8 @@
               <li v-for="(tie, index) in results[activeTabIndex].ties" :key="index">
                 {{tie.stage}}: {{tie.candidates.join('; ')}}.
                 Selected: {{tie.selected}}.
+                Tied {{tie.scores.length === 1 ? 'score' : 'scores'}}:
+                {{tie.scores.map(formatTieScore).join('; ')}}.
               </li>
             </ul>
           </b-alert>
@@ -89,6 +91,7 @@ import ResultMatrix from './components/ResultMatrix.vue'
 import ResultDemonstration from './components/ResultDemonstration.vue'
 import DownloadNameDialog from './components/DownloadNameDialog.vue'
 import { timestampedDownloadBasename } from './downloadName.js'
+import { formatNumber } from './numberFormat.js'
 import { mapState, mapActions } from 'vuex';
 
 export default {
@@ -130,6 +133,11 @@ export default {
         system.adjustment_method,
         system.adj_alloc_divider,
       ].join('|')
+    },
+    formatTieScore(score) {
+      const rounded = Number(score.toFixed(8))
+      const fraction = String(rounded).split('.')[1]
+      return formatNumber(rounded, fraction ? fraction.length : 0, this.display_settings)
     },
     saveResults: function(destination) {
       let promise = axios({
