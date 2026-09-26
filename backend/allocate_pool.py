@@ -24,8 +24,13 @@ def allocate_pool(votes, row_limits, party_targets, prior_alloc, div_gen,
     divisors = np.array([next(generator) for _ in range(int(allocation.max()) + seats + 1)])
     votesums = votes.sum(axis=1)
     steps = []
-    for _ in range(seats):
-        scores = compute_scores(votes, allocation, divisors, votesums=votesums)
+    for seat_index in range(seats):
+        scores = compute_scores(
+            votes, allocation, divisors, votesums=votesums,
+            free_const=free_const, free_party=free_party,
+            remaining=seats - seat_index,
+            exclude_zero_votes=exclude_zero_votes,
+        )
         scores[free_const <= 0, :] = -np.inf
         scores[:, free_party <= 0] = -np.inf
         if exclude_zero_votes:

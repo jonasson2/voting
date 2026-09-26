@@ -92,52 +92,11 @@
       :show="vuedata.show"
       >
       </QualityMeasures>
-    <h4>Fixed seats</h4>
-    <SimResultMatrix
-      v-for="(system, idx) in results.data"
-      :key="'const-seats-' + idx"
-      :constituencies="results.systems[idx].constituencies"
-      :parties="results.parties"
-      :values="system.seat_measures.fixed_seats.avg"
-      :stddev="system.seat_measures.fixed_seats.std"
-      :title="system.name"
-      :party_votes_name="vote_table.party_vote_info.name"
-      :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="display_settings.fractional_digits">
-    </SimResultMatrix>
-    <h4 class="mt-3">Adjustment seats</h4>
-    <SimResultMatrix
-      v-for="(system, idx) in results.data"
-      :key="'adj-seats-' + idx"
-      :constituencies="results.systems[idx].constituencies"
-      :parties="results.parties"
-      :values="system.seat_measures.adj_seats.avg"
-      :stddev="system.seat_measures.adj_seats.std"
-      :title="system.name"
-      :party_votes_name="vote_table.party_vote_info.name"
-      :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="display_settings.fractional_digits">
-    </SimResultMatrix>
-    <h4 class="mt-3">Total seats</h4>
-    <SimResultMatrix
-      v-for="(system, idx) in results.data"
-      :key="'total-seats-' + idx"
-      :constituencies="results.systems[idx].constituencies"
-      :parties="results.parties"
-      :values="system.seat_measures.total_seats.avg"
-      :stddev="system.seat_measures.total_seats.std"
-      :title="system.name"
-      :party_votes_name="vote_table.party_vote_info.name"
-      :party_votes_specified="vote_table.party_vote_info.specified"
-      :round="display_settings.fractional_digits"
-      >
-    </SimResultMatrix>
   </div>
 </div>
 </template>
 
 <script>
-import SimResultMatrix from './components/SimResultMatrix.vue'
 import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './components/QualityMeasures.vue'
@@ -182,7 +141,6 @@ export default {
     }
   },
   components: {
-    SimResultMatrix,
     SimulationSettings,
     QualityMeasures,
     DownloadNameDialog,

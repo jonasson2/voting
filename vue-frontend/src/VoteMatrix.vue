@@ -240,6 +240,9 @@
     Votes must be non-negative integers. Thousands separators may be omitted; if
     used, they must match Settings and group digits in threes.
   </b-alert>
+  <b-alert :show="checkVoteInput() && !validSingleCandidateInput">
+    A single candidate may have votes in only one constituency.
+  </b-alert>
   <b-alert :show="checkVoteLabels()==false">
     Table, party, and constituency names must not be blank
   </b-alert>
@@ -302,6 +305,7 @@ import {
   validNationalVotes,
   validVoteTableLabels,
   validVotes,
+  validSingleCandidates,
   regionError,
 } from "./voteTable.js";
 
@@ -322,6 +326,7 @@ export default {
       'sim_capabilities',
       'systems',
       'all_filename',
+      'all_file_handle',
     ]),
     partyVoteBasisOptions() {
       return this.sim_capabilities.seat_spec_options
@@ -331,6 +336,9 @@ export default {
     hasPrunedVotes() {
       return this.vote_table.pruned.some(value => value > 0)
         || this.vote_table.party_vote_info.pruned > 0
+    },
+    validSingleCandidateInput() {
+      return validSingleCandidates(this.vote_table)
     },
     hasPartyNames() {
       return Array.isArray(this.vote_table.party_names)
@@ -466,7 +474,7 @@ export default {
       if (kind === "all" && canChooseSaveLocation()
           && validDownloadBasename(basename)) {
         try {
-          const fileHandle = await chooseSaveLocation(basename, extension)
+          const fileHandle = await chooseSaveLocation(basename, extension, this.all_file_handle)
           this.confirmDownload({fileHandle})
           return
         } catch (error) {

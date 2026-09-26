@@ -143,9 +143,10 @@ def check_simul_settings(sim_settings):
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
     sim_settings.setdefault("cpu_count", 4)
-    sim_settings.setdefault("sens_rsd", 0.01)
-    sim_settings.setdefault("sens_method", "uniform")
     sim_settings.setdefault("sensitivity", False)
+    sim_settings.setdefault("sensitivity_simulation_count", 3)
+    sim_settings.setdefault("sensitivity_gen_method", "uniform")
+    sim_settings.setdefault("sensitivity_covs", [1, 2, 3])
     seed = sim_settings.get("random_seed")
     if seed in (None, "", "-"):
         sim_settings["random_seed"] = None
@@ -167,6 +168,38 @@ def check_simul_settings(sim_settings):
         sim_settings["party_vote_corr"] = 0
     if "use_thresholds" not in sim_settings:
         sim_settings["use_thresholds"] = False
+    entropy_score = sim_settings.get("entropy_score", True)
+    if not isinstance(entropy_score, bool):
+        entropy_score = parse_bool(str(entropy_score))
+    sim_settings["entropy_score"] = entropy_score
+    sensitivity = sim_settings.get("sensitivity", False)
+    if not isinstance(sensitivity, bool):
+        sensitivity = parse_bool(str(sensitivity))
+    sim_settings["sensitivity"] = sensitivity
+    if sensitivity:
+        sensitivity_count = sim_settings["sensitivity_simulation_count"]
+        if (type(sensitivity_count) is not int or sensitivity_count <= 0):
+            raise ValueError(
+                "Number of sensitivity simulations must be a positive integer.")
+        generating_methods = {"beta", "gamma", "log-normal", "uniform"}
+        if sim_settings["sensitivity_gen_method"] not in generating_methods:
+            raise ValueError("Unknown sensitivity generating distribution.")
+        from sensitivity import sensitivity_covs
+        covs = sensitivity_covs(sim_settings["sensitivity_covs"])
+        sim_settings["sensitivity_covs"] = [100 * cov for cov in covs]
+        maximum_sensitivity_cov = covs[-1]
+        sensitivity_method = sim_settings["sensitivity_gen_method"]
+        if sensitivity_method == "beta" and maximum_sensitivity_cov >= 0.75:
+            raise ValueError(
+                "Maximum sensitivity CoV must be less than 75% for beta draws.")
+        if (sensitivity_method == "uniform"
+                and maximum_sensitivity_cov >= 1 / sqrt(3)):
+            raise ValueError(
+                "Maximum sensitivity CoV must be less than 57.735% for uniform draws.")
+        if (sensitivity_method in {"gamma", "log-normal"}
+                and maximum_sensitivity_cov >= 1):
+            raise ValueError(
+                "Maximum sensitivity CoV must be less than 100% for this distribution.")
     variance_coefficient = sim_settings["const_rsd"]
     if sim_settings["gen_method"] == "beta":
         if variance_coefficient >= 0.75:

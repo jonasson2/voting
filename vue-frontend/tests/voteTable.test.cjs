@@ -39,6 +39,21 @@ function exampleTable() {
   }
 }
 
+test("single candidates can have votes in only one constituency", async () => {
+  const {validSingleCandidates} = await voteTableModule()
+  const table = exampleTable()
+  table.constituencies.push({name: "II", num_fixed_seats: 1, num_adj_seats: 0})
+  table.votes.push([0, 10])
+  table.pruned.push(0)
+  table.independent_candidates = [true, false]
+  assert.equal(validSingleCandidates(table), true)
+
+  table.votes[1][0] = 1
+  assert.equal(validSingleCandidates(table), false)
+  table.independent_candidates[0] = false
+  assert.equal(validSingleCandidates(table), true)
+})
+
 test("pruning rejects invalid national votes without changing the table", async () => {
   const {pruneSmallParties} = await voteTableModule()
   const table = exampleTable()
@@ -254,20 +269,22 @@ test("region validation enforces bounds, totals, identifiers and national-vote e
 test("result numbers use the selected separators and precision", async () => {
   const {
     defaultDisplaySettings,
-    formatEstimateWithCi,
     formatNumber,
-    formatNumberUnlessZero,
     normalizeDisplaySettings,
     parseInteger,
     validIntegerEntry,
   } = await numberFormatModule()
-  assert.equal(defaultDisplaySettings().percentage_digits, 2)
-  assert.equal(normalizeDisplaySettings({}).percentage_digits, 2)
+  assert.equal(defaultDisplaySettings().fractional_digits, 2)
+  assert.equal(normalizeDisplaySettings({}).fractional_digits, 2)
+  assert.equal(defaultDisplaySettings().percentage_digits, 1)
+  assert.equal(normalizeDisplaySettings({}).percentage_digits, 1)
   assert.equal(normalizeDisplaySettings({percentage_digits: 4}).percentage_digits, 4)
   assert.equal(normalizeDisplaySettings({percentage_digits: 20}).percentage_digits, 10)
   const voteShare = 100 * 4000 / 7700
   assert.equal(formatNumber(voteShare, defaultDisplaySettings().percentage_digits,
-    defaultDisplaySettings()) + "%", "51.95%")
+    defaultDisplaySettings()) + "%", "51.9%")
+  assert.equal(formatNumber(0, defaultDisplaySettings().fractional_digits,
+    defaultDisplaySettings()), "0.00")
   const fourDigits = normalizeDisplaySettings({percentage_digits: 4})
   assert.equal(formatNumber(voteShare, fourDigits.percentage_digits,
     fourDigits) + "%", "51.9481%")
@@ -283,15 +300,6 @@ test("result numbers use the selected separators and precision", async () => {
     thousands_separator: " ",
     decimal_separator: ",",
   }), "-12\u202f345,6")
-  assert.equal(formatNumberUnlessZero(0, 3, {}), "")
-  assert.equal(formatNumberUnlessZero(-0, 3, {}), "")
-  assert.equal(formatNumberUnlessZero(0.0004, 3, {}), "")
-  assert.equal(formatNumberUnlessZero(0.0006, 3, {}), "0.001")
-  assert.equal(formatNumberUnlessZero(NaN, 3, {}), "–")
-  assert.equal(formatEstimateWithCi(0, 0, 3, {}), "")
-  assert.equal(formatEstimateWithCi(1.2344, 0.0004, 3, {}), "1.234 ± 0.000")
-  assert.equal(formatEstimateWithCi(0.0004, 0.0014, 3, {}), "0.000 ± 0.001")
-  assert.equal(formatEstimateWithCi(1.2344, null, 3, {}), "1.234")
   const comma = {thousands_separator: ",", decimal_separator: "."}
   const dot = {thousands_separator: ".", decimal_separator: ","}
   const space = {thousands_separator: " ", decimal_separator: ","}

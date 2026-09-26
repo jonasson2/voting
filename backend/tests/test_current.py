@@ -19,6 +19,7 @@ from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER
                           QUOTA_RULES)
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
+import entropy_score
 from excel_util import (fixed_seat_threshold_text, result_fractional_digits,
                         result_number_format, result_percentage_digits,
                         prepare_formats)
@@ -30,9 +31,9 @@ from input_util import check_simul_settings, check_systems, normalize_system
 from methods.max_const_votes import max_const_votes
 from methods.switching_se import switching as swedish_switching
 from methods.swedish_style_switching import switching as swedish_style_switching
-from table_util import entropy
 from vote_table import check_vote_table
 from voting import Election
+from util import get_cpu_counts, get_default_cpu_count
 import web
 from web import app
 
@@ -58,6 +59,16 @@ class CurrentApplicationTest(unittest.TestCase):
 
     def test_wsgi_import_initializes_simulation_state(self):
         self.assertIsInstance(noweb.SIMULATIONS, dict)
+
+    def test_cpu_choices_include_default_and_machine_maximum(self):
+        with patch('util.get_cpu_count', return_value=12):
+            self.assertEqual(get_default_cpu_count(), 8)
+            self.assertEqual(get_cpu_counts(),
+                             [1, 2, 3, 4, 6, 8, 10, 12])
+        with patch('util.get_cpu_count', return_value=7):
+            self.assertEqual(get_cpu_counts(), [1, 2, 3, 4, 5, 6, 7])
+        with patch('util.get_cpu_count', return_value=64):
+            self.assertEqual(get_cpu_counts()[-4:], [24, 32, 43, 64])
 
     def test_systems_default_to_comparison(self):
         self.assertTrue(ElectionSystem()['compare_with'])
@@ -102,9 +113,9 @@ class CurrentApplicationTest(unittest.TestCase):
             self.assertEqual(web.default_port(), '5050')
 
     def test_result_excel_precision_setting(self):
-        self.assertEqual(result_fractional_digits(None), 3)
+        self.assertEqual(result_fractional_digits(None), 2)
         self.assertEqual(result_fractional_digits({'fractional_digits': 2}), 2)
-        self.assertEqual(result_percentage_digits(None), 2)
+        self.assertEqual(result_percentage_digits(None), 1)
         self.assertEqual(result_percentage_digits({'percentage_digits': 4}), 4)
         self.assertEqual(result_number_format(2), '#,##0.00')
         self.assertEqual(result_number_format(2, percentage=True), '#,##0.00%')
@@ -130,6 +141,43 @@ class CurrentApplicationTest(unittest.TestCase):
         with ZipFile(output) as workbook:
             styles = workbook.read('xl/styles.xml').decode()
         self.assertIn('#,##0.0000%', styles)
+
+    def test_single_election_excel_uses_dash_for_unavailable_entropy_score(self):
+        import openpyxl
+
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-vote-percentage')
+        system['adj_alloc_divider'] = 'adams'
+        output = BytesIO()
+
+        ElectionHandler(table, [system], True).to_xlsx(output)
+        output.seek(0)
+        workbook = openpyxl.load_workbook(output, data_only=True)
+        worksheet = workbook.active
+        score_row = next(
+            cell.row for cell in worksheet['A']
+            if cell.value == 'Entropy score:')
+
+        self.assertEqual(worksheet.cell(score_row, 2).value, '–')
+        workbook.close()
+
+    def test_single_election_entropy_score_uses_percentage_format(self):
+        import openpyxl
+
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'optimal-lp')
+        output = BytesIO()
+        ElectionHandler(table, [system], True).to_xlsx(output)
+        output.seek(0)
+        workbook = openpyxl.load_workbook(output, data_only=True)
+        worksheet = workbook.active
+        score_row = next(
+            cell.row for cell in worksheet['A']
+            if cell.value == 'Entropy score:')
+        score_cell = worksheet.cell(score_row, 2)
+        self.assertAlmostEqual(score_cell.value, 1)
+        self.assertEqual(score_cell.number_format, '#,##0.0%')
+        workbook.close()
 
     def test_single_election_excel_includes_vote_percentages_and_averages(self):
         import openpyxl
@@ -531,44 +579,49 @@ class CurrentApplicationTest(unittest.TestCase):
             sorted(FLEXIBLE_ADJUSTMENT_METHODS),
         )
 
-    def test_entropy_uses_fixed_dhondt_and_sainte_lague_rules(self):
+    def test_entropy_score_replaces_raw_entropies_and_is_optional_in_simulation(self):
         table = load_votes('../data/2-by-2-example.csv')
-        system = self.make_system(table, 'max-const-seat-share')
+        system = self.make_system(table, 'optimal-lp')
         system['adj_alloc_divider'] = 'danish'
         election = ElectionHandler(table, [system], True).elections[0]
 
-        values = election.entropies()
-        seats = election.results['all_const_seats']
-        self.assertEqual(
-            values['entropy_dhondt'],
-            entropy(table['votes'], seats, DIVIDER_RULES['dhondt']),
-        )
-        self.assertEqual(
-            values['entropy_sainte_lague'],
-            entropy(
-                table['votes'], seats, DIVIDER_RULES['sainte-lague']),
-        )
-        self.assertNotEqual(
-            values['entropy_dhondt'], values['entropy_sainte_lague'])
-
         excel_result = election.get_result_excel()
-        self.assertEqual(excel_result['entropy_dhondt'], values['entropy_dhondt'])
-        self.assertEqual(
-            excel_result['entropy_sainte_lague'],
-            values['entropy_sainte_lague'])
-
-        election.set_votes(np.asarray(table['votes']) * 2)
-        election.assign_seats(True)
-        self.assertNotEqual(election.entropies(), values)
+        self.assertAlmostEqual(excel_result['entropy_score'], 1)
+        self.assertNotIn('entropy_dhondt', excel_result)
+        self.assertNotIn('entropy_sainte_lague', excel_result)
 
         settings = SimulationSettings()
         settings.update(simulation_count=0, cpu_count=1)
+        self.assertTrue(settings['entropy_score'])
+        settings['entropy_score'] = False
         simulation = Simulation(settings, [system], table)
         simulation.run_and_collect_measures(table['votes'], None)
-        simulated = simulation.election_handler.elections[0].entropies()
-        for measure, value in simulated.items():
-            self.assertEqual(simulation.stat[measure].mean(), [value])
-        self.assertNotIn('entropy', simulation.stat)
+        self.assertNotIn('entropy_score', simulation.stat)
+
+        settings['entropy_score'] = True
+        simulation = Simulation(settings, [system], table)
+        simulation.run_and_collect_measures(table['votes'], None)
+        self.assertEqual(simulation.stat['entropy_score'].mean(), [1])
+
+    def test_entropy_score_reuses_an_identical_benchmark_between_systems(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        systems = [
+            self.make_system(table, method)
+            for method in ('max-const-votes', 'max-const-vote-percentage')
+        ]
+        for index, system in enumerate(systems, 1):
+            system['name'] = f'System-{index}'
+        settings = SimulationSettings()
+        settings.update(
+            simulation_count=0, cpu_count=1, entropy_score=True)
+        simulation = Simulation(settings, systems, table)
+
+        with patch(
+                'entropy_score._optimal_allocation',
+                wraps=entropy_score._optimal_allocation) as solve:
+            simulation.run_and_collect_measures(table['votes'], None)
+
+        self.assertEqual(solve.call_count, 1)
 
     def test_greatest_relative_representation_measures_use_direct_formulas(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -892,6 +945,21 @@ class CurrentApplicationTest(unittest.TestCase):
                 np.testing.assert_allclose(
                     np.asarray(votes).sum(axis=1), reference_totals)
 
+    def test_paired_absolute_differences_do_not_cancel_across_draws(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        systems = [self.make_system(table, 'max-const-seat-share')
+                   for _ in range(2)]
+        settings = SimulationSettings()
+        settings.update(simulation_count=0, cpu_count=1)
+        simulation = Simulation(settings, systems, table)
+
+        first = simulation._with_paired_difference([2, 1])
+        second = simulation._with_paired_difference([1, 2])
+
+        self.assertEqual(first[-1], 1)
+        self.assertEqual(second[-1], 1)
+        self.assertEqual((first[-1] + second[-1]) / 2, 1)
+
     def test_comparison_measures_are_combined_once_across_workers(self):
         table = load_votes('../data/2-by-2-example.csv')
         systems = []
@@ -940,21 +1008,21 @@ class CurrentApplicationTest(unittest.TestCase):
         for simulation in (uninterrupted, combined):
             values = simulation.stat['sum_abs'].numpy_mean()
             self.assertEqual(len(values), 3)
-            self.assertAlmostEqual(values[2], values[0] - values[1])
+            self.assertGreaterEqual(values[2], abs(values[0] - values[1]) - 1e-12)
 
         uninterrupted.analysis()
         web_result = uninterrupted.get_result_web(False)
         paired = web_result['paired_data']['sum_abs']
-        self.assertAlmostEqual(
+        self.assertGreaterEqual(
             paired['avg'],
-            web_result['data'][0]['measures']['sum_abs']['avg']
-            - web_result['data'][1]['measures']['sum_abs']['avg'],
+            abs(web_result['data'][0]['measures']['sum_abs']['avg']
+                - web_result['data'][1]['measures']['sum_abs']['avg']) - 1e-12,
         )
         displayed = web_result['vuedata']['toLists'][0]['avg']
         self.assertEqual(len(displayed), 3)
         self.assertAlmostEqual(displayed[2]['value'], paired['avg'])
         self.assertIn(
-            "D'Hondt minus Sainte-Laguë",
+            "Absolute difference between D'Hondt and Sainte-Laguë",
             web_result['vuedata']['difference_tooltip'],
         )
         for group in ('cmpList', 'cmpParty'):
@@ -979,6 +1047,18 @@ class CurrentApplicationTest(unittest.TestCase):
 
         self.assertAlmostEqual(displacement, 1)
 
+    def test_constituency_disparity_uses_all_votes_and_seats(self):
+        election = SimpleNamespace(
+            votes=np.array([[60, 40], [50, 40]]),
+            pruned_votes=np.array([100, 10]),
+            final_row_sums=np.array([3, 3]),
+        )
+        self.assertAlmostEqual(Simulation.constituency_disparity(election), 2)
+
+        election.final_row_sums[1] = 0
+        with self.assertRaisesRegex(ValueError, 'positive votes and seats'):
+            Simulation.constituency_disparity(election)
+
     def test_random_seed_validation(self):
         for seed in ('', '-'):
             settings = SimulationSettings()
@@ -991,6 +1071,14 @@ class CurrentApplicationTest(unittest.TestCase):
         settings['random_seed'] = 2**31
         with self.assertRaisesRegex(ValueError, 'Random seed'):
             check_simul_settings(settings)
+
+    def test_entropy_difference_defaults_on_but_can_be_disabled(self):
+        settings = SimulationSettings()
+        self.assertTrue(settings['entropy_score'])
+        settings.pop('entropy_score')
+        self.assertTrue(check_simul_settings(settings)['entropy_score'])
+        settings['entropy_score'] = False
+        self.assertFalse(check_simul_settings(settings)['entropy_score'])
 
     def test_simulation_endpoint_accepts_cleared_random_seed(self):
         table = load_votes('../data/2-by-2-example.csv')

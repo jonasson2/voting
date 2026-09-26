@@ -76,6 +76,7 @@ def apportion1d_general(
     threshold_total=None,
     on_tie=None,
     eligible=None,
+    max_seats=None,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -96,6 +97,7 @@ def apportion1d_general(
                            are also retained in a quota-rule denominator.
         - eligible: Optional boolean mask of parties allowed to receive seats
                     beyond their prior allocations.
+        - max_seats: Optional per-party upper bounds on allocated seats.
     Outputs:
         - allocations vector (list of int)
         - a generator that generates a sequence of seat allocations,
@@ -109,6 +111,10 @@ def apportion1d_general(
         else prior_allocations.copy() if isinstance(prior_allocations, np.ndarray)
         else np.array(prior_allocations)
     )
+    if max_seats is not None:
+        max_seats = np.asarray(max_seats, dtype=int)
+        if max_seats.shape != (N,) or (max_seats < allocations).any():
+            raise ValueError("Seat caps must match parties and prior allocations.")
     if eligible is not None:
         eligible = np.asarray(eligible, dtype=bool)
         if eligible.shape != (N,):
@@ -131,7 +137,8 @@ def apportion1d_general(
             np.asarray(v_votes)[indices], active_total, allocations[indices], rule,
             type_of_rule, threshold_percent, threshold_choice, threshold_seats,
             threshold_total,
-            on_tie=remapped_tie if on_tie is not None else None)
+            on_tie=remapped_tie if on_tie is not None else None,
+            max_seats=max_seats[indices] if max_seats is not None else None)
         allocations[indices] = active_allocations
 
         def remapped_generator():
@@ -171,6 +178,7 @@ def apportion1d_general(
         type_of_rule = type_of_rule,
         quota_total = sum(votes) + unrepresented_votes,
         report_ties = on_tie is not None,
+        max_seats=max_seats,
     )
 
     last_in = None
@@ -192,6 +200,7 @@ def seat_generator(
     type_of_rule,
     quota_total=None,
     report_ties=False,
+    max_seats=None,
 ):
     if type_of_rule == "Division":
         seat_gen = seat_generator_div(
@@ -199,6 +208,7 @@ def seat_generator(
             prior_allocations=prior_allocations,
             divisor_gen=rule,
             report_ties=report_ties,
+            max_seats=max_seats,
         )
     else:
         assert type_of_rule == "Quota"
@@ -209,6 +219,7 @@ def seat_generator(
             quota_rule=rule,
             total_votes=quota_total,
             report_ties=report_ties,
+            max_seats=max_seats,
         )
     return seat_gen
 
@@ -217,6 +228,7 @@ def seat_generator_div(
     prior_allocations,
     divisor_gen,
     report_ties=False,
+    max_seats=None,
 ):
     """
     Perform a one-dimensional apportionment of seats,
@@ -233,12 +245,18 @@ def seat_generator_div(
     assert N == len(prior_allocations)
     def seat_gen():
         divisor_gens = [divisor_gen() for x in range(N)]
+        allocated = np.asarray(prior_allocations, dtype=int).copy()
         active_votes = [0]*N
         for i in range(N):
             for k in range(prior_allocations[i]):
                 next(divisor_gens[i])
-            active_votes[i] = votes[i]*1.0/next(divisor_gens[i])
+            score = votes[i]*1.0/next(divisor_gens[i])
+            active_votes[i] = (
+                -np.inf if max_seats is not None and allocated[i] >= max_seats[i]
+                else score)
         while True:
+            if max(active_votes) == -np.inf:
+                raise ValueError("Seat caps prevent allocation of all fixed seats.")
             idx = active_votes.index(max(active_votes))
             seat = {
                 "idx": idx,
@@ -248,7 +266,11 @@ def seat_generator_div(
                 seat["tied"] = [i for i, score in enumerate(active_votes)
                                 if score == active_votes[idx]]
             yield seat
-            active_votes[idx] = votes[idx]*1.0/next(divisor_gens[idx])
+            allocated[idx] += 1
+            score = votes[idx]*1.0/next(divisor_gens[idx])
+            active_votes[idx] = (
+                -np.inf if max_seats is not None and allocated[idx] >= max_seats[idx]
+                else score)
 
     return seat_gen
 
@@ -259,6 +281,7 @@ def seat_generator_quota(
     quota_rule,
     total_votes=None,
     report_ties=False,
+    max_seats=None,
 ):
     """
     Assist with one-dimensional apportionment of seats,
@@ -283,7 +306,14 @@ def seat_generator_quota(
 
     def seat_gen():
         active_votes = copy(votes)
+        allocated = np.asarray(prior_allocations, dtype=int).copy()
+        if max_seats is not None:
+            active_votes = [
+                -np.inf if allocated[i] >= max_seats[i] else score
+                for i, score in enumerate(active_votes)]
         while True:
+            if max(active_votes) == -np.inf:
+                raise ValueError("Seat caps prevent allocation of all fixed seats.")
             idx = active_votes.index(max(active_votes))
             seat = {
                 "idx": idx,
@@ -293,7 +323,10 @@ def seat_generator_quota(
                 seat["tied"] = [i for i, score in enumerate(active_votes)
                                 if score == active_votes[idx]]
             yield seat
-            active_votes[idx] -= quota
+            allocated[idx] += 1
+            active_votes[idx] = (
+                -np.inf if max_seats is not None and allocated[idx] >= max_seats[idx]
+                else active_votes[idx] - quota)
 
     return seat_gen
 

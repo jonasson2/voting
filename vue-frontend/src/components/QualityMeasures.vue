@@ -2,26 +2,42 @@
 <div class="table-scroll quality-measures-scroll">
   <table style="position:relative">
     <thead> 
-      <tr>                                      <!-- STATISTICS HEADING -->
-        <th class="firstcol top quality-heading">{{group_titles["topLeft"]}}</th>
+      <tr class="block-heading">                <!-- STATISTICS HEADING -->
+        <th rowspan="2" class="firstcol quality-heading">
+          {{group_titles["topLeft"]}}
+        </th>
         <template v-for="stat in stats" :key="stat">
-          <th :colspan="statColumnCount(stat)" class="top">
+          <th :colspan="statColumnCount(stat)" class="title-rule stat-edge">
             {{stat_headings[stat]}}
           </th>
         </template>
       </tr>
+      <tr>
+        <template v-for="stat in statsForGroup('shareTitle')" :key="stat">
+          <template v-for="(sysname, s) in statColumnNames(stat, 'shareTitle')" :key="s">
+            <th class="system-heading title-rule"
+                :class="sysclass(s, stat, 'shareTitle')"
+                :title="columnTitle(stat, s, 'shareTitle')">
+              {{sysname}}
+            </th>
+          </template>
+        </template>
+      </tr>
     </thead>
     <tbody>
-      <template v-for="(id, index) in group_ids" :key="id">
-        <template v-if="show[id]">
-          <tr v-if="group_titles[id] || headingType[id]=='systems'">
-            <th :class="groupclass(id)">
+      <template v-for="id in group_ids" :key="id">
+        <template v-if="show[id] && id !== 'shareTitle'">
+          <tr v-if="group_titles[id] || headingType[id]=='systems'"
+              :class="{'block-heading': group_titles[id]}">
+            <th v-if="group_titles[id]" class="firstcol"
+                :rowspan="headingType[id] === 'stats' ? 2 : null">
               {{group_titles[id]}}                     <!-- GROUP TITLE -->
             </th>
             <template v-if="headingType[id]=='systems'">
-              <template v-for="stat in stats" :key="stat">
+              <template v-for="stat in statsForGroup(id)" :key="stat">
                 <template v-for="(sysname, s) in statColumnNames(stat, id)" :key="s">
-                  <th :class="sysclass(s, stat, id)"
+                  <th class="system-heading title-rule"
+                      :class="sysclass(s, stat, id)"
                       :title="columnTitle(stat, s, id)">
                     {{sysname}}
                   </th>
@@ -29,22 +45,33 @@
               </template>
             </template>
             <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
-              <template v-for="stat in stats" :key="stat">
-                <th :colspan="statColumnCount(stat, id)" class="top">
+              <template v-for="stat in statsForGroup(id)" :key="stat">
+                <th :colspan="statColumnCount(stat, id)" class="title-rule stat-edge">
                   {{stat_headings[stat]}}
                 </th>
               </template>
             </template>
             <template v-else>                               <!-- NO HEADING -->
-              <th :colspan="totalDataColumns" class="gap"></th>
+              <td :colspan="dataColumnsForGroup(id)"
+                  :class="{'title-rule': !vuedata.group_messages?.[id]}"></td>
             </template>
           </tr>
+          <tr v-if="vuedata.group_messages?.[id]">
+            <td class="group-message" :colspan="1 + totalDataColumns">
+              <span class="footnote-text">{{vuedata.group_messages[id]}}</span>
+            </td>
+          </tr>
           <tr v-for="(row, rowidx) in vuedata[id]"
-              :key="id + rowidx">
-            <td class="firstcol">
+              :key="id + rowidx"
+              :class="{
+                'subgroup-start': row.subgroup_start,
+                'block-end': rowidx === vuedata[id].length - 1,
+              }">
+            <td class="firstcol" v-b-tooltip.hover.top.v-primary.ds500
+                :title="row.tooltip">
               {{row["rowtitle"]}}
             </td>
-            <template v-for="stat in stats" :key="stat">
+            <template v-for="stat in statsForGroup(id)" :key="stat">
               <template v-for="(entry, s) in row[stat]" :key="s">
                 <td :class="sysclass(s, stat, id)">
                   {{format(entry)}}
@@ -53,16 +80,18 @@
             </template>
           </tr>
           <tr v-if="id in footnotes">
-            <td class="firstcol" :colspan="1 + totalDataColumns">
-              {{footnotes[id]}}
+            <td class="footnote"
+                :colspan="1 + totalDataColumns">
+              <span class="footnote-text">{{footnotes[id]}}</span>
             </td>
           </tr>
-          <tr v-if="vuedata[id].length>0">
-            <td class="firstcol blank"></td>
+          <tr v-if="vuedata[id].length > 0 || vuedata.group_messages?.[id]"
+              class="section-spacer"
+              aria-hidden="true">
+            <td :colspan="1 + totalDataColumns">&nbsp;</td>
           </tr>
         </template>
       </template>
-      <tr><td class="firstcol blank"></td></tr>
     </tbody>
   </table>
 </div>
@@ -70,7 +99,7 @@
 
 <script>
 import { mapState } from "vuex"
-import { formatEstimateWithCi } from "../numberFormat.js"
+import { formatNumber } from "../numberFormat.js"
 
 export default {
   props: [
@@ -95,9 +124,22 @@ export default {
   methods: {
     format(entry) {
       if (entry === null || typeof entry !== "object") return entry
-      const digits = entry.integer ? 0 : this.display_settings.fractional_digits
-      return formatEstimateWithCi(
-        entry.value, entry.ci, digits, this.display_settings)
+      const digits = entry.percentage
+        ? this.display_settings.percentage_digits
+        : entry.integer ? 0 : this.display_settings.fractional_digits
+      const display = value => formatNumber(
+        entry.percentage ? value * 100 : value, digits, this.display_settings)
+      const value = display(entry.value)
+      return entry.ci === null
+        ? value
+        : `${value} ± ${display(entry.ci)}`
+    },
+    statsForGroup(groupId) {
+      return this.vuedata.group_stats?.[groupId] || this.stats
+    },
+    dataColumnsForGroup(groupId) {
+      return this.statsForGroup(groupId).reduce((total, stat) =>
+        total + this.statColumnCount(stat, groupId), 0)
     },
     groupHasPairedDifference(stat, groupId) {
       return stat === "avg" && this.vuedata.has_paired_difference &&
@@ -121,32 +163,26 @@ export default {
       return null
     },
     sysclass: function(s, stat, groupId) {
-      if (s==this.statColumnCount(stat, groupId)-1) return "last"
-      else return "middle"
+      return {'stat-edge': s === this.statColumnCount(stat, groupId) - 1}
     },
-    groupclass: function(id) {
-      if (this.headingType[id] == 'systems')
-        return "firstcol"
-      else
-        return "firstcol top"
-    }
   }
 }
 </script>
 
 <style scoped>
 table {
+  --rule: 1.5px solid #c7c7c7;
   table-layout: auto;
   font-size:90%;
-  border-collapse:collapse;
+  /* Collapsed borders detach from sticky cells during horizontal scrolling. */
+  border-collapse:separate;
   border-spacing:0;
 }
 
 th, td {
   white-space:nowrap;  
-  border:1px solid #c7c7c7;
+  border:0;
   padding: 2px 6px 3px 6px;
-  border-left-width:0
 }
 
 th {
@@ -159,50 +195,55 @@ th {
   white-space: pre-line;
 }
 
-th.top {
-  border-top-width: 0px;
-}
-
-th:not(.top),td:not(.top) {
-  border-top-width:0;
-}
-
-td {
+td, .system-heading {
   text-align:right;
+}
+
+.title-rule,
+th.firstcol,
+tr.block-end > td {
+  border-bottom:var(--rule);
+}
+
+.block-heading > th {
+  border-top:var(--rule);
+}
+
+tr.subgroup-start > td {
+  border-top:var(--rule);
+}
+
+.stat-edge,
+.firstcol {
+  border-right:var(--rule);
+}
+
+.firstcol,
+.footnote-text {
+  position: sticky;
+  z-index: 1;
+  left: 0;
 }
 
 .firstcol {
   text-align:left;
-  position: sticky;
   background: #eee;
-  left: 0;
+  border-left:var(--rule);
 }
 
-.gap {
+th.firstcol {
+  vertical-align:middle;
+}
+
+.footnote,
+.group-message {
+  text-align: left;
+}
+
+.footnote-text {
+  display: inline-block;
+  left: 6px;
   background: white;
-  border-right-width:0;
-}
-
-.middle {
-  border-right-width:0;
-}
-
-.firstcol.top {
-  border-top-width:0
-}
-
-.firstcol.topleft {
-  border-top-width:0;
-  background: white;
-}
-
-.blank {
-  border-right-width:0;
-  border-bottom-width:0;
-  border-left-width:0;
-  border-right-width:0;
-  background: white;
-  padding:6px
 }
 
 </style>

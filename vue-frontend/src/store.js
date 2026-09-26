@@ -67,6 +67,7 @@ const store = new Vuex.Store({
     sim_settings: {},
     display_settings: defaultDisplaySettings(),
     all_filename: "",
+    all_file_handle: null,
     sim_capabilities: {},
     results: [],
     server_error: "",
@@ -167,8 +168,9 @@ const store = new Vuex.Store({
       state.display_settings = normalizeDisplaySettings(settings)
     },
 
-    setAllFilename(state, filename) {
+    setAllFile(state, {filename, fileHandle = null}) {
       state.all_filename = filename
+      state.all_file_handle = fileHandle
     },
 
     setWaitingForData(state) { state.waiting_for_data = true },
@@ -306,7 +308,7 @@ const store = new Vuex.Store({
             context.commit("updateVoteTable", response.data.vote_table)
             context.commit("updateSystems", response.data.systems)
             context.commit("updateSimSettings", response.data.sim_settings)
-            context.commit("setAllFilename", filename || "")
+            context.commit("setAllFile", {filename: filename || ""})
             findNumbering(context.state, 0)
             context.commit("clearWaitingForData")
           }
@@ -314,7 +316,7 @@ const store = new Vuex.Store({
         response => context.commit("serverError", response.status)
       )
     },
-    saveAll(context, destination = {}) {
+    async saveAll(context, destination = {}) {
       let promise;
       promise = axios({
         method: "post",
@@ -326,8 +328,11 @@ const store = new Vuex.Store({
         },
         responseType: "arraybuffer",
       });
-      context.dispatch("downloadFile", {promise, ...destination})
-      context.commit("removeBeforeunload")
+      const saved = await context.dispatch("downloadFile", {promise, ...destination})
+      if (saved) {
+        context.commit("setAllFile", saved)
+        context.commit("removeBeforeunload")
+      }
     },
     
     calculate_results(context) {
@@ -380,7 +385,7 @@ const store = new Vuex.Store({
     // Thanks to Pétur Helgi Einarsson for the next two functions
     downloadFile: function (context, request) {
       const promise = request.promise || request
-      promise.then (
+      return promise.then (
         async (response) => {
           const status = response.status;
           if (status != 200) {
@@ -406,6 +411,7 @@ const store = new Vuex.Store({
             if (request.fileHandle) {
               try {
                 await writeDownload(request.fileHandle, blob);
+                return {filename: request.fileHandle.name, fileHandle: request.fileHandle};
               } catch (error) {
                 context.commit("serverError", `Could not save file: ${error.message}`);
               }
@@ -427,6 +433,7 @@ const store = new Vuex.Store({
             );
             link.remove();
             window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            return {filename: link.download};
           }
         },
         (response) => {

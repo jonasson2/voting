@@ -23,9 +23,10 @@ export function canChooseSaveLocation() {
     && typeof window.showSaveFilePicker === "function"
 }
 
-export function chooseSaveLocation(basename, extension) {
+export function chooseSaveLocation(basename, extension, previousFile = null) {
   return window.showSaveFilePicker({
     suggestedName: downloadFilename(basename, extension),
+    ...(previousFile ? {startIn: previousFile} : {}),
   })
 }
 

@@ -4,12 +4,15 @@ export const NUMBER_SEPARATOR_OPTIONS = [
   {value: "space-comma", text: "1\u202f234,567", thousands: " ", decimal: ","},
 ]
 
+const DEFAULT_FRACTIONAL_DIGITS = 2
+const DEFAULT_PERCENTAGE_DIGITS = 1
+
 export function defaultDisplaySettings() {
   return {
     thousands_separator: ",",
     decimal_separator: ".",
-    fractional_digits: 3,
-    percentage_digits: 2,
+    fractional_digits: DEFAULT_FRACTIONAL_DIGITS,
+    percentage_digits: DEFAULT_PERCENTAGE_DIGITS,
   }
 }
 
@@ -21,11 +24,11 @@ export function normalizeDisplaySettings(settings = {}) {
   const requestedDigits = Number(settings.fractional_digits)
   const fractionalDigits = Number.isInteger(requestedDigits)
     ? Math.min(10, Math.max(0, requestedDigits))
-    : 3
+    : DEFAULT_FRACTIONAL_DIGITS
   const requestedPercentageDigits = Number(settings.percentage_digits)
   const percentageDigits = Number.isInteger(requestedPercentageDigits)
     ? Math.min(10, Math.max(0, requestedPercentageDigits))
-    : 2
+    : DEFAULT_PERCENTAGE_DIGITS
   return {
     thousands_separator: separators.thousands,
     decimal_separator: separators.decimal,
@@ -48,21 +51,6 @@ export function formatNumber(value, digits, settings) {
   return fraction === undefined
     ? grouped
     : grouped + normalized.decimal_separator + fraction
-}
-
-export function formatNumberUnlessZero(value, digits, settings) {
-  const number = Number(value)
-  const precision = Math.min(10, Math.max(0, Number(digits)))
-  if (Number.isFinite(number) && Number(number.toFixed(precision)) === 0) return ""
-  return formatNumber(value, precision, settings)
-}
-
-export function formatEstimateWithCi(value, ci, digits, settings) {
-  if (ci === null) return formatNumberUnlessZero(value, digits, settings)
-  const displayedValue = formatNumberUnlessZero(value, digits, settings)
-  const displayedCi = formatNumberUnlessZero(ci, digits, settings)
-  if (!displayedValue && !displayedCi) return ""
-  return `${formatNumber(value, digits, settings)} ± ${formatNumber(ci, digits, settings)}`
 }
 
 function groupedIntegerDigits(text, settings) {

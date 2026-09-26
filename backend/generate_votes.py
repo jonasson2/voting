@@ -1,11 +1,11 @@
-from math import sqrt
+from math import log, sqrt
 
 import numpy as np
 
 
 def generate_votes(base_votes, var_coeff, distribution, rng):
     """Generate continuous votes with one batch of random factors per table."""
-    if distribution not in ("beta", "gamma", "uniform"):
+    if distribution not in ("beta", "gamma", "log-normal", "uniform"):
         raise ValueError(f"Unknown vote-generating distribution: {distribution}")
     means = np.asarray(base_votes, dtype=float)
     if var_coeff == 0:
@@ -18,6 +18,13 @@ def generate_votes(base_votes, var_coeff, distribution, rng):
     elif distribution == "gamma":
         shape = 1 / var_coeff**2
         factors = rng.gamma(size=means.shape, shape=shape, scale=1 / shape)
+    elif distribution == "log-normal":
+        sigma_squared = log(1 + var_coeff**2)
+        factors = rng.lognormal(
+            size=means.shape,
+            mu=-sigma_squared / 2,
+            sigma=sqrt(sigma_squared),
+        )
     else:
         deviation = sqrt(3) * var_coeff
         factors = rng.unif(

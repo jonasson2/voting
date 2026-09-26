@@ -50,6 +50,10 @@ test("native save picker receives the suggested name", async () => {
     assert.equal(canChooseSaveLocation(), true)
     assert.equal(await chooseSaveLocation("Ísland 2024", "xlsx"), fileHandle)
     assert.deepEqual(options, {suggestedName: "Ísland 2024.xlsx"})
+    await chooseSaveLocation("Ísland 2024", "json", fileHandle)
+    assert.deepEqual(options, {
+      suggestedName: "Ísland 2024.json", startIn: fileHandle,
+    })
   } finally {
     if (originalWindow === undefined) delete global.window
     else global.window = originalWindow

@@ -49,7 +49,8 @@ function_dict_party = {
 }
 
 class MeasureGroups(dict):
-    def __init__(self, systems, party_votes_specified, qm_topleft2=None, nr=0):
+    def __init__(self, systems, party_votes_specified, qm_topleft2=None, nr=0,
+                 include_entropy_score=False):
         self["shareTitle"] = {
             "title": qm_topleft2,
             "rows":  {}
@@ -57,6 +58,7 @@ class MeasureGroups(dict):
 
         self["toLists"] = {
             "title": "",
+            "subgroup_starts": ("sum_pos",),
             "rows": {
                 "sum_abs":     ("Absolute values (Hare quota)", ""),
                 "sum_sq":      ("Squared values (Hare quota)", ""),
@@ -91,6 +93,7 @@ class MeasureGroups(dict):
 
         self["toPartiesTotal"] = {
             "title": "Party seat totals: allocated minus fractional reference",
+            "subgroup_starts": ("max_val_party_overall",),
             # overall,
             # altogeter, grand total
             "rows": {
@@ -101,27 +104,37 @@ class MeasureGroups(dict):
             }
         }
 
+        specific_rows = {
+            "geographical_displacement": (
+                "Geographical seat displacement", ""),
+            "constituency_disparity": (
+                "Constituency disparity", ""),
+            "max_overrepresentation": (
+                "Greatest relative over-representation (D'Hondt)", ""),
+            "max_underrepresentation": (
+                "Greatest relative under-representation (Adams)", ""),
+            "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
+            "bias_corr":      ("Correlation of seat excess and reference seat "
+                               "shares", ""),
+            "excess":         ("Total seat excess", ""),
+            "max_neg_margin": ("Maximum negative margin over constituencies",""),
+            "freq_neg_margin": ("Frequency of negative margin over constituencies",""),
+            "total_overhang": ("Potential overhang", ""),
+            #"disparity":      ("Total and reference allocations abs. difference",""),
+            #"shortage":       ("Shortage", "")
+        }
+        if include_entropy_score:
+            specific_rows = {
+                "entropy_score": ("Entropy score", ""),
+                **specific_rows,
+            }
         self["other"] = {
             "title": "Specific quality indices for allocations in the constituencies",
-            "rows": {
-                "entropy_dhondt": ("D'Hondt entropy", ""),
-                "entropy_sainte_lague": ('Sainte-Laguë entropy', ""),
-                "max_overrepresentation": (
-                    "Greatest relative over-representation (D'Hondt)", ""),
-                "max_underrepresentation": (
-                    "Greatest relative under-representation (Adams)", ""),
-                "max_neg_margin": ("Maximum negative margin over constituencies",""),
-                "freq_neg_margin": ("Frequency of negative margin over constituencies",""),
-                "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
-                "bias_corr":      ("Correlation of seat excess and reference seat "
-                                   "shares", ""),
-                "geographical_displacement": (
-                    "Geographical seat displacement", ""),
-                #"disparity":      ("Total and reference allocations abs. difference",""),
-                "excess":         ("Total seat excess", ""),
-                "total_overhang": ("Potential overhang", ""),
-                #"shortage":       ("Shortage", "")
-            },
+            "subgroup_starts": (
+                "geographical_displacement", "max_overrepresentation",
+                "bias_slope", "max_neg_margin",
+            ),
+            "rows": specific_rows,
             "footnote": "(single-constituency minimizing methods in brackets)",
         }
 
@@ -169,7 +182,7 @@ class MeasureGroups(dict):
             "rows": {}
         }
         self["cmpPartyTitle"] = {
-            "title": "Absolute seat differences summed over parties",
+            "title": "Total absolute difference in party seats",
             "rows": {}
         }
         self["cmpParty"] = {

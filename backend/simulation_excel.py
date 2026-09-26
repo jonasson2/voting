@@ -108,7 +108,7 @@ class SimulationWorkbook:
 
     def simulation_settings(self):
         settings = self.results["sim_settings"]
-        return [
+        rows = [
             {"label": "Number of simulations", "data": self.results["iteration"]},
             {"label": "Random seed", "data": settings.get("random_seed", "")},
             {"label": "Generating method", "data": settings["gen_method"]},
@@ -122,9 +122,23 @@ class SimulationWorkbook:
              "data": settings["party_vote_corr"]},
             {"label": "Thresholds used",
              "data": "yes" if settings["use_thresholds"] else "no"},
+            {"label": "Entropy score calculated",
+             "data": "yes" if settings["entropy_score"] else "no"},
             {"label": "Scaling of votes for fractional reference seat shares",
              "data": SCALING_NAMES[settings["scaling"]]},
         ]
+        if settings.get("sensitivity"):
+            rows.extend((
+                {"label": "Sensitivity measures calculated", "data": "yes"},
+                {"label": "Number of perturbations per major simulation",
+                 "data": settings["sensitivity_simulation_count"]},
+                {"label": "Sensitivity generating method",
+                 "data": settings["sensitivity_gen_method"]},
+                {"label": "Sensitivity CoVs (%)",
+                 "data": ", ".join(
+                     f"{value:g}" for value in settings["sensitivity_covs"])},
+            ))
+        return rows
 
     def write_common_settings(self):
         worksheet = self.workbook.add_worksheet("Common settings")
@@ -168,32 +182,84 @@ class SimulationWorkbook:
 
     def quality_measure_data(self, groups):
         paired_data = self.results.get("paired_data", {})
+        entropy_available = self.results.get(
+            "entropy_score_available", [True] * len(self.systems))
         excluded = {"cmpList", "cmpParty", "cmpNationalDetails"}
         data = {"stats": EXCEL_HEADINGS.keys(), "stat_headings": EXCEL_HEADINGS}
         for group_id, group in groups.items():
             data[group_id] = []
             for measure in group["rows"]:
-                row = {}
+                row = {"measure": measure}
                 for statistic in data["stats"]:
                     values = [
                         system["measures"][measure][statistic]
                         for system in self.results["data"]
                     ]
+                    if measure == "entropy_score":
+                        values = [
+                            value if entropy_available[index] else "–"
+                            for index, value in enumerate(values)
+                        ]
                     if (len(self.systems) >= 2
                             and statistic in {"avg", "lo95", "hi95"}):
                         difference = (
                             paired_data[measure][statistic]
                             if group_id not in excluded else None)
+                        if (measure == "entropy_score"
+                                and not all(entropy_available[:2])):
+                            difference = "–"
                         values.insert(2, difference)
                     row[statistic] = values
                 data[group_id].append(row)
         return data
 
-    def write_quality_measures(self):
+    def sensitivity_quality_data(self, measure):
+        sensitivity = self.results["sensitivity_data"]
+        rows = []
+        for row_index in range(len(sensitivity["covs"])):
+            row = {}
+            for statistic in EXCEL_HEADINGS:
+                values = list(sensitivity[measure][statistic][row_index])
+                difference = values.pop() if len(self.systems) >= 2 else None
+                if len(self.systems) >= 2 and statistic in {
+                        "avg", "lo95", "hi95"}:
+                    values.insert(2, difference)
+                row[statistic] = values
+            rows.append(row)
+        return rows
+
+    def write_quality_group(
+            self, worksheet, top, group_id, title, row_titles, rows):
         from excel_util import write_matrix
 
+        if title:
+            worksheet.write(top, 0, title, self.fmt["h"])
+            top += 1
+        worksheet.write_column(top, 0, [title[0] for title in row_titles])
+        worksheet.write_column(top, 1, [title[1] for title in row_titles])
+        column = 2
+        for statistic in EXCEL_HEADINGS:
+            base_format = (
+                statistic in {"min", "max"}
+                and group_id in {"seatSpec", "expected", "cmpList",
+                                 "cmpParty", "cmpNationalDetails"})
+            write_matrix(
+                worksheet, top, column,
+                [row[statistic] for row in rows],
+                format=[
+                    self.fmt["percentages"] if row.get("measure") == "entropy_score"
+                    else self.fmt["base" if base_format else "cell"]
+                    for row in rows
+                ],
+                display_zeros=True)
+            column += len(self.statistic_column_names(statistic)) + 1
+        return top + len(row_titles) + 1 if row_titles else top
+
+    def write_quality_measures(self):
         party_votes = self.results["vote_table"]["party_vote_info"]["specified"]
-        groups = MeasureGroups(self.systems, party_votes, "")
+        groups = MeasureGroups(
+            self.systems, party_votes, "",
+            include_entropy_score=self.results["sim_settings"]["entropy_score"])
         data = self.quality_measure_data(groups)
         worksheet = self.workbook.add_worksheet("Quality measures")
         worksheet.freeze_panes(4, 2)
@@ -203,7 +269,7 @@ class SimulationWorkbook:
         worksheet.set_column(0, 0, 20)
         worksheet.write(
             3, 0,
-            "Differences between allocated and fractional reference seats, "
+            "Differences between allocated and fractional reference seat shares, "
             "summed over constituency lists",
             self.fmt["h"])
         worksheet.set_column(1, 1, 25)
@@ -220,25 +286,32 @@ class SimulationWorkbook:
 
         top = 4
         for group_id, group in groups.items():
-            if group["title"]:
-                worksheet.write(top, 0, group["title"], self.fmt["h"])
-                top += 1
-            worksheet.write_column(top, 0, [row[0] for row in group["rows"].values()])
-            worksheet.write_column(top, 1, [row[1] for row in group["rows"].values()])
-            column = 2
-            for statistic in data["stats"]:
-                base_format = (
-                    statistic in {"min", "max"}
-                    and group_id in {"seatSpec", "expected", "cmpList",
-                                     "cmpParty", "cmpNationalDetails"})
-                write_matrix(
-                    worksheet, top, column,
-                    [row[statistic] for row in data[group_id]],
-                    format=self.fmt["base" if base_format else "cell"],
-                    display_zeros=True)
-                column += len(self.statistic_column_names(statistic)) + 1
-            if group["rows"]:
-                top += len(group["rows"]) + 1
+            top = self.write_quality_group(
+                worksheet,
+                top,
+                group_id,
+                group["title"],
+                list(group["rows"].values()),
+                data[group_id],
+            )
+
+        sensitivity = self.results.get("sensitivity_data")
+        if sensitivity:
+            row_titles = [
+                (f"{cov:g}% CoV", "") for cov in sensitivity["covs"]]
+            for group_id, measure, title in (
+                    ("sensitivityWithin", "sensitivity_within_parties",
+                     "Seats displaced between lists within parties"),
+                    ("sensitivityBetween", "sensitivity_between_parties",
+                     "Seats displaced between parties")):
+                top = self.write_quality_group(
+                    worksheet,
+                    top,
+                    group_id,
+                    title,
+                    row_titles,
+                    self.sensitivity_quality_data(measure),
+                )
 
     def national_vote_percentages(self):
         vote_table = self.results["vote_table"]

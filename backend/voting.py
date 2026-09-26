@@ -3,13 +3,14 @@
 This module contains the core voting system logic.
 """
 
-from table_util import entropy, add_total_column
+from table_util import add_total_column
 from apportion import apportion1d_general, threshold_drop
 from dictionaries import ADJUSTMENT_METHODS
 from dictionaries import FLEXIBLE_ADJUSTMENT_METHODS
 from dictionaries import REGIONAL_ADJUSTMENT_METHODS
 from dictionaries import DEMO_TABLE_FORMATS
-from division_rules import dhondt_gen, sainte_lague_gen
+from entropy_score import calculate as calculate_entropy_score
+from entropy_score import is_available as entropy_score_is_available
 import numpy as np
 from methods import danish, regional
 from methods.switching_se import switching as apply_swedish_rules
@@ -100,7 +101,6 @@ class Election:
         self.set_votes(votes)
         self.reference_results = []
         self.vote_table_name = vote_table_name
-        self.stored_entropies = None
 
     def _set_adjustment_seat_bounds(self, adjustment_seat_info):
         """Normalize and validate the adjustment-seat total and bounds."""
@@ -142,22 +142,16 @@ class Election:
                 self.min_adj_seats, self.max_adj_seats)
         )
 
-    def entropies(self):
-        """Evaluate the final allocation using fixed divisor sequences."""
-        if self.stored_entropies is None:
-            seats = self.results['all_const_seats']
-            self.stored_entropies = {
-                "entropy_dhondt": entropy(self.votes, seats, dhondt_gen),
-                "entropy_sainte_lague": entropy(
-                    self.votes, seats, sainte_lague_gen),
-            }
-        return self.stored_entropies
+    def entropy_score_available(self):
+        return entropy_score_is_available(self)
+
+    def entropy_score(self, optimum_cache=None):
+        return calculate_entropy_score(self, optimum_cache)
 
     def set_reference_results(self):
         self.reference_results = self.results['all_const_seats']
 
     def set_votes(self, votes, party_votes=None):
-        self.stored_entropies = None
         # votesums: column sums of m_votes
         self.votes = np.array(votes)
         if party_votes is not None:
@@ -233,13 +227,13 @@ class Election:
         self.results["row_names"] = row_names
         self.results["seats"] = seats
 
-    def get_result_excel(self):
+    def get_result_excel(self, entropy_cache=None):
         return {
             "vote_table_name": self.vote_table_name,
             "system": self.system,
             "results": self.results,
             "demo_tables": self.demo_tables,
-            **self.entropies(),
+            "entropy_score": self.entropy_score(entropy_cache),
         }
 
     def get_result_web(self):
@@ -303,7 +297,6 @@ class Election:
             self.system["constituencies"], self.regions)
 
     def _initialize_seat_allocation(self, use_thresholds):
-        self.stored_entropies = None
         self.tie_report = TieReport()
         if self.system["special_rules"] == "danish" and not self.has_regions:
             raise ValueError(
@@ -394,6 +387,9 @@ class Election:
                 eligible_votes, num_seats, self.independent_candidates,
                 self.system.get_generator("primary_divider"), self.rng, on_tie)
         else:
+            max_seats = (
+                np.where(self.independent_candidates, 1, num_seats)
+                if self.independent_candidates.any() else None)
             allocation, _, last = apportion1d_general(
                 v_votes=votes,
                 num_total_seats=num_seats,
@@ -403,6 +399,7 @@ class Election:
                 threshold_percent=0,
                 threshold_total=self.const_threshold_totals[index],
                 on_tie=on_tie,
+                max_seats=max_seats,
             )
         assert last is not None
         return allocation, last
@@ -423,6 +420,8 @@ class Election:
             threshold_total=self.nat_threshold_total,
             on_tie=self.report_ties(
                 "National fixed seats", self.system["parties"]),
+            eligible=(~self.independent_candidates
+                      if self.independent_candidates.any() else None),
         )
         return np.asarray(allocation)
 

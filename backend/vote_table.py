@@ -175,10 +175,14 @@ def _parse_metadata(rows, layout):
         "maximum_total": None,
     }
     seen = set()
-    valid_names = {"party names", "independent candidates", "max adj seats"}
+    valid_names = {
+        "party names", "single candidates", "independent candidates",
+        "max adj seats"}
     while rows and _text(rows[0][0]).lower() in valid_names:
         row = rows.pop(0)
         row_name = _text(row[0]).lower()
+        if row_name == "independent candidates":
+            row_name = "single candidates"
         if row_name in seen:
             raise VoteTableFormatError(f'Duplicate metadata row "{row[0]}"')
         seen.add(row_name)
@@ -186,14 +190,14 @@ def _parse_metadata(rows, layout):
         if row_name == "party names":
             names = [_text(value) for value in _metadata_values(row, layout)]
             metadata["party_names"] = names if any(names) else None
-        elif row_name == "independent candidates":
+        elif row_name == "single candidates":
             flags = [
-                _nonnegative_int(value, "Independent candidate flag")
+                _nonnegative_int(value, "Single candidate flag")
                 for value in _metadata_values(row, layout)
             ]
             if any(flag not in (0, 1) for flag in flags):
                 raise VoteTableFormatError(
-                    "Independent candidate flags must be 0 or 1")
+                    "Single candidate flags must be 0 or 1")
             metadata["independent_candidates"] = [bool(flag) for flag in flags]
         else:
             metadata["maximum_total"] = _parse_maximum_total(row, layout)
@@ -405,7 +409,13 @@ def _normalize_party_metadata(table, num_parties):
     if flags is not None and (
             not isinstance(flags, list) or len(flags) != num_parties
             or any(type(flag) is not bool for flag in flags)):
-        raise ValueError("Independent candidate flags must be booleans matching the party list.")
+        raise ValueError("Single candidate flags must be booleans matching the party list.")
+    if flags is not None:
+        for party, single in enumerate(flags):
+            if single and sum(row[party] > 0 for row in table["votes"]) > 1:
+                raise ValueError(
+                    f'Single candidate {table["parties"][party]} may have '
+                    'votes in only one constituency.')
     if party_names is not None:
         if not isinstance(party_names, list) or len(party_names) != num_parties:
             raise ValueError("Party names do not match the party list.")

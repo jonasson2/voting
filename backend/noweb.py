@@ -220,7 +220,7 @@ def votes_to_excel(vote_table, file):
                            + party_names + [""])
     independent = vote_table.get("independent_candidates")
     if independent and any(independent):
-        file_matrix.append(["Independent candidates"] + [""] * len(seat_headers)
+        file_matrix.append(["Single candidates"] + [""] * len(seat_headers)
                            + [int(flag) for flag in independent] + [""])
     if has_max_adj_seats:
         file_matrix.append(["Max adj seats", "", "",

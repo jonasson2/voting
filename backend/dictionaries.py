@@ -24,12 +24,14 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.farthest_from_next import farthest_from_next
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
+from methods.switching_plus import switching_plus
+from methods.switching_flex import switching_flex
 from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
-from util import get_cpu_count
+from util import get_default_cpu_count
 
 
 CONSTANTS = {
@@ -37,7 +39,7 @@ CONSTANTS = {
     'ConstCorr': 0.5,
     'PartyVoteCorr': 0.5,
     'simulation_id_length': 20,
-    'default_cpu_count': get_cpu_count()/2
+    'default_cpu_count': get_default_cpu_count()
 }
 
 DIVIDER_RULES = {
@@ -219,24 +221,24 @@ ELECTION_LAW_PRESETS = [
 ]
 
 ADJUSTMENT_METHOD_NAMES = [
-    {"value": "icelandic-law", "text": "Icelandic law 112/2021"},
-    {"value": "ice-shares",    "text": "Icelandic law based on constituency seat shares"},
-    {"value": "norwegian-law", "text": "Norwegian law 20/2002"},
-    {"value": "max-const-seat-share",      "text": "Maximum constituency seat share"},
-    {"value": "party-seats-unbounded",     "text": "Party seats unbounded"},
-    {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
-    {"value": "adjustment-as-fixed",       "text": "Adjustment seats as fixed seats"},
-    {"value": "relative-superiority",      "text": "Relative superiority"},
-    {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
-    # {"value": "nearest-to-previous",       "text": "Nearest-to-previous"},
-    {"value": "max-relative-margin",       "text": "Maximum relative margin"},
-    {"value": "max-absolute-margin",       "text": "Maximum absolute margin"},
-    # = max-relative-margin með absolute mun
-    {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "swedish-style-switching", "text": "Swedish-style switching"},
-    {"value": "max-const-votes",           "text": "Maximum constituency votes"},
-    {"value": "alternating-scaling",       "text": "Alternating scaling"},
     {"value": "optimal-lp",                "text": "Optimal LP"},
+    {"value": "alternating-scaling",       "text": "Alternating scaling"},
+    {"value": "max-const-votes",           "text": "Maximum constituency votes"},
+    {"value": "max-const-seat-share",      "text": "Maximum constituency seat share"},
+    {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
+    {"value": "switching",                 "text": "Switching of seats"},
+    {"value": "switching-plus",            "text": "Switching+"},
+    {"value": "switching-flex",            "text": "Flexible switching"},
+    {"value": "swedish-style-switching",   "text": "Swedish-style switching"},
+    {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
+    {"value": "relative-superiority",      "text": "Relative superiority"},
+    {"value": "party-seats-unbounded",     "text": "Party seats unbounded"},
+    {"value": "adjustment-as-fixed",       "text": "Adjustment seats as fixed seats"},
+    {"value": "max-relative-margin",       "text": "Maximum relative margin (in single const.)"},
+    {"value": "max-absolute-margin",       "text": "Maximum absolute margin (in single const.)"},
+    {"value": "icelandic-law",             "text": "Icelandic law 112/2021"},
+    {"value": "ice-shares",                "text": "Icelandic law based on constituency seat shares"},
+    {"value": "norwegian-law",             "text": "Norwegian law 20/2002"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 
@@ -270,6 +272,8 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
+    "switching-plus":            ("sccc", "clss3", "clsslss3"),
+    "switching-flex":            ("clsl3", "clsslss3"),
     "swedish-style-switching":   ("sccc", "clss33"),
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
@@ -320,7 +324,7 @@ EXCEL_HEADINGS = {
 }
 
 STATISTICS_HEADINGS = {
-    "avg": "AVG 95%-CI",
+    "avg": "Average & 95% confidence interval",
     "min": "MINIMUM",
     "max": "MAXIMUM",
     "std": "STD.DEV."
@@ -345,6 +349,8 @@ ADJUSTMENT_METHODS = {
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,
+    "switching-plus":            switching_plus,
+    "switching-flex":            switching_flex,
     "swedish-style-switching":   swedish_style_switching,
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
@@ -359,8 +365,9 @@ REGIONAL_ADJUSTMENT_METHODS = {
 }
 
 FLEXIBLE_ADJUSTMENT_METHODS = {
-    "max-const-votes", "max-const-vote-percentage", "switching",
-    "swedish-style-switching", "optimal-lp"}
+    "max-const-votes", "max-const-vote-percentage",
+    "swedish-style-switching", "optimal-lp", "relative-sup-simple",
+    "switching-flex"}
 
 USE_THRESHOLDS = [
     {"value": False, "text": "no"},
@@ -387,8 +394,8 @@ VOTE_MEASURES = {
 }
 
 SENS_MEASURES = [
-    "party_sens",
-    "list_sens"
+    "sensitivity_between_parties",
+    "sensitivity_within_parties",
 ]
 
 PARTY_MEASURES = {

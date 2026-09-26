@@ -249,17 +249,10 @@ class FlexibleAllocationTest(unittest.TestCase):
         election = ElectionHandler(table, [system], True).elections[0]
         np.testing.assert_array_equal(np.asarray(election.results["adj_const_seats"]).sum(axis=1), [1, 0])
 
-    def test_switching_supports_a_flexible_adjustment_seat_pool(self):
+    def test_switching_rejects_a_flexible_adjustment_seat_pool(self):
         table, system = self.table_and_system("switching")
-
-        election = ElectionHandler(table, [system], True).elections[0]
-        added = np.asarray(election.results["adj_const_seats"]).sum(axis=1)
-
-        self.assertEqual(int(added.sum()), 4)
-        self.assertEqual(int(added[0]), 1)
-        self.assertTrue(np.all(
-            np.asarray(election.results["all_const_total"])
-            <= election.desired_col_sums))
+        with self.assertRaisesRegex(ValueError, "does not support constituency ranges"):
+            ElectionHandler(table, [system], True)
 
     def test_swedish_style_switching_reallocates_from_a_shared_pool(self):
         allocation, demo = swedish_style_switching(

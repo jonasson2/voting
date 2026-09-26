@@ -61,7 +61,7 @@ def optimal_lp(
         m_votes, v_desired_row_sums, v_desired_col_sums,
         m_prior_allocations, divisor_gen, nat_prior_allocations=None,
         **kwargs):
-    """Maximize divisor-rule entropy within row bounds and party totals."""
+    """Maximize divisor-rule entropy within row and optional party bounds."""
     from scipy.optimize import linprog
 
     votes = np.maximum(np.asarray(m_votes, dtype=float), 1)
@@ -74,20 +74,25 @@ def optimal_lp(
     minimums, total, capacities = prepare_adjustment_bounds(
         base_rows, v_desired_row_sums, kwargs)
 
-    party_targets = np.asarray(v_desired_col_sums, dtype=int)
-    has_national_seats = nat_prior_allocations is not None
-    if has_national_seats:
-        party_targets = (
-            party_targets - np.asarray(nat_prior_allocations, dtype=int))
-    deficits = party_targets - prior.sum(axis=0)
-    if (deficits < 0).any():
-        raise ValueError("Party targets are below seats already allocated.")
-    if int(deficits.sum()) < total:
-        raise ValueError(
-            "Party deficits are smaller than the adjustment-seat total.")
-    if not has_national_seats and int(deficits.sum()) != total:
-        raise ValueError(
-            "Party deficits do not equal the adjustment-seat total.")
+    enforce_party_targets = kwargs.get("enforce_party_targets", True)
+    has_national_seats = (
+        enforce_party_targets and nat_prior_allocations is not None)
+    if enforce_party_targets:
+        party_targets = np.asarray(v_desired_col_sums, dtype=int)
+        if has_national_seats:
+            party_targets = (
+                party_targets - np.asarray(nat_prior_allocations, dtype=int))
+        deficits = party_targets - prior.sum(axis=0)
+        if (deficits < 0).any():
+            raise ValueError("Party targets are below seats already allocated.")
+        if int(deficits.sum()) < total:
+            raise ValueError(
+                "Party deficits are smaller than the adjustment-seat total.")
+        if not has_national_seats and int(deficits.sum()) != total:
+            raise ValueError(
+                "Party deficits do not equal the adjustment-seat total.")
+    else:
+        deficits = np.full(nparty, total, dtype=int)
 
     variables = []
     by_constituency = [[] for _ in range(nconst)]
@@ -123,12 +128,13 @@ def optimal_lp(
             indices, [1] * len(indices),
             int(minimums[c]), int(capacities[c]),
         ))
-    for p, indices in enumerate(by_party):
-        target = int(deficits[p])
-        if target == 0:
-            continue
-        lower = 0 if has_national_seats else target
-        constraints.append((indices, [1] * len(indices), lower, target))
+    if enforce_party_targets:
+        for p, indices in enumerate(by_party):
+            target = int(deficits[p])
+            if target == 0:
+                continue
+            lower = 0 if has_national_seats else target
+            constraints.append((indices, [1] * len(indices), lower, target))
     (inequality_matrix, inequality_bounds,
      equality_matrix, equality_bounds) = _constraint_matrices(
          len(variables), constraints)
@@ -164,9 +170,9 @@ def optimal_lp(
     if (int(added_rows.sum()) != total
             or (added_rows < minimums).any()
             or (added_rows > capacities).any()
-            or (added_parties > deficits).any()
-            or (not has_national_seats and not np.array_equal(
-                added_parties, deficits))):
+            or (enforce_party_targets and (added_parties > deficits).any())
+            or (enforce_party_targets and not has_national_seats
+                and not np.array_equal(added_parties, deficits))):
         raise RuntimeError("Optimal LP returned an allocation outside its constraints.")
     return allocation, {"data": [], "function": print_demo_table}
 

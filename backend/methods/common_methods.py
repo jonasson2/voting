@@ -59,7 +59,7 @@ def rel_sup_simple(*args, **kwargs):
     reason = "Max ratio of next-in vote score to computed substitute vote score"
     heading = "Superiority ratio"
     return common_allocate(*args, superiority_simple, heading, reason,
-                           nat_prior_allocations=kwargs.get("nat_prior_allocations"))
+                           flex_scores=superiority_pool_scores, **kwargs)
 
 def rel_sup_next(*args, **_):
     pass
@@ -79,8 +79,44 @@ def vote_percentage(votes, alloc, div, **kwargs):
     return next_quotient(votes / kwargs["votesum"], alloc, div)
 
 
-def vote_percentage_scores(votes, alloc, div, *, votesums):
+def vote_percentage_scores(votes, alloc, div, *, votesums, **_):
     return votes / votesums[:, None] / div[alloc]
+
+
+def superiority_pool_scores(votes, alloc, div, *, free_const, free_party,
+                            remaining, exclude_zero_votes=False, **_):
+    """Score one actual seat using a provisional allocation of the whole pool."""
+    active = np.flatnonzero(free_party > 0)
+    provisional = alloc.copy()
+    room = free_const.copy()
+    counts = np.zeros(len(room), dtype=int)
+    # The simplified method's lookahead can exceed party deficits.
+    for _ in range(remaining):
+        quotients = np.full(votes.shape, -np.inf)
+        quotients[:, active] = votes[:, active] / div[provisional[:, active]]
+        quotients[room <= 0, :] = -np.inf
+        if exclude_zero_votes:
+            quotients[votes <= 0] = -np.inf
+        winner = int(np.argmax(quotients))
+        c, p = np.unravel_index(winner, votes.shape)
+        if not np.isfinite(quotients[c, p]):
+            raise ValueError("No eligible list can receive the remaining seats.")
+        provisional[c, p] += 1
+        room[c] -= 1
+        counts[c] += 1
+
+    scores = np.full(votes.shape, -np.inf)
+    for c in np.flatnonzero(counts):
+        parties = active
+        if exclude_zero_votes:
+            parties = parties[votes[c, parties] > 0]
+        if len(parties):
+            p, score = superiority_simple(
+                votes[c, parties], alloc[c, parties], div,
+                nfree=counts[c], npartyseats=free_party[parties])
+            scores[c, parties[p]] = score
+    return scores
+
 
 def absolute_margin(votes, alloc, div, **_):
     quot = votes/div[alloc]

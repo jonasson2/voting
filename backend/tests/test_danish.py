@@ -84,6 +84,11 @@ class DanishTest(unittest.TestCase):
                 self.assertIn(table["sup_header"], strings)
             book.close()
 
+    def test_entropy_score_preserves_regional_party_totals(self):
+        score = self.election().entropy_score()
+
+        self.assertGreaterEqual(score, 0)
+
     def test_all_flexible_methods_allocate_within_regions(self):
         settings = SimulationSettings()
         settings.update(simulation_count=1, cpu_count=1, random_seed=123)
@@ -346,6 +351,9 @@ class DanishTest(unittest.TestCase):
         displayed_measure = web_result["vuedata"][populated_groups[0]][0]["avg"][0]
         self.assertEqual(set(displayed_measure), {"value", "integer", "ci"})
         self.assertIsInstance(displayed_measure["value"], float)
+        entropy_row = web_result["vuedata"]["other"][0]
+        self.assertEqual(entropy_row["rowtitle"], "Entropy score (%)")
+        self.assertTrue(entropy_row["avg"][0]["percentage"])
         with TemporaryDirectory() as directory:
             path = Path(directory) / "simulation.xlsx"
             simulation_to_xlsx(web_result, path, {
@@ -361,6 +369,12 @@ class DanishTest(unittest.TestCase):
                 for cell in row
             }
             self.assertIn("Difference", quality_values)
+            score_row = next(
+                row for row in book["Quality measures"].iter_rows()
+                if row[0].value == "Entropy score")
+            self.assertEqual(score_row[2].number_format, "#,##0.0000%")
+            self.assertGreater(score_row[2].value, 0)
+            self.assertLessEqual(score_row[2].value, 1)
             names = [row[1] for row in book["Party names"].iter_rows(values_only=True)]
             self.assertNotIn("Rashid Ali", names)
             self.assertTrue(any(

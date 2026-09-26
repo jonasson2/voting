@@ -202,6 +202,7 @@ export default {
       'show_systems',
       'waiting_for_data',
       'all_filename',
+      'all_file_handle',
     ]),
     activeTabIndex: {
       get() {
@@ -271,7 +272,8 @@ export default {
         : timestampedDownloadBasename(prefix)
       if (canChooseSaveLocation()) {
         try {
-          const fileHandle = await chooseSaveLocation(basename, 'json')
+          const fileHandle = await chooseSaveLocation(
+            basename, 'json', kind === 'all' ? this.all_file_handle : null)
           this.confirmDownload({fileHandle})
           return
         } catch (error) {

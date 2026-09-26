@@ -20,6 +20,8 @@ DRN = {rn["value"]: rn["text"] for rn in RULE_NAMES}
 GMN = {gmn["value"]: gmn["text"] for gmn in GENERATING_METHOD_NAMES}
 SCONST = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["const"]}
 SPARTY = {sso["value"]: sso["text"] for sso in SEAT_SPECIFICATION_OPTIONS["party"]}
+DEFAULT_FRACTIONAL_DIGITS = 2
+DEFAULT_PERCENTAGE_DIGITS = 1
 
 
 def fixed_seat_threshold_text(system):
@@ -41,14 +43,16 @@ def adjustment_qualification_text(system):
 
 
 def result_fractional_digits(display_settings=None):
-    value = (display_settings or {}).get("fractional_digits", 3)
+    value = (display_settings or {}).get(
+        "fractional_digits", DEFAULT_FRACTIONAL_DIGITS)
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10:
         raise ValueError("Fractional digits must be an integer between 0 and 10")
     return value
 
 
 def result_percentage_digits(display_settings=None):
-    value = (display_settings or {}).get("percentage_digits", 2)
+    value = (display_settings or {}).get(
+        "percentage_digits", DEFAULT_PERCENTAGE_DIGITS)
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10:
         raise ValueError("Percentage digits must be an integer between 0 and 10")
     return value
@@ -182,7 +186,9 @@ def write_matrix(worksheet, startrow, startcol,
             value = int(value) if isPosInt(value) else value
             worksheet.write(startrow+c, startcol+len(matrix[c])-1, value, totalsformat)
 
-def cell_width(x, fmt, fractional_digits=3, percentage_digits=2):
+def cell_width(
+        x, fmt, fractional_digits=DEFAULT_FRACTIONAL_DIGITS,
+        percentage_digits=DEFAULT_PERCENTAGE_DIGITS):
     if isinstance(x,str): n = len(x)
     elif fmt == '1':      n = len(f'{x:,.1f}')
     elif fmt == '3':      n = len(f'{x:,.{fractional_digits}f}')
@@ -197,8 +203,8 @@ def demo_table_to_xlsx(
         col,
         fmt,
         demo_table,
-        fractional_digits=3,
-        percentage_digits=2,
+        fractional_digits=DEFAULT_FRACTIONAL_DIGITS,
+        percentage_digits=DEFAULT_PERCENTAGE_DIGITS,
 ):
     headers = demo_table["headers"]
     steps = demo_table["steps"]
@@ -336,12 +342,11 @@ def _write_election_sheet(
             [votes[-1] / seats[-1] if seats[-1] else None
              for votes, seats in zip(vote_matrix, results["all"])],
             fmt["cell"]))
-    for label, key in (
-            ("D'Hondt entropy:", "entropy_dhondt"),
-            ("Sainte-Laguë entropy:", "entropy_sainte_lague")):
-        worksheet.write(row, 0, label, fmt["h"])
-        worksheet.write(row, 1, result[key], fmt["cell"])
-        row += 1
+    worksheet.write(row, 0, "Entropy score:", fmt["h"])
+    score = result["entropy_score"]
+    worksheet.write(
+        row, 1, "–" if score is None else score, fmt["percentages"])
+    row += 1
 
     column = len(parties) + 2
     worksheet.set_column(1, column - 1, 10)
@@ -359,9 +364,10 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
     fmt = prepare_formats(workbook, display_settings)
     fractional_digits = result_fractional_digits(display_settings)
     percentage_digits = result_percentage_digits(display_settings)
+    entropy_cache = {}
     for election in elections:
         _write_election_sheet(
-            workbook, fmt, election.get_result_excel(),
+            workbook, fmt, election.get_result_excel(entropy_cache),
             fractional_digits, percentage_digits)
     party_names_to_xlsx(
         workbook, fmt, elections[0].system["parties"], party_names)

@@ -91,6 +91,10 @@ export default {
   padding: 0 16px 24px;
 }
 
+.settings-pane h3 {
+  margin-left: 0;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: max-content minmax(9rem, 13rem);

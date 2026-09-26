@@ -13,8 +13,8 @@
             <th>Abbreviation</th>
             <th>Name</th>
             <th v-b-tooltip.hover.top.v-primary.ds500
-              title="Independent candidates receive fixed seats only under Danish rules and are omitted from simulations; their votes remain in threshold totals.">
-              Independent
+              title="A single candidate may have votes in only one constituency and receive at most one fixed seat, but no adjustment or national seats. Single candidates are excluded from simulations; their votes remain in threshold totals. In Denmark they are called independents.">
+              Single candidate
             </th>
           </tr>
         </thead>
@@ -33,7 +33,7 @@
             <td class="displaycenter">
               <input type="checkbox" v-model="voteTable.independent_candidates[partyIndex]"
                 :data-grid-row="partyIndex" data-grid-column="1"
-                :aria-label="`${party}: independent candidate`" />
+                :aria-label="`${party}: single candidate`" />
             </td>
           </tr>
         </tbody>

@@ -215,18 +215,21 @@ def writecsv(file, L):
 def get_cpu_count():
     from multiprocessing import cpu_count
     return cpu_count()
-        
+
+def get_default_cpu_count(cpu_count=None):
+    if cpu_count is None:
+        cpu_count = get_cpu_count()
+    return max(1, round(2 * cpu_count / 3))
+
 def get_cpu_counts():
-    from math import sqrt
-    cpu_counts = []
-    rcount = sqrt(2)
-    count = round(rcount)
     cpu_count = get_cpu_count()
+    choices = [1, 2, 3, 4, 6, 8, 10, 12, 16, 24, 32]
+    count = 64
     while count <= cpu_count:
-        cpu_counts.append(count)
-        rcount *= sqrt(2)
-        count = round(rcount)
-    return cpu_counts
+        choices.append(count)
+        count *= 2
+    return sorted({n for n in choices if n <= cpu_count}
+                  | {cpu_count, get_default_cpu_count(cpu_count)})
 
 def timestamp():
     from datetime import datetime as dt

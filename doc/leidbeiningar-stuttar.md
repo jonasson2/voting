@@ -40,7 +40,7 @@ sem hlaða má niður til frekari skoðunar og úrvinnslu. Útreiknuðum mælikv
 fylgja meðaltöl og staðalfrávik yfir allar hermanirnar og með þeim má m.a.
 ákvarða hvort munur á milli kerfa sé tölfræðilega marktækur.
 
-## Fyrsta tilraun: tvö kjördæmi og tveir flokkar
+## Dæmi 1: tvö kjördæmi og tveir flokkar
 
 Á *Source votes and seats* velurðu *Use preset* og síðan *2 by 2 example*.
 Þar eru þessi grunnatkvæði og sæti:
@@ -87,94 +87,96 @@ með Sainte-Laguë og paraði munurinn -0,005 ± 0,001; þar stendur D'Hondt-að
 sig betur, og hún stendur sig líka betur í mestu hlutfallslegu umframúthlutun
 (*Greatest relative over-representation*).
 
-## Önnur tilraun: sænsku kosningarnar 2026
+## Dæmi 2: íslensku kosningarnar 2024
 
-Veldu *Use preset* og síðan sænsku þingkosningarnar 2026. Hér eru raunveruleg
-atkvæðagögn í mun stærri töflu en í fyrri tilrauninni: 29 kjördæmi og fjölmargir
-flokkar. Tilraunin sýnir hvernig sænska kerfið er sett upp og hvernig bera má
-það saman við aðrar aðferðir við úthlutun jöfnunarsæta.
+Veljum nú *Use preset* og íslensku alþingiskosningarnar 2024. Hér eru sex
+kjördæmi, 54 föst sæti og níu jöfnunarsæti. Fjöldi beggja tegunda sæta er
+ákveðinn í hverju kjördæmi. Dálkarnir sýna listabókstafi flokkanna og í
+töflunni *Party names* fyrir neðan atkvæðin má sjá hvaða flokkur stendur að
+hverjum lista. Í þessari tilraun ætlum við að bera saman fimm aðferðir við að
+staðsetja jöfnunarsætin, en halda öðrum úthlutunarreglum óbreyttum.
 
-Atkvæðataflan sýnir 310 föst sæti. Lágmark jöfnunarsæta er núll í hverju
-kjördæmi og bandstrik í dálkinum *# Max adj.* merkir að þar sé ekkert fyrirfram
-ákveðið hámark. Í reitnum *Adjustment seats to allocate* ofan við töfluna
-stendur 39, svo alls eru 349 þingsæti. Jöfnunarsætunum 39 er dreift milli
-flokkanna þannig að þingsætahlutfall hvers flokks verði sem næst hlutfalli hans
-af atkvæðum á landsvísu. Jöfnunarsætum hvers flokks er síðan dreift milli
-kjördæma þannig að dreifing heildarsæta hans endurspegli dreifingu atkvæða hans
-sem best.
+Setjum *Small party cutoff* í 2% og ýtum á *Prune small parties*. Þá hverfa L og
+Y úr töflunni og níu flokkar standa eftir. Atkvæði þeirra sem voru fjarlægðir,
+alls 2257, varðveitast í dálkinum *Pruned* og teljast áfram með þegar
+atkvæðahlutföll fyrir þröskulda eru reiknuð.
 
-Eins og sést eru ótal flokkar í framboði, margir smáflokkar og sumir fá aðeins 1
-eða 2 atkvæði. Til að fækka þeim má velja *Prune small parties*. Þá standa eftir
-átta flokkar sem allir hafa meira en 5% atkvæða. Þessi stytting er aðeins gerð
-til að einfalda tilraunina; 1% er ekki sænskur úthlutunarþröskuldur.
+Veljum kosningakerfi *Iceland (2003–)* undir *Election-law preset*. Kerfið fær
+sjálfkrafa nafnið *Iceland*, og D'Hondt-regla helst á öllum þremur
+úthlutunarstigunum og stillt er á 5% landsþröskuld fyrir jöfnunarsæti. Bætum
+síðan við fjórum kerfum með *+*. Nýtt kerfi tekur stillingar þess fyrra, svo 5%
+þröskuldurinn og D'Hondt-reglurnar fylgja sjálfkrafa með. Breytum aðeins nafni
+hvers kerfis og *Allocation method* undir *Allocation of adjustment seats to
+lists* sem hér segir:
 
-Næst skal fara í *Electoral systems* og láta *Election law preset* vera *Sweden
-(2018–)*. Bættu svo við tveimur samanburðarkerfum,
+- Nafn *Optimal* og aðferð *Optimal LP*,
+- *Max seat share* og *Maximum constituency seat share*,
+- *Switching* og *Switching of seats*,
+- *Rel-sup-simple* og *Relative superiority, simplified*.
 
-Veldu *Sweden (2018–)* undir *Election-law preset*. Fyrirmyndin
-stillir meðal annars 4% landsþröskuld, 12% staðbundinn þröskuld og breyttu
-Sainte-Laguë-regluna með fyrsta deili 1,2. Hún velur einnig *Swedish switching*
-sem undirbúning fyrir úthlutun jöfnunarsæta og *Maximum constituency votes*
-sem aðferð við lokaúthlutun þeirra.
+Skoðum fyrst *Single election*. Öll fimm kerfin gefa B 5 sæti, C 11, D 14, F 10,
+M 8 og S 15, en J, P og V ekkert sæti. Þau úthluta líka föstu sætunum eins;
+munurinn er í hvaða kjördæmum jöfnunarsæti flokkanna lenda. Tölur í svigum sýna
+jöfnunarsætin og skrefatöflurnar fyrir neðan sýna hvernig þeim er úthlutað. Í
+öllum tilvikum þarf að færa fjögur sæti milli lista til að breyta úthlutun
+*Iceland* í úthlutun hinna kerfanna, sem eru þó ekki öll eins: *Optimal* og
+*Rel-sup-simple* gefa sömu úthlutun, en *Switching* og *Max seat share* gefa
+hvort sína úthlutun.
 
-Reiknaðu úrslitin og skoðaðu skrefatöflurnar. Fyrst eru föstu sæti hvers
-flokks borin saman við þann heildarsætafjölda sem flokknum ber á landsvísu. Ef
-flokkur hefur fengið of mörg föst sæti eru umframsæti hans færð til flokka sem
-vantar sæti. Þetta er *Swedish switching*. Í kosningunum 2026 þarf þó enga
-slíka færslu og það kemur fram í fyrri skrefatöflunni. Í þeirri síðari sést
-hvernig jöfnunarsætunum 39 er úthlutað eitt af öðru.
+Hermum næst 2000 kosningar með upphafsgildi slembitölugjafans (*random seed*)
+1234, en höldum öðrum stillingum óbreyttum eins og sjálfgefið er og ýtum á
+*Start simulation*. Byrjum á fyrstu línu niðurstaðna, *Absolute values (Hare
+quota)*, í hlutanum *Differences between allocated and fractional reference
+seats, summed over constituency lists*. Þar eru algildi frávika úthlutaðra sæta
+frá brotnum viðmiðunarsætishlutum lögð saman og summunni deilt með tveimur. Hver
+eining í summunni telur því tilfærslu eins sætis frá einum lista til annars.
+Meðaltölin eru 9,36 fyrir *Iceland*, 8,88 fyrir *Optimal*, 8,95 fyrir *Max seat
+share*, 8,89 fyrir *Switching* og 8,90 fyrir *Rel-sup-simple*. Dálkurinn
+*Difference* sýnir paraðan mun fyrstu tveggja kerfanna: 0,49 ± 0,03.
+Öryggisbilið er vel ofan við núll, svo frávikin eru að meðaltali marktækt meiri
+með íslensku aðferðinni en þeirri bestu samkvæmt þessum mælikvarða.
 
-Til að kanna áhrif lokaúthlutunarinnar skaltu bæta við öðru kerfi og velja þar
-einnig *Sweden (2018–)*. Nefndu kerfin til dæmis *Swedish method* og *Vote
-percentage*. Í seinna kerfinu breytirðu aðeins *Allocation method* úr *Maximum
-constituency votes* í *Maximum constituency vote percentage*. Landsúthlutun
-flokkanna og hugsanleg sænsk skipti eru þá óbreytt, en önnur regla ræður í hvaða
-kjördæmum jöfnunarsætin lenda.
+Hinar línurnar í þessum hluta leggja mismunandi áherslu á stærð frávika,
+umframúthlutun og vanúthlutun, ýmist í sætum eða miðað við stærð listanna.
+Heildarmyndin er svipuð: *Optimal* hefur lægstu meðaltölin í sex af sjö línum
+og *Iceland* þau hæstu í sex. *Switching* og *Rel-sup-simple* standa sig svipað
+og báðar yfirleitt nokkru betur en *Max seat share*, en röðin er ekki alstaðar
+eins.
 
-Fyrir þessi atkvæði fá flokkarnir sömu heildarsætatölur í báðum kerfum, en
-sætaskiptingin milli kjördæmalista verður talsvert ólík. Færa þarf 27 sæti milli
-kjördæmalista til að breyta annarri úthlutuninni í hina. Með hermun má síðan
-bera aðferðirnar saman yfir mörg möguleg atkvæðamynstur. Samanburður
-heildarsæta flokka á að vera núll, því kerfin ákvarða þau eins, en mælikvarðar
-á úthlutun til kjördæmalista geta verið ólíkir.
+Í næsta hluta, *Party seat totals: allocated minus fractional reference*,
+eru allar niðurstöður eins fyrir kerfin fimm, bæði meðaltöl og öryggisbil.
+Ástæðan er að föstu sætin, landsúthlutun flokkanna og þröskuldarnir eru eins
+í öllum kerfunum. Þau gefa hverjum flokki því sama heildarsætafjölda í hverri
+einustu hermun.
 
-## Hermun og samanburður
+Í þriðja hlutanum, *Specific quality indices for allocations in the
+constituencies*, skoðum við fyrst *Entropy score*, óreiðustigið. Það sýnir
+hlutfall margfeldis kvóta úthlutaðra sæta af stærsta mögulega margfeldinu
+samkvæmt valinni reglu og sömu skorðum. *Optimal* fær því 100%. Samkvæmt þessu
+viðmiði er *Rel-sup-simple* næst bestu úthlutuninni, síðan *Switching* og *Max
+seat share*, en *Iceland* lengst frá henni. Hér greinast *Switching* og
+*Rel-sup-simple* betur að en í fyrstu töflunni. Athuga skal að óreiðustigið
+metur aðeins úthlutun jöfnunarsætanna en leggur engan mælikvarða á gæði
+kjördæmaúthlutunarinnar eða ákvörðun heildarsæta hvers flokks; 100% merkir því
+ekki að kosningakerfið í heild sé besta mögulega kerfið.
 
-Fyrsta tilraunin notar sjálfgefin gildi á *Simulated elections*, að
-undanskildum fjölda hermana, sem er settur í 5.000, og upphafsgildi
-slembitölugjafans (*random seed*), sem er sett í 123. Bandstrikið *-* lætur
-herminn velja nýjar slembitölur. Bæði kerfin eru sjálfgefið valin undir
-*Electoral systems used for comparison*. Ýttu á *Start simulation* til
-að hefja hermunina. Stillingar fyrir sérstök landsatkvæði koma ekki við sögu
-í þessu dæmi.
+Næstu tvær línur í þriðja hlutanum mæla misvægi milli kjördæma: Sú fyrri segir
+að færa þurfi rétt um 5 sæti milli kjördæma til að ná jafnvægi þannig að
+sætafjöldinn endurspegli atkvæðafjölda, og sú seinni segir að 1,88 sinnum fleiri
+atkvæði séu að baki hverju sæti þar sem þau eru flest en þar sem þau eru fæst.
+Með því skoða atkvæðatöfluna sést að munurinn er mestur milli NV og SV. Allir
+dálkarnir gefa sömu tölur því fyrstu tvö úthlutunarskref allra kerfanna eru hin
+sömu.
 
-Í hverri hermun fá bæði kerfin sömu atkvæðin. Því er eðlilegt að bera kerfi
-saman í sömu keyrslu. Byrjaðu á eftirfarandi þremur atriðum:
+Skoðum loks *Absolute seat differences summed over constituency lists*.
+Þar eru kerfin borin saman tvö og tvö og hver tala segir hversu mörg sæti
+þurfi að færa milli lista að meðaltali til að breyta annarri úthlutuninni í
+hina. Í röðinni fyrir *Optimal* eru gildin 3,35 fyrir *Iceland*, 2,47 fyrir
+*Max seat share*, 1,76 fyrir *Switching* og 1,15 fyrir *Rel-sup-simple*.
+Þetta segir sömu sögu og óreiðustigið: *Rel-sup-simple* er næst bestu
+úthlutuninni, síðan kemur *Switching*, þá *Max seat share* og loks *Iceland*.
 
-- *Sætatölur.* Skoðaðu meðaltöl og staðalfrávik heildarsæta. Brot í meðaltali
-  merkir ekki að broti úr sæti hafi verið úthlutað í einstakri hermun.
-- *Mismunur milli kerfa.* Skoðaðu samanburð þeirra bæði eftir listum og eftir
-  heildarsætum flokka. Þau geta gefið flokkunum sömu heildarsætatölur en skipt
-  sætum þeirra ólíkt milli kjördæma. Í summu algilda sætamunar telur ein
-  tilfærsla frá A til B tvö: eitt sæti tapast og annað bætist við.
-- *Frávik frá sætishlutum.* Skoðaðu einn eða tvo mælikvarða í þessum flokki
-  áður en þú skoðir þá alla. Lægra frávik er betra samkvæmt viðkomandi mælikvarða;
-  það eitt gerir kerfi ekki almennt betra.
-
-*Kvörðun viðmiða og samanburður við annað kerfi eru ólíkir hlutir.* Kvörðunin
-ákveður þá brotnu sætishluti sem ákveðnir gæðamælikvarðar bera úthlutuð sæti
-saman við. Hún breytir ekki úthlutun sætanna. Sjálfgefna kvörðunin í dæminu
-tekur bæði mið af heildarsætatölum kjördæma og landsfylgi flokka. Aðrar
-kvörðunarleiðir leggja áherslu á annað þessara atriða. Valið þarf að hæfa því
-sem þú vilt rannsaka.
-Valin samanburðarkerfi eru hins vegar notuð til að bera saman sjálfar
-heiltöluúthlutanirnar.
-
-*Óvissa í meðaltali er ekki dreifing niðurstaðna.* Staðalfrávikið lýsir
-breytileika milli hermdra kosninga. Bilið við meðaltalið er áætlað 95%
-öryggisbil fyrir meðaltalið og þrengist að jafnaði þegar hermunum fjölgar.
-Það er ekki bil sem inniheldur 95% allra hermdra úrslita. Fjölga má hermunum
-enn frekar þegar meta á mun milli kerfa nánar.
+## Gamalt:
 
 Stillingin *Simulate with thresholds?* skiptir máli við samanburð kerfa með
 þröskulda. Valið *No* gerir kleift að skoða kerfin án stökka sem verða
@@ -182,32 +184,18 @@ Stillingin *Simulate with thresholds?* skiptir máli við samanburð kerfa með
 hæfisskilyrðum flokka, nema *Stand in all constituencies*. Niðurstöðurnar
 lýsa þá ekki lengur kerfunum með öllum upphaflegum skilyrðum þeirra.
 
-Helstu niðurstöður sjást á vefsíðunni. *Download Excel file* á niðurstöðuflipunum
-gefur ítarlegri töflur til skoðunar og frekari úrvinnslu. Til dæmis má finna
-viðmiðunarsætishlutina í Excel-skrá hermunar. Í *Settings* má velja talnasnið
-og fjölda aukastafa; það breytir framsetningu en ekki útreikningunum.
-
-\newpage
+Helstu niðurstöður sjást á vefsíðunni. *Download Excel file* á
+niðurstöðuflipunum gefur ítarlegri töflur til skoðunar og frekari úrvinnslu. Til
+dæmis má finna viðmiðunarsætishlutina í Excel-skrá hermunar. Í *Settings* má
+velja talnasnið og fjölda aukastafa; það breytir framsetningu en ekki
+útreikningunum.
 
 ## Eigin gögn og aðrar tilraunir
-
-*Atkvæðagögn og kosningalög eru valin hvort í sínu lagi.* *Use preset* á
-fyrsta flipanum sækir atkvæði og sætaskipan. *Election-law preset* á öðrum
-flipanum stillir reglurnar en breytir ekki atkvæðum eða sætafjölda. Þannig má
-bæði endurgera kosningar samkvæmt lögum viðkomandi lands og prófa önnur kerfi
-á sömu úrslitum. Fyrir endurgerð raunverulegra kosninga þarf að velja bæði
-viðeigandi gögn og rétta lagafyrirmynd.
 
 Atkvæðatöflunni má breyta beint eða lesa hana úr Excel- eða CSV-skrá með
 *Upload from file*. Auðveld leið til að útbúa eigin skrá er að hlaða niður
 atkvæðatöflu úr herminum, breyta henni og hlaða henni inn aftur. Þá þarf ekki
 að smíða skráarsniðið frá grunni.
-
-Við stærri tilraunir getur verið gagnlegt að fækka smáflokkum með *Prune small
-parties*. Aðgerðin breytir atkvæðatöflunni og fjarlægðir flokkar fá ekki sæti.
-Atkvæði þeirra varðveitast í *Pruned* og eru áfram talin með þegar
-atkvæðahlutföll fyrir þröskulda eru reiknuð. Vistaðu gögnin fyrst ef þú vilt
-geta snúið aftur til óstyttu töflunnar.
 
 ## Vista, hlaða inn og halda áfram
 

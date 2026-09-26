@@ -171,6 +171,11 @@ th {
   margin: 0 15px;
 }
 
+.tooltip.scaling-tooltip,
+.tooltip.scaling-tooltip .tooltip-inner {
+  max-width: min(400px, calc(100vw - 24px));
+}
+
 /* Fixed dropdown widths, including room for the arrow. */
 .compact-select.settings-rule { width: 280px; }
 .compact-select.settings-vote-basis { width: 220px; }

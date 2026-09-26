@@ -165,6 +165,12 @@ export function validVotes(table) {
             && table.independent_candidates.every(flag => typeof flag === "boolean")))
 }
 
+export function validSingleCandidates(table) {
+  if (!Array.isArray(table.independent_candidates)) return true
+  return table.independent_candidates.every((single, party) =>
+    !single || table.votes.filter(row => Number(row[party]) > 0).length <= 1)
+}
+
 export function validNationalVotes(table) {
   const info = table.party_vote_info
   if (!info

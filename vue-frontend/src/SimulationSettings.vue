@@ -36,6 +36,7 @@
               @blur="restoreRandomSeed"/>
           </span>
         </div>
+        <hr class="simulation-settings-divider">
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Distribution used to vary list support before each
@@ -71,7 +72,7 @@
               v-model.number="sim_settings.const_corr"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
+        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Standard deviation of simulated votes divided by their mean.
                  Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
@@ -83,7 +84,7 @@
               v-model.number="sim_settings.party_vote_rsd"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
+        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Correlation between list votes and national party votes,
                  use only with lognormal distribution, else 0 is used.">
@@ -94,6 +95,7 @@
               v-model.number="sim_settings.party_vote_corr"/>
           </span>
         </div>
+        <hr class="simulation-settings-divider">
         <div class="simulation-setting-row"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="Selecting No disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.">
@@ -103,6 +105,76 @@
             v-model="sim_settings.use_thresholds"
             :options="sim_capabilities.use_thresholds"/>
         </div>
+        <div class="simulation-setting-row"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Compare the product of allocated-seat quotients with the largest achievable product under the selected rule and constraints. 100% is optimal.">
+          <label for="simulation-entropy-score">Calculate entropy score?</label>
+          <b-form-select id="simulation-entropy-score"
+            class="compact-select simulation-threshold-select simulation-setting-control"
+            v-model="sim_settings.entropy_score"
+            :options="sim_capabilities.use_thresholds"/>
+        </div>
+        <div class="simulation-setting-row"
+          v-b-tooltip.hover.bottom.v-primary.ds500
+          title="For every simulated election, perturb its votes at several small CoVs and measure how many seats move between parties and between lists within parties.">
+          <label for="simulation-sensitivity">Compute sensitivity measures?</label>
+          <b-form-select id="simulation-sensitivity"
+            class="compact-select simulation-threshold-select simulation-setting-control"
+            v-model="sim_settings.sensitivity"
+            :options="sim_capabilities.use_thresholds"/>
+        </div>
+        <template v-if="sim_settings.sensitivity">
+          <div class="simulation-setting-row"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Number of minor vote perturbations generated at every sensitivity CoV for each simulated election.">
+            <label for="sensitivity-simulation-count">Number of perturbations per major simulation</label>
+            <span class="simulation-setting-control compact-entry">
+              <input id="sensitivity-simulation-count" class="compact-entry-input"
+                type="text"
+                v-autowidth="{ maxWidth: '122px', minWidth: '62px' }"
+                v-model.number="sim_settings.sensitivity_simulation_count"/>
+            </span>
+          </div>
+          <div class="simulation-setting-row"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Distribution used for independent multiplicative perturbations around each simulated vote table.">
+            <label for="sensitivity-distribution">Sensitivity generating distribution</label>
+            <b-form-select id="sensitivity-distribution"
+              class="compact-select simulation-distribution-select simulation-setting-control"
+              v-model="sim_settings.sensitivity_gen_method"
+              :options="sim_capabilities.generating_methods"/>
+          </div>
+          <div class="simulation-setting-row sensitivity-cov-row"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Positive, distinct CoVs at which sensitivity is calculated, in increasing order.">
+            <label>Sensitivity CoVs</label>
+            <span class="simulation-setting-control sensitivity-cov-list">
+              <span class="sensitivity-cov-item"
+                v-for="(cov, index) in sim_settings.sensitivity_covs"
+                :key="index">
+                <span class="compact-entry">
+                  <input class="compact-entry-input" type="text"
+                    v-autowidth="{ maxWidth: '70px', minWidth: '35px' }"
+                    v-model.number="sim_settings.sensitivity_covs[index]"
+                    :aria-label="`Sensitivity CoV ${index + 1}`"/>
+                  <span class="compact-entry-unit">%</span>
+                </span>
+                <b-button v-if="index === sim_settings.sensitivity_covs.length - 1"
+                  variant="link" size="sm" class="sensitivity-cov-remove"
+                  :disabled="sim_settings.sensitivity_covs.length === 1"
+                  v-b-tooltip.hover.bottom.v-primary.ds500
+                  title="Remove sensitivity CoV"
+                  @click="removeSensitivityCov(index)">X</b-button>
+              </span>
+              <b-button size="sm" class="sensitivity-cov-add"
+                v-b-tooltip.hover.bottom.v-primary.ds500
+                title="Add sensitivity CoV"
+                @click="addSensitivityCov">
+                <span class="add-button-symbol">+</span>
+              </b-button>
+            </span>
+          </div>
+        </template>
       </b-col>
       <b-col class="simulation-settings-scaling">
         <b-form-group style="font-size:110%"
@@ -113,39 +185,29 @@
             id="A"
             v-model="sim_settings.scaling"
             >
-            <b-form-radio
-              v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Recommended default. Fractional reference seats satisfy both important
-                     margins: each constituency receives its specified seat total, and each
-                     party its nationally proportional entitlement."
-              value="both"
-              >
-              {{scaling_name("both")}}
-            </b-form-radio><br>
-            <b-form-radio
-              v-b-tooltip.hover.bottom.v-primary.ds500
+            <div class="scaling-option"
+              v-b-tooltip.hover.top.v-primary.ds500="{ customClass: 'scaling-tooltip' }"
+              title="Fractional reference seat shares satisfy both important margins: each constituency's seat total and each party's nationally proportional entitlement.">
+              <b-form-radio value="both">{{scaling_name("both")}}</b-form-radio>
+            </div>
+            <div class="scaling-option"
+              v-b-tooltip.hover.top.v-primary.ds500
               title="Adjust the vote shares so that they sum to the total number of seats for
-                     each constituency (scale rows of vote table)"
-              value="const"
-              >          
-              {{scaling_name("const")}}
-            </b-form-radio><br>
-            <b-form-radio
-              v-b-tooltip.hover.bottom.v-primary.ds500
+                     each constituency (scale rows of vote table)">
+              <b-form-radio value="const">{{scaling_name("const")}}</b-form-radio>
+            </div>
+            <div class="scaling-option"
+              v-b-tooltip.hover.top.v-primary.ds500
               title="Adjust the vote shares so that they sum to the total number of seats for
-                     each party (scale columns of vote table)"
-              value="party"
-              >
-              {{scaling_name("party")}}
-            </b-form-radio><br>
-            <b-form-radio
-              v-b-tooltip.hover.bottom.v-primary.ds500
+                     each party (scale columns of vote table)">
+              <b-form-radio value="party">{{scaling_name("party")}}</b-form-radio>
+            </div>
+            <div class="scaling-option"
+              v-b-tooltip.hover.top.v-primary.ds500
               title="Adjust the vote shares so that they sum to the total number of seats
-                     nationally (scales all entries in vote table by the same factor)"
-              value="total"
-              >
-              {{scaling_name("total")}}
-            </b-form-radio>
+                     nationally (scales all entries in vote table by the same factor)">
+              <b-form-radio value="total">{{scaling_name("total")}}</b-form-radio>
+            </div>
           </b-form-radio-group>
         </b-form-group>
       </b-col>
@@ -172,6 +234,7 @@ export default {
     ...mapState([
       'sim_settings',
       'sim_capabilities',
+      'vote_table',
       'systems',
       'waiting_for_data'
     ]),
@@ -209,6 +272,18 @@ export default {
     }
   },
   methods: {
+    addSensitivityCov() {
+      const covs = this.sim_settings.sensitivity_covs
+      const last = Number(covs[covs.length - 1])
+      const previous = Number(covs[covs.length - 2])
+      const increment = covs.length > 1 && last > previous ? last - previous : 1
+      covs.push((Number.isFinite(last) ? last : 0) + increment)
+    },
+    removeSensitivityCov(index) {
+      if (this.sim_settings.sensitivity_covs.length > 1) {
+        this.sim_settings.sensitivity_covs.splice(index, 1)
+      }
+    },
     restoreRandomSeed() {
       const seed = this.sim_settings.random_seed
       if (typeof seed === 'string' && seed.trim() === '') {
@@ -241,3 +316,38 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.scaling-option {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.simulation-settings-divider {
+  border: 0;
+  border-top: 2px solid #000;
+  margin: 0.5em 0;
+}
+
+.sensitivity-cov-list,
+.sensitivity-cov-item {
+  align-items: center;
+  display: inline-flex;
+}
+
+.sensitivity-cov-list {
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sensitivity-cov-remove {
+  font-weight: 400;
+  line-height: 1;
+  margin-left: 4px;
+  padding: 2px 3px;
+}
+
+.sensitivity-cov-add {
+  padding: 2px 7px;
+}
+</style>
