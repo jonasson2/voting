@@ -1402,16 +1402,31 @@ class CurrentApplicationTest(unittest.TestCase):
         system['constituency_threshold'] = 50
         for national_threshold, choice, expected in (
                 (0, 0, [0, 2]), (40, 0, [0, 2]),
-                (40, 1, [1, 1]), (0, 1, [1, 1])):
+                (40, 1, [1, 1]), (0, 1, [0, 2])):
             with self.subTest(national_threshold=national_threshold, choice=choice):
                 system['fixed_seat_national_threshold'] = national_threshold
                 system['fixed_seat_threshold_choice'] = choice
                 allocation = ElectionHandler(
                     table, [system], use_thresholds=True).elections[0]
                 self.assertEqual(allocation.results['fixed_const_seats'][0], expected)
-        self.assertEqual(fixed_seat_threshold_text(system), '0% national or 50% local')
+        self.assertEqual(fixed_seat_threshold_text(system), '50% local')
         system['fixed_seat_threshold_choice'] = 0
-        self.assertEqual(fixed_seat_threshold_text(system), '0% national and 50% local')
+        self.assertEqual(fixed_seat_threshold_text(system), '50% local')
+        system['fixed_seat_national_threshold'] = 50
+        system['constituency_threshold'] = 0
+        for choice in (0, 1):
+            with self.subTest(national_only=choice):
+                system['fixed_seat_threshold_choice'] = choice
+                allocation = ElectionHandler(
+                    table, [system], use_thresholds=True).elections[0]
+                self.assertEqual(allocation.results['fixed_const_seats'][0], [0, 2])
+                self.assertEqual(fixed_seat_threshold_text(system), '50% national')
+        system['fixed_seat_national_threshold'] = 0
+        self.assertEqual(fixed_seat_threshold_text(system), '-')
+        allocation = ElectionHandler(
+            table, [system], use_thresholds=True).elections[0]
+        self.assertEqual(allocation.results['fixed_const_seats'][0], [1, 1])
+        system['constituency_threshold'] = 50
         table['pruned'] = [20]
         for national_threshold, expected in ((40, [0, 2]), (30, [1, 1])):
             with self.subTest(pruned_national_threshold=national_threshold):

@@ -25,16 +25,30 @@ DEFAULT_PERCENTAGE_DIGITS = 1
 
 
 def fixed_seat_threshold_text(system):
-    local = f'{system["constituency_threshold"]:g}% local'
+    local = system["constituency_threshold"]
     national = system["fixed_seat_national_threshold"]
+    if not national and not local:
+        return "-"
+    if not national:
+        return f'{local:g}% local'
+    if not local:
+        return f'{national:g}% national'
     choice = "or" if system["fixed_seat_threshold_choice"] else "and"
-    return f'{national:g}% national {choice} {local}'
+    return f'{national:g}% national {choice} {local:g}% local'
 
 
 def adjustment_qualification_text(system):
-    text = (str(system["adjustment_threshold"]) + "% " +
-            ("or " if system["adj_threshold_choice"] else "and ") +
-            str(system["adjustment_threshold_seats"]) + " fixed seat(s)")
+    national = system["adjustment_threshold"]
+    fixed = system["adjustment_threshold_seats"]
+    if national and fixed:
+        choice = "or" if system["adj_threshold_choice"] else "and"
+        text = f"{national:g}% {choice} {fixed} fixed seat(s)"
+    elif national:
+        text = f"{national:g}%"
+    elif fixed:
+        text = f"{fixed} fixed seat(s)"
+    else:
+        text = "-"
     if system["require_votes_in_all_constituencies"]:
         text += "; must stand in all constituencies"
     if system["special_rules"] != "none":

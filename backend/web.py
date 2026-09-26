@@ -223,7 +223,9 @@ def api_presets_load():
             raise ValueError("Unexpected missing ID in presets_dict")
         idx = election_id
         preset = presets_dict[idx]
-        name = f'{preset["Country"]}-{preset["Name"]}-{preset["Year"]}'
+        name = "-".join(
+            preset[key] for key in ("Country", "Name", "Year")
+            if preset[key] not in ("", "-"))
         filename = "../data/" + presets_dict[idx]['filename']
         result = load_votes(filename)
         result["name"] = name

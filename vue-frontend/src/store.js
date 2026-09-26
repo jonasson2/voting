@@ -31,7 +31,7 @@ const store = new Vuex.Store({
 
   state : {
     vote_table: {
-      name: "Default Example",
+      name: "Default example",
       parties: ["A", "B"],
       votes: [
         [1800, 2000],

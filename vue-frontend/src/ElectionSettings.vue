@@ -36,14 +36,15 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="National vote share required for the national qualification test. Set 0% with And to use only the local threshold.">
+      title="National vote share required for fixed seats. Enter - to disable this threshold; then only the local threshold applies.">
       <span>National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-          v-model.number="systems[systemidx].fixed_seat_national_threshold"
-          @blur="restoreNationalThreshold('fixed_seat_national_threshold')"/>
-        <span class="compact-entry-unit">%</span>
+          :value="thresholdDisplay('fixed_seat_national_threshold')"
+          @input="setThreshold('fixed_seat_national_threshold', $event.target.value)"
+          @blur="restoreThreshold('fixed_seat_national_threshold', $event)"/>
+        <span v-if="systems[systemidx].fixed_seat_national_threshold" class="compact-entry-unit">%</span>
       </span>
     </label>
     <span class="settings-threshold-alternative">
@@ -51,17 +52,20 @@
         aria-label="Fixed-seat threshold combination"
         v-model="systems[systemidx].fixed_seat_threshold_choice"
         :options="capabilities.adj_threshold_choice"
+        :disabled="!bothThresholdsEnabled('fixed_seat_national_threshold', 'constituency_threshold')"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Choose whether a party must meet both thresholds or either one."/>
+        title="When both thresholds are enabled, choose whether a party must meet both or either one."/>
       <label class="settings-field"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Share of all votes in a constituency required for the local qualification test. This percentage also applies to national fixed seats when present.">
-        <span>Local threshold</span>
+        title="Share of constituency votes required for fixed seats. Enter - to disable this threshold; then only the national threshold applies. Also applies to national fixed seats when present.">
+        <span>local threshold</span>
         <span class="compact-entry">
           <input class="compact-entry-input" type="text"
             v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-            v-model.number="systems[systemidx].constituency_threshold"/>
-          <span class="compact-entry-unit">%</span>
+            :value="thresholdDisplay('constituency_threshold')"
+            @input="setThreshold('constituency_threshold', $event.target.value)"
+            @blur="restoreThreshold('constituency_threshold', $event)"/>
+          <span v-if="systems[systemidx].constituency_threshold" class="compact-entry-unit">%</span>
         </span>
       </label>
     </span>
@@ -86,28 +90,32 @@
   <div class="settings-row">
     <label class="settings-field"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="National vote share required by a party to qualify for adjustment seats. Choose 0 if not applicable.">
+      title="National vote share required for adjustment seats. Enter - to disable this threshold; then only the fixed-seat threshold applies.">
       <span>National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-          v-model.number="systems[systemidx].adjustment_threshold"
-          @blur="restoreNationalThreshold('adjustment_threshold')"/>
-        <span class="compact-entry-unit">%</span>
+          :value="thresholdDisplay('adjustment_threshold')"
+          @input="setThreshold('adjustment_threshold', $event.target.value)"
+          @blur="restoreThreshold('adjustment_threshold', $event)"/>
+        <span v-if="systems[systemidx].adjustment_threshold" class="compact-entry-unit">%</span>
       </span>
     </label>
     <b-form-select class="compact-select settings-threshold-choice"
       aria-label="Threshold combination"
       v-model="systems[systemidx].adj_threshold_choice"
       :options="capabilities.adj_threshold_choice"
+      :disabled="!bothThresholdsEnabled('adjustment_threshold', 'adjustment_threshold_seats')"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Choose if one or both thresholds apply"/>
+      title="When both thresholds are enabled, choose whether a party must meet both or either one."/>
     <label class="compact-entry"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Threshold as number of fixed seats required by a party to qualify for apportionment of adjustment seats. Choose 0 if not applicable.">
+      title="Fixed seats required to qualify for adjustment seats. Enter - to disable this threshold; then only the national threshold applies.">
       <input class="compact-entry-input" type="text"
         v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
-        v-model.number="systems[systemidx].adjustment_threshold_seats"/>
+        :value="thresholdDisplay('adjustment_threshold_seats')"
+        @input="setThreshold('adjustment_threshold_seats', $event.target.value)"
+        @blur="restoreThreshold('adjustment_threshold_seats', $event)"/>
       <span class="compact-entry-unit fixed-seats-unit">fixed seats</span>
     </label>
   </div>
@@ -348,9 +356,22 @@ export default {
     },
   },
   methods: {
-    restoreNationalThreshold: function(key) {
+    thresholdDisplay: function(key) {
+      return this.systems[this.systemidx][key] === 0 ? '-' : this.systems[this.systemidx][key]
+    },
+    setThreshold: function(key, value) {
       let system = this.systems[this.systemidx]
-      if (system[key] === '') system[key] = 0
+      let trimmed = value.trim()
+      let number = Number(trimmed)
+      system[key] = trimmed === '' || trimmed === '-' ? 0 :
+        Number.isNaN(number) ? trimmed : number
+    },
+    restoreThreshold: function(key, event) {
+      event.target.value = this.thresholdDisplay(key)
+    },
+    bothThresholdsEnabled: function(first, second) {
+      let system = this.systems[this.systemidx]
+      return system[first] > 0 && system[second] > 0
     },
     matchesPreset: function(system, settings) {
       return Object.entries(settings).every(([key, value]) => {

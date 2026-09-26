@@ -361,7 +361,12 @@ class Election:
         local_shares = (
             votes / local_total if local_total else np.zeros_like(votes))
         locally_eligible = local_shares * 100 >= local_threshold
-        if self.system["fixed_seat_threshold_choice"]:
+        national_threshold = self.system["fixed_seat_national_threshold"]
+        if not self.use_thresholds or national_threshold == 0:
+            eligible = locally_eligible
+        elif local_threshold == 0:
+            eligible = nationally_eligible
+        elif self.system["fixed_seat_threshold_choice"]:
             eligible = nationally_eligible | locally_eligible
         else:
             eligible = nationally_eligible & locally_eligible

@@ -42,7 +42,7 @@ fylgja meðaltöl og staðalfrávik yfir allar hermanirnar og með þeim má m.a
 
 ## Dæmi 1: tvö kjördæmi og tveir flokkar
 
-Á *Source votes and seats* velurðu *Use preset* og síðan *2 by 2 example*.
+Á *Source votes and seats* velurðu *Use preset* og síðan *Default example*.
 Þar eru þessi grunnatkvæði og sæti:
 
 | Kjördæmi | Föst sæti | Jöfnunarsæti | A | B |
@@ -50,8 +50,7 @@ fylgja meðaltöl og staðalfrávik yfir allar hermanirnar og með þeim má m.a
 | I        | 10        | 2           | 1800 | 2000 |
 | II       | 10        | 3           | 2500 | 1700 |
 
-Alls eru því tvö kjördæmi, tveir flokkar, 25 sæti, og 8000 atkvæði. Halda má
-þessum gögnum óbreyttum í allri fyrstu tilrauninni.
+Alls eru því tvö kjördæmi, tveir flokkar, 25 sæti, og 8000 atkvæði.
 
 Í *Electoral systems* gefurðu kerfinu nafnið *D'Hondt*. Bættu síðan við öðru
 kerfi með *+*, gefðu því nafnið *Sainte-Laguë* og veldu *Sainte-Laguë* í
@@ -64,12 +63,26 @@ Opnaðu svo *Single election* og skoðaðu bæði kerfin. Bæði gefa A 13 sæti
 og 8 í kjördæmi II; B fær 7 og 5. Með Sainte-Laguë fær A hins vegar 6 og 7
 sæti og B fær 6 í hvoru kjördæmi.
 
-Næst hermum við 5000 kosningar út frá sömu grunnatkvæðum og berum kerfin tvö
-saman. Setjum upphafsgildi slembitölugjafans (*random seed*) í 123 svo hægt sé
-að endurtaka tilraunina og notum að öðru leyti sjálfgefnar hermunarstillingar.
-Þá eru atkvæðin lognormaldreifð, með hlutfallslegu staðalfráviki 25% og fylgni
-0,5 milli lista sama flokks. Í hverri hermun fá kerfin sömu atkvæðin og úthluta
-sætum samkvæmt sínum reglum.
+Prófum nú að breyta atkvæðum A í kjördæmi I úr 1800 í 1500 á *Source votes
+and seats* og skoðum aftur *Single election*. Undir D'Hondt birtist
+viðvörunin **Tied allocation scores** og línan *Fixed seats in I: A; B.
+Selected: A.* Við úthlutun fasta sætisins númer sex eru úthlutunartölurnar jafnar:
+1500/3 = 2000/4 = 500. Forritið velur þann flokk sem kemur fyrr í töflunni,
+hér A. Viðvörunin minnir á að hlutkesti í raunverulegum kosningum gæti gefið
+aðra niðurstöðu. Í þessu tilviki breytist þó aðeins röð úthlutunar: hinn
+flokkurinn fær sjöunda sætið og endanleg sætaskipting verður sú sama hvor sem
+er valinn fyrst. Jafntefli um síðasta sæti getur hins vegar breytt
+sætaskiptingunni.
+
+Breytum atkvæðum A í kjördæmi I aftur í 1800 áður en við höldum áfram, svo
+hermunin hér á eftir byggist á upphaflegu grunnatkvæðunum.
+
+Næst optnum við *Simulated elections* og hermum 5000 kosningar út frá sömu
+grunnatkvæðum og berum kerfin tvö saman. Setjum upphafsgildi slembitölugjafans
+(*random seed*) í 123 svo hægt sé að endurtaka tilraunina og notum að öðru leyti
+sjálfgefnar hermunarstillingar. Þá eru atkvæðin lognormaldreifð, með
+hlutfallslegu staðalfráviki 25% og fylgni 0,5 milli lista sama flokks. Í hverri
+hermun fá kerfin sömu atkvæðin og úthluta sætum samkvæmt sínum reglum.
 
 Skoðum summur algildisfrávika og kvaðrata frávika sætafjölda frá
 viðmiðunarsætishlutum (*absolute values* og *squared values*). Yfir listana eru
@@ -168,13 +181,14 @@ Með því skoða atkvæðatöfluna sést að munurinn er mestur milli NV og SV.
 dálkarnir gefa sömu tölur því fyrstu tvö úthlutunarskref allra kerfanna eru hin
 sömu.
 
-Skoðum loks *Absolute seat differences summed over constituency lists*.
-Þar eru kerfin borin saman tvö og tvö og hver tala segir hversu mörg sæti
-þurfi að færa milli lista að meðaltali til að breyta annarri úthlutuninni í
-hina. Í röðinni fyrir *Optimal* eru gildin 3,35 fyrir *Iceland*, 2,47 fyrir
-*Max seat share*, 1,76 fyrir *Switching* og 1,15 fyrir *Rel-sup-simple*.
-Þetta segir sömu sögu og óreiðustigið: *Rel-sup-simple* er næst bestu
-úthlutuninni, síðan kemur *Switching*, þá *Max seat share* og loks *Iceland*.
+Skoðum loks *Absolute seat differences summed over constituency lists*. Þar eru
+kerfin sem merkt er við undir *Electoral systems used for comparison* ("öll" er
+sjálfgefið) borin saman tvö og tvö og hver tala segir hversu mörg sæti þurfi að
+færa milli lista að meðaltali til að breyta annarri úthlutuninni í hina. Í
+röðinni fyrir *Optimal* eru gildin 3,35 fyrir *Iceland*, 2,47 fyrir *Max seat
+share*, 1,76 fyrir *Switching* og 1,15 fyrir *Rel-sup-simple*. Þetta segir sömu
+sögu og óreiðustigið: *Rel-sup-simple* er næst bestu úthlutuninni, síðan kemur
+*Switching*, þá *Max seat share* og loks *Iceland*.
 
 ## Gamalt:
 
