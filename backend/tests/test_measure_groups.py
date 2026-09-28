@@ -7,7 +7,7 @@ from sim_measures import add_vuedata
 
 class MeasureGroupsTest(unittest.TestCase):
     def test_constituency_disparity_follows_geographical_displacement(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+        systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, party_votes_specified=False)
         rows = list(groups["other"]["rows"])
         index = rows.index("geographical_displacement")
@@ -29,7 +29,7 @@ class MeasureGroupsTest(unittest.TestCase):
         self.assertIn("pruned votes", row["tooltip"])
 
     def test_specific_measures_are_grouped_in_display_order(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+        systems = [{"name": "System-1"}]
         groups = MeasureGroups(
             systems, party_votes_specified=False, include_entropy_score=True)
         self.assertEqual(list(groups["other"]["rows"]), [
@@ -46,7 +46,7 @@ class MeasureGroupsTest(unittest.TestCase):
         json.dumps(groups)
 
     def test_confidence_interval_is_retained_for_zero_mean(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+        systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
             measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
@@ -66,18 +66,23 @@ class MeasureGroupsTest(unittest.TestCase):
         self.assertEqual(displayed["value"], 0)
         self.assertAlmostEqual(displayed["ci"], 0.196)
 
-    def test_comparison_heading_is_omitted_without_comparison_systems(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+    def test_every_system_is_included_despite_legacy_selection(self):
+        systems = [
+            {"name": "System-1", "compare_with": False},
+            {"name": "System-2"},
+        ]
 
         groups = MeasureGroups(systems, party_votes_specified=False)
 
-        self.assertNotIn("cmpListTitle", groups)
-        self.assertNotIn("cmpList", groups)
-        self.assertNotIn("cmpPartyTitle", groups)
-        self.assertNotIn("cmpParty", groups)
+        self.assertIn("cmpListTitle", groups)
+        self.assertIn("cmpPartyTitle", groups)
+        self.assertEqual(list(groups["cmpList"]["rows"]), [
+            "cmp_System-1_const", "cmp_System-2_const"])
+        self.assertEqual(list(groups["cmpParty"]["rows"]), [
+            "cmp_System-1_tot", "cmp_System-2_tot"])
 
     def test_comparison_heading_is_retained_with_comparison_system(self):
-        systems = [{"name": "System-1", "compare_with": True}]
+        systems = [{"name": "System-1"}]
 
         groups = MeasureGroups(systems, party_votes_specified=False)
 
@@ -91,7 +96,7 @@ class MeasureGroupsTest(unittest.TestCase):
             list(groups["cmpParty"]["rows"]), ["cmp_System-1_tot"])
 
     def test_single_system_hides_both_web_comparisons_without_a_message(self):
-        systems = [{"name": "System-1", "compare_with": True}]
+        systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
             measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
@@ -113,8 +118,8 @@ class MeasureGroupsTest(unittest.TestCase):
 
     def test_only_self_comparisons_are_blank(self):
         systems = [
-            {"name": "System-1", "compare_with": True},
-            {"name": "System-2", "compare_with": True},
+            {"name": "System-1"},
+            {"name": "System-2"},
         ]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
@@ -140,7 +145,7 @@ class MeasureGroupsTest(unittest.TestCase):
             self.assertEqual(rows[1]["avg"][0]["value"], 0)
 
     def test_national_vote_comparisons_remain_available_for_excel(self):
-        systems = [{"name": "System-1", "compare_with": True}]
+        systems = [{"name": "System-1"}]
 
         groups = MeasureGroups(systems, party_votes_specified=True)
 
@@ -159,8 +164,8 @@ class MeasureGroupsTest(unittest.TestCase):
 
     def test_party_comparison_is_hidden_only_when_all_differences_are_zero(self):
         systems = [
-            {"name": "System-1", "compare_with": True},
-            {"name": "System-2", "compare_with": False},
+            {"name": "System-1"},
+            {"name": "System-2"},
         ]
         for national_votes in (False, True):
             for has_difference in (False, True):
@@ -203,7 +208,7 @@ class MeasureGroupsTest(unittest.TestCase):
                         2 if has_difference else 0)
 
     def test_entropy_score_is_included_only_when_requested(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+        systems = [{"name": "System-1"}]
 
         without_score = MeasureGroups(systems, False)
         with_score = MeasureGroups(
@@ -211,9 +216,14 @@ class MeasureGroupsTest(unittest.TestCase):
 
         self.assertNotIn("entropy_score", without_score["other"]["rows"])
         self.assertIn("entropy_score", with_score["other"]["rows"])
+        two_systems = MeasureGroups(
+            [{"name": "System-1"}, {"name": "System-2"}], False,
+            include_entropy_score=True)
+        self.assertIn("entropy_relative", two_systems["other"]["rows"])
+        self.assertNotIn("entropy_relative", with_score["other"]["rows"])
 
     def test_unavailable_entropy_score_is_displayed_as_dash(self):
-        systems = [{"name": "System-1", "compare_with": False}]
+        systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, False, include_entropy_score=True)
         measures = {
             measure: {"avg": 0, "min": 0, "max": 0, "std": 0}

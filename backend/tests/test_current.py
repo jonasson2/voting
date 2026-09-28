@@ -2,6 +2,7 @@ from contextlib import redirect_stdout
 from copy import deepcopy
 from io import BytesIO, StringIO
 import json
+from math import exp
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -20,10 +21,11 @@ from dictionaries import (ADJUSTMENT_METHODS, DEFAULT_ELECTION_SETTINGS, DIVIDER
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 import entropy_score
+from table_util import entropy
 from excel_util import (fixed_seat_threshold_text, result_fractional_digits,
                         result_number_format, result_percentage_digits,
-                        prepare_formats)
-from noweb import load_json, load_votes, votes_to_excel
+                        prepare_formats, votes_to_excel)
+from noweb import load_json, load_votes
 import noweb
 from par_util import parallel_dir
 from simulate import Sim_result, Simulation, SimulationSettings
@@ -70,12 +72,12 @@ class CurrentApplicationTest(unittest.TestCase):
         with patch('util.get_cpu_count', return_value=64):
             self.assertEqual(get_cpu_counts()[-4:], [24, 32, 43, 64])
 
-    def test_systems_default_to_comparison(self):
-        self.assertTrue(ElectionSystem()['compare_with'])
-        self.assertTrue(normalize_system({})['compare_with'])
-        self.assertFalse(normalize_system({'compare_with': False})['compare_with'])
+    def test_legacy_comparison_selection_is_discarded(self):
+        self.assertNotIn('compare_with', ElectionSystem())
+        self.assertNotIn('compare_with', normalize_system({}))
+        self.assertNotIn('compare_with', normalize_system({'compare_with': False}))
         response = app.test_client().post('/api/capabilities/', json=[])
-        self.assertTrue(response.get_json()['election_system']['compare_with'])
+        self.assertNotIn('compare_with', response.get_json()['election_system'])
 
     def test_electoral_system_names_cannot_be_blank(self):
         table = load_votes('../data/2-by-2-example.csv')
@@ -86,18 +88,10 @@ class CurrentApplicationTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'cannot be blank'):
                     check_systems([system])
 
-    def test_legacy_fixed_seat_eligibility_is_normalized(self):
-        system = normalize_system({
-            'adjustment_threshold': 4,
-            'fixed_seat_eligibility': 'national-or-constituency',
-        })
-        self.assertEqual(system['fixed_seat_national_threshold'], 4)
+    def test_optional_fixed_seat_threshold_fields_have_defaults(self):
+        system = normalize_system({})
+        self.assertEqual(system['fixed_seat_national_threshold'], 0)
         self.assertEqual(system['fixed_seat_threshold_choice'], 1)
-        self.assertNotIn('fixed_seat_eligibility', system)
-        self.assertEqual(normalize_system({})['fixed_seat_national_threshold'], 0)
-        self.assertEqual(normalize_system({})['fixed_seat_threshold_choice'], 1)
-        with self.assertRaisesRegex(ValueError, 'Unknown fixed-seat eligibility'):
-            normalize_system({'fixed_seat_eligibility': 'invalid'})
 
     def test_default_web_ports(self):
         with patch.dict(os.environ, {}, clear=True):
@@ -623,6 +617,42 @@ class CurrentApplicationTest(unittest.TestCase):
 
         self.assertEqual(solve.call_count, 1)
 
+    def test_entropy_relative_to_first_system_is_a_quotient_product_ratio(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        systems = [
+            self.make_system(table, method)
+            for method in ('max-const-votes', 'optimal-lp')
+        ]
+        for index, system in enumerate(systems, 1):
+            system['name'] = f'System-{index}'
+        settings = SimulationSettings()
+        settings.update(simulation_count=0, cpu_count=1)
+        simulation = Simulation(settings, systems, table)
+        simulation.run_and_collect_measures(table['votes'], None)
+
+        elections = simulation.election_handler.elections
+        generator = elections[0].system.get_generator('adj_alloc_divider')
+        values = [
+            entropy(np.maximum(election.votes, 1),
+                    election.results['all_const_seats'], generator)
+            for election in elections
+        ]
+        ratios = simulation.stat['entropy_relative'].mean()
+        self.assertAlmostEqual(ratios[0], 1)
+        self.assertAlmostEqual(ratios[1], exp(values[1] - values[0]))
+
+        systems[1]['adj_alloc_divider'] = 'danish'
+        unavailable = Simulation(settings, systems, table)
+        unavailable.run_and_collect_measures(table['votes'], None)
+        self.assertEqual(unavailable.entropy_relative_available,
+                         [True, False])
+        result = Sim_result(unavailable.attributes())
+        result.analysis()
+        web_result = result.get_result_web(parallel=False)
+        relative_row = web_result['vuedata']['other'][1]
+        self.assertEqual(relative_row['avg'][1], '–')
+        self.assertFalse(relative_row['avg'][0].get('percentage', False))
+
     def test_greatest_relative_representation_measures_use_direct_formulas(self):
         table = load_votes('../data/2-by-2-example.csv')
         system = self.make_system(table, 'max-const-seat-share')
@@ -971,6 +1001,7 @@ class CurrentApplicationTest(unittest.TestCase):
             system['adj_determine_divider'] = divider
             system['adj_alloc_divider'] = divider
             systems.append(system)
+        systems[1]['compare_with'] = False  # Selection in an older settings file.
 
         settings = SimulationSettings()
         settings.update(random_seed=12345, simulation_count=9, cpu_count=2)
@@ -993,6 +1024,7 @@ class CurrentApplicationTest(unittest.TestCase):
             if measure.startswith('cmp_')
         ]
         self.assertTrue(comparison_measures)
+        self.assertIn("cmp_Sainte-Laguë_const", comparison_measures)
         for measure in comparison_measures:
             with self.subTest(measure=measure):
                 self.assertEqual(combined.stat[measure].n, 9)
@@ -1720,7 +1752,7 @@ class CurrentApplicationTest(unittest.TestCase):
                 'party_vote_info',
             )
 
-    def test_old_json_uses_first_system_party_vote_basis(self):
+    def test_load_json_preserves_vote_table_party_vote_basis(self):
         table = load_votes('../data/2-by-2-example.csv')
         table['party_vote_info'] = {
             'name': 'National',
@@ -1731,7 +1763,7 @@ class CurrentApplicationTest(unittest.TestCase):
             'total': 8000,
             'pruned': 0,
         }
-        table.pop('party_vote_basis')
+        table['party_vote_basis'] = 'average'
         system = self.make_system(table, 'max-const-seat-share')
         system['seat_spec_options']['party'] = 'average'
         contents = {
@@ -1744,6 +1776,20 @@ class CurrentApplicationTest(unittest.TestCase):
             filename.write_text(json.dumps(contents), encoding='utf-8')
             loaded = load_json(filename)
         self.assertEqual(loaded['vote_table']['party_vote_basis'], 'average')
+
+    def test_load_json_rejects_obsolete_system_fields(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'max-const-seat-share')
+        system['regional_adjustment_rule'] = 'dhondt'
+        contents = {
+            'systems': [system],
+            'sim_settings': SimulationSettings(),
+        }
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'settings.json'
+            filename.write_text(json.dumps(contents), encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'Obsolete electoral-system field'):
+                load_json(filename)
 
     def test_settings_download_preserves_special_rules(self):
         table = load_votes('../data/sweden_2018.csv')
@@ -1760,12 +1806,23 @@ class CurrentApplicationTest(unittest.TestCase):
             'sim_settings': SimulationSettings(),
         })
         saved = json.loads(response.data)
-        saved_system = saved['e_settings'][0]
+        saved_system = saved['systems'][0]
+        self.assertNotIn('compare_with', saved_system)
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / 'settings.json'
+            filename.write_text(json.dumps(saved), encoding='utf-8')
+            reloaded = load_json(filename)
+        self.assertEqual(reloaded['systems'][0]['name'], system['name'])
+        self.assertEqual(reloaded['systems'][0]['regional_adjustment_divider'],
+                         system['regional_adjustment_divider'])
         self.assertEqual(saved_system['special_rules'], 'swedish')
         self.assertEqual(
             saved_system['regional_adjustment_method'], 'max-const-votes')
         self.assertEqual(
-            saved_system['regional_adjustment_rule'], 'sainte-lague')
+            saved_system['regional_adjustment_divider'], 'sainte-lague')
+        self.assertEqual(saved_system['primary_divider'], system['primary_divider'])
+        self.assertEqual(saved_system['adj_determine_divider'], system['adj_determine_divider'])
+        self.assertEqual(saved_system['adj_alloc_divider'], system['adj_alloc_divider'])
         self.assertEqual(
             saved_system['fixed_seat_national_threshold'], 4)
         self.assertEqual(

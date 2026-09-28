@@ -33,30 +33,6 @@
   </b-modal>
   
   <b-modal
-    size="lg"
-    id="modaluploadall"
-    ref="modaluploadallref"
-    title="Upload json file with vote table and settings"
-    >
-    <p>
-      The file provided should be a JSON file formatted like a file
-      downloaded from here using the SAVE ALL button.
-    </p>
-    <b-form-file
-      v-model="uploadfile"
-      accept=".json"
-      :state="Boolean(uploadfile)"
-      placeholder="Choose a file..."
-      @input="loadAll"
-      ></b-form-file>
-    <template #modal-footer="{ cancel }">
-      <b-button size="sm" @click="cancel()">
-        Cancel
-      </b-button>
-    </template>
-  </b-modal>
-  
-  <b-modal
     size="md"
     id="modalpreset"
     ref="modalpresetref"
@@ -130,7 +106,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Upload vote table, all electoral systems, and simulation
                settings from local JSON file."
-        v-b-modal.modaluploadall
+        v-b-modal.upload-all-dialog
         >
         Upload all
       </b-button>
@@ -401,7 +377,6 @@ export default {
     ...mapActions([
       "saveAll",
       "downloadFile",
-      "uploadAll",
     ]),
     deleteParty: function (index) {
       removeParty(this.vote_table, index)
@@ -528,13 +503,6 @@ export default {
       var formData = new FormData();
       formData.append("file", file, file.name);
       this.loadVoteTable("api/votes/upload/", formData)
-    },
-    loadAll: function(file) {
-      if (!file) return
-      this.$refs.modaluploadallref.hide()
-      var formData = new FormData();
-      formData.append("file", file, file.name);
-      this.uploadAll({formData, filename: file.name})
     },
     checkVoteSeats: function() {
       return validConstituencySeats(this.vote_table)

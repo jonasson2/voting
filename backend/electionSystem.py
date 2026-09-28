@@ -13,7 +13,6 @@ class ElectionSystem(dict):
 
         self.update(DEFAULT_ELECTION_SETTINGS)
         self["seat_spec_options"] = {"const": "refer", "party": "totals"}
-        self["compare_with"] = True
         self["parties"] = []
 
     def copy_info_from_votes(self, votes):

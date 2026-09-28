@@ -11,6 +11,7 @@ from running_stats import Running_stats
 #from system import System
 from table_util import add_totals, find_percentages, find_bias
 from table_util import np_add_total, np_add_totals
+from table_util import entropy
 from util import hms, count
 from copy import copy, deepcopy
 from util import remove_prefix, sum_abs_diff
@@ -21,6 +22,7 @@ from sensitivity import (
     generate_perturbations, seat_displacements, sensitivity_covs)
 import numpy as np
 from numpy import vstack
+from math import exp
 
 # logging.basicConfig(filename='logs/simulate.log', filemode='w',
 # format='%(name)s - %(levelname)s - %(message)s')
@@ -146,6 +148,16 @@ class Simulation():
         self.entropy_score_available = [
             election.entropy_score_available()
             for election in self.election_handler.elections
+        ]
+        reference = self.election_handler.elections[0]
+        self.entropy_relative_available = [
+            self.entropy_score_available[0] and available
+            and election.system["adj_alloc_divider"]
+                == reference.system["adj_alloc_divider"]
+            and election.votes.shape == reference.votes.shape
+            and election.total_const_seats == reference.total_const_seats
+            for election, available in zip(
+                self.election_handler.elections, self.entropy_score_available)
         ]
         # -------- Following is used for plotting
         #self.disparity_data = [pd.DataFrame(columns=self.parties) for sys in range(self.nsys)]
@@ -362,6 +374,12 @@ class Simulation():
         entropy_cache = {}
         ref_elections = self.reference_handler.elections
         elections = self.election_handler.elections
+        if self.sim_settings["entropy_score"] and self.nsys > 1:
+            reference = elections[0]
+            reference_entropy = entropy(
+                np.maximum(reference.votes, 1),
+                reference.results["all_const_seats"],
+                reference.system.get_generator("adj_alloc_divider"))
         for i, (ref_election, election) in enumerate(zip(ref_elections, elections)):
             system = election.system
             self.add_deviation(election, ref_election, "dev_ref", deviations)
@@ -376,6 +394,15 @@ class Simulation():
                 score = election.entropy_score(entropy_cache)
                 deviations.add(
                     "entropy_score", 0 if score is None else score)
+                if self.nsys > 1:
+                    relative = 0
+                    if self.entropy_relative_available[i]:
+                        actual_entropy = entropy(
+                            np.maximum(election.votes, 1),
+                            election.results["all_const_seats"],
+                            election.system.get_generator("adj_alloc_divider"))
+                        relative = exp(actual_entropy - reference_entropy)
+                    deviations.add("entropy_relative", relative)
             excess, shortage, disparity = self.calculate_disparity(election)
             deviations.add("excess", excess)
             deviations.add("shortage", shortage)
@@ -384,9 +411,8 @@ class Simulation():
             deviations.add("total_overhang", total_overhang)
             for cmp_election in elections:
                 cmp_system = cmp_election.system
-                if cmp_system["compare_with"]:
-                    prefix = 'cmp_' + cmp_system["name"]
-                    self.add_deviation(election,  cmp_election, prefix, deviations)
+                prefix = 'cmp_' + cmp_system["name"]
+                self.add_deviation(election, cmp_election, prefix, deviations)
             self.other_seat_spec_measures(election, system, deviations)
             self.seats_minus_shares_measures(election, i, deviations)
             self.specific_measures(election, deviations)
@@ -835,6 +861,7 @@ class Sim_result:
             "base_allocations": self.base_allocations,
             "paired_data":      getattr(self, "paired_data", {}),
             "entropy_score_available": self.entropy_score_available,
+            "entropy_relative_available": self.entropy_relative_available,
             "sensitivity_data": getattr(self, "sensitivity_data", None),
             "data":         [{
                 "name":           self.systems[sysnr]["name"],

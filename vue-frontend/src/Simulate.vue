@@ -1,6 +1,42 @@
 <template>
 <div v-if="show_simulate">
   <h3>Simulation settings</h3>
+  <b-modal id="upload-simulation-settings" ref="uploadSettingsDialog"
+    title="Upload simulation settings">
+    <p>Choose a simulation-settings JSON file created by Download.</p>
+    <b-form-file v-model="settingsUploadFile" accept=".json"
+      :state="Boolean(settingsUploadFile)" placeholder="Choose a file..."
+      @input="loadSettings" />
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">Cancel</b-button>
+    </template>
+  </b-modal>
+  <DownloadNameDialog id="simulation-settings-download-name"
+    ref="settingsDownloadNameDialog" @confirm="confirmSettingsDownload" />
+  <b-button-toolbar key-nav aria-label="Simulation settings tools"
+    style="margin-left:12px; margin-bottom:12px">
+    <b-button-group class="mx-1">
+      <b-button v-b-modal.upload-simulation-settings class="mb-10"
+        title="Upload simulation settings from a local JSON file">Upload</b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button class="mb-10" title="Download simulation settings to a local JSON file"
+        @click="openSettingsDownload('settings')">Download</b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button class="mb-10" title="Restore the default simulation settings"
+        @click="resetSimulationSettings">Reset to defaults</b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button v-b-modal.upload-all-dialog class="mb-10"
+        title="Upload votes, electoral systems, and simulation settings from a local JSON file">Upload all</b-button>
+    </b-button-group>
+    <b-button-group class="mx-1">
+      <b-button class="mb-10"
+        title="Download votes, electoral systems, and simulation settings to a local JSON file"
+        @click="openSettingsDownload('all')">Download all</b-button>
+    </b-button-group>
+  </b-button-toolbar>
   <DownloadNameDialog
     id="simulation-results-download-name"
     ref="downloadNameDialog"
@@ -101,7 +137,10 @@ import SimulationSettings from './SimulationSettings.vue'
 // import SimulationData from './components/SimulationData.vue'
 import QualityMeasures from './components/QualityMeasures.vue'
 import DownloadNameDialog from './components/DownloadNameDialog.vue'
-import { timestampedDownloadBasename } from './downloadName.js'
+import {
+  canChooseSaveLocation, chooseSaveLocation, downloadBasename,
+  downloadFilename, timestampedDownloadBasename,
+} from './downloadName.js'
 import { mapState, mapActions, mapMutations } from 'vuex';
 
 export default {
@@ -113,6 +152,8 @@ export default {
       'show_simulate',
       'simulateCreated',
       'display_settings',
+      'all_filename',
+      'all_file_handle',
     ]),
     check_interval_ms: function() {
       // milliseconds between updating simulation progress bar
@@ -137,7 +178,9 @@ export default {
       time_left: 0,
       total_time: 0,
       results: {data: [], parties: [], systems: []},
-      vuedata: {}
+      vuedata: {},
+      settingsUploadFile: null,
+      settingsDownloadKind: null,
     }
   },
   components: {
@@ -153,8 +196,51 @@ export default {
       "addBeforeunload"
     ]),
     ...mapActions([
-      "downloadFile"
+      "downloadFile", "saveAll", "uploadSimulationSettings",
+      "resetSimulationSettings"
     ]),
+    loadSettings(file) {
+      if (!file) return
+      this.$refs.uploadSettingsDialog.hide()
+      const formData = new FormData()
+      formData.append('file', file, file.name)
+      this.uploadSimulationSettings(formData)
+      this.settingsUploadFile = null
+    },
+    async openSettingsDownload(kind) {
+      this.settingsDownloadKind = kind
+      const prefix = kind === 'all' ? 'simulator' : 'simulation-settings'
+      const basename = kind === 'all'
+        ? (downloadBasename(this.all_filename, 'json')
+          || timestampedDownloadBasename(prefix))
+        : timestampedDownloadBasename(prefix)
+      if (canChooseSaveLocation()) {
+        try {
+          const fileHandle = await chooseSaveLocation(basename, 'json',
+            kind === 'all' ? this.all_file_handle : null)
+          this.confirmSettingsDownload({fileHandle})
+          return
+        } catch (error) {
+          if (error.name === 'AbortError') return
+        }
+      }
+      if (kind === 'all' && this.all_filename) {
+        this.confirmSettingsDownload({filename: downloadFilename(basename, 'json')})
+        return
+      }
+      this.$refs.settingsDownloadNameDialog.open(basename, 'json')
+    },
+    confirmSettingsDownload(destination) {
+      if (this.settingsDownloadKind === 'all') {
+        this.saveAll(destination)
+        return
+      }
+      const promise = axios({
+        method: 'post', url: 'api/simulation-settings/save/',
+        data: {sim_settings: this.sim_settings}, responseType: 'arraybuffer',
+      })
+      this.downloadFile({promise, ...destination})
+    },
     check_simulation: function() {
       this.checkstatus(false)
     },

@@ -14,6 +14,7 @@ __pycache__/
 /pardir/
 /tmp/
 /output/
+/parsim/jobs/
 /backend/*.xlsx
 /.venv/
 /vue-frontend/node_modules

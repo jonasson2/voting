@@ -5,15 +5,20 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from traceback import format_exc
 
-import dictionaries, simulate
+import dictionaries, noweb, simulate
+from excel_util import simulation_to_xlsx, votes_to_excel
 from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
 from input_util import check_simul_settings, check_system_names
+from input_files import (
+    load_section, validate_systems, validate_settings,
+    prepare_simulation_inputs,
+)
 from util import get_cpu_counts
 from trace_util import short_traceback
 from noweb import load_votes, load_json, single_election
 from noweb import new_simulation, check_simulation
-from noweb import simulation_to_excel, votes_to_excel, create_SIMULATIONS
+from noweb import create_SIMULATIONS
 from vote_table import check_vote_table
 
 # Initialize process-local simulation state when imported by a WSGI server as
@@ -112,46 +117,88 @@ def api_update_constituencies():
     except Exception:
         return errormsg()
 
+SYSTEM_DOWNLOAD_KEYS = [
+    "name", "seat_spec_options", "constituencies",
+    "constituency_threshold", "fixed_seat_national_threshold",
+    "fixed_seat_threshold_choice",
+    "adjustment_threshold", "adjustment_threshold_seats",
+    "adj_threshold_choice", "require_votes_in_all_constituencies",
+    "special_rules", "regional_adjustment_method",
+    "adjustment_method", "primary_divider",
+    "adj_determine_divider", "regional_adjustment_divider",
+    "adj_alloc_divider", "nat_seats"
+]
+
+def downloadable_systems(systems):
+    check_system_names(systems)
+    return [{key: system[key] for key in SYSTEM_DOWNLOAD_KEYS}
+            for system in systems]
+
+
+def save_json(contents, prefix):
+    tmpfilename = tempfile.mktemp(prefix=prefix + '-')
+    with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
+        json.dump(contents, jsonfile, ensure_ascii=False, indent=2)
+    date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
+    return save_file(tmpfilename, f"{prefix}-{date}.json")
+
+
+@app.route('/api/systems/save/', methods=['POST'])
+def api_systems_save():
+    try:
+        systems = downloadable_systems(getparam("systems"))
+        return save_json({"systems": systems}, "electoral-systems")
+    except Exception:
+        return errormsg()
+
+
+@app.route('/api/systems/upload/', methods=['POST'])
+def api_systems_upload():
+    try:
+        systems = validate_systems(load_section(getfileparam(), "systems"))
+        return jsonify({"systems": systems})
+    except ValueError as error:
+        return errormsg(str(error))
+    except Exception:
+        return errormsg()
+
+
+@app.route('/api/simulation-settings/save/', methods=['POST'])
+def api_simulation_settings_save():
+    try:
+        settings = getparam("sim_settings")
+        check_simul_settings(settings.copy())
+        return save_json({"sim_settings": settings}, "simulation-settings")
+    except Exception:
+        return errormsg()
+
+
+@app.route('/api/simulation-settings/upload/', methods=['POST'])
+def api_simulation_settings_upload():
+    try:
+        settings = load_section(getfileparam(), "sim_settings")
+        validate_settings(settings.copy())
+        return jsonify({"sim_settings": settings})
+    except ValueError as error:
+        return errormsg(str(error))
+    except Exception:
+        return errormsg()
+
+
 @app.route('/api/settings/save/', methods=['POST'])
 def api_settings_save():
     try:
         (systems, sim_settings) = getparam("systems", "sim_settings")
-        check_system_names(systems)
-        keys = [
-            "name", "seat_spec_options", "constituencies",
-            "compare_with",
-            "constituency_threshold", "fixed_seat_national_threshold",
-            "fixed_seat_threshold_choice",
-            "adjustment_threshold", "adjustment_threshold_seats",
-            "adj_threshold_choice", "require_votes_in_all_constituencies",
-            "special_rules",
-            "regional_adjustment_method",
-            "adjustment_method", #"adjustment_allocation_rule",
-            "nat_seats"
-        ]
         names = []
-        electoral_system_list = []
+        electoral_system_list = downloadable_systems(systems)
         for system in systems:
             names.append(system["name"])
-            item = {key: system[key] for key in keys}
-            item["constituency_allocation_rule"] = system["primary_divider"]
-            item["adjustment_division_rule"] = system["adj_determine_divider"]
-            item["regional_adjustment_rule"] = \
-                system["regional_adjustment_divider"]
-            item["adjustment_allocation_rule"] = system["adj_alloc_divider"]
-            item["nat_seats"] = system["nat_seats"]
-            electoral_system_list.append(item)
         file_content = {
-            "e_settings": electoral_system_list,
+            "systems": electoral_system_list,
             "sim_settings": check_simul_settings(sim_settings)
         }
-        tmpfilename = tempfile.mktemp(prefix='e_settings-')
-        with open(tmpfilename, 'w', encoding='utf-8') as jsonfile:
-            json.dump(file_content, jsonfile, ensure_ascii=False, indent=2)
         filename = secure_filename(".".join(names))
-        date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
-        download_filename=f"{filename}-{date}.json"
-        return save_file(tmpfilename, download_filename)
+        return save_json(file_content, filename)
     except Exception:
         return errormsg()
 
@@ -251,8 +298,8 @@ def api_simulate():
     try:
         (votes, systems, sim_settings) = getparam("vote_table", "systems",
                                                   "sim_settings")
-        votes = check_vote_table(votes)
-        sim_settings = check_simul_settings(sim_settings)
+        votes, systems, sim_settings = prepare_simulation_inputs(
+            votes, systems, sim_settings)
         if sim_settings["simulation_count"] <= 0:
             raise ValueError("Number of simulations must be positive")
         simid = new_simulation(votes, systems, sim_settings)
@@ -318,8 +365,10 @@ def api_simdownload():
         payload = request.get_json(force=True)
         simid = payload['simid']
         tmpfilename = tempfile.mktemp(prefix=f'votesim-{simid[:6]}')
-        simulation_to_excel(
-            simid, tmpfilename, payload.get('display_settings'))
+        simulation = noweb.SIMULATIONS[simid]
+        result = simulation['result'].get_result_web(
+            simulation['kind'] == 'parallel')
+        simulation_to_xlsx(result, tmpfilename, payload.get('display_settings'))
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name = f"simulation-{date}.xlsx"
         return save_file(tmpfilename, download_name);

@@ -14,6 +14,38 @@ The browser interface is built with Vue and the HTTP API with Flask. The
 allocation and simulation code is under `backend/` and can also be run without
 the browser.
 
+## Offline simulations
+
+Use a vote-table CSV in the standard vote format (for example, one under `data/`).
+Download the systems from **Electoral systems** and the settings from
+**Simulated elections**.
+After `uv sync --locked`, activate the virtual environment and run from the
+repository root:
+
+```sh
+source .venv/bin/activate
+./sim.py \
+  -v votes.csv -e electoral-systems.json \
+  -s simulation-settings.json -o results.csv \
+  -r 1000 -C 4 -S 12345
+```
+
+Alternatively, use the simulator's **Download all** JSON file:
+
+```sh
+./sim.py -a simulator.json -o results.csv -r 1000 -C 4 -S 12345
+```
+
+The three overrides are optional; otherwise their values come from the settings
+file. `--seed -` requests fresh random draws. The offline runner always enables
+sensitivity at perturbation CoVs of 0.3%, 1%, and 3%; its number of perturbations
+per simulation and generating distribution come from the settings file.
+
+The UTF-8 CSV has one column per electoral system. Each quality-measure and
+sensitivity row has separate entries for the mean, standard deviation, and
+lower and upper 95% confidence limits. Entropy scores are percentages; their
+cells are blank when the chosen rule does not support that score.
+
 ## Run locally
 
 Requirements:
@@ -57,19 +89,6 @@ After the first installation, rebuild the frontend only when its source has
 changed. `npm ci` may report dependency deprecation or audit warnings; these do
 not prevent the documented frontend build from completing. Review and update
 dependencies separately before deploying a public service.
-
-## Run without the browser
-
-`single.py` runs one election directly from the command line. Run it from
-`backend/`; give paths outside `backend/data/` explicitly:
-
-```sh
-cd backend
-uv run --locked python single.py switch -v ../data/iceland-2021.csv
-uv run --locked python single.py --help
-```
-
-The command writes `single.xlsx` and `votes.xlsx` in `backend/`.
 
 ## Quick persistent testing with GNU Screen
 

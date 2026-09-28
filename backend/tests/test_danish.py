@@ -18,8 +18,9 @@ from dictionaries import (
 from division_rules import dhondt_gen, hare, sainte_lague_gen
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
+from excel_util import votes_to_excel
 from methods import danish, regional
-from noweb import load_votes, votes_to_excel
+from noweb import load_votes
 from randomness import make_rng
 from simulate import Simulation, SimulationSettings, simulation_vote_table
 from vote_table import check_vote_table, process_vote_table
@@ -332,7 +333,6 @@ class DanishTest(unittest.TestCase):
         from excel_util import simulation_to_xlsx
         systems = [system_for(self.table), system_for(self.table)]
         systems[0]["name"], systems[1]["name"] = "Denmark 1", "Denmark 2"
-        systems[0]["compare_with"] = True
         settings = SimulationSettings()
         settings.update(simulation_count=2, cpu_count=1)
         simulation = Simulation(settings, systems, self.table)

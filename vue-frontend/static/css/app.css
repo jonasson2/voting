@@ -212,12 +212,15 @@ th {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 6px;
-  max-width: 100%;
-  width: fit-content;
+  width: 100%;
 }
 
 .simulation-setting-row label {
   margin-bottom: 0;
+}
+
+.simulation-distribution-control {
+  max-width: 100%;
 }
 
 .compact-select.simulation-cpu-select,
@@ -250,22 +253,23 @@ th {
 .simulation-settings-layout > div {
   flex: 0 0 100%;
   max-width: 100%;
+  min-width: 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
   .simulation-settings-layout > .simulation-settings-inputs {
-    flex: 0 0 45%;
-    max-width: 45%;
+    flex: 0 0 37%;
+    max-width: 37%;
   }
 
   .simulation-settings-layout > .simulation-settings-scaling {
-    flex: 0 0 30%;
-    max-width: 30%;
+    flex: 0 0 28%;
+    max-width: 28%;
   }
 
-  .simulation-settings-layout > .simulation-settings-comparison {
-    flex: 0 0 25%;
-    max-width: 25%;
+  .simulation-settings-layout > .simulation-settings-sensitivity {
+    flex: 0 0 35%;
+    max-width: 35%;
   }
 }
 

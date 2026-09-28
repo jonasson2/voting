@@ -5,9 +5,7 @@ import { defaultDisplaySettings, normalizeDisplaySettings } from "./numberFormat
 import { writeDownload } from "./downloadName.js"
 
 function normalizeSystem(system) {
-  if (system.compare_with === undefined) {
-    system.compare_with = true
-  }
+  delete system.compare_with
   if (system.fixed_seat_national_threshold === undefined) {
     system.fixed_seat_national_threshold = 0
   }
@@ -65,6 +63,7 @@ const store = new Vuex.Store({
     system_numbering: [],
     activeSystemIndex: -1,   // Includes the <-- and --> tabs
     sim_settings: {},
+    default_sim_settings: {},
     display_settings: defaultDisplaySettings(),
     all_filename: "",
     all_file_handle: null,
@@ -133,18 +132,11 @@ const store = new Vuex.Store({
         system.adjustment_method = state.systems[idx-1].adjustment_method
         system.seat_spec_options.const = state.systems[idx-1].seat_spec_options.const
         system.seat_spec_options.party = state.systems[idx-1].seat_spec_options.party
-        system.compare_with = state.systems[idx-1].compare_with
         system.parties = state.systems[idx-1].parties
       }
       state.systems.push(system)
       findNumbering(state, idx)
     },
-    updateComparisonSystems(state, list) {
-      for (var sys of state.systems) {
-        sys.compare_with = list.includes(sys.name) ? true : false
-      }
-    },
-    
     deleteSystem(state, idx) {
       state.systems.splice(idx, 1);
       findNumbering(state, idx)
@@ -247,6 +239,7 @@ const store = new Vuex.Store({
           } else {
             context.state.sim_capabilities = response.body.capabilities;
             context.state.sim_settings = response.body.sim_settings
+            context.state.default_sim_settings = JSON.parse(JSON.stringify(response.body.sim_settings))
           }
         },
         response => context.commit("serverError", response.status)
@@ -276,7 +269,7 @@ const store = new Vuex.Store({
     uploadElectoralSystems(context, payload) {
       context.commit("setWaitingForData")
       context.state.results = []
-      Vue.http.post('api/settings/upload/', payload.formData).then(
+      Vue.http.post('api/systems/upload/', payload.formData).then(
         response => {
           if (error(response)) {
             context.commit("serverError", response.body)
@@ -287,7 +280,6 @@ const store = new Vuex.Store({
               : [...context.state.systems, ...importedSystems]
             context.commit("updateSystems", systems)
             findNumbering(context.state, 0)
-            context.commit("updateSimSettings", response.data.sim_settings);
             context.dispatch("recalc_sys_const")
             context.commit("clearWaitingForData")
           }
@@ -296,6 +288,25 @@ const store = new Vuex.Store({
           context.commit('serverError', response.status)
         }
       )
+    },
+    uploadSimulationSettings(context, formData) {
+      context.commit("setWaitingForData")
+      Vue.http.post('api/simulation-settings/upload/', formData).then(
+        response => {
+          if (error(response)) context.commit("serverError", response.body)
+          else {
+            context.commit("updateSimSettings", response.data.sim_settings)
+            context.commit("addBeforeunload")
+            context.commit("clearWaitingForData")
+          }
+        },
+        response => context.commit("serverError", response.status)
+      )
+    },
+    resetSimulationSettings(context) {
+      context.commit("updateSimSettings",
+        JSON.parse(JSON.stringify(context.state.default_sim_settings)))
+      context.commit("addBeforeunload")
     },
     uploadAll: function (context, {formData, filename}) {
       context.commit("setWaitingForData")

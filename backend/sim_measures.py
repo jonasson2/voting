@@ -31,9 +31,11 @@ def normalize_negative_zero(value):
 
 def _system_display_value(
         data, system_index, measure, stat, group, nsim,
-        entropy_score_available):
-    if (measure == "entropy_score"
-            and not entropy_score_available[system_index]):
+        entropy_score_available, entropy_relative_available):
+    if ((measure == "entropy_score"
+            and not entropy_score_available[system_index])
+            or (measure == "entropy_relative"
+                and not entropy_relative_available[system_index])):
         return "–"
     value = normalize_negative_zero(
         data[system_index]["measures"][measure][stat])
@@ -51,9 +53,12 @@ def _system_display_value(
 
 
 def _paired_display_value(
-        paired_data, measure, group, nsim, entropy_score_available):
-    if (measure == "entropy_score"
-            and not all(entropy_score_available[:2])):
+        paired_data, measure, group, nsim, entropy_score_available,
+        entropy_relative_available):
+    if ((measure == "entropy_score"
+            and not all(entropy_score_available[:2]))
+            or (measure == "entropy_relative"
+                and not all(entropy_relative_available[:2]))):
         return "–"
     paired = paired_data.get(measure)
     show = group not in {"cmpList", "cmpParty", "cmpNationalDetails"}
@@ -70,7 +75,7 @@ def _paired_display_value(
 
 def _measure_row(
         data, systems, paired_data, group, measure, title, nsim,
-        entropy_score_available):
+        entropy_score_available, entropy_relative_available):
     row = {"rowtitle": title}
     if measure == "entropy_score":
         row["rowtitle"] += " (%)"
@@ -79,6 +84,12 @@ def _measure_row(
             "largest achievable product under the selected rule and "
             "constraints. 100% is optimal; the Difference column is in "
             "percentage points.")
+    elif measure == "entropy_relative":
+        row["tooltip"] = (
+            "Product of allocated-seat quotients divided by the product for "
+            "system 1, calculated for each simulated election. System 1 "
+            "equals 1; values above 1 outperform it. Available when the "
+            "systems have the same divisor rule and total seat count.")
     elif measure == "constituency_disparity":
         row["tooltip"] = (
             "Highest constituency votes per seat divided by lowest. "
@@ -92,14 +103,14 @@ def _measure_row(
                    and system["name"] == title) else
             _system_display_value(
                 data, index, measure, stat, group, nsim,
-                entropy_score_available)
+                entropy_score_available, entropy_relative_available)
             for index, system in enumerate(systems)
         ]
         if stat == "avg" and has_paired_difference:
             row[stat].insert(
                 2, _paired_display_value(
                     paired_data, measure, group, nsim,
-                    entropy_score_available))
+                    entropy_score_available, entropy_relative_available))
     return row
 
 
@@ -194,6 +205,8 @@ def add_vuedata(sim_result_dict, parallel):
     paired_data = sim_result_dict.get("paired_data", {})
     entropy_score_available = sim_result_dict.get(
         "entropy_score_available", [True] * len(systems))
+    entropy_relative_available = sim_result_dict.get(
+        "entropy_relative_available", [True] * len(systems))
     vuedata = _vue_data_header(systems)
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
@@ -209,7 +222,7 @@ def add_vuedata(sim_result_dict, parallel):
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
             row = _measure_row(
                 data, systems, paired_data, id, measure, rowtitle, nsim,
-                entropy_score_available)
+                entropy_score_available, entropy_relative_available)
             if vuedata[id] and measure in group.get("subgroup_starts", ()):
                 row["subgroup_start"] = True
             vuedata[id].append(row)

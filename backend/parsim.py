@@ -1,17 +1,12 @@
 from par_util import *
 from util import disp, timestamp, hms
-from simulate import Simulation, Sim_result
-from copy import copy
+from simulation_chunks import combine_chunks, run_chunk, split_replicates
 import multiprocessing as mp
-import numpy as np
 from time import time, sleep
 from trace_util import traceback, long_traceback
 def task_simulate(nr, ntask, start_iteration, sim_settings, systems, votes, monitor):
-    sim_settings = copy(sim_settings)
-    sim_settings["simulation_count"] = ntask
-    sim = Simulation(sim_settings, systems, votes, nr, start_iteration)
-    sim.simulate(nr, monitor)
-    return sim.attributes()
+    return run_chunk(votes, systems, sim_settings, ntask, start_iteration,
+                     nr=nr, monitor=monitor)
 
 def get_status(monitor, nsim):
     # GET CURRENT STATUS FROM THE WORKERS
@@ -37,15 +32,14 @@ def parallel_simulate(simid):
     votes = data["votes"]
     systems = data["systems"]    
     nsim = sim_settings["simulation_count"]
-    nproc = min(nsim, sim_settings["cpu_count"]) # no more processes than nsim
+    chunks = split_replicates(nsim, sim_settings["cpu_count"])
+    nproc = len(chunks)
     monitor = Monitor(nproc)
-    ntask = [nsim//nproc + (1 if i < nsim % nproc else 0) for i in range(nproc)]
     starttime = time()
 
     # CREATE POOL OF WORKERS
-    start_iterations = np.cumsum([0] + ntask[:-1])
-    pars = ((k, ntask[k], int(start_iterations[k]), sim_settings, systems, votes, monitor)
-            for k in range(nproc))
+    pars = ((index, count, start, sim_settings, systems, votes, monitor)
+            for index, (count, start) in enumerate(chunks))
     pool = mp.Pool(nproc)
 
     # START THE WORKERS
@@ -63,11 +57,7 @@ def parallel_simulate(simid):
         #print(timestamp(), "(1) sim_status=", sim_status)
         write_sim_status(simid, sim_status)
     sim_dicts = asyncres.get()
-    sim0 = Sim_result(sim_dicts[0])
-    for i in range(1,len(sim_dicts)):
-        sim_i = Sim_result(sim_dicts[i])
-        sim0.combine(sim_i)
-    sim0.analysis()
+    sim0 = combine_chunks(sim_dicts)
     del sim0.stat
     sim_dict = vars(sim0)
     write_sim_dict(simid, sim_dict)

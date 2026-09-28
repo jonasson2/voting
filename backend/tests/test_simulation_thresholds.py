@@ -74,7 +74,7 @@ class SimulationThresholdTest(unittest.TestCase):
                     system = ElectionSystem()
                     system.copy_info_from_votes(table)
                     system.update(
-                        name=f'System {index}', compare_with=index == 0,
+                        name=f'System {index}',
                         primary_divider=rule, adj_determine_divider=rule,
                         constituency_threshold=45, fixed_seat_national_threshold=35,
                         fixed_seat_threshold_choice=choice,

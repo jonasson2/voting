@@ -9,23 +9,14 @@ from dictionaries import (
 
 
 def normalize_system(system):
-    """Add defaults for settings saved before newer system fields existed."""
-    legacy_eligibility = system.pop("fixed_seat_eligibility", None)
-    if legacy_eligibility not in (None, "constituency", "national-or-constituency"):
-        raise ValueError(f"Unknown fixed-seat eligibility rule: {legacy_eligibility}")
-    system.setdefault(
-        "fixed_seat_threshold_choice",
-        1 if legacy_eligibility != "constituency" else 0,
-    )
-    if "fixed_seat_national_threshold" not in system:
-        system["fixed_seat_national_threshold"] = (
-            system.get("adjustment_threshold", 0)
-            if legacy_eligibility == "national-or-constituency" else 0)
+    """Add defaults for optional electoral-system settings."""
+    system.setdefault("fixed_seat_threshold_choice", 1)
+    system.setdefault("fixed_seat_national_threshold", 0)
     system.setdefault("require_votes_in_all_constituencies", False)
     system.setdefault("special_rules", "none")
     system.setdefault("regional_adjustment_method", "max-const-votes")
     system.setdefault("regional_adjustment_divider", "sainte-lague")
-    system.setdefault("compare_with", True)
+    system.pop("compare_with", None)  # Ignore selections in older settings files.
     return system
 
 def parse_bool(value):
@@ -130,16 +121,7 @@ def check_simul_settings(sim_settings):
         KeyError: If simulation settings are missing a component
         ValueError: If relative SD is too high
     """
-    if "row_constraints" in sim_settings and "col_constraints" in sim_settings:
-        for key in ["row_constraints", "col_constraints"]:
-            sim_settings[key] = parse_bool(str(sim_settings[key]))
-        if sim_settings["row_constraints"]:
-            sim_settings["scaling"] = "both" if sim_settings[
-                "col_constraints"] else "const"
-        else:
-            sim_settings["scaling"] = "party" if sim_settings[
-                "col_constraints"] else "total"
-    for key in ["simulation_count", "gen_method", "scaling"]:
+    for key in ["simulation_count", "gen_method", "scaling", "const_rsd"]:
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
     sim_settings.setdefault("cpu_count", 4)
@@ -153,13 +135,6 @@ def check_simul_settings(sim_settings):
     elif type(seed) is not int or not -(2**31) <= seed < 2**31:
         raise ValueError(
             "Random seed must be an integer from -2147483648 to 2147483647.")
-    if "const_cov" in sim_settings:
-        sim_settings["const_rsd"] = sim_settings["const_cov"]
-    if "party_vote_cov" in sim_settings:
-        sim_settings["party_vote_rsd"] = sim_settings["party_vote_cov"]
-
-    if "const_rsd" not in sim_settings:
-        sim_settings["const_rsd"] = sim_settings["distribution_parameter"]
     if "const_corr" not in sim_settings:
         sim_settings["const_corr"] = 0
     if "party_vote_rsd" not in sim_settings:
@@ -187,7 +162,7 @@ def check_simul_settings(sim_settings):
         from sensitivity import sensitivity_covs
         covs = sensitivity_covs(sim_settings["sensitivity_covs"])
         sim_settings["sensitivity_covs"] = [100 * cov for cov in covs]
-        maximum_sensitivity_cov = covs[-1]
+        maximum_sensitivity_cov = max(covs)
         sensitivity_method = sim_settings["sensitivity_gen_method"]
         if sensitivity_method == "beta" and maximum_sensitivity_cov >= 0.75:
             raise ValueError(

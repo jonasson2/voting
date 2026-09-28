@@ -48,17 +48,22 @@ class SensitivityTest(unittest.TestCase):
         result.analysis()
         return result
 
-    def test_cov_list_accepts_arbitrary_increasing_values(self):
+    def test_cov_list_sorts_any_order_and_rejects_duplicates(self):
         self.assertEqual(
-            sensitivity_covs([0.1, 0.2, 0.5, 1, 2]),
+            sensitivity_covs([2, 0.1, 1, 0.5, 0.2]),
             [0.001, 0.002, 0.005, 0.01, 0.02],
         )
         with self.assertRaisesRegex(ValueError, "at least one"):
             sensitivity_covs([])
         with self.assertRaisesRegex(ValueError, "positive"):
             sensitivity_covs([0, 1])
-        with self.assertRaisesRegex(ValueError, "in increasing order"):
-            sensitivity_covs([1, 0.5])
+        with self.assertRaisesRegex(ValueError, "distinct"):
+            sensitivity_covs([1, 0.5, 1])
+
+    def test_sensitivity_limit_uses_largest_cov_at_any_position(self):
+        settings = self.settings(sensitivity_covs=[58, 1])
+        with self.assertRaisesRegex(ValueError, "57.735%"):
+            check_simul_settings(settings)
 
     def test_sensitivity_settings_are_validated(self):
         self.assertEqual(
@@ -72,6 +77,9 @@ class SensitivityTest(unittest.TestCase):
             "uniform")
         settings = self.settings()
         self.assertTrue(check_simul_settings(settings)["sensitivity"])
+        descending = self.settings(sensitivity_covs=[2, 1])
+        self.assertEqual(
+            check_simul_settings(descending)["sensitivity_covs"], [1, 2])
         settings["sensitivity_simulation_count"] = 0
         with self.assertRaisesRegex(ValueError, "positive integer"):
             check_simul_settings(settings)
@@ -114,7 +122,7 @@ class SensitivityTest(unittest.TestCase):
             seat_displacements([base], [within]), ([0], [1]))
 
     def test_sensitivity_keeps_ordinary_measures_and_averages_by_major(self):
-        result = self.run_simulation()
+        result = self.run_simulation(self.settings(sensitivity_covs=[2, 1]))
 
         self.assertEqual(result.stat["sum_abs"].n, 2)
         self.assertEqual(result.stat["sensitivity_between_parties"].n, 2)

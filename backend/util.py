@@ -128,37 +128,6 @@ def remove_blank_rows(rows):
         rows.pop()
     return rows
 
-def correct_deprecated(L):
-    # Remove 1-, 2- etc. from deprecated values in L["systems"]
-    import re
-    deprec_list = [
-        "adj_alloc_divider",          "adj_determine_divider",
-        "adjustment_allocation_rule", "adjustment_division_rule",
-        "adjustment_method",          "constituency_allocation_rule",
-        "name",                       "primary_divider"]
-    old_names = {
-        "norwegian-icelandic": "max-const-seat-share",
-        "pure-vote-ratios":    "max-const-vote-percentage",
-        #"nearest-neighbor":    "nearest-to-previous",
-        #"nearest-to-last":     "nearest-to-previous",
-    }
-    translate = {
-        "constituency_allocation_rule": "primary_divider",
-        "adjustment_division_rule":     "adj_determine_divider",
-        "adjustment_allocation_rule":   "adj_alloc_divider",
-    }
-    for sys in L["systems"]:
-        for deprec in deprec_list:
-            if deprec in sys:
-                sys[deprec] = re.sub('^[0-9AB]-', '', sys[deprec])
-        for (oldkey,newkey) in translate.items():
-            if oldkey in sys:
-                sys[newkey] = sys[oldkey]
-        for (old,new) in old_names.items():
-            if sys["adjustment_method"] == old:
-                sys["adjustment_method"] = new
-    return L
-
 def hms(sec):
     # Turn seconds into xxx days hh:mm:ss
     sec = round(sec)

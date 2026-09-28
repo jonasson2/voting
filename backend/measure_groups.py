@@ -126,6 +126,8 @@ class MeasureGroups(dict):
         if include_entropy_score:
             specific_rows = {
                 "entropy_score": ("Entropy score", ""),
+                **({"entropy_relative": ("Entropy relative to system 1", "")}
+                   if len(systems) > 1 else {}),
                 **specific_rows,
             }
         self["other"] = {
@@ -201,31 +203,20 @@ class MeasureGroups(dict):
         list_group = self["cmpList"]["rows"]
         party_group = self["cmpParty"]["rows"]
         for sys in systems:
-            if "compare_with" not in sys:
-                raise ValueError
-            if sys["compare_with"]:
-                measure = "cmp_" + sys["name"] + "_const"
-                list_group[measure] = (sys["name"], "")
+            measure = "cmp_" + sys["name"] + "_const"
+            list_group[measure] = (sys["name"], "")
         for sys in systems:
-            if sys["compare_with"]:
-                suffix = "grand" if party_votes_specified else "tot"
-                measure = "cmp_" + sys["name"] + "_" + suffix
-                party_group[measure] = (sys["name"], "")
+            suffix = "grand" if party_votes_specified else "tot"
+            measure = "cmp_" + sys["name"] + "_" + suffix
+            party_group[measure] = (sys["name"], "")
         if party_votes_specified:
             details = self["cmpNationalDetails"]["rows"]
             for sys in systems:
-                if sys["compare_with"]:
-                    name = sys["name"]
-                    details["cmp_" + name + "_tot"] = (
-                        "Party constituency totals", name)
-                    details["cmp_" + name + "_nat"] = (
-                        "National lists", name)
-        no_comparison_systems = not list_group
-        if no_comparison_systems:
-            for group in ("cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty",
-                          "cmpNationalDetails"):
-                self.pop(group, None)
-            return
+                name = sys["name"]
+                details["cmp_" + name + "_tot"] = (
+                    "Party constituency totals", name)
+                details["cmp_" + name + "_nat"] = (
+                    "National lists", name)
 
     def get_measures(self, group): # get measures from one group
         return self[group]["rows"].keys()

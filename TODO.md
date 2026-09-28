@@ -25,7 +25,7 @@ Other possible future work:
   allocation comparators.
 
 - Document and test the standalone Python interface.
-  Cover single.py, noweb.py, method names, input paths, and expected
+  Cover noweb.py, method names, input paths, and expected
   output.
 
 - Document election-data provenance and regeneration.

@@ -184,6 +184,8 @@ class SimulationWorkbook:
         paired_data = self.results.get("paired_data", {})
         entropy_available = self.results.get(
             "entropy_score_available", [True] * len(self.systems))
+        entropy_relative_available = self.results.get(
+            "entropy_relative_available", [True] * len(self.systems))
         excluded = {"cmpList", "cmpParty", "cmpNationalDetails"}
         data = {"stats": EXCEL_HEADINGS.keys(), "stat_headings": EXCEL_HEADINGS}
         for group_id, group in groups.items():
@@ -200,6 +202,11 @@ class SimulationWorkbook:
                             value if entropy_available[index] else "–"
                             for index, value in enumerate(values)
                         ]
+                    elif measure == "entropy_relative":
+                        values = [
+                            value if entropy_relative_available[index] else "–"
+                            for index, value in enumerate(values)
+                        ]
                     if (len(self.systems) >= 2
                             and statistic in {"avg", "lo95", "hi95"}):
                         difference = (
@@ -207,6 +214,9 @@ class SimulationWorkbook:
                             if group_id not in excluded else None)
                         if (measure == "entropy_score"
                                 and not all(entropy_available[:2])):
+                            difference = "–"
+                        if (measure == "entropy_relative"
+                                and not all(entropy_relative_available[:2])):
                             difference = "–"
                         values.insert(2, difference)
                     row[statistic] = values

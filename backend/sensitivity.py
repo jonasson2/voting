@@ -6,7 +6,7 @@ from generate_votes import generate_votes
 
 
 def sensitivity_covs(percentages):
-    """Validate percentage values and return CoVs as fractions."""
+    """Validate percentages and return ascending CoVs as fractions."""
     if not isinstance(percentages, list) or not percentages:
         raise ValueError("Specify at least one sensitivity CoV.")
     try:
@@ -16,10 +16,9 @@ def sensitivity_covs(percentages):
             "Sensitivity CoVs must be positive numbers.") from error
     if any(not np.isfinite(value) or value <= 0 for value in values):
         raise ValueError("Sensitivity CoVs must be positive numbers.")
-    if any(left >= right for left, right in zip(values, values[1:])):
-        raise ValueError(
-            "Sensitivity CoVs must be distinct and in increasing order.")
-    return [value / 100 for value in values]
+    if len(set(values)) != len(values):
+        raise ValueError("Sensitivity CoVs must be distinct.")
+    return [value / 100 for value in sorted(values)]
 
 
 def _normalize_vote_batches(generated, reference):

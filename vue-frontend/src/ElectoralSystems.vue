@@ -6,16 +6,10 @@
     ref="modaluploadesettingsref"
     title="Upload JSON file"
     >
-    <p v-if="replace">
-      The file provided must be a JSON file formatted like a file downloaded
-      from here, using the Save button. The electoral systems contained in the
-      file will be replace the current systems.
-    </p>
-    <p v-else>
-      The file provided must be a JSON file formatted like a file downloaded
-      from here, using the Save button. The electoral systems contained in the
-      file will be added to those currently specified.
-    </p>
+    <p v-if="replace">Choose an electoral-systems JSON file created by Download.
+      Its systems will replace the current systems.</p>
+    <p v-else>Choose an electoral-systems JSON file created by Download.
+      Its systems will be added to the current systems.</p>
     <b-form-file
       v-model="uploadfile"
       accept=".json"
@@ -64,8 +58,7 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Download settings for all electoral systems to local
-               json-file. Also saves simulation settings" 
+        title="Download the electoral systems to a local JSON file"
         @click="openDownload('settings')"
         >
         Download
@@ -77,7 +70,7 @@
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Upload vote table, all electoral systems, and simulation
                settings from local JSON file."
-        v-b-modal.modaluploadall
+        v-b-modal.upload-all-dialog
         >
         Upload all
       </b-button>
@@ -259,7 +252,6 @@ export default {
     ]),
     ...mapActions([
       "saveAll",
-      "uploadAll",
       "downloadFile",
       "uploadElectoralSystems"
     ]),
@@ -328,10 +320,9 @@ export default {
       let promise;
       promise = axios({
         method: "post",
-        url: "api/settings/save/",
+        url: "api/systems/save/",
         data: {
           systems:        this.systems,
-          sim_settings:   this.sim_settings,
         },
         responseType: "arraybuffer",
       });
@@ -378,11 +369,6 @@ export default {
           this.clearWaitingForData()
         }
       )
-    },
-    loadAll: function() {
-      var formData = new FormData();
-      formData.append("file", this.uploadfile, this.uploadfile.name);
-      this.uploadAll({formData, filename: this.uploadfile.name})
     },
   },
   created: function () {

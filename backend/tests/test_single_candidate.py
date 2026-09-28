@@ -6,7 +6,8 @@ from apportion import apportion1d_general
 from dictionaries import DIVIDER_RULES, QUOTA_RULES
 from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
-from noweb import load_votes, votes_to_excel
+from excel_util import votes_to_excel
+from noweb import load_votes
 from vote_table import check_vote_table
 
 

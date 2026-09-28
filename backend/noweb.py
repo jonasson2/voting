@@ -1,81 +1,14 @@
-import os, csv, json, time, par_util
-from io import StringIO
+import time, par_util
 from threading import Thread
-from pathlib import Path
 from par_util import write_sim_settings, write_sim_stop, read_sim_dict
 from par_util import read_sim_status, read_sim_error
 from electionHandler import ElectionHandler
-from util import load_votes_from_excel
-from util import remove_blank_rows, correct_deprecated
-from input_util import check_simul_settings, check_system_names, normalize_system
-from vote_table import check_vote_table, process_vote_table
+from input_files import load_json, load_votes
 from simulate import Simulation, Sim_result
-from excel_util import simulation_to_xlsx, votes_to_xlsx
 
 def create_SIMULATIONS():
     global SIMULATIONS
     SIMULATIONS = {}
-
-def load_json(f):
-    # returns systems and sim_settings from json-file f
-    if isinstance(f,Path) or isinstance(f,str):
-        with open(os.path.expanduser(f)) as file: file_content = json.load(file)
-    else:
-        file_content = json.load(f.stream)
-    assert type(file_content) == dict
-    if "e_settings" in file_content:
-        file_content["systems"] = file_content["e_settings"]
-        del file_content["e_settings"]
-    for system in file_content["systems"]:
-        if "regional_adjustment_rule" in system:
-            system["regional_adjustment_divider"] = system.pop(
-                "regional_adjustment_rule")
-        if "adj_threshold_choice" not in system:
-            system["adj_threshold_choice"] = 0
-            system["adjustment_threshold_seats"] = 0
-        if "seat_spec_option" in system:
-            system["seat_spec_options"] = {
-                "const": system["seat_spec_option"],
-                "party": "totals"
-            }
-            del system["seat_spec_option"]
-        normalize_system(system)
-    if "vote_table" in file_content:
-        vote_table = file_content["vote_table"]
-        if "party_vote_basis" not in vote_table and file_content["systems"]:
-            vote_table["party_vote_basis"] = file_content["systems"][0].get(
-                "seat_spec_options", {}).get("party", "totals")
-        vote_table = check_vote_table(vote_table)
-        file_content["vote_table"] = vote_table
-    assert "sim_settings" in file_content
-    assert "systems" in file_content
-    file_content["sim_settings"] = check_simul_settings(file_content["sim_settings"])
-    assert type(file_content["systems"]) == list
-    check_system_names(file_content["systems"])
-    file_content = correct_deprecated(file_content)
-    return file_content
-
-def load_votes(filename, stream=None):
-    if str(filename).endswith('.csv'):
-        if stream:
-            text = stream.read().decode("utf-8-sig")
-            reader = csv.reader(StringIO(text), skipinitialspace=True)
-            rows = list(reader)
-        else:
-            with open(filename, "r", encoding="utf-8-sig", newline="") as f:
-                reader = csv.reader(f, skipinitialspace=True)
-                rows = list(reader)
-        # flines = f.read().decode('utf-8').splitlines()
-        # frows = list(csv.reader(flines, skipinitialspace=True))
-    elif str(filename).endswith('xlsx'):
-        rows = load_votes_from_excel(stream, filename)
-    else:
-        return 'Neither .csv nor .xlsx file'
-    rows = remove_blank_rows(rows)
-    vote_table = process_vote_table(rows, filename)
-    if not isinstance(vote_table, str):
-        vote_table = check_vote_table(vote_table)
-    return vote_table
 
 def single_election(votes, systems):
     '''obtain results from single election for specific votes and a
@@ -197,65 +130,3 @@ def check_simulation(simid, stop=False):
     else:
         sim_result_dict = {'data': []}
     return sim_status, sim_result_dict
-
-def simulation_to_excel(simid, file, display_settings=None):
-    sim_result = SIMULATIONS[simid]["result"]
-    parallel = SIMULATIONS[simid]["kind"] == 'parallel'
-    sim_result_dict = sim_result.get_result_web(parallel)
-    simulation_to_xlsx(sim_result_dict, file, display_settings)
-
-def votes_to_excel(vote_table, file):
-    pruned = vote_table.get("pruned", [0] * len(vote_table["constituencies"]))
-    has_max_adj_seats = "max_total_adj_seats" in vote_table
-    seat_headers = ["cons", "min_adj", "max_adj"] if has_max_adj_seats else ["cons", "adj"]
-    regions = vote_table.get("regions", [])
-    if regions:
-        seat_headers.append("region")
-    file_matrix = [
-        [vote_table["name"], *seat_headers] + vote_table["parties"] + ["Pruned"],
-    ]
-    party_names = vote_table.get("party_names")
-    if party_names and any(party_names):
-        file_matrix.append(["Party names"] + [""] * len(seat_headers)
-                           + party_names + [""])
-    independent = vote_table.get("independent_candidates")
-    if independent and any(independent):
-        file_matrix.append(["Single candidates"] + [""] * len(seat_headers)
-                           + [int(flag) for flag in independent] + [""])
-    if has_max_adj_seats:
-        file_matrix.append(["Max adj seats", "", "",
-                            vote_table["max_total_adj_seats"]]
-                           + [""] * (len(file_matrix[0]) - 4))
-    file_matrix += [
-        [
-            vote_table["constituencies"][c]["name"],
-            vote_table["constituencies"][c]["num_fixed_seats"],
-            vote_table["constituencies"][c]["num_adj_seats"],
-            *([vote_table["constituencies"][c]["max_adj_seats"]
-               if vote_table["constituencies"][c]["max_adj_seats"] is not None else "-"]
-              if has_max_adj_seats else []),
-            *([vote_table["constituencies"][c]["region"]] if regions else []),
-        ] + vote_table["votes"][c] + [pruned[c]]
-            for c in range(len(vote_table["constituencies"]))
-    ]
-    if regions:
-        width = len(file_matrix[0])
-        file_matrix.append([""] * width)
-        file_matrix.append(["Regions", "Name", "adj"] + [""] * (width - 3))
-        file_matrix.extend([
-            [region["abbreviation"], region["name"], region["num_adj_seats"]]
-            + [""] * (width - 3) for region in regions])
-    if vote_table["party_vote_info"]["specified"]:
-        party_votes_matrix = [ [
-            vote_table["party_vote_info"]["name"],
-            vote_table["party_vote_info"]["num_fixed_seats"],
-            vote_table["party_vote_info"]["num_adj_seats"],
-            *([""] if has_max_adj_seats else []),
-        ] + vote_table["party_vote_info"]["votes"] + [
-            vote_table["party_vote_info"].get("pruned", 0)
-        ] ]
-    else:
-        party_votes_matrix = None
-    votes_to_xlsx(file_matrix, party_votes_matrix, file)    
-    
-#SIMULATIONS = {}

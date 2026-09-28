@@ -94,16 +94,18 @@ test('uploading another file clears the old save location', () => {
   assert.equal(context.state.all_file_handle, null)
 })
 
-test('both Download all buttons suggest the last saved name and location', async () => {
-  for (const file of ['VoteMatrix.vue', 'ElectoralSystems.vue']) {
+test('all three Download all buttons suggest the last saved name and location', async () => {
+  for (const file of ['VoteMatrix.vue', 'ElectoralSystems.vue', 'Simulate.vue']) {
     const {descriptor} = parse(readFileSync(resolve(__dirname, '../src', file), 'utf8'))
     const script = compileScript(descriptor, {id: 'download-all-test'})
     const component = script.scriptAst.find(node => node.type === 'ExportDefaultDeclaration')
     const methods = component.declaration.properties.find(node => node.key?.name === 'methods')
-    const handler = methods.value.properties.find(node => node.key?.name === 'openDownload')
+    const methodName = file === 'Simulate.vue' ? 'openSettingsDownload' : 'openDownload'
+    const confirmName = file === 'Simulate.vue' ? 'confirmSettingsDownload' : 'confirmDownload'
+    const handler = methods.value.properties.find(node => node.key?.name === methodName)
     const previous = {name: 'saved.json'}
     const chosen = {name: 'renamed.json'}
-    const {openDownload} = runInNewContext(
+    const {[methodName]: openDownload} = runInNewContext(
       `({${descriptor.script.content.slice(handler.start, handler.end)}})`, {
         canChooseSaveLocation: () => true,
         validDownloadBasename: () => true,
@@ -118,7 +120,7 @@ test('both Download all buttons suggest the last saved name and location', async
     let confirmed = false
     await openDownload.call({
       all_filename: previous.name, all_file_handle: previous,
-      confirmDownload(destination) {
+      [confirmName](destination) {
         assert.equal(destination.fileHandle, chosen)
         confirmed = true
       },

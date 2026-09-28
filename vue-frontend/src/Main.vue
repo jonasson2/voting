@@ -2,6 +2,16 @@
 
 <template>
   <div>
+  <b-modal id="upload-all-dialog" ref="uploadAllDialog"
+    size="lg" title="Upload votes, electoral systems, and simulation settings">
+    <p>Choose a JSON file created by Download all.</p>
+    <b-form-file v-model="allUploadFile" accept=".json"
+      :state="Boolean(allUploadFile)" placeholder="Choose a file..."
+      @input="loadAll" />
+    <template #modal-footer="{ cancel }">
+      <b-button size="sm" @click="cancel()">Cancel</b-button>
+    </template>
+  </b-modal>
   <b-navbar toggleable="md" type="dark" variant="info" sticky>
     <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
@@ -64,6 +74,9 @@ import Settings from './Settings.vue'
 import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
+  data() {
+    return { allUploadFile: null }
+  },
   components: {
     VoteMatrix,
     Election,
@@ -86,6 +99,7 @@ export default {
       "showVoteMatrix",
     ]),
     ...mapActions([
+      "uploadAll",
       "showElection",
       "showElectoralSystems",
       "showSimulate",
@@ -93,6 +107,14 @@ export default {
     ]),
     showHelp: function() {
       window.open("static/leidbeiningar.pdf", "_blank");
+    },
+    loadAll(file) {
+      if (!file) return
+      this.$refs.uploadAllDialog.hide()
+      const formData = new FormData()
+      formData.append("file", file, file.name)
+      this.uploadAll({formData, filename: file.name})
+      this.allUploadFile = null
     },
   },
   mounted: function() {
