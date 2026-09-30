@@ -1,11 +1,11 @@
 Nodes	Cores	MaxNode	Speed	Part
 55	64	8	1	64cpu_256mem
-22	48	8	0.75	48cpu_192mem
-5	48	2	0.741	short
+22	48	8	1	48cpu_192mem
+5	48	2	0.988	short
 7	64	INF	1	mimir
-4	128	4	2	128cpu_256mem
+4	128	4	1	128cpu_256mem
 1	64	INF	1.056	himem-mimir
 2	64	INF	1.072	mimir-interactive
 3	64	INF	1	gpu-1xA100
 5	64	INF	0.892	gpu-2xA100
-1	128	INF	2	gpu-8xA100
+1	128	INF	1	gpu-8xA100

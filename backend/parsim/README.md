@@ -16,20 +16,21 @@ default (`--local-cores` changes this).
 `partitions.txt` lists Elja partitions in preference order. `Nodes` is the
 configured number of nodes, `Cores` counts physical cores per node, and
 `MaxNode` is the maximum in one allocation (`INF` means no partition limit).
-`Speed` is whole-node throughput relative to mimir. The five measured factors
-use 20,000 Iceland replicates at one process per physical core; unmeasured
-factors are provisional estimates based on core count relative to mimir's
-64 cores. The measured times (seconds) were mimir 115.562, short 155.994,
-mimir-interactive 107.766, gpu-2xA100 129.608, and himem-mimir 109.484.
-Each measured `Speed` is 115.562 divided by that partition's time.
+`Speed` is throughput per physical core relative to a mimir core. The five
+measured factors use 20,000 Iceland replicates at one process per physical
+core; unmeasured factors are provisionally 1 per core. The measured times
+(seconds) were mimir 115.562, short 155.994, mimir-interactive 107.766,
+gpu-2xA100 129.608, and himem-mimir 109.484.
+Each measured `Speed` is `(115.562 / partition time) × (64 / Cores)`.
 The inventory was read from Elja's `sinfo` and `scontrol show partition`.
 
 On Elja, `elja.py` requests one node at a time with `salloc --immediate`.
 Each allocation starts `worker.py`, which waits for its assigned replicate
 range and runs `backend/sim.py` once through `srun`. Slurm reserves both
 logical CPUs per physical core, while `sim.py -C` receives the physical core
-count. Replicates are divided in proportion to relative node throughput. If a
-node cannot start immediately, `elja.py` tries the next partition.
+count. Replicates are divided in proportion to each node's process count
+times its per-core `Speed`. If a node cannot start immediately, `elja.py`
+tries the next partition.
 
 The job directory contains a frozen input snapshot, a manifest, allocation
 logs, and one mergeable JSON result per node. `elja.py` checks each node's

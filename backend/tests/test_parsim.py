@@ -19,10 +19,12 @@ VOTES = ROOT / 'data' / '2-by-2-example.csv'
 
 
 class ParallelSimulationScriptsTest(unittest.TestCase):
-    def test_replicates_follow_whole_node_speed(self):
-        nodes = [{'cores': 48, 'relative_speed': 0.75},
-                 {'cores': 64, 'relative_speed': 1.0}]
+    def test_replicates_follow_core_count_and_per_core_speed(self):
+        nodes = [{'cores': 48, 'speed_per_core': 1.0},
+                 {'cores': 64, 'speed_per_core': 1.0}]
         self.assertEqual(split_counts(100, nodes), [43, 57])
+        nodes[1]['speed_per_core'] = 0.75
+        self.assertEqual(split_counts(100, nodes), [50, 50])
 
     def command(self, script, *args):
         return subprocess.run(

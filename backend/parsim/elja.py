@@ -38,22 +38,22 @@ def read_partitions(path):
         total_nodes = int(record["Nodes"])
         cores_per_node = int(record["Cores"])
         max_nodes = total_nodes if record["MaxNode"] == "INF" else int(record["MaxNode"])
-        relative_speed = float(record["Speed"])
+        speed_per_core = float(record["Speed"])
         if total_nodes <= 0 or cores_per_node <= 0 or max_nodes <= 0:
             raise ValueError(f"{name}: node and core counts must be positive")
-        if not isfinite(relative_speed) or relative_speed <= 0:
+        if not isfinite(speed_per_core) or speed_per_core <= 0:
             raise ValueError(f"{name}: Speed must be positive")
         rows.append({"partition": name, "total_nodes": total_nodes,
                      "cores_per_node": cores_per_node, "max_nodes": max_nodes,
-                     "relative_speed": relative_speed})
+                     "speed_per_core": speed_per_core})
     return rows
 
 
 def split_counts(replicates, nodes):
-    """Give each node work, then distribute the rest by node throughput."""
+    """Give each node work, then weight the rest by cores times speed per core."""
     if replicates < len(nodes):
         raise ValueError("Replicates must be at least the number of nodes")
-    weights = [node["relative_speed"] for node in nodes]
+    weights = [node["cores"] * node["speed_per_core"] for node in nodes]
     remaining = replicates - len(nodes)
     exact = [remaining * weight / sum(weights) for weight in weights]
     counts = [1 + floor(value) for value in exact]
@@ -165,7 +165,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                 nodes.append({
                     "id": node_id, "partition": partition["partition"],
                     "cores": cores, "slurm_cpus": slurm_cpus,
-                    "relative_speed": partition["relative_speed"],
+                    "speed_per_core": partition["speed_per_core"],
                     "slurm_job_id": ready["slurm_job_id"],
                 })
                 active.append((node_id, process, log.name))
