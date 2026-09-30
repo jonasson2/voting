@@ -1,8 +1,6 @@
 #coding:utf-8
 import numpy as np
 
-from randomness import random_index
-
 def icelandic_share_apportionment(m_votes,
                                   v_desired_row_sums,
                                   v_desired_col_sums,
@@ -50,10 +48,6 @@ def icelandic_share_apportionment(m_votes,
         if max(v_proportions) != 0:
             const = [j for j,k in enumerate(v_proportions)
                         if k == max(v_proportions)]
-            if len(const) > 1:
-                rng = kwargs.get("rng")
-                const = [const[random_index(rng, len(const))] if rng else const[0]]
-
             m_allocations[const[0]][idx] += 1
             num_allocated += 1
             seats_info.append({

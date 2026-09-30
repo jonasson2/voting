@@ -24,7 +24,7 @@ repository root:
 
 ```sh
 source .venv/bin/activate
-./sim.py \
+./backend/sim.py \
   -v votes.csv -e electoral-systems.json \
   -s simulation-settings.json -o results.csv \
   -r 1000 -C 4 -S 12345
@@ -33,7 +33,7 @@ source .venv/bin/activate
 Alternatively, use the simulator's **Download all** JSON file:
 
 ```sh
-./sim.py -a simulator.json -o results.csv -r 1000 -C 4 -S 12345
+./backend/sim.py -a simulator.json -o results.csv -r 1000 -C 4 -S 12345
 ```
 
 The three overrides are optional; otherwise their values come from the settings
@@ -45,6 +45,13 @@ The UTF-8 CSV has one column per electoral system. Each quality-measure and
 sensitivity row has separate entries for the mean, standard deviation, and
 lower and upper 95% confidence limits. Entropy scores are percentages; their
 cells are blank when the chosen rule does not support that score.
+
+Use `-O statistics.json` to save mergeable simulation statistics. You can use
+`-O` alone or together with `-o results.csv`. The JSON can be read with
+`simulation_chunks.read_chunk_result` and combined with other replicate ranges
+using `simulation_chunks.combine_chunks`. For a separate range, pass its
+zero-based first replicate number with `-i` (for example, `-i 1000`). Runs
+intended for merging should use the same seed and disjoint replicate ranges.
 
 ## Run locally
 

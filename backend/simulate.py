@@ -166,19 +166,7 @@ class Simulation():
         self.total_time = 0
         self.time_left = 0
         self.initialize_stat_counters()
-        self.set_election_rngs(self.reference_handler, 0, purpose=2)
-        self.reference_handler.run_elections(use_thresholds)
         self.run_initial_elections()
-
-    def rng(self, iteration, purpose, system_index=0, extra=()):
-        return make_rng(
-            self.random_seed,
-            (iteration, purpose, system_index, *extra),
-        )
-
-    def set_election_rngs(self, handler, iteration, purpose, extra=()):
-        for index, election in enumerate(handler.elections):
-            election.rng = self.rng(iteration, purpose, index, extra)
 
     def initialize_stat_counters(self):
         ns = self.nsys
@@ -261,9 +249,10 @@ class Simulation():
         for i in range(self.sim_count):
             self.iteration = i + 1
             global_iteration = self.start_iteration + i
-            votes, party_votes = self.generate_simulated_votes(global_iteration)
+            rng = make_rng(self.random_seed, (global_iteration,))
+            votes, party_votes = self.generate_simulated_votes(global_iteration, rng)
             self.run_and_collect_measures(
-                votes, party_votes, global_iteration)  # This allocates
+                votes, party_votes, global_iteration, rng)  # This allocates
             round_end = datetime.now()
             elapsed = (round_end - begin_time).total_seconds()
             time_pr_iter = elapsed/(i + 1)
@@ -281,8 +270,9 @@ class Simulation():
             yield self.generate_simulated_votes(iteration)
             iteration += 1
 
-    def generate_simulated_votes(self, iteration):
-        rng = self.rng(iteration, purpose=0)
+    def generate_simulated_votes(self, iteration, rng=None):
+        if rng is None:
+            rng = make_rng(self.random_seed, (iteration,))
         if self.distribution == 'log-normal':
             votes, party_votes = generate_corr_votes(
                 self.election_handler.votes,
@@ -309,19 +299,22 @@ class Simulation():
             votes, self.election_handler.votes)
         return votes, party_votes
 
-    def run_and_collect_measures(self, votes, party_votes, iteration=None):
+    def run_and_collect_measures(self, votes, party_votes, iteration=None, rng=None):
         if iteration is None:
             iteration = self.next_global_iteration
             self.next_global_iteration += 1
+        if rng is None:
+            rng = make_rng(self.random_seed, (iteration,))
         use_thresholds = self.sim_settings["use_thresholds"]
-        self.set_election_rngs(self.election_handler, iteration, purpose=1)
+        for election in self.election_handler.elections:
+            election.rng = rng
         self.election_handler.run_elections(use_thresholds, votes, party_votes)
         self.collect_vote_measures()
         self.collect_seat_measures()
         self.collect_party_measures()
         self.collect_general_measures()
         if self.sensitivity:
-            self.run_sensitivity(votes, party_votes, iteration)
+            self.run_sensitivity(votes, party_votes, rng)
 
     def collect_vote_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
@@ -609,18 +602,20 @@ class Simulation():
                 measure = min(measure, function(h,s))
         return measure
 
-    def run_sensitivity(self, votes, party_votes, iteration):
+    def run_sensitivity(self, votes, party_votes, rng):
         """Average minor perturbation results within one major replicate."""
+        for election in self.sensitivity_handler.elections:
+            election.rng = rng
         between_rows = []
         within_rows = []
-        for cov_index, cov in enumerate(self.sensitivity_covs):
+        for cov in self.sensitivity_covs:
             perturbed_votes, perturbed_party_votes = generate_perturbations(
                 votes,
                 party_votes,
                 self.sensitivity_simulation_count,
                 cov,
                 self.sensitivity_distribution,
-                self.rng(iteration, purpose=3, extra=(cov_index,)),
+                rng,
             )
             between_total = np.zeros(self.nsys)
             within_total = np.zeros(self.nsys)
@@ -628,12 +623,6 @@ class Simulation():
                 minor_party_votes = (
                     None if perturbed_party_votes is None
                     else perturbed_party_votes[minor_index])
-                self.set_election_rngs(
-                    self.sensitivity_handler,
-                    iteration,
-                    purpose=4,
-                    extra=(cov_index, minor_index),
-                )
                 self.sensitivity_handler.run_elections(
                     self.sim_settings["use_thresholds"],
                     perturbed_votes[minor_index],

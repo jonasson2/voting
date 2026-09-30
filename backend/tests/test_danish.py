@@ -299,13 +299,14 @@ class DanishTest(unittest.TestCase):
                          {"abbreviation": "SS", "num_adj_seats": 1}],
                 [np.array([0]), np.array([1])], sainte_lague_gen, self.rng)
 
-    def test_ties_are_reproducible_lots(self):
+    def test_ties_select_first_with_rng(self):
         results = []
         for _ in range(2):
             allocation, demo = regional.allocate_to_regions(np.array([[10, 10]]),
                 np.zeros((1, 2), int), [1, 1], [{"abbreviation": "H", "num_adj_seats": 2}],
                 [np.array([0])], sainte_lague_gen, make_rng(42))
-            self.assertTrue(demo["data"][0]["lot"])
+            self.assertTrue(demo["data"][0]["tie"])
+            self.assertFalse(demo["data"][0]["lot"])
             results.append(demo["data"])
         self.assertEqual(*results)
 

@@ -132,14 +132,13 @@ class FlexibleAllocationTest(unittest.TestCase):
 
         for minimums in ([0, 0], [1, 1]):
             report = Mock()
-            with patch("ties.random_index", side_effect=lambda rng, size: size - 1):
-                _, demo = max_const_votes(
-                    [[10, 10], [10, 10]], minimums, [1, 1], [[0, 0], [0, 0]], dhondt_gen,
-                    num_adjustment_seats=2, min_adj_seats=minimums, max_adj_seats=[None, None],
-                    rng=make_rng(42), on_tie=report)
+            _, demo = max_const_votes(
+                [[10, 10], [10, 10]], minimums, [1, 1], [[0, 0], [0, 0]], dhondt_gen,
+                num_adjustment_seats=2, min_adj_seats=minimums, max_adj_seats=[None, None],
+                rng=make_rng(42), on_tie=report)
             np.testing.assert_array_equal(report.call_args_list[0].args[0], [0, 1, 2, 3])
-            self.assertEqual((demo["data"][0]["constituency"], demo["data"][0]["party"]), (1, 1))
-            self.assertTrue(demo["data"][0]["lot"])
+            self.assertEqual((demo["data"][0]["constituency"], demo["data"][0]["party"]), (0, 0))
+            self.assertFalse(demo["data"][0]["lot"])
 
     def table_and_system(self, method="max-const-vote-percentage"):
         table = load_votes("../data/2-by-2-example.csv")

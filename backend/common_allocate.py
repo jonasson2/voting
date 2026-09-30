@@ -46,7 +46,7 @@ def allocation_step(scores, votes, allocation, divisors, rng=None, on_tie=None):
         "maximum": float(maximum), "votes": float(votes[c, p]),
         "divisor": divisor, "quotient": float(votes[c, p] / divisor),
         "tie": bool(len(tied) > 1),
-        "lot": bool(len(tied) > 1 and rng is not None),
+        "lot": False,
     }
 
 def allocate_fixed(

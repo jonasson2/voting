@@ -3,7 +3,6 @@ import numpy as np
 
 from apportion import apportion1d_general
 from methods.max_const_votes import max_const_votes
-from randomness import random_permutation
 from ties import remap
 
 
@@ -46,8 +45,7 @@ def party_totals(votes, fixed, eligible, total, rule, rule_type, rng, on_tie=Non
     """Recalculate mutable t; fixed f and original entitlements stay unchanged."""
     def apportion(active, seats):
         active_indices = np.flatnonzero(active)
-        indices = (active_indices[random_permutation(rng, len(active_indices))]
-                   if rng is not None else active_indices)
+        indices = active_indices
         result = np.zeros(len(votes), int)
         if seats < 0 or (seats and (not len(indices) or not votes[indices].sum())):
             raise ValueError("No eligible parties can receive the Danish party-seat pool.")
@@ -97,8 +95,6 @@ def party_totals_from_fixed(votes, fixed, eligible, total, rule, rule_type,
     indices = np.flatnonzero(eligible)
     if not len(indices) or not votes[indices].sum():
         raise ValueError("No eligible parties can receive the Danish party-seat pool.")
-    if rng is not None:
-        indices = indices[random_permutation(rng, len(indices))]
     allocation, _, _ = apportion1d_general(
         votes[indices], pool, fixed[indices], rule, rule_type,
         threshold_total=votes[indices].sum() + retained_votes,

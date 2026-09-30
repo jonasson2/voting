@@ -1,4 +1,4 @@
-"""Run and combine independent ranges of simulation replicates."""
+"""Run, combine, and save mergeable simulation statistics."""
 
 from copy import deepcopy
 import json
@@ -59,11 +59,11 @@ def read_chunk_result(path):
     return read_chunk_record(path)["result"]
 
 
-def split_replicates(count, workers):
-    if count <= 0 or workers <= 0:
-        raise ValueError("Replicates and workers must be positive")
+def split_replicates(count, workers, first_replicate=0):
+    if count <= 0 or workers <= 0 or first_replicate < 0:
+        raise ValueError("Replicates and workers must be positive; first replicate must be nonnegative")
     workers = min(count, workers)
-    start = 0
+    start = first_replicate
     chunks = []
     for index in range(workers):
         size = count // workers + (index < count % workers)
@@ -82,9 +82,25 @@ def run_chunk(votes, systems, settings, count, start_iteration, nr=0,
     return simulation.attributes()
 
 
-def combine_chunks(results):
+def combine_chunks(results, return_statistics=False):
+    keys = tuple(results[0]) if return_statistics else ()
     combined = Sim_result(results[0])
     for result in results[1:]:
         combined.combine(Sim_result(result))
+    if return_statistics:
+        statistics = {key: getattr(combined, key) for key in keys if key != "stat"}
+        statistics["stat"] = {
+            key: ([vars(item) for item in value] if isinstance(value, list)
+                  else vars(value))
+            for key, value in combined.stat.items()
+        }
+        statistics["start_iteration"] = min(
+            result["start_iteration"] for result in results)
+        statistics["next_global_iteration"] = max(
+            result["start_iteration"] + result["iteration"]
+            for result in results)
+        statistics["sim_count"] = combined.iteration
+        statistics["sim_settings"] = deepcopy(combined.sim_settings)
+        statistics["sim_settings"]["simulation_count"] = combined.iteration
     combined.analysis()
-    return combined
+    return (combined, statistics) if return_statistics else combined

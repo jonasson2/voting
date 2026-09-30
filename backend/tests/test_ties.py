@@ -76,26 +76,28 @@ class TieTest(unittest.TestCase):
 
     def test_unique_winner_does_not_draw_random_number_or_report_tie(self):
         report = Mock()
-        with patch('ties.random_index') as draw:
-            self.assertEqual(select([100, 101], report, rng=make_rng(42)), 1)
-            self.assertEqual(select([100, 101], report, minimum=True, rng=make_rng(42)), 0)
-            draw.assert_not_called()
+        rng = make_rng(42)
+        unchanged = rng.duplicate()
+        self.assertEqual(select([100, 101], report, rng=rng), 1)
+        self.assertEqual(select([100, 101], report, minimum=True, rng=rng), 0)
+        self.assertEqual(rng.unif(), unchanged.unif())
         report.assert_not_called()
 
-    def test_actual_tie_still_uses_rng_and_reports_winner(self):
+    def test_actual_tie_selects_first_without_consuming_rng_and_reports_winner(self):
         report = Mock()
         rng = make_rng(42)
-        with patch('ties.random_index', return_value=1) as draw:
-            self.assertEqual(select([1, 100, 100], report, rng=rng), 2)
-            draw.assert_called_once_with(rng, 2)
+        unchanged = rng.duplicate()
+        self.assertEqual(select([1, 100, 100], report, rng=rng), 1)
+        self.assertEqual(rng.unif(), unchanged.unif())
         tied, winner, score = report.call_args.args
         np.testing.assert_array_equal(tied, [1, 2])
-        self.assertEqual((winner, score), (2, 100))
+        self.assertEqual((winner, score), (1, 100))
 
     def test_deterministic_selection_without_reporting_skips_tie_search(self):
         with patch('ties.np.flatnonzero', side_effect=AssertionError('Unneeded tie search')):
             self.assertEqual(select([100, 100]), 0)
             self.assertEqual(select([200, 100, 100], minimum=True), 1)
+            self.assertEqual(select([100, 100], rng=make_rng(42)), 0)
 
     def test_max_const_votes_selects_and_reports_ties_once_per_seat(self):
         report = TieReport()
@@ -224,8 +226,7 @@ class TieTest(unittest.TestCase):
             self.assertGreater(generator.call_count, 0)
             self.assertTrue(all(not call.kwargs['report_ties']
                                 for call in generator.call_args_list))
-        for handler in (sim.reference_handler, sim.election_handler):
-            self.assertEqual(handler.elections[0].tie_report.events, [])
+        self.assertEqual(sim.election_handler.elections[0].tie_report.events, [])
 
     def test_icelandic_and_norwegian_constituency_ties(self):
         for method in (icelandic_apportionment, norwegian_apportionment):

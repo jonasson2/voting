@@ -16,9 +16,21 @@ from sensitivity import (
     generate_perturbations, seat_displacements, sensitivity_covs)
 from simulation_excel import SimulationWorkbook
 from simulate import Sim_result, Simulation, SimulationSettings
+from randomness import make_rng
 
 
 class SensitivityTest(unittest.TestCase):
+    def test_one_seeded_generator_per_replicate_including_sensitivity(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        simulation = Simulation(
+            self.settings(simulation_count=2), [self.make_system(table)],
+            table, start_iteration=5)
+        with patch("simulate.make_rng", wraps=make_rng) as create:
+            simulation.simulate()
+        self.assertEqual(
+            [record.args for record in create.call_args_list],
+            [(123, (5,)), (123, (6,))])
+
     def make_system(self, table, name="System-1"):
         system = ElectionSystem()
         system.copy_info_from_votes(table)

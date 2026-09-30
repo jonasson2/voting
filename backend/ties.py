@@ -2,13 +2,11 @@
 
 import numpy as np
 
-from randomness import random_index
-
 
 def select(scores, on_tie=None, *, minimum=False, rng=None):
-    """Return a flat index, preferring table order unless an RNG is supplied."""
+    """Return the first best flat index; report exact ties when requested."""
     scores = np.asarray(scores)
-    if on_tie is None and rng is None:
+    if on_tie is None:
         return int(scores.argmin() if minimum else scores.argmax())
     best = scores.min() if minimum else scores.max()
     tied = np.flatnonzero(scores == best)
@@ -16,12 +14,10 @@ def select(scores, on_tie=None, *, minimum=False, rng=None):
 
 
 def select_tied(tied, score, on_tie=None, *, rng=None):
-    """Choose among already identified best candidates without rescanning scores."""
+    """Choose the first best candidate without rescanning scores."""
     winner = int(tied[0])
     if len(tied) == 1:
         return winner
-    if rng is not None:
-        winner = int(tied[random_index(rng, len(tied))])
     if on_tie is not None and np.isfinite(score):
         on_tie(tied, winner, float(score))
     return winner

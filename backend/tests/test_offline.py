@@ -6,9 +6,9 @@ import unittest
 
 from electionSystem import ElectionSystem
 from input_files import load_votes
-from offline import load_all_inputs, load_inputs, main
+from sim import load_all_inputs, load_inputs, main, write_csv
 from simulate import SimulationSettings
-from simulation_chunks import split_replicates
+from simulation_chunks import combine_chunks, read_chunk_result, split_replicates
 
 
 VOTES = Path(__file__).resolve().parents[2] / 'data' / '2-by-2-example.csv'
@@ -67,6 +67,68 @@ class OfflineSimulationTest(unittest.TestCase):
 
     def test_chunk_ranges_cover_replicates_once(self):
         self.assertEqual(split_replicates(7, 3), [(3, 0), (2, 3), (2, 5)])
+        self.assertEqual(split_replicates(7, 3, 10),
+                         [(3, 10), (2, 13), (2, 15)])
+
+    def test_first_replicate_is_independent_of_cpu_count(self):
+        with TemporaryDirectory() as directory:
+            systems, settings = self.files(directory)
+            statfile = Path(directory) / 'statistics.json'
+            parallel = Path(directory) / 'parallel.csv'
+            single = Path(directory) / 'single.csv'
+            arguments = [
+                '-v', str(VOTES), '-e', str(systems), '-s', str(settings),
+                '-r', '4', '-S', '123', '-i', '7',
+            ]
+            self.assertEqual(main([
+                *arguments, '-C', '2', '-O', str(statfile),
+                '-o', str(parallel),
+            ]), 0)
+            saved = read_chunk_result(statfile)
+            self.assertEqual((saved['start_iteration'],
+                              saved['next_global_iteration'], saved['iteration']),
+                             (7, 11, 4))
+            self.assertEqual(main([
+                *arguments, '-C', '1', '-o', str(single),
+            ]), 0)
+            with parallel.open(newline='', encoding='utf-8') as file:
+                parallel_rows = list(csv.reader(file))
+            with single.open(newline='', encoding='utf-8') as file:
+                single_rows = list(csv.reader(file))
+            self.assertEqual(len(parallel_rows), len(single_rows))
+            self.assertEqual(parallel_rows[0], single_rows[0])
+            for left, right in zip(parallel_rows[1:], single_rows[1:]):
+                self.assertEqual(left[:2], right[:2])
+                for a, b in zip(left[2:], right[2:]):
+                    if a and b:
+                        self.assertAlmostEqual(float(a), float(b), places=9)
+                    else:
+                        self.assertEqual(a, b)
+
+    def test_statistics_output_can_be_read_and_reported(self):
+        with TemporaryDirectory() as directory:
+            systems, settings = self.files(directory)
+            statfile = Path(directory) / 'statistics.json'
+            report = Path(directory) / 'from-statistics.csv'
+            direct = Path(directory) / 'direct.csv'
+            arguments = [
+                '-v', str(VOTES), '-e', str(systems), '-s', str(settings),
+                '-r', '4', '-C', '2', '-S', '123',
+            ]
+            self.assertEqual(main([*arguments, '-O', str(statfile)]), 0)
+            saved = read_chunk_result(statfile)
+            self.assertEqual(saved['iteration'], 4)
+            self.assertEqual(saved['sim_count'], 4)
+            self.assertEqual(saved['random_seed'], 123)
+            self.assertEqual(saved['start_iteration'], 0)
+            self.assertEqual(saved['next_global_iteration'], 4)
+            write_csv(report, combine_chunks([saved]))
+            self.assertEqual(main([*arguments, '-o', str(direct)]), 0)
+            self.assertEqual(report.read_bytes(), direct.read_bytes())
+            self.assertEqual(main([
+                *arguments, '-o', str(report), '-O', str(statfile),
+            ]), 0)
+            self.assertEqual(report.read_bytes(), direct.read_bytes())
 
     def test_download_all_requires_votes(self):
         with TemporaryDirectory() as directory:

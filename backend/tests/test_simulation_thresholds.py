@@ -27,15 +27,14 @@ class SimulationThresholdTest(unittest.TestCase):
                 for system in run_systems:
                     system.update(dict.fromkeys(THRESHOLDS, 0))
                     system['fixed_seat_national_threshold'] = 0
-                    system['special_rules'] = 'none'
             run_settings = deepcopy(settings)
             run_settings['use_thresholds'] = use_thresholds
             simulation = Simulation(run_settings, run_systems, deepcopy(table))
             observed = []
             run_and_collect = simulation.run_and_collect_measures
 
-            def record(votes, party_votes, iteration):
-                run_and_collect(votes, party_votes, iteration)
+            def record(votes, party_votes, iteration, rng):
+                run_and_collect(votes, party_votes, iteration, rng)
                 observed.append(deepcopy({
                     'votes': votes, 'party_votes': party_votes,
                     'allocations': [e.results for e in simulation.election_handler.elections],

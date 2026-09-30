@@ -5,7 +5,7 @@ import unittest
 
 from electionSystem import ElectionSystem
 from input_files import load_votes
-from offline import prepare_inputs, write_csv
+from sim import prepare_inputs, write_csv
 from simulate import SimulationSettings
 from simulation_chunks import (
     combine_chunks, read_chunk_result, run_chunk, write_chunk_result,

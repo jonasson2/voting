@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -9,6 +10,7 @@ import unittest
 from electionSystem import ElectionSystem
 from input_files import load_votes
 from offline import main as sim_main, prepare_inputs
+from parsim.elja import split_counts
 from simulate import SimulationSettings
 
 
@@ -17,9 +19,15 @@ VOTES = ROOT / 'data' / '2-by-2-example.csv'
 
 
 class ParallelSimulationScriptsTest(unittest.TestCase):
+    def test_replicates_follow_whole_node_speed(self):
+        nodes = [{'cores': 48, 'relative_speed': 0.75},
+                 {'cores': 64, 'relative_speed': 1.0}]
+        self.assertEqual(split_counts(100, nodes), [43, 57])
+
     def command(self, script, *args):
         return subprocess.run(
-            [sys.executable, str(ROOT / 'parsim' / script), *map(str, args)],
+            [sys.executable, str(ROOT / 'backend' / 'parsim' / script),
+             *map(str, args)],
             capture_output=True, text=True, check=False)
 
     def test_dash_seed_clears_saved_seed_before_master_chooses_one(self):
@@ -30,75 +38,125 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             {'random_seed': None})
         self.assertIsNone(prepared['random_seed'])
 
-    def test_master_worker_merge_and_retry(self):
+    def test_partition_launchers_share_all_replicates(self):
         with TemporaryDirectory() as directory:
             base = Path(directory)
-            first = ElectionSystem()
-            first['name'] = 'First'
-            second = ElectionSystem()
-            second['name'] = 'Second'
-            second['adj_alloc_divider'] = 'sainte-lague'
-            systems = base / 'systems.json'
-            systems.write_text(json.dumps({'systems': [first, second]}),
-                               encoding='utf-8')
-            settings = base / 'settings.json'
-            settings.write_text(json.dumps({
-                'sim_settings': SimulationSettings()}), encoding='utf-8')
             all_file = base / 'all.json'
             all_file.write_text(json.dumps({
                 'vote_table': load_votes(VOTES),
-                'systems': [first, second],
+                'systems': [ElectionSystem()],
                 'sim_settings': SimulationSettings(),
             }), encoding='utf-8')
+            partitions = base / 'partitions.txt'
+            partitions.write_text(
+                'Nodes\tCores\tMaxNode\tSpeed\tPart\n'
+                '1\t2\t1\t1\tfirst\n'
+                '2\t4\t2\t2\tsecond\n', encoding='utf-8')
+            output = base / 'distributed.csv'
+            statistics = base / 'distributed.json'
             job_dir = base / 'job'
-            output = base / 'parallel.csv'
-            arguments = [
-                '-a', all_file,
-                '-o', output, '-r', 4, '-C', 2, '-S', 123,
-                '--chunk-size', 2, '--job-dir', job_dir,
-            ]
-            completed = self.command('run.py', *arguments)
+            completed = self.command(
+                'elja.py', '-a', all_file, '-r', 6, '-i', 10, '-S', 123,
+                '-n', 2, '-o', output, '-O', statistics, '--job-dir', job_dir,
+                '--partitions', partitions, '--mode', 'local',
+                '--local-cores', 2)
             self.assertEqual(completed.returncode, 0, completed.stderr)
             manifest = json.loads((job_dir / 'manifest.json').read_text())
-            self.assertEqual(manifest['seed'], 123)
-            self.assertEqual([(item['start'], item['count'])
-                              for item in manifest['chunks']], [(0, 2), (2, 2)])
+            self.assertEqual([node['partition'] for node in manifest['nodes']],
+                             ['first', 'second'])
+            self.assertEqual([node['replicates'] for node in manifest['nodes']],
+                             [2, 4])
+            self.assertEqual([node['start'] for node in manifest['nodes']],
+                             [10, 12])
+            self.assertEqual([node['cores'] for node in manifest['nodes']],
+                             [2, 2])
+            self.assertEqual(len(list(job_dir.glob('node-*.json'))), 2)
+            merged = json.loads(statistics.read_text())['result']
+            self.assertEqual((merged['start_iteration'],
+                              merged['next_global_iteration'],
+                              merged['iteration']), (10, 16, 6))
 
-            expected = base / 'single.csv'
+            direct = base / 'direct.csv'
             self.assertEqual(sim_main([
-                '-v', str(VOTES), '-e', str(systems), '-s', str(settings),
-                '-o', str(expected), '-r', '4', '-C', '1', '-S', '123',
+                '-a', str(all_file), '-r', '6', '-i', '10', '-C', '1',
+                '-S', '123', '-o', str(direct),
             ]), 0)
-            with expected.open(newline='', encoding='utf-8') as file:
-                single_rows = list(csv.reader(file))
             with output.open(newline='', encoding='utf-8') as file:
-                parallel_rows = list(csv.reader(file))
-            self.assertEqual(single_rows[0], parallel_rows[0])
-            for single, parallel in zip(single_rows[1:], parallel_rows[1:]):
-                self.assertEqual(single[:2], parallel[:2])
-                for left, right in zip(single[2:], parallel[2:]):
+                distributed_rows = list(csv.reader(file))
+            with direct.open(newline='', encoding='utf-8') as file:
+                direct_rows = list(csv.reader(file))
+            self.assertEqual(len(distributed_rows), len(direct_rows))
+            self.assertEqual(distributed_rows[0], direct_rows[0])
+            for distributed, single in zip(distributed_rows[1:], direct_rows[1:]):
+                self.assertEqual(distributed[:2], single[:2])
+                for left, right in zip(distributed[2:], single[2:]):
                     if left and right:
                         self.assertAlmostEqual(float(left), float(right), places=8)
                     else:
                         self.assertEqual(left, right)
 
-            chunk = job_dir / 'chunk-000001.json'
-            chunk.unlink()
-            missing = self.command('merge.py', job_dir, '-o', base / 'retry.csv')
-            self.assertNotEqual(missing.returncode, 0)
-            self.assertIn('missing', missing.stderr)
-            self.assertEqual(self.command('worker.py', job_dir, 1).returncode, 0)
-
-            record = json.loads(chunk.read_text(encoding='utf-8'))
-            record['metadata']['job_sha256'] = 'wrong'
-            chunk.write_text(json.dumps(record), encoding='utf-8')
-            mismatched = self.command('merge.py', job_dir, '-o', base / 'retry.csv')
-            self.assertNotEqual(mismatched.returncode, 0)
-            self.assertIn('another job', mismatched.stderr)
-            self.assertEqual(self.command('worker.py', job_dir, 1).returncode, 0)
-            merged = self.command('merge.py', job_dir, '-o', base / 'retry.csv')
-            self.assertEqual(merged.returncode, 0, merged.stderr)
-            self.assertEqual((base / 'retry.csv').read_bytes(), output.read_bytes())
+    def test_slurm_launch_protocol_with_stub_commands(self):
+        with TemporaryDirectory() as directory:
+            base = Path(directory)
+            all_file = base / 'all.json'
+            all_file.write_text(json.dumps({
+                'vote_table': load_votes(VOTES),
+                'systems': [ElectionSystem()],
+                'sim_settings': SimulationSettings(),
+            }), encoding='utf-8')
+            partitions = base / 'partitions.txt'
+            partitions.write_text(
+                'Nodes\tCores\tMaxNode\tSpeed\tPart\n'
+                '1\t2\t1\t1\tbusy\n'
+                '2\t2\t2\t1\ttest\n', encoding='utf-8')
+            fake_bin = base / 'bin'
+            fake_bin.mkdir()
+            salloc = fake_bin / 'salloc'
+            salloc.write_text(
+                '#!/usr/bin/env python3\n'
+                'import os, subprocess, sys\n'
+                'args = sys.argv[1:]\n'
+                'if "--partition=busy" in args: sys.exit(1)\n'
+                'if "--cpus-per-task=4" not in args: sys.exit(2)\n'
+                'command = next(i for i, arg in enumerate(args) '
+                'if not arg.startswith("--"))\n'
+                'env = dict(os.environ, SLURM_JOB_NUM_NODES="1", '
+                'SLURM_JOB_ID="12345")\n'
+                'sys.exit(subprocess.run(args[command:], env=env).returncode)\n',
+                encoding='utf-8')
+            srun = fake_bin / 'srun'
+            srun.write_text(
+                '#!/usr/bin/env python3\n'
+                'import os, subprocess, sys\n'
+                'args = sys.argv[1:]\n'
+                'if "--cpus-per-task=4" not in args: sys.exit(2)\n'
+                'command = args.index("--exact") + 1\n'
+                'if args[command:][args[command:].index("-C") + 1] != "2": '
+                'sys.exit(3)\n'
+                'sys.exit(subprocess.run(args[command:]).returncode)\n',
+                encoding='utf-8')
+            salloc.chmod(0o755)
+            srun.chmod(0o755)
+            output = base / 'report.csv'
+            job_dir = base / 'job'
+            completed = subprocess.run(
+                [sys.executable, str(ROOT / 'backend' / 'parsim' / 'elja.py'),
+                 '-a', str(all_file), '-r', '4', '-S', '123', '-n', '2',
+                 '-o', str(output), '--job-dir', str(job_dir),
+                 '--partitions', str(partitions), '--mode', 'slurm'],
+                env={**os.environ, 'PATH': f'{fake_bin}:{os.environ["PATH"]}'},
+                capture_output=True, text=True, check=False, timeout=30)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertTrue(output.exists())
+            ready = json.loads((job_dir / 'allocation-000.json').read_text())
+            self.assertEqual(ready['slurm_job_id'], '12345')
+            manifest = json.loads((job_dir / 'manifest.json').read_text())
+            self.assertEqual([node['partition'] for node in manifest['nodes']],
+                             ['test', 'test'])
+            self.assertEqual([node['cores'] for node in manifest['nodes']],
+                             [2, 2])
+            self.assertEqual([node['slurm_cpus'] for node in manifest['nodes']],
+                             [4, 4])
 
 
 if __name__ == '__main__':
