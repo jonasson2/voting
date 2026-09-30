@@ -23,6 +23,14 @@ or several adjustment seats per constituency.
 - Keep parsers and generated election data under `data/` and record sources in
   `data/sources.txt`.
 
+## Elja workflow
+
+- Develop and edit code in the local repository. Commit and push those changes
+  from the local repository, then pull them into `~/voting` on Elja before
+  running there.
+- Do not edit or replace tracked code directly on Elja. Keep Elja-only inputs
+  and simulation results there as needed.
+
 ## Responses
 
 - Never append generated follow-up links or action links. They are not rendered
