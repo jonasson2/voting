@@ -3,7 +3,7 @@ import json
 import unittest
 
 from electionSystem import ElectionSystem
-from input_files import prepare_simulation_inputs
+from input_files import prepare_simulation_inputs, validate_settings
 from noweb import load_votes
 from simulate import SimulationSettings
 from web import app
@@ -63,10 +63,46 @@ class FileSectionsTest(unittest.TestCase):
         result = self.upload('/api/systems/upload/', {'systems': [system]})
         self.assertIn('Obsolete electoral-system field', result['error'])
         settings = SimulationSettings()
-        settings['const_cov'] = 0.2
+        settings['distribution_parameter'] = 0.2
         result = self.upload('/api/simulation-settings/upload/',
                              {'sim_settings': settings})
         self.assertIn('Obsolete simulation setting', result['error'])
+
+    def test_settings_upload_discards_stale_cov_aliases(self):
+        settings = SimulationSettings()
+        settings.update(const_rsd=0.25, party_vote_rsd=0.125,
+                        const_cov=0.0002, party_vote_cov=0.3)
+        uploaded = self.upload('/api/simulation-settings/upload/',
+                               {'sim_settings': settings})['sim_settings']
+        self.assertEqual(uploaded['const_rsd'], 0.25)
+        self.assertEqual(uploaded['party_vote_rsd'], 0.125)
+        self.assertNotIn('const_cov', uploaded)
+        self.assertNotIn('party_vote_cov', uploaded)
+
+    def test_legacy_cov_aliases_supply_missing_current_values(self):
+        settings = SimulationSettings()
+        del settings['const_rsd']
+        del settings['party_vote_rsd']
+        settings.update(const_cov=0.2, party_vote_cov=0.1)
+        validated = validate_settings(settings)
+        self.assertEqual(validated['const_rsd'], 0.2)
+        self.assertEqual(validated['party_vote_rsd'], 0.1)
+        self.assertNotIn('const_cov', validated)
+        self.assertNotIn('party_vote_cov', validated)
+
+    def test_all_upload_preserves_current_rsd_over_stale_cov(self):
+        settings = SimulationSettings()
+        settings.update(const_rsd=0.25, party_vote_rsd=0.125,
+                        const_cov=0.0002, party_vote_cov=0.3)
+        contents = {
+            'vote_table': load_votes('../data/2-by-2-example.csv'),
+            'systems': [self.system()], 'sim_settings': settings,
+        }
+        uploaded = self.upload('/api/uploadall/', contents)['sim_settings']
+        self.assertEqual(uploaded['const_rsd'], 0.25)
+        self.assertEqual(uploaded['party_vote_rsd'], 0.125)
+        self.assertNotIn('const_cov', uploaded)
+        self.assertNotIn('party_vote_cov', uploaded)
 
     def test_all_file_round_trips_all_three_sections(self):
         contents = {

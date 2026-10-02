@@ -177,7 +177,7 @@ def api_simulation_settings_save():
 def api_simulation_settings_upload():
     try:
         settings = load_section(getfileparam(), "sim_settings")
-        validate_settings(settings.copy())
+        settings = validate_settings(settings)
         return jsonify({"sim_settings": settings})
     except ValueError as error:
         return errormsg(str(error))

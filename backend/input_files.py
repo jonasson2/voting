@@ -18,8 +18,10 @@ OBSOLETE_SYSTEM_KEYS = {
     "adjustment_division_rule", "adjustment_allocation_rule",
 }
 OBSOLETE_SIMULATION_KEYS = {
-    "row_constraints", "col_constraints", "const_cov",
-    "party_vote_cov", "distribution_parameter",
+    "row_constraints", "col_constraints", "distribution_parameter",
+}
+SIMULATION_KEY_ALIASES = {
+    "const_cov": "const_rsd", "party_vote_cov": "party_vote_rsd",
 }
 
 
@@ -54,6 +56,11 @@ def validate_systems(systems):
 def validate_settings(settings):
     if not isinstance(settings, dict):
         raise ValueError("Simulation settings must be an object.")
+    # Older downloads can retain stale aliases alongside the current values.
+    # Use an alias only when its replacement is absent, then discard it.
+    for old, current in SIMULATION_KEY_ALIASES.items():
+        if old in settings:
+            settings.setdefault(current, settings.pop(old))
     obsolete = OBSOLETE_SIMULATION_KEYS & settings.keys()
     if obsolete:
         raise ValueError(f"Obsolete simulation setting: {sorted(obsolete)[0]}")
