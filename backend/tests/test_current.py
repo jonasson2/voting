@@ -653,7 +653,7 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertEqual(relative_row['avg'][1], '–')
         self.assertFalse(relative_row['avg'][0].get('percentage', False))
 
-    def test_greatest_relative_representation_measures_use_direct_formulas(self):
+    def test_maximum_representation_measures_use_direct_formulas(self):
         table = load_votes('../data/2-by-2-example.csv')
         system = self.make_system(table, 'max-const-seat-share')
         settings = SimulationSettings()
@@ -684,6 +684,24 @@ class CurrentApplicationTest(unittest.TestCase):
             simulation.stat['max_underrepresentation'].mean()[0],
             expected_under)
         self.assertNotIn('min_seat_val', simulation.stat)
+        surplus, shortfall = simulation.max_seat_share_deviations(election)
+        self.assertAlmostEqual(
+            simulation.stat['max_seat_share_surplus'].mean()[0], surplus)
+        self.assertAlmostEqual(
+            simulation.stat['max_seat_share_shortfall'].mean()[0], shortfall)
+
+    def test_seat_share_deviations_use_each_constituencys_final_seats(self):
+        election = SimpleNamespace(
+            results={'all_const_seats': [[5, 5, 0], [5, 35, 0], [0, 0, 0]]},
+            ref_seat_shares=[[2, 7.5, 0.5], [20, 19, 1], [0, 0, 0]])
+        self.assertEqual(Simulation.max_seat_share_deviations(election),
+                         (0.4, 0.375))
+        election.results['all_const_seats'] = [[1, 9, 0]]
+        election.ref_seat_shares = [[0, 9.5, 0.5]]
+        self.assertEqual(Simulation.max_seat_share_deviations(election), (0.1, 0.05))
+        election.results['all_const_seats'] = [[0, 0, 0]]
+        election.ref_seat_shares = [[0, 0, 0]]
+        self.assertEqual(Simulation.max_seat_share_deviations(election), (0, 0))
 
     def test_finnish_2015_matches_official_party_seat_totals(self):
         table = load_votes('../data/finland_2015.csv')

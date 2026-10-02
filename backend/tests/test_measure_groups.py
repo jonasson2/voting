@@ -27,6 +27,11 @@ class MeasureGroupsTest(unittest.TestCase):
         row = result["vuedata"]["other"][index + 1]
         self.assertEqual(row["avg"][0]["value"], 1)
         self.assertIn("pruned votes", row["tooltip"])
+        for measure in ("max_seat_share_surplus", "max_seat_share_shortfall"):
+            share_row = result["vuedata"]["other"][rows.index(measure)]
+            self.assertIn("Expressed as a proportion", share_row["tooltip"])
+            self.assertIn("final total seats", share_row["tooltip"])
+            self.assertEqual(share_row["avg"][0]["value"], 1)
 
     def test_specific_measures_are_grouped_in_display_order(self):
         systems = [{"name": "System-1"}]
@@ -36,6 +41,7 @@ class MeasureGroupsTest(unittest.TestCase):
             "entropy_score",
             "geographical_displacement", "constituency_disparity",
             "max_overrepresentation", "max_underrepresentation",
+            "max_seat_share_surplus", "max_seat_share_shortfall",
             "bias_slope", "bias_corr", "excess",
             "max_neg_margin", "freq_neg_margin", "total_overhang",
         ])

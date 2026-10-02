@@ -6,7 +6,7 @@ import unittest
 
 from electionSystem import ElectionSystem
 from input_files import load_votes
-from sim import load_all_inputs, load_inputs, main, write_csv
+from sim import load_all_inputs, load_inputs, main, run_simulation, write_csv
 from simulate import SimulationSettings
 from simulation_chunks import combine_chunks, read_chunk_result, split_replicates
 
@@ -154,10 +154,25 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(rows[0], ['Measure', 'Statistic', 'Test system'])
+            for label in (
+                    'Party-total absolute deviation',
+                    'Constituency-list absolute deviation',
+                    'Geographical seat displacement',
+                    'Constituency disparity',
+                    "Maximum relative over-representation (D'Hondt)",
+                    'Maximum seat-share surplus',
+                    'Maximum seat-share shortfall'):
+                measure_rows = [row for row in rows if row[0] == label]
+                self.assertEqual(len(measure_rows), 4)
+                self.assertTrue(all(row[2] != '' for row in measure_rows))
+            relative = [row for row in rows
+                        if row[0] == 'Entropy relative to system 1']
+            self.assertEqual(len(relative), 4)
+            self.assertTrue(all(row[2] == '' for row in relative))
             self.assertIn(['Party-total absolute deviation', 'Mean', rows[1][2]], rows)
             self.assertEqual(
                 {row[1] for row in rows
-                 if row[0] == "Greatest relative over-representation (D'Hondt)"},
+                 if row[0] == "Maximum relative over-representation (D'Hondt)"},
                 {'Mean', 'Standard deviation', '95% CI lower', '95% CI upper'},
             )
             self.assertEqual({row[1] for row in rows[1:]},
@@ -170,13 +185,48 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(main(arguments), 0)
             self.assertEqual(output.read_bytes(), first)
 
+    def test_relative_entropy_is_a_ratio_and_survives_statistics_reload(self):
+        with TemporaryDirectory() as directory:
+            systems_path, settings_path = self.files(directory)
+            systems = json.loads(systems_path.read_text())['systems']
+            systems.append(dict(systems[0], name='Compatible system'))
+            systems.append(dict(systems[0], name='Different divisor',
+                                adj_alloc_divider='sainte-lague'))
+            systems_path.write_text(json.dumps({'systems': systems}),
+                                    encoding='utf-8')
+            votes, systems, settings = load_inputs(
+                VOTES, systems_path, settings_path,
+                {'simulation_count': 4, 'cpu_count': 1, 'random_seed': 123})
+            result = run_simulation(votes, systems, settings)
+            output = Path(directory) / 'results.csv'
+            statfile = Path(directory) / 'statistics.json'
+            self.assertEqual(main([
+                '-v', str(VOTES), '-e', str(systems_path),
+                '-s', str(settings_path), '-r', '4', '-C', '1', '-S', '123',
+                '-o', str(output), '-O', str(statfile),
+            ]), 0)
+            direct = output.read_bytes()
+            with output.open(newline='', encoding='utf-8') as file:
+                relative = [row for row in csv.reader(file)
+                            if row[0] == 'Entropy relative to system 1']
+            self.assertEqual(len(relative), 4)
+            statistics = ('avg', 'std', 'lo95', 'hi95')
+            for row, statistic in zip(relative, statistics):
+                self.assertEqual(row[4], '')
+                for index in range(2):
+                    self.assertEqual(float(row[index + 2]),
+                                     result.data[index]['entropy_relative'][statistic])
+            self.assertEqual(relative[0][2:4], ['1.0', '1.0'])
+            write_csv(output, combine_chunks([read_chunk_result(statfile)]))
+            self.assertEqual(output.read_bytes(), direct)
+
     def test_two_cpu_output_has_same_seeded_means(self):
         with TemporaryDirectory() as directory:
             systems, settings = self.files(directory)
             output = Path(directory) / 'results.csv'
             arguments = [
                 '--votes', str(VOTES), '--systems', str(systems),
-                '--settings', str(settings), '--output', str(output),
+                '--settings', str(settings), '--csv', str(output),
                 '--replicates', '2', '--seed', '123',
             ]
             self.assertEqual(main(arguments + ['--cpus', '1']), 0)

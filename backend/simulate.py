@@ -487,6 +487,9 @@ class Simulation():
             "max_underrepresentation",
             self.max_underrepresentation(election),
         )
+        surplus, shortfall = self.max_seat_share_deviations(election)
+        deviations.add("max_seat_share_surplus", surplus)
+        deviations.add("max_seat_share_shortfall", shortfall)
         deviations.add(
             "geographical_displacement",
             self.geographical_seat_displacement(election),
@@ -680,6 +683,21 @@ class Simulation():
             for seat, reference in zip(seats, references)
             if reference != 0
         ), default=0)
+
+    @staticmethod
+    def max_seat_share_deviations(election):
+        """Maximum surplus and shortfall as proportions of final seats."""
+        surplus, shortfall = 0, 0
+        for seats, references in zip(
+                election.results['all_const_seats'], election.ref_seat_shares):
+            total = sum(seats)
+            if total == 0:
+                continue
+            for seat, reference in zip(seats, references):
+                difference = (seat - reference) / total
+                surplus = max(surplus, difference)
+                shortfall = max(shortfall, -difference)
+        return surplus, shortfall
 
     def attributes(self):
         builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones

@@ -90,6 +90,14 @@ def _measure_row(
             "system 1, calculated for each simulated election. System 1 "
             "equals 1; values above 1 outperform it. Available when the "
             "systems have the same divisor rule and total seat count.")
+    elif measure in {"max_seat_share_surplus", "max_seat_share_shortfall"}:
+        direction = "surplus" if measure.endswith("surplus") else "shortfall"
+        row["tooltip"] = (
+            f"Largest list seat {direction} relative to its fractional reference "
+            "allocation, divided by that constituency's final total seats "
+            "(fixed plus adjustment). Expressed as a proportion; 0.3 means a "
+            "seat-share difference of 30 percentage points. "
+            "Constituencies with no final seats are excluded.")
     elif measure == "constituency_disparity":
         row["tooltip"] = (
             "Highest constituency votes per seat divided by lowest. "

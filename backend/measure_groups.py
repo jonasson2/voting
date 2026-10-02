@@ -110,9 +110,13 @@ class MeasureGroups(dict):
             "constituency_disparity": (
                 "Constituency disparity", ""),
             "max_overrepresentation": (
-                "Greatest relative over-representation (D'Hondt)", ""),
+                "Maximum relative over-representation (D'Hondt)", ""),
             "max_underrepresentation": (
-                "Greatest relative under-representation (Adams)", ""),
+                "Maximum relative under-representation (Adams)", ""),
+            "max_seat_share_surplus": (
+                "Maximum seat-share surplus", ""),
+            "max_seat_share_shortfall": (
+                "Maximum seat-share shortfall", ""),
             "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
             "bias_corr":      ("Correlation of seat excess and reference seat "
                                "shares", ""),

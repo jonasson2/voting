@@ -20,9 +20,12 @@ QUALITY_MEASURES = (
     ("sum_abs", "Constituency-list absolute deviation"),
     ("sum_sqshare", "Squared deviation per reference seat"),
     ("entropy_score", "Entropy score (%)"),
+    ("entropy_relative", "Entropy relative to system 1"),
     ("geographical_displacement", "Geographical seat displacement"),
     ("constituency_disparity", "Constituency disparity"),
-    ("max_overrepresentation", "Greatest relative over-representation (D'Hondt)"),
+    ("max_overrepresentation", "Maximum relative over-representation (D'Hondt)"),
+    ("max_seat_share_surplus", "Maximum seat-share surplus"),
+    ("max_seat_share_shortfall", "Maximum seat-share shortfall"),
     ("total_overhang", "Potential overhang"),
 )
 SENSITIVITY_MEASURES = (
@@ -108,7 +111,11 @@ def write_csv(path, result):
                     result.data[index][measure][statistic]
                     if (measure in result.data[index]
                         and (measure != "entropy_score"
-                             or result.entropy_score_available[index])) else ""
+                             or result.entropy_score_available[index])
+                        and (measure != "entropy_relative"
+                             or (len(names) > 1
+                                 and result.entropy_relative_available[index])))
+                    else ""
                     for index in range(len(names))
                 ]
                 if measure == "entropy_score":
