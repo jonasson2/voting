@@ -19,7 +19,8 @@ from histogram import Histogram
 from sim_measures import add_vuedata
 from randomness import make_rng
 from sensitivity import (
-    generate_perturbations, seat_displacements, sensitivity_covs)
+    generate_perturbations, seat_displacements, sensitivity_covs,
+    sensitivity_statistics)
 import numpy as np
 from numpy import vstack
 from math import exp
@@ -196,6 +197,8 @@ class Simulation():
             for measure in SENS_MEASURES:
                 self.stat[measure] = Running_stats(
                     sensitivity_shape, parallel, measure)
+                self.stat[measure + "_perturbations"] = Running_stats(
+                    sensitivity_shape, True, measure)
         for measure in self.MEASURES:
             shape = ns + (1 if ns >= 2 else 0)
             self.stat[measure] = Running_stats(shape, parallel, measure)
@@ -606,12 +609,14 @@ class Simulation():
         return measure
 
     def run_sensitivity(self, votes, party_votes, rng):
-        """Average minor perturbation results within one major replicate."""
+        """Retain individual displacements as well as each outer mean."""
         for election in self.sensitivity_handler.elections:
             election.rng = rng
-        between_rows = []
-        within_rows = []
-        for cov in self.sensitivity_covs:
+        shape = (self.sensitivity_simulation_count,
+                 len(self.sensitivity_covs), self.nsys + (self.nsys >= 2))
+        between_values = np.empty(shape)
+        within_values = np.empty(shape)
+        for cov_index, cov in enumerate(self.sensitivity_covs):
             perturbed_votes, perturbed_party_votes = generate_perturbations(
                 votes,
                 party_votes,
@@ -620,8 +625,6 @@ class Simulation():
                 self.sensitivity_distribution,
                 rng,
             )
-            between_total = np.zeros(self.nsys)
-            within_total = np.zeros(self.nsys)
             for minor_index in range(self.sensitivity_simulation_count):
                 minor_party_votes = (
                     None if perturbed_party_votes is None
@@ -635,16 +638,17 @@ class Simulation():
                     self.election_handler.elections,
                     self.sensitivity_handler.elections,
                 )
-                between_total += between
-                within_total += within
+                between_values[minor_index, cov_index] = self._with_paired_difference(
+                    between)
+                within_values[minor_index, cov_index] = self._with_paired_difference(
+                    within)
 
-            between_rows.append(self._with_paired_difference(
-                between_total / self.sensitivity_simulation_count))
-            within_rows.append(self._with_paired_difference(
-                within_total / self.sensitivity_simulation_count))
-
-        self.stat["sensitivity_between_parties"].update(between_rows)
-        self.stat["sensitivity_within_parties"].update(within_rows)
+        for measure, values in (
+                ("sensitivity_between_parties", between_values),
+                ("sensitivity_within_parties", within_values)):
+            self.stat[measure].update(values.mean(axis=0))
+            for perturbation in values:
+                self.stat[measure + "_perturbations"].update(perturbation)
 
     def _with_paired_difference(self, values):
         values = list(values)
@@ -740,6 +744,14 @@ class Sim_result:
                             val[statkey] = Running_stats.from_dict(statval)
             setattr(self, key, val)
 
+        # Completed parallel web results contain analyzed data without stat.
+        if self.sensitivity and "stat" in dictionary and any(
+                measure + "_perturbations" not in self.stat
+                for measure in SENS_MEASURES):
+            raise ValueError(
+                "These saved sensitivity statistics lack individual perturbation "
+                "statistics. Rerun the simulation to calculate their uncertainty.")
+
         # self.data = [{} for _ in range(self.nsys)]
         # self.seat_data = [{} for _ in range(self.nsys + 1)]
         # self.vote_data = [{} for _ in range(self.nsys)]
@@ -757,6 +769,8 @@ class Sim_result:
         if self.sensitivity:
             for measure in SENS_MEASURES:
                 self.stat[measure].combine(sim_result.stat[measure])
+                self.stat[measure + "_perturbations"].combine(
+                    sim_result.stat[measure + "_perturbations"])
         np = self.nparty
         for measure in HISTOGRAM_MEASURES:
             for s in range(self.nsys):
@@ -813,8 +827,8 @@ class Sim_result:
             "covs": [100 * cov for cov in self.sensitivity_covs],
         }
         for measure in SENS_MEASURES:
-            self.sensitivity_data[measure] = self.find_datadict(
-                self.stat[measure], self.MEASURE_LIST)
+            self.sensitivity_data[measure] = sensitivity_statistics(
+                self.stat[measure], self.stat[measure + "_perturbations"])
 
     def analysis(self):
         # Calculate averages and variances of various quality measures.

@@ -175,7 +175,16 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
         vuedata["show"][group_id] = True
         vuedata[group_id] = []
         for row_index, cov in enumerate(sensitivity_data["covs"]):
-            row = {"rowtitle": f"{cov:g}% CoV"}
+            row = {
+                "rowtitle": f"{cov:g}% CoV",
+                "tooltip": (
+                    "Seat displacements for individual perturbations, each compared "
+                    "with its own base election. Confidence intervals account for "
+                    "perturbations sharing a base election; with one base election "
+                    "they describe uncertainty conditional on that election. "
+                    "Difference is the average absolute difference between systems "
+                    "1 and 2 for the same perturbation."),
+            }
             for statistic in vuedata["stats"]:
                 values = sensitivity_data[measure][statistic][row_index]
                 displayed = list(values[:nsys])
@@ -185,15 +194,18 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
                     indices.insert(2, -1)
                 row[statistic] = []
                 for value, value_index in zip(displayed, indices):
+                    if value is None:
+                        row[statistic].append("–")
+                        continue
                     entry = {
                         "value": normalize_negative_zero(value),
                         "integer": False,
                         "ci": None,
                     }
                     if statistic == "avg" and nsim > 0:
-                        std = sensitivity_data[measure]["std"][row_index][
+                        se = sensitivity_data[measure]["se"][row_index][
                             value_index]
-                        entry["ci"] = 1.96 * std / sqrt(nsim)
+                        entry["ci"] = 1.96 * se if se is not None else None
                     row[statistic].append(entry)
             vuedata[group_id].append(row)
 

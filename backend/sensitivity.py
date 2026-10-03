@@ -5,6 +5,48 @@ import numpy as np
 from generate_votes import generate_votes
 
 
+def sensitivity_statistics(outer, perturbations):
+    """Separate individual displacement spread from uncertainty of its mean.
+
+    With M outer elections and S perturbations each, the variance of the
+    outer means estimates A + B/S, where A is between-election variance and
+    B is mean conditional variance. Individual displacement variance is A+B.
+    For one outer election, report conditional spread and uncertainty only.
+    Both accumulators can be merged before applying these formulas.
+    """
+    result = {
+        "avg": outer.mean(),
+        "min": perturbations.minimum(),
+        "max": perturbations.maximum(),
+    }
+    if perturbations.n < 2:
+        for key in ("std", "se", "lo95", "hi95"):
+            result[key] = np.full(outer.shape, None).tolist()
+        return result
+
+    count = outer.n
+    inner_count = perturbations.n // count
+    within_variance = (
+        np.maximum(0, perturbations.M2 - inner_count * outer.M2)
+        / (count * (inner_count - 1))
+        if inner_count > 1 else np.zeros(outer.shape))
+    if count > 1:
+        means_variance = outer.M2 / (count - 1)
+        variance = means_variance + (1 - 1 / inner_count) * within_variance
+        mean_variance = means_variance / count
+    else:
+        variance = within_variance
+        mean_variance = within_variance / inner_count
+    se = np.sqrt(mean_variance)
+    result.update(
+        std=np.sqrt(variance).tolist(),
+        se=se.tolist(),
+        lo95=(outer.M1 - 1.96 * se).tolist(),
+        hi95=(outer.M1 + 1.96 * se).tolist(),
+    )
+    return result
+
+
 def sensitivity_covs(percentages):
     """Validate percentages and return ascending CoVs as fractions."""
     if not isinstance(percentages, list) or not percentages:

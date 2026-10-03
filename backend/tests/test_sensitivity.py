@@ -1,19 +1,24 @@
 from copy import deepcopy
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 from openpyxl import load_workbook
 
 import entropy_score
+import noweb
+from par_util import write_sim_dict, write_sim_status
 from electionSystem import ElectionSystem
 from input_util import check_simul_settings
 from noweb import load_votes
 from sensitivity import (
-    generate_perturbations, seat_displacements, sensitivity_covs)
+    generate_perturbations, seat_displacements, sensitivity_covs,
+    sensitivity_statistics)
+from running_stats import Running_stats
 from simulation_excel import SimulationWorkbook
 from simulate import Sim_result, Simulation, SimulationSettings
 from randomness import make_rng
@@ -143,6 +148,101 @@ class SensitivityTest(unittest.TestCase):
             (2, 1),
         )
         self.assertEqual(result.sensitivity_data["covs"], [1, 2])
+        self.assertEqual(
+            result.stat["sensitivity_between_parties_perturbations"].n, 6)
+
+    def test_single_outer_election_uses_all_inner_displacements(self):
+        # The yellow report's failure: one outer mean must not imply zero SD.
+        table = load_votes("../data/2-by-2-example.csv")
+        systems = [self.make_system(table, name) for name in ("One", "Two")]
+        settings = self.settings(
+            simulation_count=1, sensitivity_simulation_count=4,
+            sensitivity_covs=[0.1])
+        with patch("simulate.seat_displacements", side_effect=[
+                (np.array([0, 0]), np.array(row))
+                for row in ([0, 2], [2, 0], [0, 2], [2, 0])]):
+            result = self.run_simulation(settings, systems)
+        data = result.sensitivity_data["sensitivity_within_parties"]
+        np.testing.assert_allclose(data["avg"], [[1, 1, 2]])
+        np.testing.assert_allclose(data["std"], [[np.sqrt(4/3), np.sqrt(4/3), 0]])
+        np.testing.assert_allclose(data["se"], [[np.sqrt(1/3), np.sqrt(1/3), 0]])
+        self.assertEqual(data["min"], [[0, 0, 2]])
+        self.assertEqual(data["max"], [[2, 2, 2]])
+        self.assertAlmostEqual(data["lo95"][0][0], 1 - 1.96*np.sqrt(1/3))
+        web = result.get_result_web(False)["vuedata"]["sensitivityWithin"][0]
+        self.assertAlmostEqual(web["avg"][0]["ci"], 1.96*np.sqrt(1/3))
+
+    def test_nested_variance_and_ci_keep_outer_elections_independent(self):
+        outer = Running_stats((1, 1))
+        individual = Running_stats((1, 1))
+        for group in ([0, 2], [4, 6]):
+            outer.update([[np.mean(group)]])
+            for value in group:
+                individual.update([[value]])
+        data = sensitivity_statistics(outer, individual)
+        # Between means variance is 8; within variance is 2.
+        # A+B = 8 + (1-1/2)*2 = 9; Var(grand mean) = 8/2 = 4.
+        self.assertEqual(data["avg"], [[3]])
+        self.assertEqual(data["std"], [[3]])
+        self.assertEqual(data["se"], [[2]])
+        self.assertEqual(data["lo95"], [[3 - 1.96*2]])
+        self.assertEqual(data["hi95"], [[3 + 1.96*2]])
+
+    def test_one_inner_per_outer_uses_ordinary_sample_uncertainty(self):
+        stats = Running_stats((1, 1))
+        for value in (0, 2):
+            stats.update([[value]])
+        data = sensitivity_statistics(stats, stats)
+        np.testing.assert_allclose(data["std"], [[np.sqrt(2)]])
+        self.assertEqual(data["se"], [[1]])
+
+    def test_one_observation_has_no_estimate_of_uncertainty(self):
+        result = self.run_simulation(self.settings(
+            simulation_count=1, sensitivity_simulation_count=1))
+        data = result.sensitivity_data["sensitivity_within_parties"]
+        self.assertEqual(data["std"], [[None], [None]])
+        self.assertEqual(data["lo95"], [[None], [None]])
+        web = result.get_result_web(False)["vuedata"]["sensitivityWithin"][0]
+        self.assertIsNone(web["avg"][0]["ci"])
+        self.assertEqual(web["std"], ["–"])
+
+    def test_old_saved_sensitivity_cannot_supply_missing_inner_statistics(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        simulation = Simulation(self.settings(), [self.make_system(table)], table)
+        simulation.simulate()
+        saved = simulation.attributes()
+        del saved["stat"]["sensitivity_within_parties_perturbations"]
+        with self.assertRaisesRegex(ValueError, "Rerun the simulation"):
+            Sim_result(saved)
+
+    def test_parallel_sensitivity_results_can_be_read_by_web(self):
+        from web import app
+
+        result = self.run_simulation(self.settings(cpu_count=2))
+        # parsim.py sends analyzed results without the raw accumulators.
+        summary = dict(vars(result))
+        del summary["stat"]
+        simid = "sensitivity-result"
+        process = Mock()
+        with TemporaryDirectory() as directory, \
+                patch.dict(os.environ, {"VOTING_STATE_DIR": directory}), \
+                patch.dict(noweb.SIMULATIONS, {
+                    simid: {"kind": "parallel", "process": process}}, clear=True):
+            write_sim_dict(simid, summary)
+            write_sim_status(simid, {
+                "done": True, "iteration": result.iteration,
+                "total_time": 0, "time_left": 0})
+            response = app.test_client().post("/api/simulate/check/", json={
+                "simid": simid, "stop": False})
+            payload = response.get_json()
+
+        self.assertNotIn("error", payload)
+        self.assertTrue(payload["status"]["done"])
+        self.assertEqual(payload["results"]["sensitivity_data"],
+                         result.sensitivity_data)
+        self.assertEqual(payload["results"]["vuedata"]["sensitivityWithin"],
+                         result.get_result_web(True)["vuedata"]["sensitivityWithin"])
+        process.wait.assert_called_once()
 
     def test_sensitivity_combines_reproducibly_across_workers(self):
         table = load_votes("../data/2-by-2-example.csv")
@@ -161,13 +261,22 @@ class SensitivityTest(unittest.TestCase):
         combined.combine(run(2, 2))
         for measure in (
                 "sensitivity_between_parties",
-                "sensitivity_within_parties"):
+                "sensitivity_within_parties",
+                "sensitivity_between_parties_perturbations",
+                "sensitivity_within_parties_perturbations"):
             np.testing.assert_allclose(
                 uninterrupted.stat[measure].numpy_mean(),
                 combined.stat[measure].numpy_mean())
             np.testing.assert_allclose(
                 uninterrupted.stat[measure].numpy_std(),
                 combined.stat[measure].numpy_std())
+        uninterrupted.analysis()
+        combined.analysis()
+        for measure in ("sensitivity_between_parties", "sensitivity_within_parties"):
+            for statistic in ("avg", "std", "se", "lo95", "hi95", "min", "max"):
+                np.testing.assert_allclose(
+                    uninterrupted.sensitivity_data[measure][statistic],
+                    combined.sensitivity_data[measure][statistic])
 
     def test_entropy_reference_is_not_computed_for_minor_perturbations(self):
         settings = self.settings(entropy_score=True, simulation_count=2)

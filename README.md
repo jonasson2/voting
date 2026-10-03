@@ -46,6 +46,12 @@ sensitivity row has separate entries for the mean, standard deviation, and
 lower and upper 95% confidence limits. Entropy scores are percentages; their
 cells are blank when the chosen rule does not support that score.
 
+Sensitivity standard deviations describe individual perturbations. Confidence
+intervals account for perturbations sharing an outer election; with just one
+outer election, they describe uncertainty conditional on that election.
+The web and Excel Difference column averages the absolute difference between
+systems 1 and 2 for each shared perturbation.
+
 Use `-O statistics.json` to save mergeable simulation statistics. You can use
 `-O` alone or together with `-o results.csv`. The JSON can be read with
 `simulation_chunks.read_chunk_result` and combined with other replicate ranges

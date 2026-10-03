@@ -25,6 +25,7 @@ class SimulationChunkDiskTest(unittest.TestCase):
         settings.update(simulation_count=4, cpu_count=2, random_seed=123)
         votes, systems, settings = prepare_inputs(
             votes, [system, other_system], settings, {})
+        settings.update(sensitivity_covs=[50], sensitivity_simulation_count=5)
 
         uninterrupted = combine_chunks([
             run_chunk(votes, systems, settings, 4, 0)])
@@ -39,6 +40,9 @@ class SimulationChunkDiskTest(unittest.TestCase):
             self.assertEqual([result['random_seed'] for result in loaded],
                              [123, 123])
             merged = combine_chunks(loaded)
+            self.assertTrue(any(
+                value > 0 for value in
+                merged.sensitivity_data['sensitivity_between_parties']['std'][0]))
 
             expected_path = Path(directory) / 'expected.csv'
             actual_path = Path(directory) / 'actual.csv'
