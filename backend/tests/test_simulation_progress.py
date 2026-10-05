@@ -14,7 +14,7 @@ class SimulationProgressTest(unittest.TestCase):
     def test_cpu_counts_are_throttled_and_final_count_is_always_reported(self):
         counts = [0, 0]
         monitor = ReplicateMonitor(counts, [4, 4])
-        with patch('simulation_progress.time.monotonic', side_effect=[10, 11, 16, 17]):
+        with patch('simulation_progress.time.monotonic', side_effect=[20, 21, 35, 36]):
             monitor.monitor(1, 1)
             self.assertEqual(counts, [0, 1])
             monitor.monitor(1, 2)

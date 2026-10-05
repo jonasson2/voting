@@ -47,7 +47,7 @@ logs, and one mergeable JSON result per node. `elja.py` checks each node's
 seed and replicate range before combining the results.
 
 During simulation, each node writes an atomic `progress-NNN.json` file
-every five seconds, with completed and assigned replicates and elapsed time.
+every 15 seconds, with completed and assigned replicates and elapsed time.
 `elja.py` displays the total progress, finished-node count, elapsed time,
 and estimated remaining time. Remaining time uses each node's recent rate
 and the longest expected remaining run; it shows `--` until all unfinished

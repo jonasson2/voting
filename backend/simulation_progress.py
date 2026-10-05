@@ -5,7 +5,7 @@ import time
 from parsim.common import atomic_json
 
 
-INTERVAL = 5
+INTERVAL = 15
 
 
 class ReplicateMonitor:
