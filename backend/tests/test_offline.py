@@ -198,7 +198,7 @@ class OfflineSimulationTest(unittest.TestCase):
                         scale = 100 if entry.get('percentage') else 1
                         cell = f"{scale * entry['value']:.3f}"
                         if entry['ci'] is not None:
-                            cell += f" +/- {scale * entry['ci']:.3f}"
+                            cell += f" ± {scale * entry['ci']:.3f}"
                         expected.append(cell)
                     self.assertIn(expected, rows)
             self.assertNotIn(['Quality measures'], rows)
@@ -235,7 +235,7 @@ class OfflineSimulationTest(unittest.TestCase):
             # Means include the paired Difference column; SD columns do not.
             self.assertEqual(relative[0], [
                 'Entropy relative to system 1',
-                '1.000 +/- 0.000', '1.000 +/- 0.000', '0.000 +/- 0.000', '–',
+                '1.000 ± 0.000', '1.000 ± 0.000', '0.000 ± 0.000', '–',
                 '0.000', '0.000', '–',
             ])
             sensitivity = [row for row in rows if row[0].endswith('% CoV')]

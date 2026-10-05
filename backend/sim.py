@@ -101,7 +101,7 @@ def format_csv_entry(entry):
         return entry
     scale = 100 if entry.get("percentage") else 1
     value = f"{scale * entry['value']:.3f}"
-    return (f"{value} +/- {scale * entry['ci']:.3f}"
+    return (f"{value} ± {scale * entry['ci']:.3f}"
             if entry["ci"] is not None else value)
 
 
