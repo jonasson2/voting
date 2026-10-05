@@ -24,7 +24,10 @@ gpu-2xA100 129.608, and himem-mimir 109.484.
 Each measured `Speed` is `(115.562 / partition time) × (64 / Cores)`.
 The inventory was read from Elja's `sinfo` and `scontrol show partition`.
 
-On Elja, `elja.py` requests one node at a time with `salloc --immediate`.
+On Elja, `elja.py` makes separate one-node requests with `salloc --immediate`,
+launching requests concurrently within each partition. It collects that
+partition's results before requesting any remaining nodes from the next
+partition in preference order.
 Each allocation starts `worker.py`, which waits for its assigned replicate
 range and runs `backend/sim.py` once through `srun`. Slurm reserves both
 logical CPUs per physical core, while `sim.py -C` receives the physical core

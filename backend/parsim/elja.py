@@ -136,24 +136,28 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
     nodes = []
     try:
         for partition in partitions:
+            pending = []
+            cores = partition["cores_per_node"]
+            if core_cap:
+                cores = min(cores, core_cap)
+            slurm_cpus = 2 * partition["cores_per_node"]
+            # Request the remaining nodes together, so allocation waits overlap.
             for _ in range(min(partition["total_nodes"], target_nodes - len(nodes))):
-                node_id = len(nodes)
-                cores = partition["cores_per_node"]
-                if core_cap:
-                    cores = min(cores, core_cap)
-                slurm_cpus = 2 * partition["cores_per_node"]
-                log = (job_dir / f"attempt-{len(logs):03d}.log").open("x")
+                node_id = len(launchers)
+                log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
                 logs.append(log)
                 process = launch_node(job_dir, node_id, partition["partition"],
                                       slurm_cpus, immediate, log)
                 launchers.append(process)
+                pending.append((node_id, process, log.name))
+            for node_id, process, log_name in pending:
                 ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
                                    process, immediate + 30)
                 if ready is None:
                     process.wait()
                     print(f"{partition['partition']}: no immediate allocation",
                           flush=True)
-                    break
+                    continue
                 if ready["node_id"] != node_id:
                     raise RuntimeError("Allocation reported an unexpected node ID")
                 nodes.append({
@@ -162,7 +166,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     "speed_per_core": partition["speed_per_core"],
                     "slurm_job_id": ready["slurm_job_id"],
                 })
-                active.append((node_id, process, log.name))
+                active.append((node_id, process, log_name))
                 print(f"{partition['partition']}: started node "
                       f"{len(nodes)}/{target_nodes}", flush=True)
             if len(nodes) == target_nodes:

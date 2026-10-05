@@ -131,8 +131,11 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             stack.enter_context(redirect_stdout(StringIO()))
             launch = stack.enter_context(patch.object(
                 elja, 'launch_node', side_effect=processes))
-            stack.enter_context(patch.object(
+            wait_ready = stack.enter_context(patch.object(
                 elja, 'wait_ready', side_effect=outcomes))
+            events = Mock()
+            events.attach_mock(launch, 'launch')
+            events.attach_mock(wait_ready, 'ready')
             read = stack.enter_context(patch(
                 'simulation_chunks.read_chunk_result', side_effect=result_for))
             merge = stack.enter_context(patch('simulation_chunks.combine_chunks'))
@@ -144,6 +147,9 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                     stat_path=None, job_dir=job, partitions=partitions,
                     target_nodes=target_nodes, first_replicate=37,
                     core_cap=40, immediate=5)
+                self.assertEqual(
+                    [call[0] for call in events.mock_calls[:3]],
+                    ['launch', 'launch', 'ready'])
             except RuntimeError as error:
                 return job, processes, launch, read, merge, write, kill, error
         return job, processes, launch, read, merge, write, kill, None
@@ -174,16 +180,16 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
     def test_refused_allocation_moves_to_next_partition(self):
         with TemporaryDirectory() as directory:
             job, _, launch, _, merge, _, _, error = self.run_with_allocations(
-                directory, [None, {'node_id': 0, 'slurm_job_id': '20'},
-                            {'node_id': 1, 'slurm_job_id': '21'}])
+                directory, [None, {'node_id': 1, 'slurm_job_id': '20'},
+                            {'node_id': 2, 'slurm_job_id': '21'}])
             self.assertIsNone(error)
             self.assertEqual([call.args[2] for call in launch.call_args_list],
-                             ['first', 'second', 'second'])
+                             ['first', 'first', 'second'])
             self.assertEqual([call.args[1] for call in launch.call_args_list],
-                             [0, 0, 1])
+                             [0, 1, 2])
             manifest = json.loads((job / 'manifest.json').read_text())
             self.assertEqual([n['partition'] for n in manifest['nodes']],
-                             ['second', 'second'])
+                             ['first', 'second'])
             merge.assert_called_once()
 
     def test_exhausted_partitions_release_acquired_allocation(self):
@@ -219,7 +225,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             partitions = base / 'partitions.txt'
             partitions.write_text(
                 'Nodes\tCores\tMaxNode\tSpeed\tPart\n'
-                '1\t2\t1\t1\tbusy\n'
+                '2\t2\t1\t1\tbusy\n'
                 '2\t2\t2\t1\ttest\n', encoding='utf-8')
             fake_bin = base / 'bin'
             fake_bin.mkdir()
@@ -259,7 +265,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 env={**os.environ, 'PATH': f'{fake_bin}:{os.environ["PATH"]}'},
                 capture_output=True, text=True, check=False, timeout=30)
             self.assertEqual(completed.returncode, 0, completed.stderr)
-            for filename in ('inputs.json', 'node-000.json', 'node-001.json'):
+            for filename in ('inputs.json', 'node-002.json', 'node-003.json'):
                 saved = (json.loads((job_dir / filename).read_text())
                          if filename == 'inputs.json' else
                          read_chunk_result(job_dir / filename))
@@ -269,7 +275,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 self.assertEqual(saved_settings['sensitivity_gen_method'], 'uniform')
                 self.assertEqual(saved_settings['sensitivity_simulation_count'], 2)
             self.assertTrue(output.exists())
-            ready = json.loads((job_dir / 'allocation-000.json').read_text())
+            ready = json.loads((job_dir / 'allocation-002.json').read_text())
             self.assertEqual(ready['slurm_job_id'], '12345')
             manifest = json.loads((job_dir / 'manifest.json').read_text())
             self.assertEqual([node['partition'] for node in manifest['nodes']],
