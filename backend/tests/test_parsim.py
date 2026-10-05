@@ -68,7 +68,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             '--cpus-per-task=128', '--job-name=parsim-003',
             sys.executable, str(elja.HERE / 'worker.py'),
             '--job-dir', '/job', '--node-id', '3',
-        ], stdout=log, stderr=log, start_new_session=True)
+        ], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+            start_new_session=True)
         self.assertIs(process, launch.return_value)
 
     def test_worker_passes_range_seed_and_core_count_to_sim(self):

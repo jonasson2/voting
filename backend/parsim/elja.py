@@ -111,7 +111,7 @@ def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log):
         f"--cpus-per-task={slurm_cpus}", f"--job-name=parsim-{node_id:03d}",
         *child,
     ]
-    return subprocess.Popen(command, stdout=log, stderr=log,
+    return subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                             start_new_session=True)
 
 
