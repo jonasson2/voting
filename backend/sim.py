@@ -15,30 +15,6 @@ from simulation_chunks import (
 )
 
 
-QUALITY_MEASURES = (
-    ("sum_abs_party_overall", "Party-total absolute deviation"),
-    ("sum_abs", "Constituency-list absolute deviation"),
-    ("sum_sqshare", "Squared deviation per reference seat"),
-    ("entropy_score", "Entropy score (%)"),
-    ("entropy_relative", "Entropy relative to system 1"),
-    ("geographical_displacement", "Geographical seat displacement"),
-    ("constituency_disparity", "Constituency disparity"),
-    ("max_overrepresentation", "Maximum relative over-representation (D'Hondt)"),
-    ("max_seat_share_surplus", "Maximum seat-share surplus"),
-    ("max_seat_share_shortfall", "Maximum seat-share shortfall"),
-    ("total_overhang", "Potential overhang"),
-)
-SENSITIVITY_MEASURES = (
-    ("sensitivity_between_parties", "Sensitivity: seats moving between parties"),
-    ("sensitivity_within_parties", "Sensitivity: seats moving within parties"),
-)
-STATISTICS = (
-    ("avg", "Mean"),
-    ("std", "Standard deviation"),
-    ("lo95", "95% CI lower"),
-    ("hi95", "95% CI upper"),
-)
-DEFAULT_SENSITIVITY_COVS = (0.3, 1, 3)  # Percent, as in the web settings file.
 UNSET = object()
 
 
@@ -73,8 +49,6 @@ def prepare_inputs(votes, systems, settings, overrides):
     for key, value in overrides.items():
         if value is not None or key == "random_seed":
             settings[key] = value
-    settings["sensitivity"] = True
-    settings["sensitivity_covs"] = list(DEFAULT_SENSITIVITY_COVS)
     votes, systems, settings = prepare_simulation_inputs(votes, systems, settings)
     names = [system["name"] for system in systems]
     if len(set(names)) != len(names):
@@ -100,35 +74,54 @@ def run_simulation(votes, systems, settings, first_replicate=0,
     return combine_chunks(results, return_statistics=return_statistics)
 
 
+def format_csv_entry(entry):
+    """Use the web entry's value, percentage flag, and confidence half-width."""
+    if not isinstance(entry, dict):
+        return entry
+    scale = 100 if entry.get("percentage") else 1
+    value = f"{scale * entry['value']:.3f}"
+    return (f"{value} +/- {scale * entry['ci']:.3f}"
+            if entry["ci"] is not None else value)
+
+
 def write_csv(path, result):
-    names = [system["name"] for system in result.systems]
+    """Write the visible web table as comma-separated cells."""
+    table = result.get_result_web(parallel=False)["vuedata"]
+
+    def columns(group):
+        for stat in table["group_stats"].get(group, table["stats"]):
+            names = list(table["system_names"])
+            if (stat == "avg" and table["has_paired_difference"]
+                    and group not in table["groups_without_paired_difference"]):
+                names.insert(2, "Difference")
+            yield stat, names
+
     with Path(path).open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Measure", "Statistic", *names])
-        for measure, label in QUALITY_MEASURES:
-            for statistic, statistic_label in STATISTICS:
-                values = [
-                    result.data[index][measure][statistic]
-                    if (measure in result.data[index]
-                        and (measure != "entropy_score"
-                             or result.entropy_score_available[index])
-                        and (measure != "entropy_relative"
-                             or (len(names) > 1
-                                 and result.entropy_relative_available[index])))
-                    else ""
-                    for index in range(len(names))
-                ]
-                if measure == "entropy_score":
-                    values = [value * 100 if value != "" else "" for value in values]
-                writer.writerow([label, statistic_label, *values])
-        if result.sensitivity:
-            for measure, label in SENSITIVITY_MEASURES:
-                for cov_index, cov in enumerate(result.sensitivity_data["covs"]):
-                    row_label = f"{label} (CoV {cov:g}%)"
-                    for statistic, statistic_label in STATISTICS:
-                        values = result.sensitivity_data[measure][statistic][cov_index]
-                        writer.writerow([row_label, statistic_label,
-                                         *values[:len(names)]])
+        header = ["Sum over reference seat share differences"]
+        for stat, names in columns("shareTitle"):
+            heading = "" if stat == "avg" else table["stat_headings"][stat]
+            header.extend([heading, *[""] * (len(names) - 1)])
+        writer.writerow(header)
+        writer.writerow(["", *[name for _, names in columns("shareTitle")
+                                for name in names]])
+        for group in table["group_ids"]:
+            if group == "shareTitle" or not table["show"][group]:
+                continue
+            title = table["group_titles"][group]
+            heading_type = table["headingType"].get(group)
+            if title or heading_type == "systems":
+                names = [name for _, names in columns(group) for name in names]
+                writer.writerow([title, *names] if heading_type == "systems"
+                                else [title])
+            for row in table[group]:
+                writer.writerow([row["rowtitle"], *[
+                    format_csv_entry(entry)
+                    for stat, _ in columns(group) for entry in row[stat]]])
+            if group in table["group_messages"]:
+                writer.writerow([table["group_messages"][group]])
+            if group in table["footnotes"]:
+                writer.writerow([table["footnotes"][group]])
 
 
 def positive_int(value):

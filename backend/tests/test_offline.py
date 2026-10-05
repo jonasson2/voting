@@ -21,11 +21,12 @@ class OfflineSimulationTest(unittest.TestCase):
         systems = Path(directory) / 'systems.json'
         systems.write_text(json.dumps({'systems': [system]}), encoding='utf-8')
         settings = Path(directory) / 'settings.json'
-        settings.write_text(json.dumps({'sim_settings': SimulationSettings()}),
+        settings.write_text(json.dumps({'sim_settings': dict(SimulationSettings(), sensitivity=True,
+                                                    sensitivity_covs=[0.3, 1, 3])}),
                             encoding='utf-8')
         return systems, settings
 
-    def test_input_overrides_and_sensitivity_defaults(self):
+    def test_input_overrides_preserve_sensitivity_settings(self):
         with TemporaryDirectory() as directory:
             systems, settings = self.files(directory)
             _, _, parsed = load_inputs(VOTES, systems, settings, {
@@ -36,6 +37,19 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(parsed['random_seed'], 17)
             self.assertTrue(parsed['sensitivity'])
             self.assertEqual(parsed['sensitivity_covs'], [0.3, 1, 3])
+
+    def test_disabled_sensitivity_is_preserved(self):
+        with TemporaryDirectory() as directory:
+            systems, settings = self.files(directory)
+            contents = json.loads(settings.read_text())
+            contents['sim_settings'].update(
+                sensitivity=False, sensitivity_covs=[0.01, 0.1],
+                sensitivity_gen_method='uniform')
+            settings.write_text(json.dumps(contents), encoding='utf-8')
+            _, _, parsed = load_inputs(VOTES, systems, settings, {})
+            self.assertFalse(parsed['sensitivity'])
+            self.assertEqual(parsed['sensitivity_covs'], [0.01, 0.1])
+            self.assertEqual(parsed['sensitivity_gen_method'], 'uniform')
 
     def test_spreadsheet_vote_input_is_rejected(self):
         with TemporaryDirectory() as directory:
@@ -63,7 +77,7 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(len([row for row in rows
-                                  if row[0].startswith('Sensitivity:')]), 24)
+                                  if row[0].endswith('% CoV')]), 6)
 
     def test_chunk_ranges_cover_replicates_once(self):
         self.assertEqual(split_replicates(7, 3), [(3, 0), (2, 3), (2, 5)])
@@ -95,15 +109,7 @@ class OfflineSimulationTest(unittest.TestCase):
                 parallel_rows = list(csv.reader(file))
             with single.open(newline='', encoding='utf-8') as file:
                 single_rows = list(csv.reader(file))
-            self.assertEqual(len(parallel_rows), len(single_rows))
-            self.assertEqual(parallel_rows[0], single_rows[0])
-            for left, right in zip(parallel_rows[1:], single_rows[1:]):
-                self.assertEqual(left[:2], right[:2])
-                for a, b in zip(left[2:], right[2:]):
-                    if a and b:
-                        self.assertAlmostEqual(float(a), float(b), places=9)
-                    else:
-                        self.assertEqual(a, b)
+            self.assertEqual(parallel_rows, single_rows)
 
     def test_statistics_output_can_be_read_and_reported(self):
         with TemporaryDirectory() as directory:
@@ -141,49 +147,43 @@ class OfflineSimulationTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Download all file'):
                 load_all_inputs(all_file, {})
 
-    def test_csv_has_means_standard_deviations_and_confidence_limits(self):
+    def test_csv_matches_web_rows_and_headings(self):
         with TemporaryDirectory() as directory:
-            systems, settings = self.files(directory)
+            systems_path, settings_path = self.files(directory)
+            votes, systems, settings = load_inputs(
+                VOTES, systems_path, settings_path,
+                {'simulation_count': 2, 'cpu_count': 1, 'random_seed': 123})
+            result = run_simulation(votes, systems, settings)
             output = Path(directory) / 'results.csv'
-            arguments = [
-                '-v', str(VOTES), '-e', str(systems),
-                '-s', str(settings), '-o', str(output),
-                '-r', '2', '-C', '1', '-S', '123',
-            ]
-            self.assertEqual(main(arguments), 0)
+            write_csv(output, result)
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
-            self.assertEqual(rows[0], ['Measure', 'Statistic', 'Test system'])
-            for label in (
-                    'Party-total absolute deviation',
-                    'Constituency-list absolute deviation',
-                    'Geographical seat displacement',
-                    'Constituency disparity',
-                    "Maximum relative over-representation (D'Hondt)",
-                    'Maximum seat-share surplus',
-                    'Maximum seat-share shortfall'):
-                measure_rows = [row for row in rows if row[0] == label]
-                self.assertEqual(len(measure_rows), 4)
-                self.assertTrue(all(row[2] != '' for row in measure_rows))
-            relative = [row for row in rows
-                        if row[0] == 'Entropy relative to system 1']
-            self.assertEqual(len(relative), 4)
-            self.assertTrue(all(row[2] == '' for row in relative))
-            self.assertIn(['Party-total absolute deviation', 'Mean', rows[1][2]], rows)
-            self.assertEqual(
-                {row[1] for row in rows
-                 if row[0] == "Maximum relative over-representation (D'Hondt)"},
-                {'Mean', 'Standard deviation', '95% CI lower', '95% CI upper'},
-            )
-            self.assertEqual({row[1] for row in rows[1:]},
-                             {'Mean', 'Standard deviation', '95% CI lower',
-                              '95% CI upper'})
-            sensitivity = [row for row in rows if row[0].startswith('Sensitivity:')]
-            self.assertEqual(len(sensitivity), 2 * 3 * 4)
-            self.assertTrue(all(row[2] != '' for row in sensitivity))
-            first = output.read_bytes()
-            self.assertEqual(main(arguments), 0)
-            self.assertEqual(output.read_bytes(), first)
+            self.assertEqual(rows[:2], [
+                ['Sum over reference seat share differences', '', 'STD.DEV.'],
+                ['', 'Test system', 'Test system'],
+            ])
+            table = result.get_result_web(parallel=False)['vuedata']
+            for group in table['group_ids']:
+                if not table['show'][group]:
+                    continue
+                if table['group_titles'][group]:
+                    self.assertTrue(any(row[0] == table['group_titles'][group]
+                                        for row in rows))
+                for row in table[group]:
+                    stats = table['group_stats'].get(group, table['stats'])
+                    expected = [row['rowtitle']]
+                    for stat in stats:
+                        entry = row[stat][0]
+                        scale = 100 if entry.get('percentage') else 1
+                        cell = f"{scale * entry['value']:.3f}"
+                        if entry['ci'] is not None:
+                            cell += f" +/- {scale * entry['ci']:.3f}"
+                        expected.append(cell)
+                    self.assertIn(expected, rows)
+            self.assertNotIn(['Quality measures'], rows)
+            self.assertNotIn(['Average & 95% confidence interval'], rows)
+            self.assertEqual(sum(row[0].endswith('% CoV') for row in rows), 6)
+            self.assertFalse(any('all seats as fixed' in row[0] for row in rows))
 
     def test_relative_entropy_is_a_ratio_and_survives_statistics_reload(self):
         with TemporaryDirectory() as directory:
@@ -207,16 +207,19 @@ class OfflineSimulationTest(unittest.TestCase):
             ]), 0)
             direct = output.read_bytes()
             with output.open(newline='', encoding='utf-8') as file:
-                relative = [row for row in csv.reader(file)
+                rows = list(csv.reader(file))
+                relative = [row for row in rows
                             if row[0] == 'Entropy relative to system 1']
-            self.assertEqual(len(relative), 4)
-            statistics = ('avg', 'std', 'lo95', 'hi95')
-            for row, statistic in zip(relative, statistics):
-                self.assertEqual(row[4], '')
-                for index in range(2):
-                    self.assertEqual(float(row[index + 2]),
-                                     result.data[index]['entropy_relative'][statistic])
-            self.assertEqual(relative[0][2:4], ['1.0', '1.0'])
+            self.assertEqual(len(relative), 1)
+            # Means include the paired Difference column; SD columns do not.
+            self.assertEqual(relative[0], [
+                'Entropy relative to system 1',
+                '1.000 +/- 0.000', '1.000 +/- 0.000', '0.000 +/- 0.000', '–',
+                '0.000', '0.000', '–',
+            ])
+            sensitivity = [row for row in rows if row[0].endswith('% CoV')]
+            self.assertEqual(len(sensitivity), 6)
+            self.assertTrue(all(len(row) == 5 for row in sensitivity))
             write_csv(output, combine_chunks([read_chunk_result(statfile)]))
             self.assertEqual(output.read_bytes(), direct)
 
@@ -235,8 +238,4 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(main(arguments + ['--cpus', '2']), 0)
             with output.open(newline='', encoding='utf-8') as file:
                 parallel = list(csv.reader(file))
-            self.assertEqual([row[0:2] for row in parallel],
-                             [row[0:2] for row in single])
-            for left, right in zip(single[1:], parallel[1:]):
-                if left[2] and right[2]:
-                    self.assertAlmostEqual(float(left[2]), float(right[2]), places=8)
+            self.assertEqual(parallel, single)

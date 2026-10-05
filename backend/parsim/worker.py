@@ -14,13 +14,13 @@ BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
 
-def run_allocated(job_dir, node_id, mode):
+def run_allocated(job_dir, node_id):
     from parsim.common import atomic_json
 
     job_dir = Path(job_dir)
     atomic_json(job_dir / f"allocation-{node_id:03d}.json", {
         "node_id": node_id,
-        "slurm_job_id": os.environ.get("SLURM_JOB_ID") if mode == "slurm" else None,
+        "slurm_job_id": os.environ.get("SLURM_JOB_ID"),
     })
     assignment = job_dir / f"assignment-{node_id:03d}.json"
     deadline = time.monotonic() + 600
@@ -39,9 +39,8 @@ def run_allocated(job_dir, node_id, mode):
         "-C", str(work["cores"]), "-S", str(work["seed"]),
         "-O", str(job_dir / f"node-{node_id:03d}.json"),
     ]
-    if mode == "slurm":
-        command = ["srun", "--nodes=1", "--ntasks=1",
-                   f"--cpus-per-task={work['slurm_cpus']}", "--exact", *command]
+    command = ["srun", "--nodes=1", "--ntasks=1",
+               f"--cpus-per-task={work['slurm_cpus']}", "--exact", *command]
     return subprocess.run(command, check=False).returncode
 
 
@@ -49,12 +48,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job-dir", type=Path, required=True)
     parser.add_argument("--node-id", type=int, required=True)
-    parser.add_argument("--mode", choices=("local", "slurm"), required=True)
     args = parser.parse_args(argv)
     if args.node_id < 0:
         parser.error("node ID must be nonnegative")
     try:
-        return run_allocated(args.job_dir, args.node_id, args.mode)
+        return run_allocated(args.job_dir, args.node_id)
     except (OSError, ValueError, KeyError, RuntimeError) as error:
         parser.exit(1, f"worker: {error}\n")
 

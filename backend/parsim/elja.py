@@ -7,7 +7,6 @@ import json
 from math import floor, isfinite
 import os
 from pathlib import Path
-import platform
 import secrets
 import signal
 import subprocess
@@ -103,25 +102,21 @@ def wait_ready(path, process, timeout):
     raise RuntimeError(f"Timed out waiting for allocation {path.name}")
 
 
-def launch_node(job_dir, node_id, partition, slurm_cpus, mode, immediate, log):
+def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log):
     child = [sys.executable, str(HERE / "worker.py"),
-             "--job-dir", str(job_dir), "--node-id", str(node_id), "--mode", mode]
-    if mode == "slurm":
-        command = [
-            "salloc", f"--immediate={immediate}", "--exclusive", "--mem=0",
-            f"--partition={partition}", "--nodes=1", "--ntasks=1",
-            f"--cpus-per-task={slurm_cpus}", f"--job-name=parsim-{node_id:03d}",
-            *child,
-        ]
-    else:
-        command = child
+             "--job-dir", str(job_dir), "--node-id", str(node_id)]
+    command = [
+        "salloc", f"--immediate={immediate}", "--exclusive", "--mem=0",
+        f"--partition={partition}", "--nodes=1", "--ntasks=1",
+        f"--cpus-per-task={slurm_cpus}", f"--job-name=parsim-{node_id:03d}",
+        *child,
+    ]
     return subprocess.Popen(command, stdout=log, stderr=log,
                             start_new_session=True)
 
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
-                    partitions, target_nodes, first_replicate, mode,
-                    local_cores, core_cap, immediate):
+                    partitions, target_nodes, first_replicate, core_cap, immediate):
     from parsim.common import atomic_json
     from sim import write_csv
     from simulation_chunks import combine_chunks, read_chunk_result, write_chunk_result
@@ -143,18 +138,17 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         for partition in partitions:
             for _ in range(min(partition["total_nodes"], target_nodes - len(nodes))):
                 node_id = len(nodes)
-                cores = (local_cores if mode == "local" else
-                         partition["cores_per_node"])
+                cores = partition["cores_per_node"]
                 if core_cap:
                     cores = min(cores, core_cap)
                 slurm_cpus = 2 * partition["cores_per_node"]
                 log = (job_dir / f"attempt-{len(logs):03d}.log").open("x")
                 logs.append(log)
                 process = launch_node(job_dir, node_id, partition["partition"],
-                                      slurm_cpus, mode, immediate, log)
+                                      slurm_cpus, immediate, log)
                 launchers.append(process)
                 ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
-                                   process, immediate + 30 if mode == "slurm" else 30)
+                                   process, immediate + 30)
                 if ready is None:
                     process.wait()
                     print(f"{partition['partition']}: no immediate allocation",
@@ -251,10 +245,6 @@ def main(argv=None):
                         help="New job directory (default: backend/parsim/jobs/<id>)")
     parser.add_argument("--partitions", type=Path, default=HERE / "partitions.txt",
                         help="Ordered tab-separated partition list")
-    parser.add_argument("--mode", choices=("auto", "local", "slurm"),
-                        default="auto", help="auto uses local on macOS, Slurm elsewhere")
-    parser.add_argument("--local-cores", type=positive_int, default=2,
-                        help="Processes per virtual node in local mode")
     parser.add_argument("--immediate", type=positive_int, default=5,
                         help="Seconds allowed for each Slurm allocation")
     args = parser.parse_args(argv)
@@ -275,14 +265,11 @@ def main(argv=None):
             load_all_inputs(args.all, overrides) if args.all else
             load_inputs(args.votes, args.systems, args.settings, overrides))
         partitions = read_partitions(args.partitions)
-        mode = ("local" if platform.system() == "Darwin" else "slurm") \
-            if args.mode == "auto" else args.mode
         run_distributed(
             votes, systems, settings, csv_path=args.csv, stat_path=args.output,
             job_dir=args.job_dir or HERE / "jobs" / uuid4().hex,
             partitions=partitions, target_nodes=args.nodes,
-            first_replicate=args.first_replicate, mode=mode,
-            local_cores=args.local_cores, core_cap=args.cores,
+            first_replicate=args.first_replicate, core_cap=args.cores,
             immediate=args.immediate)
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, f"elja: {error}\n")

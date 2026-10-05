@@ -37,14 +37,15 @@ Alternatively, use the simulator's **Download all** JSON file:
 ```
 
 The three overrides are optional; otherwise their values come from the settings
-file. `--seed -` requests fresh random draws. The offline runner always enables
-sensitivity at perturbation CoVs of 0.3%, 1%, and 3%; its number of perturbations
-per simulation and generating distribution come from the settings file.
+file. `--seed -` requests fresh random draws. Both offline and Elja runs retain the sensitivity switch, perturbation CoVs,
+number of perturbations per simulation, and generating distribution from the
+settings file.
 
-The UTF-8 CSV has one column per electoral system. Each quality-measure and
-sensitivity row has separate entries for the mean, standard deviation, and
-lower and upper 95% confidence limits. Entropy scores are percentages; their
-cells are blank when the chosen rule does not support that score.
+The UTF-8 CSV follows the web results table using the same table builder:
+section headings, system names, Difference columns, and the statistics shown
+in each section. Means and 95% confidence half-widths share one cell, written
+as `x.xxx +/- x.xxx`; standard deviations occupy their web columns. Entropy
+scores are percentages, and unavailable values are shown as `–`.
 
 Sensitivity standard deviations describe individual perturbations. Confidence
 intervals account for perturbations sharing an outer election; with just one

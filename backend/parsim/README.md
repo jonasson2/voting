@@ -9,9 +9,9 @@ Activate the repository's Python environment, then run from the repository root:
 Use `-v votes.csv -e systems.json -s settings.json` instead of `-a` for
 separate input files. The `-r`, `-i`, `-S`, `-o`, and `-O` options have
 the same meanings as in `backend/sim.py`. Here `-C` caps simulation processes
-per node; by default Elja uses one process per physical core. On a Mac,
-`elja.py` simulates nodes as local processes, with two processes per node by
-default (`--local-cores` changes this).
+per node; by default Elja uses one process per physical core. Run `elja.py`
+on Elja; it always uses Slurm. For local multicore simulations, use
+`backend/sim.py`.
 
 `partitions.txt` lists Elja partitions in preference order. `Nodes` is the
 configured number of nodes, `Cores` counts physical cores per node, and

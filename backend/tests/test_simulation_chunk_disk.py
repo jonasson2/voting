@@ -22,24 +22,34 @@ class SimulationChunkDiskTest(unittest.TestCase):
         other_system['name'] = 'Second system'
         other_system['adj_alloc_divider'] = 'sainte-lague'
         settings = SimulationSettings()
-        settings.update(simulation_count=4, cpu_count=2, random_seed=123)
+        settings.update(simulation_count=5, cpu_count=2, random_seed=123,
+                        sensitivity=True)
         votes, systems, settings = prepare_inputs(
             votes, [system, other_system], settings, {})
         settings.update(sensitivity_covs=[50], sensitivity_simulation_count=5)
 
         uninterrupted = combine_chunks([
-            run_chunk(votes, systems, settings, 4, 0)])
+            run_chunk(votes, systems, settings, 5, 37)])
         with TemporaryDirectory() as directory:
             paths = [Path(directory) / f'chunk-{i}.json' for i in range(2)]
-            for path, start in zip(paths, (0, 2)):
+            for path, (count, start) in zip(paths, ((2, 37), (3, 39))):
                 write_chunk_result(path, run_chunk(
-                    votes, systems, settings, 2, start))
+                    votes, systems, settings, count, start))
             loaded = [read_chunk_result(path) for path in paths]
             self.assertEqual([result['start_iteration'] for result in loaded],
-                             [0, 2])
+                             [37, 39])
+            self.assertEqual([result['iteration'] for result in loaded], [2, 3])
             self.assertEqual([result['random_seed'] for result in loaded],
                              [123, 123])
             merged = combine_chunks(loaded)
+            self.assertEqual(merged.iteration, 5)
+            for measure in ('sensitivity_between_parties',
+                            'sensitivity_within_parties'):
+                for statistic in ('avg', 'std', 'se', 'lo95', 'hi95', 'min', 'max'):
+                    for expected, actual in zip(
+                            uninterrupted.sensitivity_data[measure][statistic][0],
+                            merged.sensitivity_data[measure][statistic][0]):
+                        self.assertAlmostEqual(expected, actual, places=12)
             self.assertTrue(any(
                 value > 0 for value in
                 merged.sensitivity_data['sensitivity_between_parties']['std'][0]))
@@ -52,16 +62,7 @@ class SimulationChunkDiskTest(unittest.TestCase):
                 expected = list(csv.reader(file))
             with actual_path.open(newline='', encoding='utf-8') as file:
                 actual = list(csv.reader(file))
-            self.assertEqual(len(actual), len(expected))
-            self.assertEqual(actual[0], expected[0])
-            for left, right in zip(expected[1:], actual[1:]):
-                self.assertEqual(left[:2], right[:2])
-                for expected_value, actual_value in zip(left[2:], right[2:]):
-                    if expected_value and actual_value:
-                        self.assertAlmostEqual(
-                            float(expected_value), float(actual_value), places=9)
-                    else:
-                        self.assertEqual(expected_value, actual_value)
+            self.assertEqual(actual, expected)
 
     def test_failed_write_preserves_previous_result(self):
         with TemporaryDirectory() as directory:
