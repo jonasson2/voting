@@ -115,6 +115,27 @@ def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log):
                             start_new_session=True)
 
 
+def available_node_count(partition, slurm_cpus):
+    """Count fully idle nodes that can satisfy our exclusive CPU request."""
+    try:
+        result = subprocess.run(
+            ["sinfo", "-N", "-h", f"--partition={partition}",
+             "-o", "%N|%t|%c"],
+            check=True, capture_output=True, text=True)
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError(f"Cannot query Slurm availability for {partition}: "
+                           f"{error}") from error
+    nodes = set()
+    for line in result.stdout.splitlines():
+        fields = line.strip().split("|")
+        if len(fields) != 3:
+            raise ValueError(f"Unexpected sinfo row: {line}")
+        name, state, cpus = fields
+        if state == "idle" and int(cpus) >= slurm_cpus:
+            nodes.add(name)
+    return len(nodes)
+
+
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     partitions, target_nodes, first_replicate, core_cap, immediate):
     from parsim.common import atomic_json
@@ -141,8 +162,13 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
             if core_cap:
                 cores = min(cores, core_cap)
             slurm_cpus = 2 * partition["cores_per_node"]
+            available = available_node_count(partition["partition"], slurm_cpus)
+            if not available:
+                print(f"{partition['partition']}: no eligible idle nodes", flush=True)
+                continue
             # Request the remaining nodes together, so allocation waits overlap.
-            for _ in range(min(partition["total_nodes"], target_nodes - len(nodes))):
+            for _ in range(min(available, partition["total_nodes"],
+                               target_nodes - len(nodes))):
                 node_id = len(launchers)
                 log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
                 logs.append(log)

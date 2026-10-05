@@ -72,6 +72,34 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             start_new_session=True)
         self.assertIs(process, launch.return_value)
 
+    def test_availability_counts_only_eligible_idle_nodes_once(self):
+        with patch.object(elja.subprocess, 'run') as query:
+            query.return_value.stdout = (
+                'node1|idle|128\nnode1|idle|128\nnode2|mix|128\n'
+                'node3|idle*|128\nnode4|idle|64\nnode5|drain|128\n'
+                'node6|idle|256\n')
+            self.assertEqual(elja.available_node_count('mimir', 128), 2)
+        query.assert_called_once_with(
+            ['sinfo', '-N', '-h', '--partition=mimir', '-o', '%N|%t|%c'],
+            check=True, capture_output=True, text=True)
+
+    def test_availability_empty_partition(self):
+        with patch.object(elja.subprocess, 'run') as query:
+            query.return_value.stdout = ''
+            self.assertEqual(elja.available_node_count('mimir', 128), 0)
+
+    def test_availability_inquiry_errors_are_reported(self):
+        for error in (FileNotFoundError('sinfo'),
+                      subprocess.CalledProcessError(1, ['sinfo'])):
+            with self.subTest(error=error), \
+                    patch.object(elja.subprocess, 'run', side_effect=error):
+                with self.assertRaisesRegex(RuntimeError, 'Cannot query Slurm'):
+                    elja.available_node_count('mimir', 128)
+        with patch.object(elja.subprocess, 'run') as query:
+            query.return_value.stdout = 'unexpected output'
+            with self.assertRaisesRegex(ValueError, 'Unexpected sinfo row'):
+                elja.available_node_count('mimir', 128)
+
     def test_worker_passes_range_seed_and_core_count_to_sim(self):
         with TemporaryDirectory() as directory:
             job = Path(directory)
@@ -103,7 +131,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
         self.assertIsNone(prepared['random_seed'])
 
     def run_with_allocations(self, directory, outcomes, *, target_nodes=2,
-                             live_processes=()):
+                             live_processes=(), availability=(3, 3)):
         """Exercise the master without starting processes or allocating nodes."""
         job = Path(directory) / 'job'
         processes = [Mock(pid=1000 + i) for i in range(len(outcomes))]
@@ -129,6 +157,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
 
         with ExitStack() as stack:
             stack.enter_context(redirect_stdout(StringIO()))
+            stack.enter_context(patch.object(
+                elja, 'available_node_count', side_effect=availability))
             launch = stack.enter_context(patch.object(
                 elja, 'launch_node', side_effect=processes))
             wait_ready = stack.enter_context(patch.object(
@@ -147,9 +177,10 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                     stat_path=None, job_dir=job, partitions=partitions,
                     target_nodes=target_nodes, first_replicate=37,
                     core_cap=40, immediate=5)
-                self.assertEqual(
-                    [call[0] for call in events.mock_calls[:3]],
-                    ['launch', 'launch', 'ready'])
+                if availability[0] >= 2:
+                    self.assertEqual(
+                        [call[0] for call in events.mock_calls[:3]],
+                        ['launch', 'launch', 'ready'])
             except RuntimeError as error:
                 return job, processes, launch, read, merge, write, kill, error
         return job, processes, launch, read, merge, write, kill, None
@@ -192,6 +223,29 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                              ['first', 'second'])
             merge.assert_called_once()
 
+    def test_requests_follow_current_availability(self):
+        for availability, expected in (((0, 2), ['second', 'second']),
+                                       ((1, 1), ['first', 'second'])):
+            with self.subTest(availability=availability), \
+                    TemporaryDirectory() as directory:
+                job, _, launch, _, _, _, _, error = self.run_with_allocations(
+                    directory, [{'node_id': 0, 'slurm_job_id': '10'},
+                                {'node_id': 1, 'slurm_job_id': '11'}],
+                    availability=availability)
+                self.assertIsNone(error)
+                self.assertEqual([call.args[2] for call in launch.call_args_list],
+                                 expected)
+                manifest = json.loads((job / 'manifest.json').read_text())
+                self.assertEqual(sum(n['replicates'] for n in manifest['nodes']), 17)
+
+    def test_no_idle_nodes_means_no_allocation_requests(self):
+        with TemporaryDirectory() as directory:
+            _, _, launch, _, merge, _, _, error = self.run_with_allocations(
+                directory, [], availability=(0, 0))
+            self.assertRegex(str(error), 'Started 0 of 2 requested nodes')
+            launch.assert_not_called()
+            merge.assert_not_called()
+
     def test_exhausted_partitions_release_acquired_allocation(self):
         with TemporaryDirectory() as directory:
             job, processes, launch, read, merge, write, kill, error = (
@@ -229,6 +283,15 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 '2\t2\t2\t1\ttest\n', encoding='utf-8')
             fake_bin = base / 'bin'
             fake_bin.mkdir()
+            sinfo = fake_bin / 'sinfo'
+            sinfo.write_text(
+                '#!/usr/bin/env python3\n'
+                'import sys\n'
+                'partition = next(arg.split("=", 1)[1] for arg in sys.argv '
+                'if arg.startswith("--partition="))\n'
+                'print(f"{partition}1|idle|4\\n{partition}2|idle|4")\n',
+                encoding='utf-8')
+            sinfo.chmod(0o755)
             salloc = fake_bin / 'salloc'
             salloc.write_text(
                 '#!/usr/bin/env python3\n'

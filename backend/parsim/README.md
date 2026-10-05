@@ -24,7 +24,14 @@ gpu-2xA100 129.608, and himem-mimir 109.484.
 Each measured `Speed` is `(115.562 / partition time) × (64 / Cores)`.
 The inventory was read from Elja's `sinfo` and `scontrol show partition`.
 
-On Elja, `elja.py` makes separate one-node requests with `salloc --immediate`,
+Before trying each partition, `elja.py` queries `sinfo` (as `avail.sh` does)
+for fully idle nodes with enough logical CPUs for the exclusive allocation.
+It limits requests to that available count and skips partitions with none.
+The inquiry is refreshed for each partition, so nodes already allocated
+through an earlier partition are no longer counted as idle. Slurm still
+decides which nodes to allocate; availability can change after the inquiry.
+
+`elja.py` makes separate one-node requests with `salloc --immediate`,
 launching requests concurrently within each partition. It collects that
 partition's results before requesting any remaining nodes from the next
 partition in preference order.
