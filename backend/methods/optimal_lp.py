@@ -1,6 +1,9 @@
 """Maximum-entropy adjustment-seat allocation using a network LP."""
 
 import numpy as np
+# Load before Linux forks workers, avoiding concurrent shared-filesystem imports.
+from scipy.optimize import linprog
+from scipy.sparse import coo_matrix
 
 from common_allocate import prepare_adjustment_bounds
 
@@ -16,8 +19,6 @@ def _divisors(divisor_gen, count):
 
 
 def _constraint_matrices(num_variables, constraints):
-    from scipy.sparse import coo_matrix
-
     equalities = []
     inequalities = []
     for indices, coefficients, low, high in constraints:
@@ -62,8 +63,6 @@ def optimal_lp(
         m_prior_allocations, divisor_gen, nat_prior_allocations=None,
         **kwargs):
     """Maximize divisor-rule entropy within row and optional party bounds."""
-    from scipy.optimize import linprog
-
     votes = np.maximum(np.asarray(m_votes, dtype=float), 1)
     prior = np.asarray(m_prior_allocations, dtype=int)
     if votes.shape != prior.shape:
