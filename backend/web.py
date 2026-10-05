@@ -11,7 +11,7 @@ from electionSystem import ElectionSystem
 from electionHandler import ElectionHandler, update_constituencies
 from input_util import check_simul_settings, check_system_names
 from input_files import (
-    load_section, validate_systems, validate_settings,
+    load_section, validate_systems, validate_settings, validate_display_settings,
     prepare_simulation_inputs,
 )
 from util import get_cpu_counts
@@ -223,6 +223,8 @@ def api_votes_save_all():
         param_list = ("vote_table", "systems", "sim_settings")
         param = getparam(*param_list)
         contents = dict(zip(param_list, param))
+        if "display_settings" in request.get_json():
+            contents["display_settings"] = validate_display_settings(getparam("display_settings"))
         contents["vote_table"] = check_vote_table(contents["vote_table"])
         check_system_names(contents["systems"])
         tmpfilename = tempfile.mktemp(prefix='simulator-')
@@ -239,10 +241,11 @@ def api_votes_uploadall():
     try:
         f = getfileparam()
         content = load_json(f)
-        if set(content) == {"systems", "sim_settings"}:
+        sections = set(content) - {"display_settings"}
+        if sections == {"systems", "sim_settings"}:
             return errormsg(f'File {f.filename} contains no votes and must '
                             'be uploaded with "Load from file"')
-        elif set(content) == {"systems", "sim_settings", "vote_table"}:
+        elif sections == {"systems", "sim_settings", "vote_table"}:
             return jsonify(content)
         else:
             return errormsg('Not a legal json-file for "Load all"')

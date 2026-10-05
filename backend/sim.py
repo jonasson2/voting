@@ -9,7 +9,7 @@ from pathlib import Path
 import time
 
 from input_files import (
-    load_all, load_section, load_votes, prepare_simulation_inputs,
+    load_all, load_section, load_votes, prepare_simulation_inputs, validate_display_settings,
 )
 from simulation_chunks import (
     combine_chunks, run_chunk, split_replicates, write_chunk_result,
@@ -27,6 +27,7 @@ class HelpParser(argparse.ArgumentParser):
 
 
 def load_inputs(votes_path, systems_path, settings_path, overrides):
+    """Return votes, systems, simulation settings, and default CSV precision."""
     if Path(votes_path).suffix != ".csv":
         raise ValueError("Vote input must be a CSV file in the standard vote format")
     votes = load_votes(votes_path)
@@ -34,13 +35,15 @@ def load_inputs(votes_path, systems_path, settings_path, overrides):
         raise ValueError(votes)
     systems = load_section(systems_path, "systems")
     settings = load_section(settings_path, "sim_settings")
-    return prepare_inputs(votes, systems, settings, overrides)
+    return (*prepare_inputs(votes, systems, settings, overrides), validate_display_settings())
 
 
 def load_all_inputs(all_path, overrides):
+    """Return the three simulation inputs and saved CSV precision."""
     contents = load_all(all_path)
-    return prepare_inputs(contents["vote_table"], contents["systems"],
-                          contents["sim_settings"], overrides)
+    return (*prepare_inputs(contents["vote_table"], contents["systems"],
+                            contents["sim_settings"], overrides),
+            validate_display_settings(contents.get("display_settings")))
 
 
 def prepare_inputs(votes, systems, settings, overrides):
@@ -95,19 +98,22 @@ def run_simulation(votes, systems, settings, first_replicate=0,
     return combine_chunks(results, return_statistics=return_statistics)
 
 
-def format_csv_entry(entry):
+def format_csv_entry(entry, display_settings):
     """Use the web entry's value, percentage flag, and confidence half-width."""
     if not isinstance(entry, dict):
         return entry
     scale = 100 if entry.get("percentage") else 1
-    value = f"{scale * entry['value']:.3f}"
-    return (f"{value} ± {scale * entry['ci']:.3f}"
+    digits = (display_settings["percentage_digits"] if entry.get("percentage")
+              else 0 if entry.get("integer") else display_settings["fractional_digits"])
+    value = f"{scale * entry['value']:.{digits}f}"
+    return (f"{value} ± {scale * entry['ci']:.{digits}f}"
             if entry["ci"] is not None else value)
 
 
-def write_csv(path, result):
+def write_csv(path, result, display_settings=None):
     """Write the visible web table as comma-separated cells."""
     table = result.get_result_web(parallel=False)["vuedata"]
+    display_settings = validate_display_settings(display_settings)
 
     def columns(group):
         for stat in table["group_stats"].get(group, table["stats"]):
@@ -137,7 +143,7 @@ def write_csv(path, result):
                                 else [title])
             for row in table[group]:
                 writer.writerow([row["rowtitle"], *[
-                    format_csv_entry(entry)
+                    format_csv_entry(entry, display_settings)
                     for stat, _ in columns(group) for entry in row[stat]]])
             if group in table["group_messages"]:
                 writer.writerow([table["group_messages"][group]])
@@ -212,9 +218,9 @@ def main(argv=None):
         overrides["random_seed"] = args.seed
     try:
         if args.all:
-            votes, systems, settings = load_all_inputs(args.all, overrides)
+            votes, systems, settings, display_settings = load_all_inputs(args.all, overrides)
         else:
-            votes, systems, settings = load_inputs(
+            votes, systems, settings, display_settings = load_inputs(
                 args.votes, args.systems, args.settings, overrides)
         if args.output:
             result, statistics = run_simulation(
@@ -226,7 +232,7 @@ def main(argv=None):
                 votes, systems, settings, first_replicate=args.first_replicate,
                 progress_path=args.progress)
         if args.csv:
-            write_csv(args.csv, result)
+            write_csv(args.csv, result, display_settings)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     return 0

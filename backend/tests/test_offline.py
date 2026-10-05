@@ -6,7 +6,7 @@ import unittest
 
 from electionSystem import ElectionSystem
 from input_files import load_votes
-from sim import load_all_inputs, load_inputs, main, run_simulation, write_csv
+from sim import format_csv_entry, load_all_inputs, load_inputs, main, run_simulation, write_csv
 from simulate import SimulationSettings
 from simulation_chunks import combine_chunks, read_chunk_result, split_replicates
 
@@ -15,6 +15,41 @@ VOTES = Path(__file__).resolve().parents[2] / 'data' / '2-by-2-example.csv'
 
 
 class OfflineSimulationTest(unittest.TestCase):
+    def test_csv_precision_applies_to_values_and_confidence_intervals(self):
+        display = {'fractional_digits': 4, 'percentage_digits': 2}
+        entry = {'value': 1.234567, 'ci': 0.012345}
+        self.assertEqual(format_csv_entry(entry, display), '1.2346 ± 0.0123')
+        self.assertEqual(format_csv_entry(dict(entry, percentage=True), display),
+                         '123.46 ± 1.23')
+        self.assertEqual(format_csv_entry(dict(entry, integer=True, ci=None), display), '1')
+        self.assertEqual(format_csv_entry('–', display), '–')
+        self.assertEqual(format_csv_entry(entry, {'fractional_digits': 0, 'percentage_digits': 0}),
+                         '1 ± 0')
+
+    def test_download_all_precision_reaches_csv_and_old_files_use_defaults(self):
+        with TemporaryDirectory() as directory:
+            systems, settings = self.files(directory)
+            contents = {
+                'vote_table': load_votes(VOTES),
+                'systems': json.loads(systems.read_text())['systems'],
+                'sim_settings': json.loads(settings.read_text())['sim_settings'],
+            }
+            all_file = Path(directory) / 'all.json'
+            all_file.write_text(json.dumps(contents), encoding='utf-8')
+            overrides = {'simulation_count': 2, 'cpu_count': 1, 'random_seed': 123}
+            votes, systems, settings, display = load_all_inputs(all_file, overrides)
+            self.assertEqual(display, {'fractional_digits': 3, 'percentage_digits': 1})
+            result = run_simulation(votes, systems, settings)
+            contents['display_settings'] = {'fractional_digits': 5, 'percentage_digits': 2,
+                                            'decimal_separator': ',', 'thousands_separator': '.'}
+            all_file.write_text(json.dumps(contents), encoding='utf-8')
+            expected = Path(directory) / 'expected.csv'
+            output = Path(directory) / 'output.csv'
+            write_csv(expected, result, contents['display_settings'])
+            self.assertEqual(main(['-a', str(all_file), '-r', '2', '-C', '1', '-S', '123',
+                                   '-o', str(output)]), 0)
+            self.assertEqual(output.read_bytes(), expected.read_bytes())
+
     def files(self, directory):
         system = ElectionSystem()
         system['name'] = 'Test system'
@@ -29,7 +64,7 @@ class OfflineSimulationTest(unittest.TestCase):
     def test_input_overrides_preserve_sensitivity_settings(self):
         with TemporaryDirectory() as directory:
             systems, settings = self.files(directory)
-            _, _, parsed = load_inputs(VOTES, systems, settings, {
+            _, _, parsed, display = load_inputs(VOTES, systems, settings, {
                 'simulation_count': 5, 'cpu_count': 2, 'random_seed': 17,
             })
             self.assertEqual(parsed['simulation_count'], 5)
@@ -37,6 +72,7 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(parsed['random_seed'], 17)
             self.assertTrue(parsed['sensitivity'])
             self.assertEqual(parsed['sensitivity_covs'], [0.3, 1, 3])
+            self.assertEqual(display, {'fractional_digits': 3, 'percentage_digits': 1})
 
     def test_disabled_sensitivity_is_preserved(self):
         with TemporaryDirectory() as directory:
@@ -46,7 +82,7 @@ class OfflineSimulationTest(unittest.TestCase):
                 sensitivity=False, sensitivity_covs=[0.01, 0.1],
                 sensitivity_gen_method='uniform')
             settings.write_text(json.dumps(contents), encoding='utf-8')
-            _, _, parsed = load_inputs(VOTES, systems, settings, {})
+            _, _, parsed, _ = load_inputs(VOTES, systems, settings, {})
             self.assertFalse(parsed['sensitivity'])
             self.assertEqual(parsed['sensitivity_covs'], [0.01, 0.1])
             self.assertEqual(parsed['sensitivity_gen_method'], 'uniform')
@@ -171,7 +207,7 @@ class OfflineSimulationTest(unittest.TestCase):
     def test_csv_matches_web_rows_and_headings(self):
         with TemporaryDirectory() as directory:
             systems_path, settings_path = self.files(directory)
-            votes, systems, settings = load_inputs(
+            votes, systems, settings, _ = load_inputs(
                 VOTES, systems_path, settings_path,
                 {'simulation_count': 2, 'cpu_count': 1, 'random_seed': 123})
             result = run_simulation(votes, systems, settings)
@@ -196,9 +232,10 @@ class OfflineSimulationTest(unittest.TestCase):
                     for stat in stats:
                         entry = row[stat][0]
                         scale = 100 if entry.get('percentage') else 1
-                        cell = f"{scale * entry['value']:.3f}"
+                        digits = 1 if entry.get('percentage') else 0 if entry.get('integer') else 3
+                        cell = f"{scale * entry['value']:.{digits}f}"
                         if entry['ci'] is not None:
-                            cell += f" ± {scale * entry['ci']:.3f}"
+                            cell += f" ± {scale * entry['ci']:.{digits}f}"
                         expected.append(cell)
                     self.assertIn(expected, rows)
             self.assertNotIn(['Quality measures'], rows)
@@ -215,7 +252,7 @@ class OfflineSimulationTest(unittest.TestCase):
                                 adj_alloc_divider='sainte-lague'))
             systems_path.write_text(json.dumps({'systems': systems}),
                                     encoding='utf-8')
-            votes, systems, settings = load_inputs(
+            votes, systems, settings, _ = load_inputs(
                 VOTES, systems_path, settings_path,
                 {'simulation_count': 4, 'cpu_count': 1, 'random_seed': 123})
             result = run_simulation(votes, systems, settings)

@@ -128,3 +128,28 @@ class FileSectionsTest(unittest.TestCase):
         _, systems, _ = prepare_simulation_inputs(
             votes, [system], SimulationSettings())
         self.assertEqual(systems[0]['constituencies'], votes['constituencies'])
+
+    def test_all_file_round_trips_precision_without_separators(self):
+        contents = {
+            'vote_table': load_votes('../data/2-by-2-example.csv'),
+            'systems': [self.system()], 'sim_settings': SimulationSettings(),
+            'display_settings': {'fractional_digits': 5, 'percentage_digits': 2,
+                                 'thousands_separator': '.', 'decimal_separator': ','},
+        }
+        response = self.client.post('/api/saveall/', json=contents)
+        saved = json.loads(response.data)
+        response.close()
+        expected = {'fractional_digits': 5, 'percentage_digits': 2}
+        self.assertEqual(saved['display_settings'], expected)
+        self.assertEqual(self.upload('/api/uploadall/', saved)['display_settings'], expected)
+
+    def test_all_upload_rejects_invalid_precision(self):
+        contents = {
+            'vote_table': load_votes('../data/2-by-2-example.csv'),
+            'systems': [self.system()], 'sim_settings': SimulationSettings(),
+        }
+        for value in (-1, 11, True, 1.5, '2'):
+            with self.subTest(value=value):
+                contents['display_settings'] = {'fractional_digits': value}
+                self.assertIn('fractional_digits must be',
+                              self.upload('/api/uploadall/', contents)['error'])

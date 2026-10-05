@@ -75,6 +75,21 @@ def load_settings(source):
     return validate_settings(load_section(source, "sim_settings"))
 
 
+def validate_display_settings(settings=None):
+    """Read saved precision only; older offline inputs use 3 and 1 digits."""
+    if settings is None:
+        settings = {}
+    if not isinstance(settings, dict):
+        raise ValueError("Display settings must be an object.")
+    digits = {}
+    for key, default in (("fractional_digits", 3), ("percentage_digits", 1)):
+        value = settings.get(key, default)
+        if type(value) is not int or not 0 <= value <= 10:
+            raise ValueError(f"{key} must be an integer between 0 and 10")
+        digits[key] = value
+    return digits
+
+
 def load_json(source):
     """Read a systems-and-settings file, optionally including votes."""
     contents = read_json(source)
@@ -88,12 +103,14 @@ def load_json(source):
     contents["sim_settings"] = validate_settings(contents["sim_settings"])
     if "vote_table" in contents:
         contents["vote_table"] = check_vote_table(contents["vote_table"])
+    if "display_settings" in contents:
+        contents["display_settings"] = validate_display_settings(contents["display_settings"])
     return contents
 
 
 def load_all(source):
     contents = load_json(source)
-    if set(contents) != {"vote_table", "systems", "sim_settings"}:
+    if set(contents) - {"display_settings"} != {"vote_table", "systems", "sim_settings"}:
         raise ValueError("Expected a Download all file with votes, systems, and settings")
     return contents
 

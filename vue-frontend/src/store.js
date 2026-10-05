@@ -320,6 +320,12 @@ const store = new Vuex.Store({
             context.commit("updateSystems", response.data.systems)
             context.commit("updateSimSettings", response.data.sim_settings)
             context.commit("setAllFile", {filename: filename || ""})
+            if (response.data.display_settings) {
+              context.commit("updateDisplaySettings", {
+                ...context.state.display_settings,
+                ...response.data.display_settings,
+              })
+            }
             findNumbering(context.state, 0)
             context.commit("clearWaitingForData")
           }
@@ -335,7 +341,11 @@ const store = new Vuex.Store({
         data: {
           vote_table: context.state.vote_table,
           systems: context.state.systems,
-          sim_settings: context.state.sim_settings
+          sim_settings: context.state.sim_settings,
+          display_settings: {
+            fractional_digits: context.state.display_settings.fractional_digits,
+            percentage_digits: context.state.display_settings.percentage_digits,
+          },
         },
         responseType: "arraybuffer",
       });

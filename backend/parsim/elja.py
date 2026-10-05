@@ -178,9 +178,11 @@ def wait_for_nodes(active, nodes, job_dir):
 
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
-                    partitions, target_nodes, first_replicate, core_cap, immediate):
+                    partitions, target_nodes, first_replicate, core_cap, immediate,
+                    display_settings=None):
     from parsim.common import atomic_json
     from sim import write_csv
+    from input_files import validate_display_settings
     from simulation_chunks import combine_chunks, read_chunk_result, write_chunk_result
 
     if settings["random_seed"] is None:
@@ -189,8 +191,10 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         raise ValueError("Replicates must be at least the requested node count")
     job_dir = Path(job_dir).resolve()
     job_dir.mkdir(parents=True, exist_ok=False)
+    display_settings = validate_display_settings(display_settings)
     atomic_json(job_dir / "inputs.json", {
         "vote_table": votes, "systems": systems, "sim_settings": settings,
+        "display_settings": display_settings,
     })
     launchers = []
     active = []
@@ -277,7 +281,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         else:
             combined = combine_chunks(results)
         if csv_path:
-            write_csv(csv_path, combined)
+            write_csv(csv_path, combined, display_settings)
             print(f"Report: {csv_path}", flush=True)
         if stat_path:
             print(f"Statistics: {stat_path}", flush=True)
@@ -334,7 +338,7 @@ def main(argv=None):
     if args.seed is not UNSET:
         overrides["random_seed"] = args.seed
     try:
-        votes, systems, settings = (
+        votes, systems, settings, display_settings = (
             load_all_inputs(args.all, overrides) if args.all else
             load_inputs(args.votes, args.systems, args.settings, overrides))
         partitions = read_partitions(args.partitions)
@@ -343,7 +347,7 @@ def main(argv=None):
             job_dir=args.job_dir or HERE / "jobs" / uuid4().hex,
             partitions=partitions, target_nodes=args.nodes,
             first_replicate=args.first_replicate, core_cap=args.cores,
-            immediate=args.immediate)
+            immediate=args.immediate, display_settings=display_settings)
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, f"elja: {error}\n")
     return 0

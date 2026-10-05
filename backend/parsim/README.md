@@ -13,6 +13,11 @@ per node; by default Elja uses one process per physical core. Run `elja.py`
 on Elja; it always uses Slurm. For local multicore simulations, use
 `backend/sim.py`.
 
+Download all files also save the Settings precision for results and percentages.
+Both scripts use those digit counts in CSV values and confidence intervals;
+older files default to 3 and 1 digits respectively. CSV always uses comma field
+separators and dot decimal separators, without thousands separators.
+
 `partitions.txt` lists Elja partitions in preference order. `Nodes` is the
 configured number of nodes, `Cores` counts physical cores per node, and
 `MaxNode` is the maximum in one allocation (`INF` means no partition limit).

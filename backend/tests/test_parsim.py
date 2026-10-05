@@ -276,6 +276,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                                      sensitivity_covs=[0.01, 0.1],
                                      sensitivity_gen_method='uniform',
                                      sensitivity_simulation_count=2),
+                'display_settings': {'fractional_digits': 4, 'percentage_digits': 2},
             }), encoding='utf-8')
             partitions = base / 'partitions.txt'
             partitions.write_text(
@@ -354,6 +355,14 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 self.assertEqual(progress['assigned'], node['replicates'])
             self.assertIn('remaining', completed.stdout)
             self.assertIn('100.0%', completed.stdout)
+            frozen = json.loads((job_dir / 'inputs.json').read_text())
+            self.assertEqual(frozen['display_settings'],
+                             {'fractional_digits': 4, 'percentage_digits': 2})
+            from sim import main as sim_main
+            direct = base / 'direct.csv'
+            self.assertEqual(sim_main(['-a', str(all_file), '-r', '4', '-S', '123',
+                                       '-C', '2', '-o', str(direct)]), 0)
+            self.assertEqual(output.read_bytes(), direct.read_bytes())
 
 
 if __name__ == '__main__':
