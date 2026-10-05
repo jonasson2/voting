@@ -145,8 +145,8 @@ class Election:
     def entropy_score_available(self):
         return entropy_score_is_available(self)
 
-    def entropy_score(self, optimum_cache=None):
-        return calculate_entropy_score(self, optimum_cache)
+    def entropy_score(self, optimum_cache=None, *, replicate=None):
+        return calculate_entropy_score(self, optimum_cache, replicate=replicate)
 
     def set_reference_results(self):
         self.reference_results = self.results['all_const_seats']

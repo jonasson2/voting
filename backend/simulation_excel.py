@@ -5,7 +5,8 @@ from datetime import datetime
 import numpy as np
 import xlsxwriter
 
-from dictionaries import EXCEL_HEADINGS, STATISTICS_HEADINGS, SCALING_NAMES
+from dictionaries import EXCEL_HEADINGS, STATISTICS_HEADINGS
+from simulation_report import simulation_settings, source_settings
 from measure_groups import MeasureGroups
 from table_util import add_total, add_totals, find_percentages
 
@@ -106,61 +107,12 @@ class SimulationWorkbook:
             worksheet, row, col, data, format=cell_format,
             display_zeros=True, totalsformat=totals_format)
 
-    def simulation_settings(self):
-        settings = self.results["sim_settings"]
-        rows = [
-            {"label": "Number of simulations", "data": self.results["iteration"]},
-            {"label": "Random seed", "data": settings.get("random_seed", "")},
-            {"label": "Generating method", "data": settings["gen_method"]},
-            {"label": "Relative standard deviation for list votes",
-             "data": settings["const_rsd"]},
-            {"label": "Correlation between list votes within each party",
-             "data": settings["const_corr"]},
-            {"label": "Relative standard deviation for national party votes",
-             "data": settings["party_vote_rsd"]},
-            {"label": "Correlation between list votes and national party votes",
-             "data": settings["party_vote_corr"]},
-            {"label": "Thresholds used",
-             "data": "yes" if settings["use_thresholds"] else "no"},
-            {"label": "Entropy score calculated",
-             "data": "yes" if settings["entropy_score"] else "no"},
-            {"label": "Scaling of votes for fractional reference seat shares",
-             "data": SCALING_NAMES[settings["scaling"]]},
-        ]
-        if settings.get("sensitivity"):
-            rows.extend((
-                {"label": "Sensitivity measures calculated", "data": "yes"},
-                {"label": "Number of perturbations per major simulation",
-                 "data": settings["sensitivity_simulation_count"]},
-                {"label": "Sensitivity generating method",
-                 "data": settings["sensitivity_gen_method"]},
-                {"label": "Sensitivity CoVs (%)",
-                 "data": ", ".join(
-                     f"{value:g}" for value in settings["sensitivity_covs"])},
-            ))
-        return rows
-
     def write_common_settings(self):
         worksheet = self.workbook.add_worksheet("Common settings")
         worksheet.set_column(0, 1, 43)
         worksheet.write(0, 0, "Date:", self.fmt["h"])
         worksheet.write(0, 1, datetime.now(), self.fmt["time"])
-        vote_table = self.results["vote_table"]
-        source = [
-            ("Votes-and-seats table", vote_table["name"]),
-            ("Number of constituencies", len(vote_table["constituencies"])),
-            ("Number of parties", len(vote_table["parties"])),
-            ("Total number of const. seats", sum(
-                constituency["num_fixed_seats"]
-                for constituency in vote_table["constituencies"])),
-            ("Total number of adj. seats", sum(
-                constituency["num_adj_seats"]
-                for constituency in vote_table["constituencies"])),
-            ("Total number of const. votes",
-             sum(map(sum, vote_table["votes"])) + sum(vote_table.get("pruned", []))),
-            ("Total number of national party votes",
-             vote_table["party_vote_info"]["total"]),
-        ]
+        source = source_settings(self.results)
         row = 2
         worksheet.write(row, 0, "Source votes and seats", self.fmt["h"])
         for label, value in source:
@@ -169,24 +121,16 @@ class SimulationWorkbook:
             worksheet.write(row, 1, value, self.fmt["basic"])
         row += 2
         worksheet.write(row, 0, "Simulation settings", self.fmt["h"])
-        for setting in self.simulation_settings():
+        for setting in simulation_settings(self.results):
             row += 1
             worksheet.write(row, 0, setting["label"], self.fmt["basic"])
             worksheet.write(row, 1, setting["data"], self.fmt["basic"])
 
-    def statistic_column_names(self, statistic):
-        names = self.system_names.copy()
-        if len(self.systems) >= 2 and statistic in {"avg", "lo95", "hi95"}:
-            names.insert(2, "Difference")
-        return names
-
     def quality_measure_data(self, groups):
-        paired_data = self.results.get("paired_data", {})
         entropy_available = self.results.get(
             "entropy_score_available", [True] * len(self.systems))
         entropy_relative_available = self.results.get(
             "entropy_relative_available", [True] * len(self.systems))
-        excluded = {"cmpList", "cmpParty", "cmpNationalDetails"}
         data = {"stats": EXCEL_HEADINGS.keys(), "stat_headings": EXCEL_HEADINGS}
         for group_id, group in groups.items():
             data[group_id] = []
@@ -207,18 +151,6 @@ class SimulationWorkbook:
                             value if entropy_relative_available[index] else "–"
                             for index, value in enumerate(values)
                         ]
-                    if (len(self.systems) >= 2
-                            and statistic in {"avg", "lo95", "hi95"}):
-                        difference = (
-                            paired_data[measure][statistic]
-                            if group_id not in excluded else None)
-                        if (measure == "entropy_score"
-                                and not all(entropy_available[:2])):
-                            difference = "–"
-                        if (measure == "entropy_relative"
-                                and not all(entropy_relative_available[:2])):
-                            difference = "–"
-                        values.insert(2, difference)
                     row[statistic] = values
                 data[group_id].append(row)
         return data
@@ -229,12 +161,8 @@ class SimulationWorkbook:
         for row_index in range(len(sensitivity["covs"])):
             row = {}
             for statistic in EXCEL_HEADINGS:
-                values = list(sensitivity[measure][statistic][row_index])
-                difference = values.pop() if len(self.systems) >= 2 else None
-                if len(self.systems) >= 2 and statistic in {
-                        "avg", "lo95", "hi95"}:
-                    values.insert(2, difference)
-                row[statistic] = values
+                row[statistic] = list(
+                    sensitivity[measure][statistic][row_index][:len(self.systems)])
             rows.append(row)
         return rows
 
@@ -262,7 +190,7 @@ class SimulationWorkbook:
                     for row in rows
                 ],
                 display_zeros=True)
-            column += len(self.statistic_column_names(statistic)) + 1
+            column += len(self.system_names) + 1
         return top + len(row_titles) + 1 if row_titles else top
 
     def write_quality_measures(self):
@@ -286,7 +214,7 @@ class SimulationWorkbook:
         column = 2
         for statistic in data["stats"]:
             worksheet.write(2, column, data["stat_headings"][statistic], self.fmt["h"])
-            names = self.statistic_column_names(statistic)
+            names = self.system_names
             worksheet.set_column(column, column + len(names) - 1, 11)
             for name in names:
                 worksheet.write(3, column, name, self.fmt["h_center"])

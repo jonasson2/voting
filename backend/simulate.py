@@ -192,7 +192,7 @@ class Simulation():
         if self.sensitivity:
             sensitivity_shape = (
                 len(self.sensitivity_covs),
-                ns + (1 if ns >= 2 else 0),
+                ns,
             )
             for measure in SENS_MEASURES:
                 self.stat[measure] = Running_stats(
@@ -200,8 +200,7 @@ class Simulation():
                 self.stat[measure + "_perturbations"] = Running_stats(
                     sensitivity_shape, True, measure)
         for measure in self.MEASURES:
-            shape = ns + (1 if ns >= 2 else 0)
-            self.stat[measure] = Running_stats(shape, parallel, measure)
+            self.stat[measure] = Running_stats(ns, parallel, measure)
         for measure in HISTOGRAM_MEASURES:
             self.stat[measure] = [None]*ns*np
             for i in range(ns*np):
@@ -315,7 +314,7 @@ class Simulation():
         self.collect_vote_measures()
         self.collect_seat_measures()
         self.collect_party_measures()
-        self.collect_general_measures()
+        self.collect_general_measures(iteration)
         if self.sensitivity:
             self.run_sensitivity(votes, party_votes, rng)
 
@@ -365,7 +364,7 @@ class Simulation():
                 self.stat["overhang_count"][i*self.nparty + p].update(
                     party_overhang[p])
 
-    def collect_general_measures(self):
+    def collect_general_measures(self, replicate=None):
         deviations = Collect()
         entropy_cache = {}
         ref_elections = self.reference_handler.elections
@@ -387,7 +386,7 @@ class Simulation():
             deviations.add("max_neg_margin", max(neg_margins))
             deviations.add("freq_neg_margin", count(neg_margins))
             if self.sim_settings["entropy_score"]:
-                score = election.entropy_score(entropy_cache)
+                score = election.entropy_score(entropy_cache, replicate=replicate)
                 deviations.add(
                     "entropy_score", 0 if score is None else score)
                 if self.nsys > 1:
@@ -414,10 +413,7 @@ class Simulation():
             self.specific_measures(election, deviations)
         for m in deviations.keys():
             if m in self.stat:
-                values = deviations[m]
-                if self.nsys >= 2:
-                    values = self._with_paired_difference(values)
-                self.stat[m].update(values)
+                self.stat[m].update(deviations[m])
 
     def calculate_disparity(self, election):
         excess, shortage, disparity = 0, 0, 0
@@ -613,7 +609,7 @@ class Simulation():
         for election in self.sensitivity_handler.elections:
             election.rng = rng
         shape = (self.sensitivity_simulation_count,
-                 len(self.sensitivity_covs), self.nsys + (self.nsys >= 2))
+                 len(self.sensitivity_covs), self.nsys)
         between_values = np.empty(shape)
         within_values = np.empty(shape)
         for cov_index, cov in enumerate(self.sensitivity_covs):
@@ -638,10 +634,8 @@ class Simulation():
                     self.election_handler.elections,
                     self.sensitivity_handler.elections,
                 )
-                between_values[minor_index, cov_index] = self._with_paired_difference(
-                    between)
-                within_values[minor_index, cov_index] = self._with_paired_difference(
-                    within)
+                between_values[minor_index, cov_index] = between
+                within_values[minor_index, cov_index] = within
 
         for measure, values in (
                 ("sensitivity_between_parties", between_values),
@@ -649,12 +643,6 @@ class Simulation():
             self.stat[measure].update(values.mean(axis=0))
             for perturbation in values:
                 self.stat[measure + "_perturbations"].update(perturbation)
-
-    def _with_paired_difference(self, values):
-        values = list(values)
-        if self.nsys >= 2:
-            values.append(abs(values[0] - values[1]))
-        return values
 
     def bias(self, election):
         (slope,corr) = find_bias(
@@ -803,15 +791,10 @@ class Sim_result:
                 self.seat_data[i][m] = D
 
     def analyze_general(self):
-        self.paired_data = {}
         for m in self.MEASURES:
             dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
             for i in range(self.nsys):
                 self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
-            if self.nsys >= 2:
-                self.paired_data[m] = {
-                    stat: values[-1] for stat, values in dd.items()
-                }
 
         for m in PARTY_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):
@@ -880,7 +863,6 @@ class Sim_result:
             "histogram_data":   self.histogram_data,
             "vote_table":       self.vote_table,
             "base_allocations": self.base_allocations,
-            "paired_data":      getattr(self, "paired_data", {}),
             "entropy_score_available": self.entropy_score_available,
             "entropy_relative_available": self.entropy_relative_available,
             "sensitivity_data": getattr(self, "sensitivity_data", None),

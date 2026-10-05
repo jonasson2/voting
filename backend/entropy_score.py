@@ -1,6 +1,7 @@
 """Rule-specific entropy score for final adjustment-seat allocations."""
 
 from math import exp
+import warnings
 import numpy as np
 
 from methods import regional
@@ -88,7 +89,7 @@ def _optimal_allocation(election, divisor_gen, enforce_party_targets):
     return allocation
 
 
-def calculate(election, optimum_cache=None):
+def calculate(election, optimum_cache=None, *, replicate=None):
     """Return the allocation's product score relative to its optimum."""
     if not is_available(election):
         return None
@@ -114,6 +115,11 @@ def calculate(election, optimum_cache=None):
 
     difference = cache[key] - actual
     if difference < -SCORE_TOLERANCE:
-        raise RuntimeError(
-            "Allocation has a better entropy value than its computed optimum.")
+        context = f"system {election.system['name']!r}"
+        if replicate is not None:
+            context += f", global replicate {replicate} (zero-based)"
+        warnings.warn(
+            f"Computed entropy optimum is below a known feasible allocation "
+            f"by {-difference:.12g} ({context}); reporting an entropy score "
+            "of 100%.", RuntimeWarning, stacklevel=2)
     return exp(-max(difference, 0))

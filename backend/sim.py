@@ -11,6 +11,8 @@ import time
 from input_files import (
     load_all, load_section, load_votes, prepare_simulation_inputs, validate_display_settings,
 )
+from simulation_report import simulation_settings, source_settings
+
 from simulation_chunks import (
     combine_chunks, run_chunk, split_replicates, write_chunk_result,
 )
@@ -112,19 +114,28 @@ def format_csv_entry(entry, display_settings):
 
 def write_csv(path, result, display_settings=None):
     """Write the visible web table as comma-separated cells."""
-    table = result.get_result_web(parallel=False)["vuedata"]
+    report = result.get_result_web(parallel=False)
+    table = report["vuedata"]
     display_settings = validate_display_settings(display_settings)
 
     def columns(group):
         for stat in table["group_stats"].get(group, table["stats"]):
-            names = list(table["system_names"])
-            if (stat == "avg" and table["has_paired_difference"]
-                    and group not in table["groups_without_paired_difference"]):
-                names.insert(2, "Difference")
-            yield stat, names
+            yield stat, table["system_names"]
 
     with Path(path).open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
+        writer.writerow(["Input files"])
+        for label, filename in getattr(result, "input_files", {}).items():
+            writer.writerow([label, filename])
+        writer.writerow(["Source votes and seats"])
+        writer.writerows(source_settings(report))
+        writer.writerow(["Electoral systems", *table["system_names"]])
+        writer.writerow(["Simulation settings"])
+        writer.writerows((row["label"], row["data"])
+                         for row in simulation_settings(report))
+        writer.writerow(["First replicate number (zero-based)",
+                         getattr(result, "start_iteration", 0)])
+        writer.writerow([""])
         header = ["Sum over reference seat share differences"]
         for stat, names in columns("shareTitle"):
             heading = "" if stat == "avg" else table["stat_headings"][stat]
@@ -167,6 +178,14 @@ def nonnegative_int(value):
 
 def seed_value(value):
     return None if value == "-" else int(value)
+
+
+def input_file_names(args):
+    """Record the original command-line inputs, rather than node staging files."""
+    if args.all:
+        return {"Download all file": str(args.all)}
+    return {"Votes file": str(args.votes), "Electoral systems file": str(args.systems),
+            "Simulation settings file": str(args.settings)}
 
 
 def main(argv=None):
@@ -226,11 +245,13 @@ def main(argv=None):
             result, statistics = run_simulation(
                 votes, systems, settings, first_replicate=args.first_replicate,
                 return_statistics=True, progress_path=args.progress)
+            statistics["input_files"] = input_file_names(args)
             write_chunk_result(args.output, statistics)
         else:
             result = run_simulation(
                 votes, systems, settings, first_replicate=args.first_replicate,
                 progress_path=args.progress)
+        result.input_files = input_file_names(args)
         if args.csv:
             write_csv(args.csv, result, display_settings)
     except (OSError, ValueError, KeyError, TypeError) as error:

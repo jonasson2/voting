@@ -369,7 +369,7 @@ class DanishTest(unittest.TestCase):
                 for row in book["Quality measures"].iter_rows()
                 for cell in row
             }
-            self.assertIn("Difference", quality_values)
+            self.assertNotIn("Difference", quality_values)
             score_row = next(
                 row for row in book["Quality measures"].iter_rows()
                 if row[0].value == "Entropy score")

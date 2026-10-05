@@ -163,11 +163,11 @@ class SensitivityTest(unittest.TestCase):
                 for row in ([0, 2], [2, 0], [0, 2], [2, 0])]):
             result = self.run_simulation(settings, systems)
         data = result.sensitivity_data["sensitivity_within_parties"]
-        np.testing.assert_allclose(data["avg"], [[1, 1, 2]])
-        np.testing.assert_allclose(data["std"], [[np.sqrt(4/3), np.sqrt(4/3), 0]])
-        np.testing.assert_allclose(data["se"], [[np.sqrt(1/3), np.sqrt(1/3), 0]])
-        self.assertEqual(data["min"], [[0, 0, 2]])
-        self.assertEqual(data["max"], [[2, 2, 2]])
+        np.testing.assert_allclose(data["avg"], [[1, 1]])
+        np.testing.assert_allclose(data["std"], [[np.sqrt(4/3), np.sqrt(4/3)]])
+        np.testing.assert_allclose(data["se"], [[np.sqrt(1/3), np.sqrt(1/3)]])
+        self.assertEqual(data["min"], [[0, 0]])
+        self.assertEqual(data["max"], [[2, 2]])
         self.assertAlmostEqual(data["lo95"][0][0], 1 - 1.96*np.sqrt(1/3))
         web = result.get_result_web(False)["vuedata"]["sensitivityWithin"][0]
         self.assertAlmostEqual(web["avg"][0]["ci"], 1.96*np.sqrt(1/3))

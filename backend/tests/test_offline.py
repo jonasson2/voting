@@ -45,6 +45,7 @@ class OfflineSimulationTest(unittest.TestCase):
             all_file.write_text(json.dumps(contents), encoding='utf-8')
             expected = Path(directory) / 'expected.csv'
             output = Path(directory) / 'output.csv'
+            result.input_files = {'Download all file': str(all_file)}
             write_csv(expected, result, contents['display_settings'])
             self.assertEqual(main(['-a', str(all_file), '-r', '2', '-C', '1', '-S', '123',
                                    '-o', str(output)]), 0)
@@ -109,7 +110,9 @@ class OfflineSimulationTest(unittest.TestCase):
                                    '-s', str(settings), *options]), 0)
             separate = output.read_bytes()
             self.assertEqual(main(['-a', str(all_file), *options]), 0)
-            self.assertEqual(output.read_bytes(), separate)
+            def measures(contents):
+                return contents[contents.index(b'Sum over reference seat share differences'):]
+            self.assertEqual(measures(output.read_bytes()), measures(separate))
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(len([row for row in rows
@@ -146,6 +149,19 @@ class OfflineSimulationTest(unittest.TestCase):
             with single.open(newline='', encoding='utf-8') as file:
                 single_rows = list(csv.reader(file))
             self.assertEqual(parallel_rows, single_rows)
+            summary = {row[0]: row[1:] for row in parallel_rows}
+            self.assertEqual(summary['Votes file'], [str(VOTES)])
+            self.assertEqual(summary['Electoral systems file'], [str(systems)])
+            self.assertEqual(summary['Simulation settings file'], [str(settings)])
+            self.assertEqual(summary['Number of replicates'], ['4'])
+            self.assertEqual(summary['Random seed'], ['123'])
+            self.assertEqual(summary['First replicate number (zero-based)'], ['7'])
+            self.assertEqual(summary['Sensitivity measures calculated'], ['yes'])
+            self.assertEqual(summary['Sensitivity CoVs (%)'], ['0.3, 1, 3'])
+            self.assertIn('Generating method', summary)
+            self.assertIn('Relative standard deviation for list votes', summary)
+            self.assertIn('Thresholds used', summary)
+            self.assertIn('Scaling of votes for fractional reference seat shares', summary)
 
     def test_statistics_output_can_be_read_and_reported(self):
         with TemporaryDirectory() as directory:
@@ -215,7 +231,9 @@ class OfflineSimulationTest(unittest.TestCase):
             write_csv(output, result)
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
-            self.assertEqual(rows[:2], [
+            start = next(index for index, row in enumerate(rows)
+                         if row[0] == 'Sum over reference seat share differences')
+            self.assertEqual(rows[start:start+2], [
                 ['Sum over reference seat share differences', '', 'STD.DEV.'],
                 ['', 'Test system', 'Test system'],
             ])
@@ -269,15 +287,15 @@ class OfflineSimulationTest(unittest.TestCase):
                 relative = [row for row in rows
                             if row[0] == 'Entropy relative to system 1']
             self.assertEqual(len(relative), 1)
-            # Means include the paired Difference column; SD columns do not.
+            self.assertFalse(any("Difference" in row for row in rows))
             self.assertEqual(relative[0], [
                 'Entropy relative to system 1',
-                '1.000 ± 0.000', '1.000 ± 0.000', '0.000 ± 0.000', '–',
+                '1.000 ± 0.000', '1.000 ± 0.000', '–',
                 '0.000', '0.000', '–',
             ])
             sensitivity = [row for row in rows if row[0].endswith('% CoV')]
             self.assertEqual(len(sensitivity), 6)
-            self.assertTrue(all(len(row) == 5 for row in sensitivity))
+            self.assertTrue(all(len(row) == 4 for row in sensitivity))
             write_csv(output, combine_chunks([read_chunk_result(statfile)]))
             self.assertEqual(output.read_bytes(), direct)
 

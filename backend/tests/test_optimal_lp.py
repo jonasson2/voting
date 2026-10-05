@@ -147,6 +147,34 @@ class OptimalLpTest(unittest.TestCase):
         # Greedy allocation has product 100*50; the optimum has 60*90.
         self.assertAlmostEqual(calculate(election), 5000 / 5400)
 
+    def test_underestimated_entropy_optimum_warns_and_caps_score(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        system = ElectionSystem()
+        system.copy_info_from_votes(table)
+        system['name'] = 'Switching'
+        system['adjustment_method'] = 'switching'
+        election = ElectionHandler(table, [system], True).elections[0]
+        actual = entropy(np.maximum(election.votes, 1),
+                         election.results['all_const_seats'],
+                         system.get_generator('adj_alloc_divider'))
+        # The gap reproduced on Elja for global replicate 5781866.
+        cache = {entropy_score._problem_key(election): actual - 9.446864623896545e-8}
+        with self.assertWarnsRegex(
+                RuntimeWarning, "below a known feasible allocation.*Switching.*5781866"):
+            score = calculate(election, cache, replicate=5781866)
+        self.assertEqual(score, 1)
+
+    def test_entropy_optimizer_failures_remain_fatal(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        system = ElectionSystem()
+        system.copy_info_from_votes(table)
+        system['adjustment_method'] = 'switching'
+        election = ElectionHandler(table, [system], True).elections[0]
+        with patch('entropy_score._optimal_allocation',
+                   side_effect=RuntimeError('Solver failed')):
+            with self.assertRaisesRegex(RuntimeError, 'Solver failed'):
+                calculate(election)
+
     def test_entropy_score_is_unavailable_for_zero_first_divisor_rules(self):
         table = load_votes("../data/2-by-2-example.csv")
         system = ElectionSystem()

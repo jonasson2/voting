@@ -7,17 +7,16 @@
           {{group_titles["topLeft"]}}
         </th>
         <template v-for="stat in stats" :key="stat">
-          <th :colspan="statColumnCount(stat)" class="title-rule stat-edge">
+          <th :colspan="nsys" class="title-rule stat-edge">
             {{stat_headings[stat]}}
           </th>
         </template>
       </tr>
       <tr>
         <template v-for="stat in statsForGroup('shareTitle')" :key="stat">
-          <template v-for="(sysname, s) in statColumnNames(stat, 'shareTitle')" :key="s">
+          <template v-for="(sysname, s) in system_names" :key="s">
             <th class="system-heading title-rule"
-                :class="sysclass(s, stat, 'shareTitle')"
-                :title="columnTitle(stat, s, 'shareTitle')">
+                :class="sysclass(s)">
               {{sysname}}
             </th>
           </template>
@@ -35,10 +34,9 @@
             </th>
             <template v-if="headingType[id]=='systems'">
               <template v-for="stat in statsForGroup(id)" :key="stat">
-                <template v-for="(sysname, s) in statColumnNames(stat, id)" :key="s">
+                <template v-for="(sysname, s) in system_names" :key="s">
                   <th class="system-heading title-rule"
-                      :class="sysclass(s, stat, id)"
-                      :title="columnTitle(stat, s, id)">
+                      :class="sysclass(s)">
                     {{sysname}}
                   </th>
                 </template>
@@ -46,7 +44,7 @@
             </template>
             <template v-else-if="headingType[id]=='stats'">  <!-- STAT HEADING -->
               <template v-for="stat in statsForGroup(id)" :key="stat">
-                <th :colspan="statColumnCount(stat, id)" class="title-rule stat-edge">
+                <th :colspan="nsys" class="title-rule stat-edge">
                   {{stat_headings[stat]}}
                 </th>
               </template>
@@ -73,7 +71,7 @@
             </td>
             <template v-for="stat in statsForGroup(id)" :key="stat">
               <template v-for="(entry, s) in row[stat]" :key="s">
-                <td :class="sysclass(s, stat, id)">
+                <td :class="sysclass(s)">
                   {{format(entry)}}
                 </td>
               </template>
@@ -116,8 +114,7 @@ export default {
     ...mapState(["display_settings"]),
     nsys: function() {return this.system_names.length},
     totalDataColumns: function() {
-      return this.stats.reduce((total, stat) =>
-        total + this.statColumnCount(stat), 0)
+      return this.stats.length * this.nsys
     },
     headingType: function() {return this.vuedata.headingType}
   },
@@ -138,32 +135,10 @@ export default {
       return this.vuedata.group_stats?.[groupId] || this.stats
     },
     dataColumnsForGroup(groupId) {
-      return this.statsForGroup(groupId).reduce((total, stat) =>
-        total + this.statColumnCount(stat, groupId), 0)
+      return this.statsForGroup(groupId).length * this.nsys
     },
-    groupHasPairedDifference(stat, groupId) {
-      return stat === "avg" && this.vuedata.has_paired_difference &&
-        !this.vuedata.groups_without_paired_difference?.includes(groupId)
-    },
-    statColumnCount(stat, groupId=null) {
-      return this.nsys + (
-        this.groupHasPairedDifference(stat, groupId) ? 1 : 0)
-    },
-    statColumnNames(stat, groupId) {
-      const names = [...this.system_names]
-      if (this.groupHasPairedDifference(stat, groupId)) {
-        names.splice(2, 0, "Difference")
-      }
-      return names
-    },
-    columnTitle(stat, index, groupId) {
-      if (this.groupHasPairedDifference(stat, groupId) && index === 2) {
-        return this.vuedata.difference_tooltip
-      }
-      return null
-    },
-    sysclass: function(s, stat, groupId) {
-      return {'stat-edge': s === this.statColumnCount(stat, groupId) - 1}
+    sysclass(s) {
+      return {'stat-edge': s === this.nsys - 1}
     },
   }
 }

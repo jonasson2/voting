@@ -9,10 +9,6 @@ from copy import deepcopy
 from math import sqrt
 
 
-NO_PAIRED_DIFFERENCE_GROUPS = {
-    "cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty",
-    "cmpNationalDetails",
-}
 STRUCTURAL_ZERO_GROUPS = {"cmpList", "cmpParty"}
 WEB_STD_GROUPS = {
     "shareTitle", "toLists", "toPartiesTotal", "other",
@@ -52,29 +48,8 @@ def _system_display_value(
     return result
 
 
-def _paired_display_value(
-        paired_data, measure, group, nsim, entropy_score_available,
-        entropy_relative_available):
-    if ((measure == "entropy_score"
-            and not all(entropy_score_available[:2]))
-            or (measure == "entropy_relative"
-                and not all(entropy_relative_available[:2]))):
-        return "–"
-    paired = paired_data.get(measure)
-    show = group not in {"cmpList", "cmpParty", "cmpNationalDetails"}
-    value = normalize_negative_zero(paired["avg"]) if paired and show else 0
-    ci = (
-        1.96 * paired["std"] / sqrt(nsim)
-        if paired and show and nsim > 0 else None
-    )
-    result = {"value": value, "integer": False, "ci": ci}
-    if measure == "entropy_score":
-        result["percentage"] = True
-    return result
-
-
 def _measure_row(
-        data, systems, paired_data, group, measure, title, nsim,
+        data, systems, group, measure, title, nsim,
         entropy_score_available, entropy_relative_available):
     row = {"rowtitle": title}
     if measure == "entropy_score":
@@ -82,8 +57,7 @@ def _measure_row(
         row["tooltip"] = (
             "The product of the allocated-seat quotients divided by the "
             "largest achievable product under the selected rule and "
-            "constraints. 100% is optimal; the Difference column is in "
-            "percentage points.")
+            "constraints. 100% is optimal.")
     elif measure == "entropy_relative":
         row["tooltip"] = (
             "Product of allocated-seat quotients divided by the product for "
@@ -103,8 +77,6 @@ def _measure_row(
             "Highest constituency votes per seat divided by lowest. "
             "Includes votes for parties without seats and pruned votes; "
             "1 means equal votes per seat.")
-    has_paired_difference = (
-        len(systems) >= 2 and group not in NO_PAIRED_DIFFERENCE_GROUPS)
     for stat in STATISTICS_HEADINGS:
         row[stat] = [
             "" if (group in STRUCTURAL_ZERO_GROUPS
@@ -114,11 +86,6 @@ def _measure_row(
                 entropy_score_available, entropy_relative_available)
             for index, system in enumerate(systems)
         ]
-        if stat == "avg" and has_paired_difference:
-            row[stat].insert(
-                2, _paired_display_value(
-                    paired_data, measure, group, nsim,
-                    entropy_score_available, entropy_relative_available))
     return row
 
 
@@ -133,9 +100,6 @@ def _vue_data_header(systems):
         },
         "headingType": dict(headingType),
         "system_names": names,
-        "has_paired_difference": len(systems) >= 2,
-        "groups_without_paired_difference": sorted(
-            NO_PAIRED_DIFFERENCE_GROUPS),
         "group_ids": [],
         "group_stats": {},
         "group_titles": {
@@ -148,11 +112,6 @@ def _vue_data_header(systems):
         "footnotes": {},
         "show": {},
     }
-    if len(systems) >= 2:
-        result["difference_tooltip"] = (
-            f"Absolute difference between {names[0]} and {names[1]}, "
-            "calculated separately for each simulated election."
-        )
     return result
 
 
@@ -181,19 +140,12 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
                     "Seat displacements for individual perturbations, each compared "
                     "with its own base election. Confidence intervals account for "
                     "perturbations sharing a base election; with one base election "
-                    "they describe uncertainty conditional on that election. "
-                    "Difference is the average absolute difference between systems "
-                    "1 and 2 for the same perturbation."),
+                    "they describe uncertainty conditional on that election."),
             }
             for statistic in vuedata["stats"]:
                 values = sensitivity_data[measure][statistic][row_index]
-                displayed = list(values[:nsys])
-                indices = list(range(nsys))
-                if statistic == "avg" and nsys >= 2:
-                    displayed.insert(2, values[-1])
-                    indices.insert(2, -1)
                 row[statistic] = []
-                for value, value_index in zip(displayed, indices):
+                for value_index, value in enumerate(values[:nsys]):
                     if value is None:
                         row[statistic].append("–")
                         continue
@@ -222,7 +174,6 @@ def add_vuedata(sim_result_dict, parallel):
         systems, party_votes_specified, "",
         include_entropy_score=include_entropy_score)
     nsim = sim_result_dict["iteration"]
-    paired_data = sim_result_dict.get("paired_data", {})
     entropy_score_available = sim_result_dict.get(
         "entropy_score_available", [True] * len(systems))
     entropy_relative_available = sim_result_dict.get(
@@ -241,7 +192,7 @@ def add_vuedata(sim_result_dict, parallel):
         for (measure, titles) in group["rows"].items():
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
             row = _measure_row(
-                data, systems, paired_data, id, measure, rowtitle, nsim,
+                data, systems, id, measure, rowtitle, nsim,
                 entropy_score_available, entropy_relative_available)
             if vuedata[id] and measure in group.get("subgroup_starts", ()):
                 row["subgroup_start"] = True

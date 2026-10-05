@@ -617,6 +617,30 @@ class CurrentApplicationTest(unittest.TestCase):
 
         self.assertEqual(solve.call_count, 1)
 
+    def test_entropy_warning_retains_outer_and_sensitivity_replicates(self):
+        table = load_votes('../data/2-by-2-example.csv')
+        system = self.make_system(table, 'switching')
+        settings = SimulationSettings()
+        settings.update(simulation_count=2, cpu_count=1, random_seed=654586209,
+                        sensitivity=True, sensitivity_covs=[0.1])
+        simulation = Simulation(settings, [system], table, start_iteration=5781866)
+
+        def underestimated(election, cache, *, replicate=None):
+            actual = entropy_score.entropy(
+                np.maximum(election.votes, 1), election.results['all_const_seats'],
+                election.system.get_generator('adj_alloc_divider'))
+            cache[entropy_score._problem_key(election)] = actual - 9.446864623896545e-8
+            return entropy_score.calculate(election, cache, replicate=replicate)
+
+        with patch('voting.calculate_entropy_score', side_effect=underestimated):
+            with self.assertWarnsRegex(RuntimeWarning, '5781866') as caught:
+                simulation.simulate()
+        self.assertIn(system['name'], str(caught.warning))
+        self.assertEqual(simulation.iteration, 2)
+        self.assertEqual(simulation.stat['entropy_score'].n, 2)
+        self.assertEqual(simulation.stat['entropy_score'].mean(), [1])
+        self.assertEqual(simulation.stat['sensitivity_within_parties'].n, 2)
+
     def test_entropy_relative_to_first_system_is_a_quotient_product_ratio(self):
         table = load_votes('../data/2-by-2-example.csv')
         systems = [
@@ -993,21 +1017,6 @@ class CurrentApplicationTest(unittest.TestCase):
                 np.testing.assert_allclose(
                     np.asarray(votes).sum(axis=1), reference_totals)
 
-    def test_paired_absolute_differences_do_not_cancel_across_draws(self):
-        table = load_votes('../data/2-by-2-example.csv')
-        systems = [self.make_system(table, 'max-const-seat-share')
-                   for _ in range(2)]
-        settings = SimulationSettings()
-        settings.update(simulation_count=0, cpu_count=1)
-        simulation = Simulation(settings, systems, table)
-
-        first = simulation._with_paired_difference([2, 1])
-        second = simulation._with_paired_difference([1, 2])
-
-        self.assertEqual(first[-1], 1)
-        self.assertEqual(second[-1], 1)
-        self.assertEqual((first[-1] + second[-1]) / 2, 1)
-
     def test_comparison_measures_are_combined_once_across_workers(self):
         table = load_votes('../data/2-by-2-example.csv')
         systems = []
@@ -1057,29 +1066,16 @@ class CurrentApplicationTest(unittest.TestCase):
 
         for simulation in (uninterrupted, combined):
             values = simulation.stat['sum_abs'].numpy_mean()
-            self.assertEqual(len(values), 3)
-            self.assertGreaterEqual(values[2], abs(values[0] - values[1]) - 1e-12)
+            self.assertEqual(len(values), len(systems))
 
         uninterrupted.analysis()
         web_result = uninterrupted.get_result_web(False)
-        paired = web_result['paired_data']['sum_abs']
-        self.assertGreaterEqual(
-            paired['avg'],
-            abs(web_result['data'][0]['measures']['sum_abs']['avg']
-                - web_result['data'][1]['measures']['sum_abs']['avg']) - 1e-12,
-        )
-        displayed = web_result['vuedata']['toLists'][0]['avg']
-        self.assertEqual(len(displayed), 3)
-        self.assertAlmostEqual(displayed[2]['value'], paired['avg'])
-        self.assertIn(
-            "Absolute difference between D'Hondt and Sainte-Laguë",
-            web_result['vuedata']['difference_tooltip'],
-        )
+        self.assertNotIn('paired_data', web_result)
+        for group in web_result['vuedata']['group_ids']:
+            for row in web_result['vuedata'][group]:
+                for statistic in web_result['vuedata']['stats']:
+                    self.assertEqual(len(row[statistic]), len(systems))
         for group in ('cmpList', 'cmpParty'):
-            self.assertIn(
-                group,
-                web_result['vuedata']['groups_without_paired_difference'],
-            )
             self.assertTrue(web_result['vuedata'][group])
             self.assertTrue(all(
                 len(row['avg']) == len(systems)

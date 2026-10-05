@@ -179,7 +179,7 @@ def wait_for_nodes(active, nodes, job_dir):
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     partitions, target_nodes, first_replicate, core_cap, immediate,
-                    display_settings=None):
+                    display_settings=None, input_files=None):
     from parsim.common import atomic_json
     from sim import write_csv
     from input_files import validate_display_settings
@@ -251,6 +251,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
             "job_id": job_dir.name, "seed": settings["random_seed"],
             "replicates": settings["simulation_count"],
             "first_replicate": first_replicate, "nodes": nodes,
+            "input_files": input_files or {},
         })
         print(f"Job: {job_dir}", flush=True)
         print(f"Seed: {settings['random_seed']}", flush=True)
@@ -277,9 +278,11 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
             results.append(result)
         if stat_path:
             combined, statistics = combine_chunks(results, return_statistics=True)
+            statistics["input_files"] = input_files or {}
             write_chunk_result(stat_path, statistics)
         else:
             combined = combine_chunks(results)
+        combined.input_files = input_files or {}
         if csv_path:
             write_csv(csv_path, combined, display_settings)
             print(f"Report: {csv_path}", flush=True)
@@ -292,7 +295,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
 
 
 def main(argv=None):
-    from sim import (UNSET, load_all_inputs, load_inputs, nonnegative_int,
+    from sim import (UNSET, input_file_names, load_all_inputs, load_inputs, nonnegative_int,
                      positive_int, seed_value)
 
     parser = argparse.ArgumentParser(
@@ -347,7 +350,8 @@ def main(argv=None):
             job_dir=args.job_dir or HERE / "jobs" / uuid4().hex,
             partitions=partitions, target_nodes=args.nodes,
             first_replicate=args.first_replicate, core_cap=args.cores,
-            immediate=args.immediate, display_settings=display_settings)
+            immediate=args.immediate, display_settings=display_settings,
+            input_files=input_file_names(args))
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, f"elja: {error}\n")
     return 0
