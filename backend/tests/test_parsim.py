@@ -118,6 +118,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 '-a', str(job / 'inputs.json'), '-r', '19', '-i', '37',
                 '-C', '64', '-S', '1234',
                 '-O', str(job / 'node-003.json'),
+                '--progress', str(job / 'progress-003.json'),
             ], check=False)
             ready = json.loads((job / 'allocation-003.json').read_text())
             self.assertEqual(ready, {'node_id': 3, 'slurm_job_id': '5678'})
@@ -347,6 +348,12 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                              [2, 2])
             self.assertEqual([node['slurm_cpus'] for node in manifest['nodes']],
                              [4, 4])
+            for node in manifest['nodes']:
+                progress = json.loads((job_dir / f"progress-{node['id']:03d}.json").read_text())
+                self.assertEqual(progress['completed'], node['replicates'])
+                self.assertEqual(progress['assigned'], node['replicates'])
+            self.assertIn('remaining', completed.stdout)
+            self.assertIn('100.0%', completed.stdout)
 
 
 if __name__ == '__main__':

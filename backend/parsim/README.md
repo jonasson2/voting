@@ -45,3 +45,15 @@ tries the next partition.
 The job directory contains a frozen input snapshot, a manifest, allocation
 logs, and one mergeable JSON result per node. `elja.py` checks each node's
 seed and replicate range before combining the results.
+
+During simulation, each node writes an atomic `progress-NNN.json` file
+every five seconds, with completed and assigned replicates and elapsed time.
+`elja.py` displays the total progress, finished-node count, elapsed time,
+and estimated remaining time. Remaining time uses each node's recent rate
+and the longest expected remaining run; it shows `--` until all unfinished
+nodes have reported enough progress. Terminal output updates one line;
+redirected output records a new line at each update. A final message marks
+the start of merging. No extra options are needed for `elja.py`.
+
+For standalone offline runs, `sim.py --progress FILE` writes the same node
+progress format. Progress reporting does not change seeds or replicate ranges.

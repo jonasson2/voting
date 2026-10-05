@@ -4,8 +4,9 @@
 import argparse
 import csv
 from copy import deepcopy
-from multiprocessing import Pool
+from multiprocessing import Manager, Pool, TimeoutError
 from pathlib import Path
+import time
 
 from input_files import (
     load_all, load_section, load_votes, prepare_simulation_inputs,
@@ -61,12 +62,32 @@ def prepare_inputs(votes, systems, settings, overrides):
 
 
 def run_simulation(votes, systems, settings, first_replicate=0,
-                   return_statistics=False):
+                   return_statistics=False, progress_path=None):
     chunks = split_replicates(
         settings["simulation_count"], settings["cpu_count"], first_replicate)
     tasks = [(votes, systems, settings, count, start) for count, start in chunks]
     workers = len(tasks)
-    if workers == 1:
+    if progress_path is not None:
+        from simulation_progress import INTERVAL, ReplicateMonitor, write_progress
+
+        started = time.monotonic()
+        total = settings["simulation_count"]
+        with Manager() as manager:
+            counts = manager.list([0] * workers)
+            monitor = ReplicateMonitor(counts, [count for count, _ in chunks])
+            write_progress(progress_path, counts, total, started)
+            monitored_tasks = [(*task, index, monitor)
+                               for index, task in enumerate(tasks)]
+            with Pool(workers) as pool:
+                pending = pool.starmap_async(run_chunk, monitored_tasks)
+                while True:
+                    try:
+                        results = pending.get(timeout=INTERVAL)
+                        break
+                    except TimeoutError:
+                        write_progress(progress_path, counts, total, started)
+            write_progress(progress_path, counts, total, started)
+    elif workers == 1:
         results = [run_chunk(*tasks[0])]
     else:
         with Pool(workers) as pool:
@@ -159,6 +180,8 @@ def main(argv=None):
     parser.add_argument("-o", "--csv", help="Output CSV file")
     parser.add_argument("-O", "--output", metavar="STATFILE",
                         help="Output mergeable statistics (JSON)")
+    parser.add_argument("--progress", metavar="FILE", type=Path,
+                        help="Write periodic replicate progress (JSON)")
     parser.add_argument("-r", "--replicates", type=positive_int,
                         help="Override the number of replicates")
     parser.add_argument("-i", "--first-replicate", type=nonnegative_int, default=0,
@@ -172,6 +195,9 @@ def main(argv=None):
         parser.error("provide -o/--csv or -O/--output")
     if args.csv and args.output and Path(args.csv) == Path(args.output):
         parser.error("CSV and statistics files must have different paths")
+    if args.progress and any(args.progress.resolve() == Path(path).resolve()
+                             for path in (args.csv, args.output) if path):
+        parser.error("Progress and result files must have different paths")
     separate_inputs = (args.votes, args.systems, args.settings)
     if args.all:
         if any(separate_inputs):
@@ -193,11 +219,12 @@ def main(argv=None):
         if args.output:
             result, statistics = run_simulation(
                 votes, systems, settings, first_replicate=args.first_replicate,
-                return_statistics=True)
+                return_statistics=True, progress_path=args.progress)
             write_chunk_result(args.output, statistics)
         else:
             result = run_simulation(
-                votes, systems, settings, first_replicate=args.first_replicate)
+                votes, systems, settings, first_replicate=args.first_replicate,
+                progress_path=args.progress)
         if args.csv:
             write_csv(args.csv, result)
     except (OSError, ValueError, KeyError, TypeError) as error:

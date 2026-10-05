@@ -38,6 +38,7 @@ def run_allocated(job_dir, node_id):
         "-r", str(work["replicates"]), "-i", str(work["start"]),
         "-C", str(work["cores"]), "-S", str(work["seed"]),
         "-O", str(job_dir / f"node-{node_id:03d}.json"),
+        "--progress", str(job_dir / f"progress-{node_id:03d}.json"),
     ]
     command = ["srun", "--nodes=1", "--ntasks=1",
                f"--cpus-per-task={work['slurm_cpus']}", "--exact", *command]

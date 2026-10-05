@@ -136,6 +136,27 @@ class OfflineSimulationTest(unittest.TestCase):
             ]), 0)
             self.assertEqual(report.read_bytes(), direct.read_bytes())
 
+    def test_progress_preserves_results_for_one_and_multiple_cpus(self):
+        with TemporaryDirectory() as directory:
+            systems, settings = self.files(directory)
+            output = Path(directory) / 'results.csv'
+            progress = Path(directory) / 'progress.json'
+            arguments = ['-v', str(VOTES), '-e', str(systems), '-s', str(settings),
+                         '-r', '4', '-S', '123', '-i', '7', '-o', str(output)]
+            self.assertEqual(main([*arguments, '-C', '1']), 0)
+            baseline = output.read_bytes()
+            for cpus in ('1', '2'):
+                with self.subTest(cpus=cpus):
+                    self.assertEqual(main([*arguments, '-C', cpus,
+                                           '--progress', str(progress)]), 0)
+                    self.assertEqual(output.read_bytes(), baseline)
+                    status = json.loads(progress.read_text())
+                    self.assertEqual(status['completed'], 4)
+                    self.assertEqual(status['assigned'], 4)
+                    self.assertGreater(status['elapsed'], 0)
+            with self.assertRaises(SystemExit):
+                main([*arguments, '--progress', str(output)])
+
     def test_download_all_requires_votes(self):
         with TemporaryDirectory() as directory:
             systems, settings = self.files(directory)
