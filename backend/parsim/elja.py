@@ -222,7 +222,11 @@ def main(argv=None):
     from sim import (UNSET, load_all_inputs, load_inputs, nonnegative_int,
                      positive_int, seed_value)
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=lambda prog: argparse.HelpFormatter(
+            prog, max_help_position=44, width=110),
+    )
     parser.add_argument("-n", "--nodes", type=positive_int, required=True,
                         help="Number of nodes to start")
     parser.add_argument("-a", "--all", help="Download all file (JSON)")
