@@ -1,3 +1,11 @@
+Iceland Althingi preset (2024)
+Vote file: data/icel-2024-mbl.csv
+Final official votes: Landskjörstjórn, Kosningaskýrsla, page 2
+https://www.althingi.is/altext/erindi/156/156-3.pdf
+The original newspaper-derived preset was corrected to the final official
+results: Norðvestur B = 2406 and M = 2669. All other vote counts match
+the official table. The existing filename is retained for preset references.
+
 Sweden Riksdag presets (2014, 2018, 2022, 2026)
 Generator: data/sweden/get-votes.py
 Run: uv run --locked python data/sweden/get-votes.py YEAR

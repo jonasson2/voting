@@ -81,3 +81,36 @@ test('each election result appears under its own named tab', async () => {
   assert.match(panels[1], /<pre[^>]*>\[\[6,6\],\[7,6\]\]<\/pre>/)
   assert.doesNotMatch(html, /There are no electoral systems specified/)
 })
+
+test('seat table renders votes per seat, including total and national rows', async () => {
+  const filename = resolve(__dirname, '../src/components/ResultMatrix.vue')
+  const {descriptor} = parse(readFileSync(filename, 'utf8'))
+  const {code, errors} = compileTemplate({
+    source: descriptor.template.content, filename, id: 'votes-per-seat-test',
+    compilerOptions: {mode: 'function'},
+  })
+  assert.deepEqual(errors, [])
+  const {formatNumber} = await import('../src/numberFormat.js')
+  const script = descriptor.script.content
+    .replace(/^import .*$/gm, '')
+    .replace('export default', 'return')
+  const component = new Function('mapState', 'formatNumber', script)(
+    () => ({display_settings: () => ({fractional_digits: 2})}), formatNumber)
+  component.render = new Function('Vue', code)(Vue)
+  const app = Vue.createSSRApp(component, {
+    constituencies: [{name: 'A'}, {name: 'B'}], parties: ['P'],
+    values: [[3, 3], [0, 0], [3, 3], [2, 2], [5, 5]],
+    votes_per_seat: [1234.5, null, 1234.5],
+    party_votes_specified: true, party_votes_name: 'National',
+  })
+  app.component('b-container', {render() { return Vue.h('div', this.$slots.default?.()) }})
+  app.directive('b-tooltip', {})
+  const html = await renderToString(app)
+  assert.match(html, /Votes per seat/)
+  const rows = html.match(/<tr[\s\S]*?<\/tr>/g)
+  assert.match(rows[1], /1,234\.50/)
+  assert.match(rows[2], /<td class="displayright">–<\/td>/)
+  assert.match(rows[3], /1,234\.50/)
+  assert.match(rows[4], /<td class="displayright">–<\/td>/)
+  assert.match(rows[5], /<td class="displayright">–<\/td>/)
+})

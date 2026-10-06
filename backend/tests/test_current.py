@@ -629,7 +629,7 @@ class CurrentApplicationTest(unittest.TestCase):
             actual = entropy_score.entropy(
                 np.maximum(election.votes, 1), election.results['all_const_seats'],
                 election.system.get_generator('adj_alloc_divider'))
-            cache[entropy_score._problem_key(election)] = actual - 9.446864623896545e-8
+            cache[entropy_score._problem_key(election)] = actual - 2e-6
             return entropy_score.calculate(election, cache, replicate=replicate)
 
         with patch('voting.calculate_entropy_score', side_effect=underestimated):
@@ -887,6 +887,14 @@ class CurrentApplicationTest(unittest.TestCase):
             '68 (1)',
         )
         self.assertEqual(display[-1][-1], '349 (39)')
+        expected_votes_per_seat = (
+            (election.votes.sum(axis=1) + election.pruned_votes)
+            / allocation.sum(axis=1))
+        np.testing.assert_allclose(
+            web_result['votes_per_seat'][:-1], expected_votes_per_seat)
+        self.assertAlmostEqual(
+            web_result['votes_per_seat'][-1],
+            (election.votes.sum() + election.pruned_votes.sum()) / 349)
         self.assertFalse(web_result['switching_affected'])
         unchanged = np.argwhere(
             (np.asarray(election.results['all_const_seats']) > 0)

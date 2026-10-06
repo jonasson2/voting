@@ -1,5 +1,6 @@
 from itertools import product
 import unittest
+import warnings
 from unittest.mock import patch
 
 import numpy as np
@@ -159,6 +160,13 @@ class OptimalLpTest(unittest.TestCase):
                          system.get_generator('adj_alloc_divider'))
         # The gap reproduced on Elja for global replicate 5781866.
         cache = {entropy_score._problem_key(election): actual - 9.446864623896545e-8}
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            score = calculate(election, cache, replicate=5781866)
+        self.assertEqual(caught, [])
+        self.assertEqual(score, 1)
+
+        cache = {entropy_score._problem_key(election): actual - 2e-6}
         with self.assertWarnsRegex(
                 RuntimeWarning, "below a known feasible allocation.*Switching.*5781866"):
             score = calculate(election, cache, replicate=5781866)

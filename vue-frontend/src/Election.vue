@@ -33,6 +33,7 @@
               :constituencies="systems[activeTabIndex].constituencies"
               :parties="vote_table.parties"
               :values="results[activeTabIndex].display_results"
+              :votes_per_seat="results[activeTabIndex].votes_per_seat"
               :party_votes_name="vote_table.party_vote_info.name"
               :party_votes_specified="vote_table.party_vote_info.specified"
               >

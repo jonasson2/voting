@@ -28,7 +28,6 @@ def funpos(h, s):      return max(0, (s - h))/h
 def funneg(h, s):      return max(0, (h - s))/h
 def funabsshare(h, s): return abs(h - s)/h
 def funsqshare(h, s):  return (s - h)**2/h
-def funsqseat(h, s):   return (s - h)**2/max(1,s) if s > 0 else 0
 def funsame(h,s):      return s - h
 
 function_dict = {
@@ -38,7 +37,6 @@ function_dict = {
     'neg': (funneg, True),
     'absshare': (funabsshare, True),
     'sqshare': (funsqshare, True),
-    'sqseat': (funsqseat, False)
 }
 
 function_dict_party = {
@@ -66,7 +64,6 @@ class MeasureGroups(dict):
                 "sum_neg":     ("Under-allocation per reference seat", ""),
                 "sum_absshare": ("Absolute values per reference seat", ""),
                 "sum_sqshare": ("Squared values per reference seat (Sainte-Laguë)", ""),
-                "sum_sqseat":  ("Squared values per allocated seat", ""),
             },
             "footnote": "(single constituency minimizing methods in brackets)",
         }

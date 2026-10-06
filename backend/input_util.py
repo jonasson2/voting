@@ -128,7 +128,7 @@ def check_simul_settings(sim_settings):
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("sensitivity_simulation_count", 3)
     sim_settings.setdefault("sensitivity_gen_method", "uniform")
-    sim_settings.setdefault("sensitivity_covs", [1, 2, 3])
+    sim_settings.setdefault("sensitivity_covs", [0.1, 0.3, 1])
     seed = sim_settings.get("random_seed")
     if seed in (None, "", "-"):
         sim_settings["random_seed"] = None

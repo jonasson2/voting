@@ -11,6 +11,11 @@
         <th class="displaycenter">
           Total
         </th>
+        <th class="displaycenter"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Total constituency votes, including pruned votes, divided by final seats (fixed and adjustment).">
+          Votes per seat
+        </th>
       </tr>
       <tr v-for="(constituency, conidx) in constituencies">
         <th class="displayleft">
@@ -21,6 +26,7 @@
             {{ format(values[conidx][partyidx - 1]) }}
           </td>
         </template>
+        <td class="displayright">{{ formatVotesPerSeat(votes_per_seat[conidx]) }}</td>
       </tr>
       <tr>
         <th class="displayleft">Total</th>
@@ -29,6 +35,7 @@
             {{ format(values[constituencies.length][partyidx - 1]) }}
           </td>
         </template>
+        <td class="displayright">{{ formatVotesPerSeat(votes_per_seat[constituencies.length]) }}</td>
       </tr>
       <tr v-if="party_votes_specified">
         <th class="displayleft">
@@ -39,6 +46,7 @@
             {{ format(values[constituencies.length + 1][partyidx - 1]) }}
           </td>
         </template>
+        <td class="displayright">–</td>
       </tr>
       <tr v-if="party_votes_specified">
         <th class="displayleft">Grand total</th>
@@ -47,6 +55,7 @@
             {{ format(values[constituencies.length + 2][partyidx - 1]) }}
           </td>
         </template>
+        <td class="displayright">–</td>
       </tr>
       </tbody>
     </table>
@@ -65,11 +74,17 @@ export default {
     "constituencies": { default: [] },
     "parties": { default: [] },
     "values": { default: [] },
+    "votes_per_seat": { type: Array, default: () => [] },
     "party_votes_specified": false,
     "party_votes_name": "",
   },
   computed: mapState(["display_settings"]),
   methods: {
+    formatVotesPerSeat(value) {
+      return Number.isFinite(value)
+        ? formatNumber(value, this.display_settings.fractional_digits, this.display_settings)
+        : "–"
+    },
     format(value) {
       return typeof value === "number"
         ? formatNumber(value, 0, this.display_settings)

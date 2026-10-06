@@ -31,6 +31,7 @@ class AbsoluteMeasureTest(unittest.TestCase):
 
         self.assertEqual(deviations['sum_abs'], [2])
         self.assertEqual(deviations['sum_sq'], [4])
+        self.assertNotIn('sum_sqseat', deviations)
         for extension in ('const', 'nat', 'overall'):
             with self.subTest(extension=extension):
                 self.assertEqual(

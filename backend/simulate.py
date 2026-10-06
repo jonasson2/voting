@@ -54,7 +54,7 @@ class SimulationSettings(dict):
         self["sensitivity"] = False
         self["sensitivity_simulation_count"] = 3
         self["sensitivity_gen_method"] = "uniform"
-        self["sensitivity_covs"] = [1, 2, 3]
+        self["sensitivity_covs"] = [0.1, 0.3, 1]
         self["random_seed"] = None
 
     def abs(q, s):      return abs(q - s)

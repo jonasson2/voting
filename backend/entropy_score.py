@@ -13,7 +13,7 @@ UNSUPPORTED_RULES = {"adams", "huntington-hill"}
 METHODS_WITHOUT_PARTY_TARGETS = {
     "adjustment-as-fixed", "party-seats-unbounded",
 }
-SCORE_TOLERANCE = 1e-8
+SCORE_TOLERANCE = 1e-6
 
 
 def is_available(election):

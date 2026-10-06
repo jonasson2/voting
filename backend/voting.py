@@ -261,11 +261,22 @@ class Election:
                     for total, adjustment in zip(allrow, adjrow)
                 ])
         
+        constituency_votes = self.votes.sum(axis=1) + self.pruned_votes
+        constituency_seats = [sum(row) for row in self.results["all_const_seats"]]
+        votes_per_seat = [
+            float(votes / seats) if seats > 0 else None
+            for votes, seats in zip(constituency_votes, constituency_seats)
+        ]
+        total_seats = sum(constituency_seats)
+        votes_per_seat.append(
+            float(constituency_votes.sum() / total_seats) if total_seats > 0 else None)
+
         return {
             "demo_tables":      self.demo_tables,
             "ties":             self.tie_report.events,
             "switching_affected": bool(switched.any()) if swedish else False,
-            "display_results":  dispResult
+            "display_results":  dispResult,
+            "votes_per_seat":   votes_per_seat,
         }
 
     def report_ties(self, stage, labels=None):
