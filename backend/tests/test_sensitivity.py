@@ -141,7 +141,7 @@ class SensitivityTest(unittest.TestCase):
     def test_sensitivity_keeps_ordinary_measures_and_averages_by_major(self):
         result = self.run_simulation(self.settings(sensitivity_covs=[2, 1]))
 
-        self.assertEqual(result.stat["sum_abs"].n, 2)
+        self.assertEqual(result.stat["const_deviation"].n, 2)
         self.assertEqual(result.stat["sensitivity_between_parties"].n, 2)
         self.assertEqual(
             result.stat["sensitivity_between_parties"].numpy_mean().shape,

@@ -1,6 +1,5 @@
 <template>
 <div v-if="show_simulate">
-  <h3>Simulation settings</h3>
   <b-modal id="upload-simulation-settings" ref="uploadSettingsDialog"
     title="Upload simulation settings">
     <p>Choose a simulation-settings JSON file created by Download.</p>
@@ -37,6 +36,7 @@
         @click="openSettingsDownload('all')">Download all</b-button>
     </b-button-group>
   </b-button-toolbar>
+  <h4 class="simulator-title simulation-content-margin">Simulation settings</h4>
   <DownloadNameDialog
     id="simulation-results-download-name"
     ref="downloadNameDialog"
@@ -88,8 +88,8 @@
     </b-col>
   </div>
   <br>
-  <h3>Simulation results</h3>
-  <b-alert :show="results.data.length == 0">
+  <h4 class="simulator-title simulation-content-margin">Simulation results</h4>
+  <b-alert class="simulation-content-margin" :show="results.data.length == 0">
     Run simulation to get results.
   </b-alert>
   <div v-if="results.data.length == 0">
@@ -100,7 +100,7 @@
       </b-alert>
     </div>
   </div>
-  <div v-else-if="results.data.length > 0" style="margin-left:25px">
+  <div v-else-if="results.data.length > 0">
     <b-container style="margin-left:0px; margin-bottom:20px">
       <b-button
         class="mb-10"
@@ -112,11 +112,6 @@
       </b-button>
     </b-container>
     <p></p>
-    <h4 style="..."
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Reference seat shares are fractional benchmarks calculated from
-        the simulated votes using the selected scaling."
-        >Quality measures</h4>
     <QualityMeasures
       :vuedata="vuedata"
       :stats="vuedata.stats"
@@ -344,3 +339,10 @@ function timeStamp(){
     return d
 }
 </script>
+
+<style scoped>
+.simulation-content-margin {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+</style>

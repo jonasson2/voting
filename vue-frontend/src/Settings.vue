@@ -1,6 +1,6 @@
 <template>
   <b-container fluid class="settings-pane">
-    <h3>Settings</h3>
+    <h4 class="simulator-title">Settings</h4>
     <div class="settings-grid">
       <label for="number-separators">Thousands and decimal separators</label>
       <b-form-select
@@ -91,7 +91,7 @@ export default {
   padding: 0 16px 24px;
 }
 
-.settings-pane h3 {
+.settings-pane h4 {
   margin-left: 0;
 }
 

@@ -6,49 +6,21 @@ from sim_measures import add_vuedata
 
 
 class MeasureGroupsTest(unittest.TestCase):
-    def test_constituency_disparity_follows_geographical_displacement(self):
-        systems = [{"name": "System-1"}]
-        groups = MeasureGroups(systems, party_votes_specified=False)
-        rows = list(groups["other"]["rows"])
-        index = rows.index("geographical_displacement")
-        self.assertEqual(rows[index + 1], "constituency_disparity")
-
-        measures = {
-            measure: {"avg": 1, "min": 1, "max": 1, "std": 0}
-            for measure in groups.get_all_measures(False)
-        }
-        result = {
-            "data": [{"measures": measures}],
-            "iteration": 10,
-            "systems": systems,
-            "vote_table": {"party_vote_info": {"specified": False}},
-        }
-        add_vuedata(result, parallel=False)
-        row = result["vuedata"]["other"][index + 1]
-        self.assertEqual(row["avg"][0]["value"], 1)
-        self.assertIn("pruned votes", row["tooltip"])
-        for measure in ("max_seat_share_surplus", "max_seat_share_shortfall"):
-            share_row = result["vuedata"]["other"][rows.index(measure)]
-            self.assertIn("Expressed as a proportion", share_row["tooltip"])
-            self.assertIn("final total seats", share_row["tooltip"])
-            self.assertEqual(share_row["avg"][0]["value"], 1)
-
-    def test_specific_measures_are_grouped_in_display_order(self):
-        systems = [{"name": "System-1"}]
-        groups = MeasureGroups(
-            systems, party_votes_specified=False, include_entropy_score=True)
-        self.assertEqual(list(groups["other"]["rows"]), [
-            "entropy_score",
-            "geographical_displacement", "constituency_disparity",
-            "max_overrepresentation", "max_underrepresentation",
-            "max_seat_share_surplus", "max_seat_share_shortfall",
-            "bias_slope", "bias_corr", "excess",
-            "max_neg_margin", "freq_neg_margin", "total_overhang",
-        ])
-        self.assertEqual(groups["other"]["subgroup_starts"], (
-            "geographical_displacement", "max_overrepresentation",
-            "bias_slope", "max_neg_margin",
-        ))
+    def test_sections_and_optional_rows_follow_design(self):
+        groups = MeasureGroups([{"name": "System-1"}], False,
+                               include_entropy_score=True,
+                               scalings=["const", "both", "party", "total"])
+        self.assertEqual(list(groups)[:8], [
+            "const", "entropy", "both", "party", "total", "parity",
+            "toPartiesTotal", "singleSeat"])
+        self.assertEqual(list(groups["const"]["rows"])[:7], [
+            "lh_lists", "local_squared", "const_deviation", "const_surplus",
+            "const_shortfall", "const_share_surplus", "const_share_shortfall"])
+        self.assertEqual(list(groups["parity"]["rows"]),
+                         ["constituency_disparity", "lh_constituencies"])
+        self.assertEqual(len(groups["both"]["options"]), 4)
+        self.assertEqual(groups["singleSeat"]["option"], "show_single_seat")
+        self.assertEqual(len(groups["singleSeat"]["rows"]), 6)
         json.dumps(groups)
 
     def test_confidence_interval_is_retained_for_zero_mean(self):
@@ -58,7 +30,7 @@ class MeasureGroupsTest(unittest.TestCase):
             measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
             for measure in groups.get_all_measures(False)
         }
-        measures["sum_abs"]["std"] = 1
+        measures["const_deviation"]["std"] = 1
         result = {
             "data": [{"measures": measures}],
             "iteration": 100,
@@ -68,7 +40,7 @@ class MeasureGroupsTest(unittest.TestCase):
 
         add_vuedata(result, parallel=False)
 
-        displayed = result["vuedata"]["toLists"][0]["avg"][0]
+        displayed = result["vuedata"]["const"][2]["avg"][0]
         self.assertEqual(displayed["value"], 0)
         self.assertAlmostEqual(displayed["ci"], 0.196)
 
@@ -198,16 +170,28 @@ class MeasureGroupsTest(unittest.TestCase):
                     add_vuedata(result, parallel=False)
 
                     shown = result["vuedata"]["show"]
-                    self.assertTrue(shown["cmpPartyTitle"])
-                    self.assertEqual(shown["cmpParty"], has_difference)
+                    self.assertFalse(shown["cmpPartyTitle"])
+                    self.assertTrue(shown["cmpParty"])
                     self.assertEqual(
                         result["vuedata"]["group_messages"].get(
-                            "cmpPartyTitle"),
+                            "cmpParty"),
                         None if has_difference else
                         "All tested systems gave identical party seat totals "
                         "in this simulation.")
-                    self.assertTrue(shown["cmpListTitle"])
+                    self.assertFalse(shown["cmpListTitle"])
                     self.assertTrue(shown["cmpList"])
+                    display = result["vuedata"]
+                    self.assertTrue(display["block_headers"]["cmpList"])
+                    self.assertEqual(display["initial_title"],
+                                     "List allocation quality measures")
+                    self.assertEqual(display["block_headers"]["parity"],
+                                     "Total allocation quality measures")
+                    self.assertEqual(display["block_continues"]["parity"],
+                                     "toPartiesTotal")
+                    self.assertEqual(display["block_continues"]["cmpList"], "cmpParty")
+                    self.assertTrue(display["side_titles"]["cmpParty"])
+                    self.assertEqual(display["group_titles"]["cmpList"],
+                                     "Total list seat\ndifference")
                     self.assertTrue(shown["toPartiesTotal"])
                     self.assertEqual(
                         result["data"][1]["measures"][measure]["max"],
@@ -220,13 +204,14 @@ class MeasureGroupsTest(unittest.TestCase):
         with_score = MeasureGroups(
             systems, False, include_entropy_score=True)
 
-        self.assertNotIn("entropy_score", without_score["other"]["rows"])
-        self.assertIn("entropy_score", with_score["other"]["rows"])
+        self.assertNotIn("entropy_score", without_score.get("entropy", {}).get("rows", {}))
+        self.assertIn("entropy_score", with_score["entropy"]["rows"])
         two_systems = MeasureGroups(
             [{"name": "System-1"}, {"name": "System-2"}], False,
             include_entropy_score=True)
-        self.assertIn("entropy_relative", two_systems["other"]["rows"])
-        self.assertNotIn("entropy_relative", with_score["other"]["rows"])
+        self.assertIn("entropy_relative", two_systems["entropy"]["rows"])
+        self.assertNotIn("entropy_relative", two_systems["secondary"]["rows"])
+        self.assertNotIn("entropy_relative", with_score["entropy"]["rows"])
 
     def test_unavailable_entropy_score_is_displayed_as_dash(self):
         systems = [{"name": "System-1"}]
@@ -246,7 +231,7 @@ class MeasureGroupsTest(unittest.TestCase):
 
         add_vuedata(result, parallel=False)
 
-        self.assertEqual(result["vuedata"]["other"][0]["avg"], ["–"])
+        self.assertEqual(result["vuedata"]["entropy"][0]["avg"], ["–"])
         self.assertEqual(result["vuedata"]["stats"], ["avg", "std"])
         self.assertEqual(
             result["vuedata"]["stat_headings"],

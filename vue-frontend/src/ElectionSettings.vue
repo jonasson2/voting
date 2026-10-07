@@ -1,10 +1,9 @@
 <template>
 <b-form>
   <div class="settings-row settings-preset-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Sets the rules below to match the selected election law. Seat numbers and vote data are not changed.">
-      <span>Election-law preset</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Sets the rules below to match the selected election law. Seat numbers and vote data are not changed.">Election-law preset</span>
       <select class="custom-select compact-select settings-preset"
         v-model="election_law_preset">
         <option value="unmatched" disabled>Select preset</option>
@@ -24,20 +23,18 @@
     Allocation of fixed seats in the constituencies
   </legend>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used for allocating fixed seats to party lists within each constituency, and national fixed seats to parties if present.">
-      <span>Rule</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Formula used for allocating fixed seats to party lists within each constituency, and national fixed seats to parties if present.">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].primary_divider"
         :options="capabilities.systems"/>
     </label>
   </div>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="National vote share required for fixed seats. Enter - to disable this threshold; then only the local threshold applies.">
-      <span>National threshold</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="National vote share required for fixed seats. Enter - to disable this threshold; then only the local threshold applies.">National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -55,10 +52,9 @@
         :disabled="!bothThresholdsEnabled('fixed_seat_national_threshold', 'constituency_threshold')"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="When both thresholds are enabled, choose whether a party must meet both or either one."/>
-      <label class="settings-field"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Share of constituency votes required for fixed seats. Enter - to disable this threshold; then only the national threshold applies. Also applies to national fixed seats when present.">
-        <span>local threshold</span>
+      <label class="settings-field">
+        <span v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Share of constituency votes required for fixed seats. Enter - to disable this threshold; then only the national threshold applies. Also applies to national fixed seats when present.">local threshold</span>
         <span class="compact-entry">
           <input class="compact-entry-input" type="text"
             v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -78,20 +74,18 @@
     Apportionment of total seats to parties
   </legend>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used to apportion adjustment seats between parties based on chosen votes.">
-      <span>Rule</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Formula used to apportion adjustment seats between parties based on chosen votes.">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_determine_divider"
         :options="capabilities.systems"/>
     </label>
   </div>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="National vote share required for adjustment seats. Enter - to disable this threshold; then only the fixed-seat threshold applies.">
-      <span>National threshold</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="National vote share required for adjustment seats. Enter - to disable this threshold; then only the fixed-seat threshold applies.">National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -121,10 +115,9 @@
   </div>
 
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Yes: a party must have positive votes in every constituency to qualify for further seats. A party that does not qualify retains its fixed seats.">
-      <span>Stand in all constituencies</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Yes: a party must have positive votes in every constituency to qualify for further seats. A party that does not qualify retains its fixed seats.">Stand in all constituencies</span>
       <b-form-select class="compact-select settings-yes-no"
         v-model="systems[systemidx].require_votes_in_all_constituencies"
         :options="[{ value: false, text: 'No' }, { value: true, text: 'Yes' }]"/>
@@ -132,10 +125,9 @@
   </div>
 
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="None: Use the selected rule and qualification settings without country-specific modifications. Danish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions, and apply the statutory recalculation when fixed seats exceed provisional entitlements. Swedish: Apportion national party totals from zero, then reallocate fixed seats that exceed those entitlements.">
-      <span>Special rules</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="None: Use the selected rule and qualification settings without country-specific modifications. Danish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions, and apply the statutory recalculation when fixed seats exceed provisional entitlements. Swedish: Apportion national party totals from zero, then reallocate fixed seats that exceed those entitlements.">Special rules</span>
       <b-form-select class="compact-select settings-special-rules"
         v-model="systems[systemidx].special_rules"
         :options="capabilities.special_rules"/>
@@ -150,20 +142,18 @@
       Regional allocation of adjustment seats
     </legend>
     <div class="settings-row">
-      <label class="settings-field"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Method used to allocate each party’s adjustment seats among regions.">
-        <span>Allocation method</span>
+      <label class="settings-field">
+        <span v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Method used to allocate each party’s adjustment seats among regions.">Allocation method</span>
         <b-form-select class="compact-select settings-method"
           v-model="systems[systemidx].regional_adjustment_method"
           :options="capabilities.regional_adjustment_methods"/>
       </label>
     </div>
     <div class="settings-row">
-      <label class="settings-field"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Formula used for the regional allocation.">
-        <span>Rule</span>
+      <label class="settings-field">
+        <span v-b-tooltip.hover.bottom.v-primary.ds500
+          title="Formula used for the regional allocation.">Rule</span>
         <b-form-select class="compact-select settings-rule"
           v-model="systems[systemidx].regional_adjustment_divider"
           :options="capabilities.divider_rules"/>
@@ -178,20 +168,18 @@
     Allocation of adjustment seats to lists
   </legend>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Method used to allocate adjustment seats to party lists.">
-      <span>Allocation method</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Method used to allocate adjustment seats to party lists.">Allocation method</span>
       <b-form-select class="compact-select settings-method"
         v-model="systems[systemidx].adjustment_method"
         :options="adjustmentMethodOptions"/>
     </label>
   </div>
   <div class="settings-row">
-    <label class="settings-field"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Formula used to allocate adjustment seats to constituency lists.">
-      <span>Rule</span>
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500
+        title="Formula used to allocate adjustment seats to constituency lists.">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_alloc_divider"
         :options="capabilities.divider_rules"/>

@@ -1,6 +1,7 @@
 """Settings summaries shared by CSV and Excel simulation reports."""
 
-from dictionaries import SCALING_NAMES
+from reference_measures import selected_scalings, primary_scaling, SCALINGS
+
 
 
 def simulation_settings(results):
@@ -21,9 +22,11 @@ def simulation_settings(results):
          "data": "yes" if settings["use_thresholds"] else "no"},
         {"label": "Entropy score calculated",
          "data": "yes" if settings["entropy_score"] else "no"},
-        {"label": "Scaling of votes for fractional reference seat shares",
-         "data": SCALING_NAMES[settings["scaling"]]},
+        {"label": "Reference scaling benchmarks",
+         "data": ", ".join(SCALINGS[key] for key in selected_scalings(settings["scaling"])) or "Dedicated local indices only"},
     ]
+    rows.append({"label": "Benchmark for detailed reference matrices and single-seat diagnostics",
+                 "data": SCALINGS[primary_scaling(settings)]})
     rows.append({"label": "Sensitivity measures calculated",
                  "data": "yes" if settings.get("sensitivity") else "no"})
     if settings.get("sensitivity"):

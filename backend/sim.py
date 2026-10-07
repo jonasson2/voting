@@ -108,8 +108,10 @@ def format_csv_entry(entry, display_settings):
     digits = (display_settings["percentage_digits"] if entry.get("percentage")
               else 0 if entry.get("integer") else display_settings["fractional_digits"])
     value = f"{scale * entry['value']:.{digits}f}"
-    return (f"{value} ± {scale * entry['ci']:.{digits}f}"
-            if entry["ci"] is not None else value)
+    if entry["ci"] is None:
+        return value + ("%" if entry.get("percentage") else "")
+    interval = f"{value} ± {scale * entry['ci']:.{digits}f}"
+    return f"({interval})%" if entry.get("percentage") else interval
 
 
 def write_csv(path, result, display_settings=None):
@@ -136,28 +138,39 @@ def write_csv(path, result, display_settings=None):
         writer.writerow(["First replicate number (zero-based)",
                          getattr(result, "start_iteration", 0)])
         writer.writerow([""])
-        header = ["Sum over reference seat share differences"]
+        header = [table.get("initial_title", ""), ""]
         for stat, names in columns("shareTitle"):
             heading = "" if stat == "avg" else table["stat_headings"][stat]
             header.extend([heading, *[""] * (len(names) - 1)])
         writer.writerow(header)
-        writer.writerow(["", *[name for _, names in columns("shareTitle")
+        writer.writerow(["", "", *[name for _, names in columns("shareTitle")
                                 for name in names]])
         for group in table["group_ids"]:
             if group == "shareTitle" or not table["show"][group]:
                 continue
-            title = table["group_titles"][group]
+            option = table["group_options"].get(group)
+            if option and not table["display_options"].get(option):
+                continue
+            side_title = table["side_titles"].get(group)
+            title = table["group_titles"][group].replace("\n", " ")
             heading_type = table["headingType"].get(group)
-            if title or heading_type == "systems":
+            if table.get("block_headers", {}).get(group):
                 names = [name for _, names in columns(group) for name in names]
-                writer.writerow([title, *names] if heading_type == "systems"
+                writer.writerow([table["block_headers"][group], "", *names])
+            if not side_title and (title or heading_type == "systems"):
+                names = [name for _, names in columns(group) for name in names]
+                writer.writerow([title, "", *names] if heading_type == "systems"
                                 else [title])
-            for row in table[group]:
-                writer.writerow([row["rowtitle"], *[
+            rows = [] if group in table["group_messages"] else table[group]
+            for row in rows:
+                if row.get("option") and not table["display_options"].get(row["option"]):
+                    continue
+                writer.writerow([title if side_title else "", row["rowtitle"], *[
                     format_csv_entry(entry, display_settings)
                     for stat, _ in columns(group) for entry in row[stat]]])
+                title = ""
             if group in table["group_messages"]:
-                writer.writerow([table["group_messages"][group]])
+                writer.writerow([title, table["group_messages"][group]])
             if group in table["footnotes"]:
                 writer.writerow([table["footnotes"][group]])
 

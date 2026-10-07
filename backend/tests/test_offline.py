@@ -20,7 +20,9 @@ class OfflineSimulationTest(unittest.TestCase):
         entry = {'value': 1.234567, 'ci': 0.012345}
         self.assertEqual(format_csv_entry(entry, display), '1.2346 ± 0.0123')
         self.assertEqual(format_csv_entry(dict(entry, percentage=True), display),
-                         '123.46 ± 1.23')
+                         '(123.46 ± 1.23)%')
+        self.assertEqual(format_csv_entry(dict(entry, percentage=True, ci=None), display),
+                         '123.46%')
         self.assertEqual(format_csv_entry(dict(entry, integer=True, ci=None), display), '1')
         self.assertEqual(format_csv_entry('–', display), '–')
         self.assertEqual(format_csv_entry(entry, {'fractional_digits': 0, 'percentage_digits': 0}),
@@ -111,12 +113,12 @@ class OfflineSimulationTest(unittest.TestCase):
             separate = output.read_bytes()
             self.assertEqual(main(['-a', str(all_file), *options]), 0)
             def measures(contents):
-                return contents[contents.index(b'Sum over reference seat share differences'):]
+                return contents[contents.index(b',,Test system'):]
             self.assertEqual(measures(output.read_bytes()), measures(separate))
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(len([row for row in rows
-                                  if row[0].endswith('% CoV')]), 6)
+                                  if (len(row) > 1 and row[1].endswith('% CoV'))]), 6)
 
     def test_chunk_ranges_cover_replicates_once(self):
         self.assertEqual(split_replicates(7, 3), [(3, 0), (2, 3), (2, 5)])
@@ -161,7 +163,7 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertIn('Generating method', summary)
             self.assertIn('Relative standard deviation for list votes', summary)
             self.assertIn('Thresholds used', summary)
-            self.assertIn('Scaling of votes for fractional reference seat shares', summary)
+            self.assertIn('Reference scaling benchmarks', summary)
 
     def test_statistics_output_can_be_read_and_reported(self):
         with TemporaryDirectory() as directory:
@@ -232,19 +234,22 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             start = next(index for index, row in enumerate(rows)
-                         if row[0] == 'Sum over reference seat share differences')
+                         if row[0] == 'List allocation quality measures' and 'STD.DEV.' in row)
             self.assertEqual(rows[start:start+2], [
-                ['Sum over reference seat share differences', '', 'STD.DEV.'],
-                ['', 'Test system', 'Test system'],
+                ['List allocation quality measures', '', '', 'STD.DEV.'],
+                ['', '', 'Test system', 'Test system'],
             ])
             table = result.get_result_web(parallel=False)['vuedata']
             for group in table['group_ids']:
-                if not table['show'][group]:
+                option = table['group_options'].get(group)
+                if not table['show'][group] or (option and not table['display_options'].get(option)):
                     continue
                 if table['group_titles'][group]:
-                    self.assertTrue(any(row[0] == table['group_titles'][group]
+                    self.assertTrue(any(row[0] == table['group_titles'][group].replace('\n', ' ')
                                         for row in rows))
                 for row in table[group]:
+                    if row.get('option') and not table['display_options'].get(row['option']):
+                        continue
                     stats = table['group_stats'].get(group, table['stats'])
                     expected = [row['rowtitle']]
                     for stat in stats:
@@ -254,11 +259,13 @@ class OfflineSimulationTest(unittest.TestCase):
                         cell = f"{scale * entry['value']:.{digits}f}"
                         if entry['ci'] is not None:
                             cell += f" ± {scale * entry['ci']:.{digits}f}"
+                        if entry.get('percentage'):
+                            cell = f"({cell})%" if entry['ci'] is not None else cell + '%'
                         expected.append(cell)
-                    self.assertIn(expected, rows)
+                    self.assertIn(expected, [row[1:] for row in rows])
             self.assertNotIn(['Quality measures'], rows)
             self.assertNotIn(['Average & 95% confidence interval'], rows)
-            self.assertEqual(sum(row[0].endswith('% CoV') for row in rows), 6)
+            self.assertEqual(sum((len(row) > 1 and row[1].endswith('% CoV')) for row in rows), 6)
             self.assertFalse(any('all seats as fixed' in row[0] for row in rows))
 
     def test_relative_entropy_is_a_ratio_and_survives_statistics_reload(self):
@@ -285,17 +292,15 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
                 relative = [row for row in rows
-                            if row[0] == 'Entropy relative to system 1']
+                            if len(row) > 1 and row[1] == 'Entropy relative to system 1']
             self.assertEqual(len(relative), 1)
-            self.assertFalse(any("Difference" in row for row in rows))
-            self.assertEqual(relative[0], [
-                'Entropy relative to system 1',
-                '1.000 ± 0.000', '1.000 ± 0.000', '–',
-                '0.000', '0.000', '–',
-            ])
-            sensitivity = [row for row in rows if row[0].endswith('% CoV')]
+            self.assertEqual(relative[0][2:5], ['1.000 ± 0.000', '1.000 ± 0.000', '–'])
+            report = result.get_result_web(parallel=False)
+            self.assertAlmostEqual(report['data'][0]['measures']['entropy_relative']['avg'], 1)
+            self.assertAlmostEqual(report['data'][1]['measures']['entropy_relative']['avg'], 1)
+            sensitivity = [row for row in rows if (len(row) > 1 and row[1].endswith('% CoV'))]
             self.assertEqual(len(sensitivity), 6)
-            self.assertTrue(all(len(row) == 4 for row in sensitivity))
+            self.assertTrue(all(len(row) == 5 for row in sensitivity))
             write_csv(output, combine_chunks([read_chunk_result(statfile)]))
             self.assertEqual(output.read_bytes(), direct)
 

@@ -74,7 +74,7 @@ test('each election result appears under its own named tab', async () => {
   const html = await renderToString(app)
   assert.match(html, /<button>D&#39;Hondt<\/button>/)
   assert.match(html, /<button>Sainte-Laguë<\/button>/)
-  const panels = html.split('<section>').slice(1).map(part => part.split('</section>')[0])
+  const panels = html.split(/<section\b[^>]*>/).slice(1).map(part => part.split('</section>')[0])
   assert.equal(panels.length, 2)
   assert.match(panels[0], /<pre[^>]*>\[\[5,7\],\[8,5\]\]<\/pre>/)
   assert.match(panels[0], /Tied scores:\s*400; 200\./)

@@ -175,8 +175,7 @@
   </div>
   <b-row>
     <b-col cols="auto">
-      <legend
-        style = "margin-left:0px"
+      <legend class="vote-table-section-heading"
         v-b-tooltip.hover.bottom.v-primary.ds500
         title="Seat numbers and votes in each constituency.
                These, and the following national party votes and seats (if specified)

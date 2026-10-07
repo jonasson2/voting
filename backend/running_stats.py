@@ -20,6 +20,7 @@ class Running_stats:
         else:
             self.shape = shape + len(self.options)
         self.n = 0
+        self.infinite = np.zeros(self.shape, dtype=bool)
         self.M1 = np.zeros(self.shape)
         self.M2 = np.zeros(self.shape)
         self.M3 = np.zeros(self.shape)
@@ -45,11 +46,13 @@ class Running_stats:
             setattr(self, m, dictionary[m])
         for m in cls.np_members:
             setattr(self, m, np.array(dictionary[m]))
+        self.infinite = np.array(dictionary.get("infinite", np.zeros(self.shape)), dtype=bool)
         return self
 
     def to_dict(self):
         D = {m: getattr(self, m) for m in self.members}
         D.update({m: getattr(self, m).tolist() for m in self.np_members})
+        D["infinite"] = self.infinite.tolist()
         return D
 
     @classmethod
@@ -105,6 +108,11 @@ class Running_stats:
         if type(values) in {int,float,np.float64,np.int64}:
             values = [values]
         A = self.extend(values)
+        # Keep mergeable moments finite. Reports flag any infinite penalty
+        # instead of presenting moments computed from its placeholder zero.
+        infinite = np.isposinf(A)
+        self.infinite |= infinite
+        A = np.where(infinite, 0, A)
         n1 = self.n
         self.n += 1
         n = self.n
@@ -128,6 +136,7 @@ class Running_stats:
             self.small = np.minimum(self.small, A)
 
     def combine(self, running_stats):
+        self.infinite |= running_stats.infinite
         n1 = self.n
         n2 = running_stats.n
         self.n = n1 + n2

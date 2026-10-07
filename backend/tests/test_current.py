@@ -1,3 +1,4 @@
+from reference_measures import list_measures
 from contextlib import redirect_stdout
 from copy import deepcopy
 from io import BytesIO, StringIO
@@ -673,7 +674,8 @@ class CurrentApplicationTest(unittest.TestCase):
         result = Sim_result(unavailable.attributes())
         result.analysis()
         web_result = result.get_result_web(parallel=False)
-        relative_row = web_result['vuedata']['other'][1]
+        relative_row = next(row for row in web_result['vuedata']['entropy']
+                            if row['measure'] == 'entropy_relative')
         self.assertEqual(relative_row['avg'][1], '–')
         self.assertFalse(relative_row['avg'][0].get('percentage', False))
 
@@ -703,29 +705,33 @@ class CurrentApplicationTest(unittest.TestCase):
         )
 
         self.assertAlmostEqual(
-            simulation.stat['max_overrepresentation'].mean()[0], expected)
+            simulation.stat['const_overrepresentation'].mean()[0], expected)
         self.assertAlmostEqual(
-            simulation.stat['max_underrepresentation'].mean()[0],
+            simulation.stat['const_underrepresentation'].mean()[0],
             expected_under)
         self.assertNotIn('min_seat_val', simulation.stat)
-        surplus, shortfall = simulation.max_seat_share_deviations(election)
+        values = list_measures(election.results["all_const_seats"], election.ref_seat_shares)
+        surplus, shortfall = values["share_surplus"], values["share_shortfall"]
         self.assertAlmostEqual(
-            simulation.stat['max_seat_share_surplus'].mean()[0], surplus)
+            simulation.stat['const_share_surplus'].mean()[0], surplus)
         self.assertAlmostEqual(
-            simulation.stat['max_seat_share_shortfall'].mean()[0], shortfall)
+            simulation.stat['const_share_shortfall'].mean()[0], shortfall)
 
     def test_seat_share_deviations_use_each_constituencys_final_seats(self):
         election = SimpleNamespace(
             results={'all_const_seats': [[5, 5, 0], [5, 35, 0], [0, 0, 0]]},
             ref_seat_shares=[[2, 7.5, 0.5], [20, 19, 1], [0, 0, 0]])
-        self.assertEqual(Simulation.max_seat_share_deviations(election),
+        self.assertEqual(tuple(list_measures(election.results["all_const_seats"], election.ref_seat_shares)[key]
+                               for key in ("share_surplus", "share_shortfall")),
                          (0.4, 0.375))
         election.results['all_const_seats'] = [[1, 9, 0]]
         election.ref_seat_shares = [[0, 9.5, 0.5]]
-        self.assertEqual(Simulation.max_seat_share_deviations(election), (0.1, 0.05))
+        self.assertEqual(tuple(list_measures(election.results["all_const_seats"], election.ref_seat_shares)[key]
+                               for key in ("share_surplus", "share_shortfall")), (0.1, 0.05))
         election.results['all_const_seats'] = [[0, 0, 0]]
         election.ref_seat_shares = [[0, 0, 0]]
-        self.assertEqual(Simulation.max_seat_share_deviations(election), (0, 0))
+        self.assertEqual(tuple(list_measures(election.results["all_const_seats"], election.ref_seat_shares)[key]
+                               for key in ("share_surplus", "share_shortfall")), (0, 0))
 
     def test_finnish_2015_matches_official_party_seat_totals(self):
         table = load_votes('../data/finland_2015.csv')
@@ -1073,7 +1079,7 @@ class CurrentApplicationTest(unittest.TestCase):
                     atol=1e-12)
 
         for simulation in (uninterrupted, combined):
-            values = simulation.stat['sum_abs'].numpy_mean()
+            values = simulation.stat['const_deviation'].numpy_mean()
             self.assertEqual(len(values), len(systems))
 
         uninterrupted.analysis()
@@ -1944,7 +1950,7 @@ class CurrentApplicationTest(unittest.TestCase):
                 for election in simulation.reference_handler.elections
             })
             simulation.run_and_collect_measures(table['votes'], None)
-            values = simulation.stat['sum_abs'].mean()
+            values = simulation.stat['const_deviation'].mean()
             measures.append(dict(zip(
                 [system['name'] for system in simulation.systems], values)))
 

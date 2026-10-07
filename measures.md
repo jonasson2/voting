@@ -1,8 +1,7 @@
 # Simulation quality measures: display redesign
 
-Working design note, before implementation. The aim is a short default display
-of core measures, with optional groups selected by checkboxes. This note describes
-display choices; it does not yet change calculation or output.
+Implemented design for the simulation quality-measure display. The default
+display contains core measures, with optional rows selected by checkboxes.
 
 ## Core measures
 
@@ -42,7 +41,8 @@ Organize the display in this order:
    These all compare with local fractional seats: constituency seat count
    multiplied by the list's local vote share. Do not split the local measures
    into separate proportionality and seat-deviation blocks.
-2. **Entropy score:** one standalone row immediately after Local measures,
+2. **Quotient optimality:** entropy score and, when comparing multiple systems,
+   entropy relative to system 1, immediately after Local measures,
    before the double-scaling block. Entropy is closely related to biproportional
    allocation, but uses the feasible quotient-product optimum rather than
    doubly scaled fractional seats as its benchmark. Display it once,
@@ -51,7 +51,7 @@ Organize the display in this order:
    list surplus/shortfall maxima, using doubly scaled fractional seats.
 4. **Measures with party scaling**, then **Measures with national scaling:**
    the same five measures using the corresponding fractional seats.
-5. **Constituency parity:** constituency disparity and Loosemore-Hanby index
+5. **Geographical balance:** constituency disparity and Loosemore-Hanby index
    for constituencies.
 6. **Party totals:** Loosemore-Hanby index for parties, maximum party-seat
    surplus, and maximum party-seat shortfall.
@@ -106,7 +106,7 @@ reference allocation. Define surplus = max(s - q, 0) and shortfall = max(q - s, 
 | Maximum seat shortfall | Largest shortfall for any constituency–party list | Proposed core; raw seats |
 | Local squared deviation per reference seat | Sum of (s - q_local)^2 / q_local over constituency lists, with q_local defined from local vote shares | Core; constituency errors weighted by seat count |
 
-The current `sum_abs` measure reports half the absolute-deviation sum, despite
+The former `sum_abs` measure reported half the absolute-deviation sum, despite
 its name “Absolute values (Hare quota)”. When the reference and allocated seat
 totals match:
 
@@ -217,10 +217,11 @@ comparisons between countries with different parliament sizes. The benchmark
 is votes, rather than population. Do not retain a second raw geographical row
 in the core.
 
-Possible additional core measure: **Entropy relative to system 1**. This is useful
+Core measure: **Entropy relative to system 1**. This is useful
 for matched comparisons of flexible and fixed constituency seat counts, where
-individual entropy scores have different feasible optima. Keep it as a candidate,
-not a settled addition.
+individual entropy scores have different feasible optima. Show it in Quotient
+optimality as a quotient-product ratio (system 1 equals 1), not a percentage.
+Do not add a separate entropy-difference measure.
 
 ### Dependence on allocation method and reference scaling
 
@@ -347,8 +348,8 @@ than additions to the selectable groups at this stage.
   benchmarks routinely.
 - Use proportions for seat-share discrepancies, not percentages or percentage
   points. Entropy score and all three Loosemore-Hanby indices use percentages.
-- Decide whether optional-group selections also control CSV output. The offline
-  CSV currently shares the web measure definitions and should continue to do so.
+- Optional-group selections also control CSV output. Web, CSV and Excel use one
+  shared catalogue; Excel always includes the optional and secondary measures.
 - Retain secondary measures in Excel, with clear names and definitions, even when
   omitted from the default web display. Pruning the display need not remove the
   underlying statistics.
@@ -361,9 +362,25 @@ than additions to the selectable groups at this stage.
 2. Review the optional squared party-seat deviation after implementation?
 3. Retain any other relative-deviation measures as secondary outputs?
 4. Include entropy relative to system 1 in the core?
-5. Which reference scalings should appear simultaneously?
-6. Which diagnostics should remain in the single-seat-constituency group?
-7. Default optional-group selections and their effect on CSV output?
+
 
 Implementation should follow these decisions, using one shared measure catalogue
 for names, groups, and output selection rather than separate web and CSV lists.
+
+## Implementation choices
+
+- New simulations default to local scaling only. Older saved files with one
+  scaling retain it; the setting now stores a list. An empty selection leaves
+  the dedicated local indices, entropy (if enabled), parity and party totals.
+- Both optional display selections default to unchecked. Toggling them changes
+  the displayed completed results immediately; it does not change calculation.
+- All six single-seat diagnostics are retained. Their reference-dependent rows
+  and Excel's detailed reference matrices use the first selected benchmark in
+  the order local, double, party, national (local if none is selected). The
+  benchmark is identified in the diagnostic labels and report settings.
+- Scaling statistics have separate identifiers for each benchmark. Seat
+  allocation and sensitivity run once per replicate, not once per scaling.
+- Infinite relative penalties are retained through statistics files and merging,
+  displayed as infinity with unavailable SD/CI rather than finite substitutes.
+- CSV uses separate section and measure fields; each average and confidence
+  interval remains one cell. Excel retains secondary measures and cell comments.

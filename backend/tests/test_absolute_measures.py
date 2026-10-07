@@ -7,7 +7,7 @@ from simulate import Collect, Simulation
 
 
 class AbsoluteMeasureTest(unittest.TestCase):
-    def test_absolute_seat_share_measures_are_halved(self):
+    def test_secondary_party_absolute_measures_are_halved(self):
         simulation = object.__new__(Simulation)
         simulation.nparty = 2
         simulation.party_votes_specified = True
@@ -17,7 +17,7 @@ class AbsoluteMeasureTest(unittest.TestCase):
             ref_seat_shares=np.array([[1, 1], [1, 1]]),
             total_ref_const=[2, 2],
             total_ref_nat=[2, 2],
-            total_ref_seat_shares=[3, 5],
+            fractional_party_seats=np.array([3, 5]),
             results={
                 'all_const_seats': [[2, 0], [0, 2]],
                 'all_const_total': [3, 1],
@@ -27,17 +27,16 @@ class AbsoluteMeasureTest(unittest.TestCase):
         )
         deviations = Collect()
 
-        simulation.seats_minus_shares_measures(election, 0, deviations)
+        simulation.party_reference_measures(election, deviations)
 
-        self.assertEqual(deviations['sum_abs'], [2])
-        self.assertEqual(deviations['sum_sq'], [4])
-        self.assertNotIn('sum_sqseat', deviations)
-        for extension in ('const', 'nat', 'overall'):
+        for extension in ('const', 'nat'):
             with self.subTest(extension=extension):
                 self.assertEqual(
                     deviations[f'sum_abs_party_{extension}'], [1])
                 self.assertEqual(
                     deviations[f'sum_sq_party_{extension}'], [2])
+
+        self.assertEqual(deviations["sum_sq_party_overall"], [2])
 
     def test_only_between_system_comparisons_are_halved(self):
         simulation = object.__new__(Simulation)

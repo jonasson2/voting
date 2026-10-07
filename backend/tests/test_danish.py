@@ -350,9 +350,9 @@ class DanishTest(unittest.TestCase):
             if web_result["vuedata"][group]
         ]
         displayed_measure = web_result["vuedata"][populated_groups[0]][0]["avg"][0]
-        self.assertEqual(set(displayed_measure), {"value", "integer", "ci"})
+        self.assertEqual(set(displayed_measure), {"value", "integer", "ci", "percentage"})
         self.assertIsInstance(displayed_measure["value"], float)
-        entropy_row = web_result["vuedata"]["other"][0]
+        entropy_row = web_result["vuedata"]["entropy"][0]
         self.assertEqual(entropy_row["rowtitle"], "Entropy score (%)")
         self.assertTrue(entropy_row["avg"][0]["percentage"])
         with TemporaryDirectory() as directory:
@@ -372,7 +372,7 @@ class DanishTest(unittest.TestCase):
             self.assertNotIn("Difference", quality_values)
             score_row = next(
                 row for row in book["Quality measures"].iter_rows()
-                if row[0].value == "Entropy score")
+                if row[1].value == "Entropy score")
             self.assertEqual(score_row[2].number_format, "#,##0.0000%")
             self.assertGreater(score_row[2].value, 0)
             self.assertLessEqual(score_row[2].value, 1)

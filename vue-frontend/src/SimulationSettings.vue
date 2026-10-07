@@ -2,11 +2,11 @@
   <b-form style="margin-left:16px;margin-right:16px" v-if="!waiting_for_data">
     <b-row class="simulation-settings-layout">
       <b-col class="simulation-settings-column simulation-settings-inputs">
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="How many vote tables should be generated?
-                 (How many simulations should be run?)">
-          <label for="simulation-count">Number of simulations</label>
+        <div class="simulation-setting-row">
+          <label for="simulation-count"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="How many vote tables should be generated?
+                 (How many simulations should be run?)">Number of simulations</label>
           <span class="compact-entry">
             <input id="simulation-count" class="compact-entry-input" type="text"
             v-autowidth="{ maxWidth: '175px', minWidth: '88px' }"
@@ -14,19 +14,19 @@
             min="0"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          :title="max_cpu_count_text">
-          <label for="simulation-cpu-count">Number of cpus</label>
+        <div class="simulation-setting-row">
+          <label for="simulation-cpu-count"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            :title="max_cpu_count_text">Number of cpus</label>
           <b-form-select id="simulation-cpu-count"
             class="compact-select simulation-cpu-select"
             v-model="sim_settings.cpu_count"
             :options="sim_capabilities.cpu_counts"/>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Optional integer seed for repeatable generated votes and random tie decisions. Use - for fresh random draws.">
-          <label for="simulation-random-seed">Random seed</label>
+        <div class="simulation-setting-row">
+          <label for="simulation-random-seed"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Optional integer seed for repeatable generated votes and random tie decisions. Use - for fresh random draws.">Random seed</label>
           <span class="compact-entry">
             <input id="simulation-random-seed" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '175px', minWidth: '88px' }"
@@ -36,11 +36,11 @@
           </span>
         </div>
         <hr class="simulation-settings-divider">
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Distribution used to vary list support before each
-                 constituency is rescaled to its source vote total.">
-          <label for="simulation-distribution">Generating distribution</label>
+        <div class="simulation-setting-row">
+          <label for="simulation-distribution"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Distribution used to vary list support before each
+                 constituency is rescaled to its source vote total.">Generating distribution</label>
           <span class="compact-entry simulation-distribution-control">
             <b-form-select id="simulation-distribution"
               class="compact-select simulation-distribution-select"
@@ -48,48 +48,48 @@
               :options="sim_capabilities.generating_methods"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Relative standard deviation (coefficient of variation; CoV)
+        <div class="simulation-setting-row">
+          <label for="simulation-const-rsd"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Relative standard deviation (coefficient of variation; CoV)
                  of list-vote draws before each constituency is rescaled to its source vote total.
                  Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
-                 0–0.577 (uniform).">
-          <label for="simulation-const-rsd">Relative standard deviation for list votes</label>
+                 0–0.577 (uniform).">Relative standard deviation for list votes</label>
           <span class="compact-entry">
             <input id="simulation-const-rsd" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.const_rsd"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Correlation used to generate list-vote draws within each
+        <div class="simulation-setting-row">
+          <label for="simulation-const-corr"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Correlation used to generate list-vote draws within each
                  party before constituency totals are rescaled. Use only
-                 with lognormal distribution; otherwise 0 is used.">
-          <label for="simulation-const-corr">Correlation between list votes within each party</label>
+                 with lognormal distribution; otherwise 0 is used.">Correlation between list votes within each party</label>
           <span class="compact-entry">
             <input id="simulation-const-corr" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.const_corr"/>
           </span>
         </div>
-        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Standard deviation of simulated votes divided by their mean.
+        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row">
+          <label for="simulation-party-rsd"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Standard deviation of simulated votes divided by their mean.
                  Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
-                 0–0.577 (uniform).">
-          <label for="simulation-party-rsd">Relative standard deviation for national party votes</label>
+                 0–0.577 (uniform).">Relative standard deviation for national party votes</label>
           <span class="compact-entry">
             <input id="simulation-party-rsd" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
               v-model.number="sim_settings.party_vote_rsd"/>
           </span>
         </div>
-        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Correlation between list votes and national party votes,
-                 use only with lognormal distribution, else 0 is used.">
-          <label for="simulation-party-corr">Correlation between list votes and national party votes</label>
+        <div v-if="vote_table.party_vote_info.specified" class="simulation-setting-row">
+          <label for="simulation-party-corr"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Correlation between list votes and national party votes,
+                 use only with lognormal distribution, else 0 is used.">Correlation between list votes and national party votes</label>
           <span class="compact-entry">
             <input id="simulation-party-corr" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
@@ -97,76 +97,79 @@
           </span>
         </div>
         <hr class="simulation-settings-divider">
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Selecting No disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.">
-          <label for="simulation-thresholds">Simulate with thresholds?</label>
-          <b-form-select id="simulation-thresholds"
-            class="compact-select simulation-threshold-select"
-            v-model="sim_settings.use_thresholds"
-            :options="sim_capabilities.use_thresholds"/>
+        <div class="simulation-setting-row">
+          <b-form-checkbox id="simulation-thresholds" v-model="sim_settings.use_thresholds">
+            <span v-b-tooltip.hover.bottom.v-primary.ds500
+              title="Unchecking disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.">
+              Simulate with thresholds
+            </span>
+          </b-form-checkbox>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Compare the product of allocated-seat quotients with the largest achievable product under the selected rule and constraints. 100% is optimal.">
-          <label for="simulation-entropy-score">Calculate entropy score?</label>
-          <b-form-select id="simulation-entropy-score"
-            class="compact-select simulation-threshold-select"
-            v-model="sim_settings.entropy_score"
-            :options="sim_capabilities.use_thresholds"/>
+        <div class="simulation-setting-row">
+          <b-form-checkbox id="simulation-entropy-score" v-model="sim_settings.entropy_score">
+            <span v-b-tooltip.hover.bottom.v-primary.ds500
+              title="Compare the product of allocated-seat quotients with the largest achievable product under the selected rule and constraints. 100% is optimal.">
+              Calculate entropy score
+            </span>
+          </b-form-checkbox>
         </div>
+        <hr class="simulation-settings-divider">
+        <h5 class="simulation-settings-section-title">Show additional measures</h5>
+        <b-form-checkbox v-model="sim_settings.show_additional">
+          Additional proportionality measures
+        </b-form-checkbox>
+        <b-form-checkbox v-model="sim_settings.show_single_seat">
+          Specifically for single-seat constituencies
+        </b-form-checkbox>
       </b-col>
-      <b-col class="simulation-settings-scaling">
-        <b-form-group style="font-size:110%">
-          <label v-b-tooltip.hover.bottom.v-primary.ds500
-            title='Scaled seat shares are used as reference in quality measurements; "Help" for more details'>
-            <b>Scaling of votes for reference seat shares</b>
-          </label>
-          <b-form-radio-group
-            id="A"
-            v-model="sim_settings.scaling"
-            >
-            <div class="scaling-option"
-              v-b-tooltip.hover.top.v-primary.ds500="{ customClass: 'scaling-tooltip' }"
-              title="Fractional reference seat shares satisfy both important margins: each constituency's seat total and each party's nationally proportional entitlement.">
-              <b-form-radio value="both">{{sim_capabilities.scaling_names.both}}</b-form-radio>
-            </div>
-            <div class="scaling-option"
-              v-b-tooltip.hover.top.v-primary.ds500
-              title="Adjust the vote shares so that they sum to the total number of seats for
-                     each constituency (scale rows of vote table)">
-              <b-form-radio value="const">{{sim_capabilities.scaling_names.const}}</b-form-radio>
-            </div>
-            <div class="scaling-option"
-              v-b-tooltip.hover.top.v-primary.ds500
-              title="Adjust the vote shares so that they sum to the total number of seats for
-                     each party (scale columns of vote table)">
-              <b-form-radio value="party">{{sim_capabilities.scaling_names.party}}</b-form-radio>
-            </div>
-            <div class="scaling-option"
-              v-b-tooltip.hover.top.v-primary.ds500
-              title="Adjust the vote shares so that they sum to the total number of seats
-                     nationally (scales all entries in vote table by the same factor)">
-              <b-form-radio value="total">{{sim_capabilities.scaling_names.total}}</b-form-radio>
-            </div>
-          </b-form-radio-group>
-        </b-form-group>
+      <b-col class="simulation-settings-column simulation-settings-scaling">
+        <h5 class="simulation-settings-section-title" v-b-tooltip.hover.bottom.v-primary.ds500
+          title='Select the fractional-seat benchmarks to calculate. Adding a benchmark requires a new simulation. The dedicated local indices are always calculated.'>
+          Reference scaling
+        </h5>
+        <b-form-checkbox-group
+          id="A"
+          v-model="sim_settings.scaling"
+          >
+          <div class="scaling-option"
+            v-b-tooltip.hover.top.v-primary.ds500
+            title="Adjust the vote shares so that they sum to the total number of seats for
+                   each constituency (scale rows of vote table)">
+            <b-form-checkbox value="const">Local scaling</b-form-checkbox>
+          </div>
+          <div class="scaling-option"
+            v-b-tooltip.hover.top.v-primary.ds500="{ customClass: 'scaling-tooltip' }"
+            title="Fractional reference seat shares satisfy both important margins: each constituency's seat total and each party's nationally proportional entitlement.">
+            <b-form-checkbox value="both">Double scaling</b-form-checkbox>
+          </div>
+          <div class="scaling-option"
+            v-b-tooltip.hover.top.v-primary.ds500
+            title="Adjust the vote shares so that they sum to the total number of seats for
+                   each party (scale columns of vote table)">
+            <b-form-checkbox value="party">Party scaling</b-form-checkbox>
+          </div>
+          <div class="scaling-option"
+            v-b-tooltip.hover.top.v-primary.ds500
+            title="Adjust the vote shares so that they sum to the total number of seats
+                   nationally (scales all entries in vote table by the same factor)">
+            <b-form-checkbox value="total">National scaling</b-form-checkbox>
+          </div>
+        </b-form-checkbox-group>
       </b-col>
-      <b-col class="simulation-settings-sensitivity">
-        <div class="simulation-settings-section-title">Sensitivity analysis</div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="For every simulated election, perturb its votes at several small CoVs and measure how many seats move between parties and between lists within parties.">
-          <label for="simulation-sensitivity">Compute sensitivity measures?</label>
-          <b-form-select id="simulation-sensitivity"
-            class="compact-select simulation-threshold-select"
-            v-model="sim_settings.sensitivity"
-            :options="sim_capabilities.use_thresholds"/>
+      <b-col class="simulation-settings-column simulation-settings-sensitivity">
+        <h5 class="simulation-settings-section-title">Sensitivity analysis</h5>
+        <div class="simulation-setting-row">
+          <b-form-checkbox id="simulation-sensitivity" v-model="sim_settings.sensitivity">
+            <span v-b-tooltip.hover.bottom.v-primary.ds500
+              title="For every simulated election, perturb its votes at several small CoVs and measure how many seats move between parties and between lists within parties.">
+              Compute sensitivity measures
+            </span>
+          </b-form-checkbox>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Number of minor vote perturbations generated at every sensitivity CoV for each simulated election.">
-          <label for="sensitivity-simulation-count">Perturbations per simulation</label>
+        <div class="simulation-setting-row">
+          <label for="sensitivity-simulation-count"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Number of minor vote perturbations generated at every sensitivity CoV for each simulated election.">Perturbations per simulation</label>
           <span class="compact-entry">
             <input id="sensitivity-simulation-count" class="compact-entry-input"
               type="text"
@@ -174,10 +177,10 @@
               v-model.number="sim_settings.sensitivity_simulation_count"/>
           </span>
         </div>
-        <div class="simulation-setting-row"
-          v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Distribution used for independent multiplicative perturbations around each simulated vote table.">
-          <label for="sensitivity-distribution">Generating distribution</label>
+        <div class="simulation-setting-row">
+          <label for="sensitivity-distribution"
+            v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Distribution used for independent multiplicative perturbations around each simulated vote table.">Generating distribution</label>
           <span class="compact-entry simulation-distribution-control">
             <b-form-select id="sensitivity-distribution"
               class="compact-select simulation-distribution-select"
@@ -298,12 +301,6 @@ export default {
   border: 0;
   border-top: 2px solid #000;
   margin: 0.5em 0;
-}
-
-.simulation-settings-section-title {
-  font-size: 110%;
-  font-weight: bold;
-  margin-bottom: 9px;
 }
 
 .sensitivity-cov-section {

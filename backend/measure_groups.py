@@ -21,125 +21,23 @@
 
 
 from util import disp
-
-def funabs(h, s):      return abs(h - s)
-def funsq(h, s):       return (h - s)**2
-def funpos(h, s):      return max(0, (s - h))/h
-def funneg(h, s):      return max(0, (h - s))/h
-def funabsshare(h, s): return abs(h - s)/h
-def funsqshare(h, s):  return (s - h)**2/h
-def funsame(h,s):      return s - h
-
-function_dict = {
-    'abs': (funabs, False),
-    'sq': (funsq, False),
-    'pos': (funpos, True),
-    'neg': (funneg, True),
-    'absshare': (funabsshare, True),
-    'sqshare': (funsqshare, True),
-}
-
-function_dict_party = {
-    'sum_abs_party': (funabs),
-    'sum_sq_party': (funsq),
-    'max_val_party': (funsame),
-    'min_val_party': (funsame),
-}
+from reference_measures import quality_groups, selected_scalings
 
 class MeasureGroups(dict):
     def __init__(self, systems, party_votes_specified, qm_topleft2=None, nr=0,
-                 include_entropy_score=False):
-        self["shareTitle"] = {
-            "title": qm_topleft2,
-            "rows":  {}
-        }
-
-        self["toLists"] = {
-            "title": "",
-            "subgroup_starts": ("sum_pos",),
-            "rows": {
-                "sum_abs":     ("Absolute values (Hare quota)", ""),
-                "sum_sq":      ("Squared values (Hare quota)", ""),
-                "sum_pos":     ("Over-allocation per reference seat", ""),
-                "sum_neg":     ("Under-allocation per reference seat", ""),
-                "sum_absshare": ("Absolute values per reference seat", ""),
-                "sum_sqshare": ("Squared values per reference seat (Sainte-Laguë)", ""),
-            },
-            "footnote": "(single constituency minimizing methods in brackets)",
-        }
-
+                 include_entropy_score=False, scalings=("const",)):
+        self.update(quality_groups(selected_scalings(scalings),
+                                   include_entropy_score, len(systems) > 1))
         if party_votes_specified:
-            self["toPartiesInConst"] = {
-                "title": "– parties in the constituencies",
-                
-                "rows": {
-                    "sum_abs_party_const": ("sum of absolute values",""),
-                    "sum_sq_party_const": ("sum of squared values",""),
-                },
-                "onlyExcel": True
-            }
-
-            self["toNationalLists"] = {
-                "title": "– national lists",
-                "rows": {
-                    "sum_abs_party_nat": ("sum of absolute values",""),
-                    "sum_sq_party_nat": ("sum of squared values",""),
-                },
-                "onlyExcel": True
-            }
-
-        self["toPartiesTotal"] = {
-            "title": "Party seat totals: allocated minus fractional reference",
-            "subgroup_starts": ("max_val_party_overall",),
-            # overall,
-            # altogeter, grand total
-            "rows": {
-                "sum_abs_party_overall": ("sum of absolute values",""),
-                "sum_sq_party_overall":  ("sum of squared values",""),
-                "max_val_party_overall": ("maximum value", ""),
-                "min_val_party_overall": ("minimum value", ""),
-            }
-        }
-
-        specific_rows = {
-            "geographical_displacement": (
-                "Geographical seat displacement", ""),
-            "constituency_disparity": (
-                "Constituency disparity", ""),
-            "max_overrepresentation": (
-                "Maximum relative over-representation (D'Hondt)", ""),
-            "max_underrepresentation": (
-                "Maximum relative under-representation (Adams)", ""),
-            "max_seat_share_surplus": (
-                "Maximum seat-share surplus", ""),
-            "max_seat_share_shortfall": (
-                "Maximum seat-share shortfall", ""),
-            "bias_slope":     ("Slope of seat excess regressed on ref. seat shares", ""),
-            "bias_corr":      ("Correlation of seat excess and reference seat "
-                               "shares", ""),
-            "excess":         ("Total seat excess", ""),
-            "max_neg_margin": ("Maximum negative margin over constituencies",""),
-            "freq_neg_margin": ("Frequency of negative margin over constituencies",""),
-            "total_overhang": ("Potential overhang", ""),
-            #"disparity":      ("Total and reference allocations abs. difference",""),
-            #"shortage":       ("Shortage", "")
-        }
-        if include_entropy_score:
-            specific_rows = {
-                "entropy_score": ("Entropy score", ""),
-                **({"entropy_relative": ("Entropy relative to system 1", "")}
-                   if len(systems) > 1 else {}),
-                **specific_rows,
-            }
-        self["other"] = {
-            "title": "Specific quality indices for allocations in the constituencies",
-            "subgroup_starts": (
-                "geographical_displacement", "max_overrepresentation",
-                "bias_slope", "max_neg_margin",
-            ),
-            "rows": specific_rows,
-            "footnote": "(single-constituency minimizing methods in brackets)",
-        }
+            for extension, title in (("const", "Party totals within constituencies"),
+                                     ("nat", "National lists")):
+                self[f"party_{extension}"] = {
+                    "title": title, "onlyExcel": True,
+                    "rows": {
+                        f"sum_abs_party_{extension}": ("Half the absolute seat deviation", ""),
+                        f"sum_sq_party_{extension}": ("Squared seat deviation", ""),
+                    },
+                }
 
         self["cmpListTitle"] = {
             "title": "Absolute seat differences summed over constituency lists",

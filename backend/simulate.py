@@ -1,6 +1,7 @@
+from reference_measures import list_measures, selected_scalings, primary_scaling
 # import logging
 from datetime import datetime
-from measure_groups import MeasureGroups, function_dict, function_dict_party
+from measure_groups import MeasureGroups
 from voting import Election
 from dictionaries import SEAT_MEASURES, VOTE_MEASURES, CONSTANTS, SENS_MEASURES
 from dictionaries import HISTOGRAM_MEASURES, PARTY_MEASURES
@@ -50,7 +51,9 @@ class SimulationSettings(dict):
         self["party_vote_corr"] = CONSTANTS["PartyVoteCorr"]
         self["use_thresholds"] = True
         self["entropy_score"] = True
-        self["scaling"] = "both"
+        self["scaling"] = ["const"]
+        self["show_additional"] = False
+        self["show_single_seat"] = False
         self["sensitivity"] = False
         self["sensitivity_simulation_count"] = 3
         self["sensitivity_gen_method"] = "uniform"
@@ -108,6 +111,8 @@ class Simulation():
         warnings_to_errors()
         use_thresholds = sim_settings['use_thresholds']
         self.sim_settings = sim_settings
+        self.scalings = selected_scalings(sim_settings["scaling"])
+        self.primary_scaling = primary_scaling(sim_settings)
         self.random_seed = sim_settings.get("random_seed")
         self.start_iteration = start_iteration
         self.next_global_iteration = start_iteration
@@ -124,7 +129,7 @@ class Simulation():
         self.party_votes_specified = self.vote_table["party_vote_info"]["specified"]
         self.measure_groups = MeasureGroups(
             systems, self.party_votes_specified, nr,
-            include_entropy_score=sim_settings["entropy_score"])
+            include_entropy_score=sim_settings["entropy_score"], scalings=self.scalings)
         self.base_allocations = []
         self.parties = vote_table["parties"]
         self.sim_count = sim_settings["simulation_count"]
@@ -213,7 +218,7 @@ class Simulation():
 
     def run_initial_elections(self):
         for election in self.reference_handler.elections:
-            election.calculate_ref_seat_shares(self.sim_settings["scaling"])
+            election.calculate_ref_seat_shares(self.primary_scaling)
             disparity, excess, shortage = self.calculate_party_disparity(election)
             party_overhang = self.calculate_potential_overhang(election)
             neg_margins, neg_parties = \
@@ -332,7 +337,7 @@ class Simulation():
     def collect_seat_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
             election.calculate_ref_seat_shares(
-                self.sim_settings["scaling"], id=self.iteration)
+                self.primary_scaling, id=self.iteration)
             ids = self.extended_ref_seat_shares(election)
             cs = np.array(election.results["fix"])
             ts = np.array(election.results["all"])
@@ -409,11 +414,33 @@ class Simulation():
                 prefix = 'cmp_' + cmp_system["name"]
                 self.add_deviation(election, cmp_election, prefix, deviations)
             self.other_seat_spec_measures(election, system, deviations)
-            self.seats_minus_shares_measures(election, i, deviations)
+            self.party_reference_measures(election, deviations)
             self.specific_measures(election, deviations)
+            self.reference_measures(election, deviations)
         for m in deviations.keys():
             if m in self.stat:
                 self.stat[m].update(deviations[m])
+
+    def reference_measures(self, election, deviations):
+        seats = np.asarray(election.results["all_const_seats"])
+        totals = seats.sum()
+        for scaling in dict.fromkeys(["const", *self.scalings]):
+            reference = (election.ref_seat_shares if scaling == self.primary_scaling
+                         else election.reference_seats(scaling))
+            values = list_measures(seats, reference)
+            if scaling == "const":
+                deviations.add("lh_lists", values["deviation"] / (2 * totals) if totals else 0)
+                deviations.add("local_squared", values["relative_squared"])
+            if scaling in self.scalings:
+                for key, value in values.items():
+                    deviations.add(f"{scaling}_{key}", value)
+        party_seats = np.asarray(election.results["all_grand_total"])
+        difference = party_seats - election.fractional_party_seats
+        deviations.add("lh_parties", np.abs(difference).sum() / (2 * party_seats.sum()))
+        deviations.add("party_total_surplus", max(0, difference.max()))
+        deviations.add("party_total_shortfall", max(0, -difference.min()))
+        deviations.add("lh_constituencies",
+                       self.geographical_seat_displacement(election) / totals if totals else 0)
 
     def calculate_disparity(self, election):
         excess, shortage, disparity = 0, 0, 0
@@ -464,39 +491,21 @@ class Simulation():
             const_party_margin_counts.append(pmc)
         return add_totals(const_party_margins), add_totals(const_party_margin_counts)
 
-    def seats_minus_shares_measures(self, election, i, deviations):
-        for (funcname, (function, div_h)) in function_dict.items():
-            measure = "sum_" + funcname ### KJ. bæta við að sleppa listum með atkvæði sem eru núll
-            value = self.sum_func(election, function, div_h, i)
-            deviations.add(measure, value / 2 if funcname == 'abs' else value)
-        for (measure, function) in function_dict_party.items():
-            for extension in ['const', 'nat', 'overall'] if self.party_votes_specified else ['overall']:
-                measure_name = measure + '_' + extension
-                value = self.party_func(measure_name, election, function)
-                deviations.add(
-                    measure_name, value / 2 if measure == 'sum_abs_party' else value)
+    def party_reference_measures(self, election, deviations):
+        allocated = np.asarray(election.results["all_grand_total"])
+        deviations.add("sum_sq_party_overall",
+                       ((allocated - election.fractional_party_seats) ** 2).sum())
+        if self.party_votes_specified:
+            for extension, key, reference in (
+                    ("const", "all_const_total", election.total_ref_const),
+                    ("nat", "all_nat_seats", election.total_ref_nat)):
+                difference = np.asarray(election.results[key]) - reference
+                deviations.add(f"sum_abs_party_{extension}", np.abs(difference).sum() / 2)
+                deviations.add(f"sum_sq_party_{extension}", (difference ** 2).sum())
 
     def specific_measures(self, election, deviations):
-        (slope, corr) = self.bias(election)
-        deviations.add(
-            "max_overrepresentation",
-            self.max_overrepresentation(election),
-        )
-        deviations.add(
-            "max_underrepresentation",
-            self.max_underrepresentation(election),
-        )
-        surplus, shortfall = self.max_seat_share_deviations(election)
-        deviations.add("max_seat_share_surplus", surplus)
-        deviations.add("max_seat_share_shortfall", shortfall)
-        deviations.add(
-            "geographical_displacement",
-            self.geographical_seat_displacement(election),
-        )
-        deviations.add(
-            "constituency_disparity",
-            self.constituency_disparity(election),
-        )
+        slope, corr = self.bias(election)
+        deviations.add("constituency_disparity", self.constituency_disparity(election))
         deviations.add("bias_slope", slope)
         deviations.add("bias_corr", corr)
 
@@ -566,44 +575,6 @@ class Simulation():
                 difference /= 2
             deviations.add(measure, difference)
 
-    def sum_func(self, election, function, div_h, election_number):
-        measure = 0
-        num_c = election.nconst
-        for c in range(num_c):
-            for p in range(self.nparty):
-                s = election.results["all_const_seats"][c][p]
-                if election.votes[c][p] == 0:
-                    continue
-                h = election.ref_seat_shares[c][p]
-                if div_h:
-                    if h == 0:
-                        h = self.base_allocations[election_number][
-                            'ref_seat_shares'][c][p]
-                    if h == 0:
-                        continue
-                measure += function(h, s)
-        return measure
-
-    def party_func(self, name, election, function):
-        measure = 0
-        for p in range(self.nparty):
-            if name.endswith('overall'):
-                s = election.results['all_grand_total'][p]
-                h = election.total_ref_seat_shares[p]
-            elif name.endswith('const'):
-                s = election.results['all_const_total'][p]
-                h = election.total_ref_const[p]
-            elif name.endswith('nat'):
-                s = election.results['all_nat_seats'][p]
-                h = election.total_ref_nat[p]
-            if name.startswith('sum'):
-                measure += function(h,s)
-            elif name.startswith('max'):
-                measure = max(measure, function(h,s))
-            elif name.startswith('min'):
-                measure = min(measure, function(h,s))
-        return measure
-
     def run_sensitivity(self, votes, party_votes, rng):
         """Retain individual displacements as well as each outer mean."""
         for election in self.sensitivity_handler.elections:
@@ -648,48 +619,6 @@ class Simulation():
         (slope,corr) = find_bias(
             election.results['all_const_seats'], election.ref_seat_shares)
         return slope,corr
-
-    # Minimized by D'Hondt in an unconstrained single-constituency allocation.
-    def max_overrepresentation(self, election):
-        ratios = []
-        for seats, references in zip(
-                election.results['all_const_seats'],
-                election.ref_seat_shares):
-            for seat, reference in zip(seats, references):
-                if seat == 0:
-                    continue
-                if reference == 0:
-                    raise RuntimeError(
-                        "Relative over-representation is undefined when a "
-                        "list with zero reference seats receives a seat.")
-                ratios.append(seat / reference)
-        return max(ratios, default=0)
-
-    # Minimized by Adams in an unconstrained single-constituency allocation.
-    def max_underrepresentation(self, election):
-        return max((
-            max(0, (reference - seat) / reference)
-            for seats, references in zip(
-                election.results['all_const_seats'],
-                election.ref_seat_shares)
-            for seat, reference in zip(seats, references)
-            if reference != 0
-        ), default=0)
-
-    @staticmethod
-    def max_seat_share_deviations(election):
-        """Maximum surplus and shortfall as proportions of final seats."""
-        surplus, shortfall = 0, 0
-        for seats, references in zip(
-                election.results['all_const_seats'], election.ref_seat_shares):
-            total = sum(seats)
-            if total == 0:
-                continue
-            for seat, reference in zip(seats, references):
-                difference = (seat - reference) / total
-                surplus = max(surplus, difference)
-                shortfall = max(shortfall, -difference)
-        return surplus, shortfall
 
     def attributes(self):
         builtins = {bool,int,float,complex,str,range,tuple,set,list,dict} # primary ones
@@ -794,7 +723,11 @@ class Sim_result:
         for m in self.MEASURES:
             dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
             for i in range(self.nsys):
-                self.data[i][m] = dict((s, dd[s][i]) for s in self.MEASURE_LIST)
+                self.data[i][m] = {
+                    s: ("∞" if s in {"avg", "max"} else "–")
+                    if self.stat[m].infinite[i] else dd[s][i]
+                    for s in self.MEASURE_LIST}
+
 
         for m in PARTY_MEASURES:
             for (i, sm) in enumerate(self.stat[m]):

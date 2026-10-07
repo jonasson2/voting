@@ -1,5 +1,7 @@
 """Excel workbook writer for simulation results."""
 
+from reference_measures import PERCENT_MEASURES, measure_tooltip
+
 from datetime import datetime
 
 import numpy as np
@@ -54,6 +56,8 @@ class SimulationWorkbook:
         self.results = results
         self.workbook = xlsxwriter.Workbook(filename)
         self.fmt = prepare_formats(self.workbook, display_settings)
+        self.quality_title_format = self.workbook.add_format(
+            {"bold": True, "text_wrap": True, "valign": "top"})
         self.include_histogram_sheets = include_histogram_sheets
         self.systems = results["systems"]
         self.parties = self.systems[0]["parties"] + ["Total"]
@@ -167,14 +171,26 @@ class SimulationWorkbook:
         return rows
 
     def write_quality_group(
-            self, worksheet, top, group_id, title, row_titles, rows):
+            self, worksheet, top, group_id, title, row_titles, rows, side_title=False):
         from excel_util import write_matrix
 
-        if title:
+        if side_title:
+            if title and len(rows) > 1:
+                worksheet.merge_range(top, 0, top + len(rows) - 1, 0,
+                                      title, self.quality_title_format)
+            else:
+                worksheet.write(top, 0, title, self.quality_title_format)
+            worksheet.write_column(top, 1, [title[0] for title in row_titles])
+        elif title:
             worksheet.write(top, 0, title, self.fmt["h"])
             top += 1
-        worksheet.write_column(top, 0, [title[0] for title in row_titles])
-        worksheet.write_column(top, 1, [title[1] for title in row_titles])
+        if not side_title:
+            worksheet.write_column(top, 0, [title[0] for title in row_titles])
+            worksheet.write_column(top, 1, [title[1] for title in row_titles])
+        for index, row in enumerate(rows):
+            tooltip = measure_tooltip(row.get("measure", ""))
+            if tooltip:
+                worksheet.write_comment(top + index, 1 if side_title else 0, tooltip)
         column = 2
         for statistic in EXCEL_HEADINGS:
             base_format = (
@@ -185,7 +201,7 @@ class SimulationWorkbook:
                 worksheet, top, column,
                 [row[statistic] for row in rows],
                 format=[
-                    self.fmt["percentages"] if row.get("measure") == "entropy_score"
+                    self.fmt["percentages"] if row.get("measure") in PERCENT_MEASURES
                     else self.fmt["base" if base_format else "cell"]
                     for row in rows
                 ],
@@ -197,7 +213,8 @@ class SimulationWorkbook:
         party_votes = self.results["vote_table"]["party_vote_info"]["specified"]
         groups = MeasureGroups(
             self.systems, party_votes, "",
-            include_entropy_score=self.results["sim_settings"]["entropy_score"])
+            include_entropy_score=self.results["sim_settings"]["entropy_score"],
+            scalings=self.results["sim_settings"]["scaling"])
         data = self.quality_measure_data(groups)
         worksheet = self.workbook.add_worksheet("Quality measures")
         worksheet.freeze_panes(4, 2)
@@ -205,12 +222,7 @@ class SimulationWorkbook:
         worksheet.write(1, 0, "Votes-and-seats table:", self.fmt["h"])
         worksheet.write(1, 1, self.results["vote_table"]["name"], self.fmt["basic"])
         worksheet.set_column(0, 0, 20)
-        worksheet.write(
-            3, 0,
-            "Differences between allocated and fractional reference seat shares, "
-            "summed over constituency lists",
-            self.fmt["h"])
-        worksheet.set_column(1, 1, 25)
+        worksheet.set_column(1, 1, 58)
         column = 2
         for statistic in data["stats"]:
             worksheet.write(2, column, data["stat_headings"][statistic], self.fmt["h"])
@@ -231,6 +243,7 @@ class SimulationWorkbook:
                 group["title"],
                 list(group["rows"].values()),
                 data[group_id],
+                side_title=group.get("side_title", False),
             )
 
         sensitivity = self.results.get("sensitivity_data")

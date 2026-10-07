@@ -812,7 +812,7 @@ class Election:
                     fmtlist[j] = "c"  if maxw <= 2 else "l"
             table['format'] = "".join(fmtlist)
 
-    def calculate_ref_seat_shares(self, scaling, id=None):
+    def reference_seats(self, scaling):
         """Calculate threshold-free fractional seat shares for quality measures."""
         col_sums = np.array(self.fractional_party_seats)
         row_sums = np.array(self.final_row_sums)
@@ -831,7 +831,10 @@ class Election:
         elif col_constraints:
             _scale_to_columns(ref_seat_shares, col_sums)
 
-        self.ref_seat_shares = ref_seat_shares
+        return ref_seat_shares
+
+    def calculate_ref_seat_shares(self, scaling, id=None):
+        self.ref_seat_shares = self.reference_seats(scaling)
         self.total_ref_const = self.ref_seat_shares.sum(0)
         self.total_ref_seat_shares = self.fractional_party_seats.copy()
         if self.party_vote_info['specified']:

@@ -13,6 +13,11 @@ input[inputmode="numeric"] {
   padding: 0px     !important;
 }
 
+.nav-tabs.simulator-tabs .nav-link,
+.nav-tabs.simulator-tabs .nav-link.active {
+  color: #a02028;
+}
+
 h2 {
   margin-left: 15px;
   margin-top: 1em;
@@ -23,9 +28,61 @@ h3 {
   margin-left: 15px;
 }
 
+h4:not(.alert-heading),
+.settings-heading,
+.vote-table-section-heading {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  margin-top: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
 th {
   text-align: center;
   font-weight: bold;
+}
+
+.btn:not(.btn-sm):not(.btn-lg) {
+  font-size: 1.1rem;
+}
+
+.btn.btn-secondary {
+  color: #fff;
+  background-color: #174a78;
+  border-color: #174a78;
+}
+
+.btn.btn-secondary:hover,
+.btn.btn-secondary:focus,
+.btn.btn-secondary:not(:disabled):not(.disabled):active,
+.btn.btn-secondary:not(:disabled):not(.disabled).active {
+  color: #fff;
+  background-color: #103657;
+  border-color: #103657;
+}
+
+.btn.btn-secondary:disabled,
+.btn.btn-secondary.disabled {
+  background-color: #174a78;
+  border-color: #174a78;
+}
+
+input[type="checkbox"] {
+  accent-color: #174a78;
+}
+
+.custom-checkbox .custom-control-input:enabled:checked ~ .custom-control-label::before,
+.custom-checkbox .custom-control-input:enabled:indeterminate ~ .custom-control-label::before {
+  background-color: #174a78;
+  border-color: #174a78;
+}
+
+.custom-checkbox .custom-control-input:focus ~ .custom-control-label::before {
+  box-shadow: 0 0 0 0.2rem rgba(23, 74, 120, 0.25);
+}
+
+.custom-checkbox .custom-control-input:focus:not(:checked) ~ .custom-control-label::before {
+  border-color: #174a78;
 }
 
 /***************************************************/
@@ -115,7 +172,6 @@ th {
 }
 
 .settings-heading {
-  margin: 12px 0 4px;
   max-width: 100%;
   width: fit-content;
 }
@@ -137,7 +193,8 @@ th {
 }
 
 .vote-table-section-heading {
-  margin: 12px 0 0;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .settings-row label {
@@ -171,9 +228,34 @@ th {
   margin: 0 15px;
 }
 
-.tooltip.scaling-tooltip,
-.tooltip.scaling-tooltip .tooltip-inner {
-  max-width: min(400px, calc(100vw - 24px));
+/* Shared tooltip appearance; anchors belong on the relevant text or control. */
+.tooltip.b-tooltip {
+  --tooltip-blue: #174a78;
+}
+.tooltip.b-tooltip.b-tooltip-primary .tooltip-inner {
+  max-width: min(300px, calc(100vw - 24px));
+  background-color: var(--tooltip-blue);
+  text-align: left;
+}
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-top .arrow::before,
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="top"] .arrow::before {
+  border-top-color: var(--tooltip-blue);
+}
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-right .arrow::before,
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="right"] .arrow::before {
+  border-right-color: var(--tooltip-blue);
+}
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-bottom .arrow::before,
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
+  border-bottom-color: var(--tooltip-blue);
+}
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-left .arrow::before,
+.tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="left"] .arrow::before {
+  border-left-color: var(--tooltip-blue);
+}
+.tooltip.b-tooltip.scaling-tooltip,
+.tooltip.b-tooltip.scaling-tooltip .tooltip-inner {
+  max-width: min(600px, calc(100vw - 24px));
 }
 
 /* Fixed dropdown widths, including room for the arrow. */
@@ -462,7 +544,7 @@ measures {
 }
 .add-button-symbol {
   display: inline-block;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 600;
   line-height: 0.75;
 }
@@ -478,4 +560,23 @@ measures {
 
 .votematrix button.split-adjustment-button {
   min-height: 22px;
+}
+
+/* Shared typography for simulator section titles. */
+.simulator-title,
+.settings-heading,
+.vote-table-section-heading,
+.simulation-settings-section-title {
+  font-family: Verdana, sans-serif;
+  font-weight: normal;
+  letter-spacing: normal;
+  color: #174a78;
+}
+
+.simulation-settings-section-title {
+  font-size: 1.4rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  width: fit-content;
+  max-width: 100%;
 }

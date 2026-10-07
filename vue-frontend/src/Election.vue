@@ -1,6 +1,5 @@
 <template>
 <div v-if="results.length > 0">
-  <h3>Results based on the source votes</h3>
   <DownloadNameDialog
     id="election-results-download-name"
     ref="downloadNameDialog"
@@ -18,18 +17,16 @@
   </b-container>
   <b-tabs v-model="resultIndex" no-key-nav card>
     <b-tab v-for="(system, activeTabIndex) in systems" :key="resultTabKey(system)"
-           :title="system.name">
+           :title="system.name" class="px-0">
       <template v-if = "results[activeTabIndex] == null">
         <b-alert :show="true">
           No solution exists.
         </b-alert>
       </template>
       <template v-else>
-        <b-container fluid align-h="start" v-if="results[activeTabIndex] !== undefined">
-          <b-row>
-            <h4>Seat allocation</h4>
-          </b-row>
-            <ResultMatrix
+        <div class="election-results" v-if="results[activeTabIndex] !== undefined">
+          <h4 class="simulator-title">Seat allocation based on the source votes</h4>
+            <ResultMatrix class="px-0"
               :constituencies="systems[activeTabIndex].constituencies"
               :parties="vote_table.parties"
               :values="results[activeTabIndex].display_results"
@@ -54,10 +51,7 @@
               </li>
             </ul>
           </b-alert>
-          <b-row>
-            <br>
-            <h4>Seat allocation step-by-step</h4>
-          </b-row>          
+          <h4 class="simulator-title">Seat allocation step-by-step</h4>
           <b-row>
             <b-col
               v-for="(table, demoIndex) in results[activeTabIndex].demo_tables"
@@ -69,7 +63,7 @@
               </ResultDemonstration>
             </b-col>
           </b-row>
-        </b-container>
+        </div>
       </template>
     </b-tab>
     <template #empty>
@@ -166,3 +160,14 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.election-results {
+  margin: 0 15px;
+}
+
+.election-results > h4:first-child {
+  margin-top: 0;
+}
+
+</style>

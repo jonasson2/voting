@@ -124,6 +124,11 @@ def check_simul_settings(sim_settings):
     for key in ["simulation_count", "gen_method", "scaling", "const_rsd"]:
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
+    from reference_measures import selected_scalings
+    sim_settings["scaling"] = selected_scalings(sim_settings["scaling"])
+    for key in ("show_additional", "show_single_seat"):
+        value = sim_settings.get(key, False)
+        sim_settings[key] = value if isinstance(value, bool) else parse_bool(str(value))
     sim_settings.setdefault("cpu_count", 4)
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("sensitivity_simulation_count", 3)

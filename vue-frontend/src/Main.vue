@@ -28,6 +28,7 @@
     </template>
   </b-alert>
   <b-tabs
+    nav-class="simulator-tabs"
     active-nav-item-class="font-weight-bold"
     no-key-nav card
     >

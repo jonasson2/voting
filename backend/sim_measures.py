@@ -3,6 +3,7 @@
 
 from measure_groups import MeasureGroups, fractional_digits
 from measure_groups import headingType
+from reference_measures import PERCENT_MEASURES, measure_tooltip
 from dictionaries import STATISTICS_HEADINGS
 from util import disp
 from copy import deepcopy
@@ -10,10 +11,6 @@ from math import sqrt
 
 
 STRUCTURAL_ZERO_GROUPS = {"cmpList", "cmpParty"}
-WEB_STD_GROUPS = {
-    "shareTitle", "toLists", "toPartiesTotal", "other",
-}
-
 def combine_titles(titles, last_column1):
     (column1, column2) = titles
     if not column1:
@@ -33,14 +30,16 @@ def _system_display_value(
             or (measure == "entropy_relative"
                 and not entropy_relative_available[system_index])):
         return "–"
-    value = normalize_negative_zero(
-        data[system_index]["measures"][measure][stat])
+    value = data[system_index]["measures"][measure][stat]
+    if isinstance(value, str):
+        return value
+    value = normalize_negative_zero(value)
     result = {
         "value": value,
         "integer": fractional_digits(group, stat) == 0,
         "ci": None,
     }
-    if measure == "entropy_score":
+    if measure in PERCENT_MEASURES:
         result["percentage"] = True
     if stat == "avg" and nsim > 0:
         std = data[system_index]["measures"][measure]["std"]
@@ -51,7 +50,7 @@ def _system_display_value(
 def _measure_row(
         data, systems, group, measure, title, nsim,
         entropy_score_available, entropy_relative_available):
-    row = {"rowtitle": title}
+    row = {"rowtitle": title, "measure": measure, "tooltip": measure_tooltip(measure)}
     if measure == "entropy_score":
         row["rowtitle"] += " (%)"
         row["tooltip"] = (
@@ -61,17 +60,11 @@ def _measure_row(
     elif measure == "entropy_relative":
         row["tooltip"] = (
             "Product of allocated-seat quotients divided by the product for "
-            "system 1, calculated for each simulated election. System 1 "
-            "equals 1; values above 1 outperform it. Available when the "
-            "systems have the same divisor rule and total seat count.")
-    elif measure in {"max_seat_share_surplus", "max_seat_share_shortfall"}:
-        direction = "surplus" if measure.endswith("surplus") else "shortfall"
-        row["tooltip"] = (
-            f"Largest list seat {direction} relative to its fractional reference "
-            "allocation, divided by that constituency's final total seats "
-            "(fixed plus adjustment). Expressed as a proportion; 0.3 means a "
-            "seat-share difference of 30 percentage points. "
-            "Constituencies with no final seats are excluded.")
+            "system 1. Useful when adjustment-seat counts or limits differ "
+            "between constituencies, for example with fixed versus flexible "
+            "seat counts: each system's entropy score uses its own feasible "
+            "optimum, so both can score 100% despite different quotient products. "
+            "Requires the same divisor rule and total constituency-seat count.")
     elif measure == "constituency_disparity":
         row["tooltip"] = (
             "Highest constituency votes per seat divided by lowest. "
@@ -102,12 +95,12 @@ def _vue_data_header(systems):
         "system_names": names,
         "group_ids": [],
         "group_stats": {},
-        "group_titles": {
-            "topLeft": (
-                "Differences between allocated and fractional reference\n"
-                "seat shares, summed over constituency lists"
-            )
-        },
+        "group_titles": {},
+        "side_titles": {},
+        "block_headers": {},
+        "block_continues": {},
+        "initial_title": "List allocation quality measures",
+        "group_options": {},
         "group_messages": {},
         "footnotes": {},
         "show": {},
@@ -120,14 +113,15 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
         return
     groups = (
         ("sensitivityWithin", "sensitivity_within_parties",
-         "Seats displaced between lists within parties"),
+         "list seat\ndisplacements"),
         ("sensitivityBetween", "sensitivity_between_parties",
-         "Seats displaced between parties"),
+         "party seat\ndisplacements"),
     )
     nsys = len(systems)
     for group_id, measure, title in groups:
         vuedata["group_ids"].append(group_id)
         vuedata["group_titles"][group_id] = title
+        vuedata["side_titles"][group_id] = True
         vuedata["headingType"][group_id] = (
             "empty" if group_id == "sensitivityBetween" else "systems")
         vuedata["group_stats"][group_id] = ["avg"]
@@ -172,17 +166,22 @@ def add_vuedata(sim_result_dict, parallel):
         "entropy_score", False)
     groups = MeasureGroups(
         systems, party_votes_specified, "",
-        include_entropy_score=include_entropy_score)
+        include_entropy_score=include_entropy_score,
+        scalings=sim_result_dict.get("sim_settings", {}).get("scaling", ["const"]))
     nsim = sim_result_dict["iteration"]
     entropy_score_available = sim_result_dict.get(
         "entropy_score_available", [True] * len(systems))
     entropy_relative_available = sim_result_dict.get(
         "entropy_relative_available", [True] * len(systems))
     vuedata = _vue_data_header(systems)
+    vuedata["display_options"] = {key: sim_result_dict.get("sim_settings", {}).get(key, False)
+                                  for key in ("show_additional", "show_single_seat")}
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
-        if id not in WEB_STD_GROUPS:
+        vuedata["side_titles"][id] = group.get("side_title", False)
+        vuedata["group_options"][id] = group.get("option")
+        if not group.get("side_title"):
             vuedata["group_stats"][id] = ["avg"]
         last_column1 = ""
         vuedata[id] = []
@@ -194,6 +193,7 @@ def add_vuedata(sim_result_dict, parallel):
             row = _measure_row(
                 data, systems, id, measure, rowtitle, nsim,
                 entropy_score_available, entropy_relative_available)
+            row["option"] = group.get("options", {}).get(measure)
             if vuedata[id] and measure in group.get("subgroup_starts", ()):
                 row["subgroup_start"] = True
             vuedata[id].append(row)
@@ -207,12 +207,29 @@ def add_vuedata(sim_result_dict, parallel):
             for system_data in data
             for measure in groups["cmpParty"]["rows"])
         if not has_party_difference:
-            vuedata["show"]["cmpParty"] = False
-            vuedata["group_messages"]["cmpPartyTitle"] = (
+            vuedata["group_messages"]["cmpParty"] = (
                 "All tested systems gave identical party seat totals "
                 "in this simulation.")
     _add_sensitivity_vuedata(
         vuedata, sim_result_dict.get("sensitivity_data"), systems, nsim)
+    # Adjacent sections share one system header and have no spacer between them.
+    for first, second, title in (
+            ("parity", "toPartiesTotal", "Total allocation quality measures"),
+            ("cmpList", "cmpParty", "System comparison"),
+            ("sensitivityWithin", "sensitivityBetween", "Sensitivity")):
+        vuedata["block_headers"][first] = title
+        vuedata["block_continues"][first] = second
+    list_groups = list(groups)[:list(groups).index("parity")]
+    for first, second in zip(list_groups, list_groups[1:]):
+        vuedata["block_continues"][first] = second
+    vuedata["group_titles"].update({
+        "cmpList": "Total list seat\ndifference",
+        "cmpParty": "Total party seat\ndifference",
+    })
+    for group_id in ("cmpList", "cmpParty"):
+        vuedata["side_titles"][group_id] = True
+    for group_id in ("cmpListTitle", "cmpPartyTitle"):
+        vuedata["show"][group_id] = False
     sim_result_dict["vuedata"] = vuedata
 
 # Statistic ids are an array in                        vuedata["stats"]
