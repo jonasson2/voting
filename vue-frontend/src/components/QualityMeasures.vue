@@ -75,7 +75,7 @@
           <tr v-for="(row, rowidx) in (vuedata.group_messages?.[id] ? [] : visibleRows(id))"
               :key="id + rowidx"
               :class="{
-                'block-start': vuedata.side_titles?.[id] && rowidx === 0 && id !== 'const',
+                'block-start': vuedata.side_titles?.[id] && rowidx === 0,
                 'subgroup-start': row.subgroup_start,
                 'block-end': rowidx === visibleRows(id).length - 1,
               }">
