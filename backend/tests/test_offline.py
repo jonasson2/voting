@@ -118,7 +118,7 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(len([row for row in rows
-                                  if (len(row) > 1 and row[1].endswith('% CoV'))]), 6)
+                                  if (len(row) > 1 and row[1].endswith('% CoV'))]), 12)
 
     def test_chunk_ranges_cover_replicates_once(self):
         self.assertEqual(split_replicates(7, 3), [(3, 0), (2, 3), (2, 5)])
@@ -265,7 +265,7 @@ class OfflineSimulationTest(unittest.TestCase):
                     self.assertIn(expected, [row[1:] for row in rows])
             self.assertNotIn(['Quality measures'], rows)
             self.assertNotIn(['Average & 95% confidence interval'], rows)
-            self.assertEqual(sum((len(row) > 1 and row[1].endswith('% CoV')) for row in rows), 6)
+            self.assertEqual(sum((len(row) > 1 and row[1].endswith('% CoV')) for row in rows), 12)
             self.assertFalse(any('all seats as fixed' in row[0] for row in rows))
 
     def test_relative_entropy_is_a_ratio_and_survives_statistics_reload(self):
@@ -299,7 +299,7 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertAlmostEqual(report['data'][0]['measures']['entropy_relative']['avg'], 1)
             self.assertAlmostEqual(report['data'][1]['measures']['entropy_relative']['avg'], 1)
             sensitivity = [row for row in rows if (len(row) > 1 and row[1].endswith('% CoV'))]
-            self.assertEqual(len(sensitivity), 6)
+            self.assertEqual(len(sensitivity), 12)
             self.assertTrue(all(len(row) == 5 for row in sensitivity))
             write_csv(output, combine_chunks([read_chunk_result(statfile)]))
             self.assertEqual(output.read_bytes(), direct)

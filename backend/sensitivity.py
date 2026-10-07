@@ -5,6 +5,15 @@ import numpy as np
 from generate_votes import generate_votes
 
 
+SENSITIVITY_CHANGE_GROUPS = (
+    ("sensitivityListOnlyChange", "sensitivity_list_only_change",
+     "List allocations change;\nparty totals unchanged"),
+    ("sensitivityPartyChange", "sensitivity_party_change",
+     "Party totals change"),
+)
+SENSITIVITY_PERCENT_MEASURES = {measure for _, measure, _ in SENSITIVITY_CHANGE_GROUPS}
+
+
 def sensitivity_statistics(outer, perturbations):
     """Separate individual displacement spread from uncertainty of its mean.
 
@@ -127,3 +136,61 @@ def seat_displacements(base_elections, perturbed_elections):
         between_parties.append(float(party))
         within_parties.append(float(max(0, within)))
     return np.asarray(between_parties), np.asarray(within_parties)
+
+
+SINGLE_LIST_GROUPS = (
+    ("singleListNoChange", "single_list_no_change", "No seat changes",
+     "Entire allocation unchanged."),
+    ("singleListOtherParties", "single_list_other_parties", "Changes confined to other parties",
+     "Some seats change, but no list of the selected party changes. All party totals remain unchanged."),
+    ("singleListOtherLists", "single_list_other_lists", "Changes to other lists\nof selected party",
+     "Other lists of the selected party change, but the selected list does not. Other parties may also change. All party totals remain unchanged."),
+    ("singleListSelected", "single_list_selected", "Changes to selected list",
+     "The selected list's seat count changes; other lists may also change. All party totals remain unchanged."),
+    ("singleListPartyTotals", "single_list_party_totals", "Party totals change",
+     "At least one party's total changes, regardless of which lists change."),
+)
+SINGLE_LIST_MEASURES = [measure for _, measure, _, _ in SINGLE_LIST_GROUPS]
+SENSITIVITY_PERCENT_MEASURES.update(SINGLE_LIST_MEASURES)
+
+
+def single_list_perturbations(votes, count, cov, distribution, rng):
+    """Choose a party, then one of its positive-vote constituency lists uniformly.
+
+    Zero-vote cells are treated as absent lists. National party votes are not
+    selected or rescaled. Each draw changes just one constituency vote cell.
+    """
+    from randomness import random_uniform
+
+    votes = np.asarray(votes, dtype=float)
+    parties = np.flatnonzero(np.any(votes > 0, axis=0))
+    if not len(parties):
+        raise ValueError("Single-list sensitivity requires a positive-vote list.")
+    selected = []
+    for _ in range(count):
+        party = int(parties[int(random_uniform(rng, 0, len(parties)))])
+        lists = np.flatnonzero(votes[:, party] > 0)
+        constituency = int(lists[int(random_uniform(rng, 0, len(lists)))])
+        selected.append((constituency, party))
+    draws = generate_votes([votes[c, p] for c, p in selected], cov, distribution, rng)
+    for (constituency, party), draw in zip(selected, draws):
+        perturbed = votes.copy()
+        perturbed[constituency, party] = draw
+        yield constituency, party, perturbed
+
+
+def single_list_category(base, perturbed, constituency, party):
+    """Return one of five mutually exclusive outcome indices."""
+    if not np.array_equal(base.results["all_grand_total"],
+                          perturbed.results["all_grand_total"]):
+        return 4
+    changed = np.asarray(base.results["all_const_seats"]) != np.asarray(
+        perturbed.results["all_const_seats"])
+    if changed[constituency, party]:
+        return 3
+    if base.party_vote_info["specified"]:
+        changed = np.vstack((changed, np.asarray(base.results["all_nat_seats"])
+                             != np.asarray(perturbed.results["all_nat_seats"])))
+    if changed[:, party].any():
+        return 2
+    return 1 if changed.any() else 0

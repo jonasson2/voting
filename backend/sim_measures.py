@@ -4,6 +4,7 @@
 from measure_groups import MeasureGroups, fractional_digits
 from measure_groups import headingType
 from reference_measures import PERCENT_MEASURES, measure_tooltip
+from sensitivity import SENSITIVITY_CHANGE_GROUPS, SENSITIVITY_PERCENT_MEASURES, SINGLE_LIST_GROUPS
 from dictionaries import STATISTICS_HEADINGS
 from util import disp
 from copy import deepcopy
@@ -117,13 +118,19 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
         ("sensitivityBetween", "sensitivity_between_parties",
          "party seat\ndisplacements"),
     )
+    groups += SENSITIVITY_CHANGE_GROUPS
+    groups += tuple((group, measure, title) for group, measure, title, _ in SINGLE_LIST_GROUPS)
+    single_tooltips = {measure: tooltip for _, measure, _, tooltip in SINGLE_LIST_GROUPS}
     nsys = len(systems)
     for group_id, measure, title in groups:
+        percentage = measure in SENSITIVITY_PERCENT_MEASURES
+        if measure not in sensitivity_data:
+            continue
         vuedata["group_ids"].append(group_id)
         vuedata["group_titles"][group_id] = title
         vuedata["side_titles"][group_id] = True
         vuedata["headingType"][group_id] = (
-            "empty" if group_id == "sensitivityBetween" else "systems")
+            "systems" if group_id in {"sensitivityWithin", "singleListNoChange"} else "empty")
         vuedata["group_stats"][group_id] = ["avg"]
         vuedata["show"][group_id] = True
         vuedata[group_id] = []
@@ -136,6 +143,19 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
                     "perturbations sharing a base election; with one base election "
                     "they describe uncertainty conditional on that election."),
             }
+            if percentage:
+                row["tooltip"] = (
+                    "Percentage of perturbations in this category, each compared "
+                    "with its own base election. The two change categories and "
+                    "no change sum to 100%. Confidence intervals account for "
+                    "perturbations sharing a base election; with one base election "
+                    "they describe uncertainty conditional on that election.")
+            if measure in single_tooltips:
+                row["tooltip"] = single_tooltips[measure] + (
+                    " Percentage of single-list perturbations compared with their own "
+                    "base election. Confidence intervals account for perturbations "
+                    "sharing a base election; with one base election they are conditional "
+                    "on that election.")
             for statistic in vuedata["stats"]:
                 values = sensitivity_data[measure][statistic][row_index]
                 row[statistic] = []
@@ -148,6 +168,8 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
                         "integer": False,
                         "ci": None,
                     }
+                    if percentage:
+                        entry["percentage"] = True
                     if statistic == "avg" and nsim > 0:
                         se = sensitivity_data[measure]["se"][row_index][
                             value_index]
@@ -218,6 +240,15 @@ def add_vuedata(sim_result_dict, parallel):
             ("cmpList", "cmpParty", "System comparison"),
             ("sensitivityWithin", "sensitivityBetween", "Sensitivity")):
         vuedata["block_headers"][first] = title
+        vuedata["block_continues"][first] = second
+    sensitivity_groups = [group for group in vuedata["group_ids"]
+                          if group.startswith("sensitivity")]
+    for first, second in zip(sensitivity_groups, sensitivity_groups[1:]):
+        vuedata["block_continues"][first] = second
+    single_groups = [group for group in vuedata["group_ids"] if group.startswith("singleList")]
+    if single_groups:
+        vuedata["block_headers"][single_groups[0]] = "Single-list sensitivity"
+    for first, second in zip(single_groups, single_groups[1:]):
         vuedata["block_continues"][first] = second
     list_groups = list(groups)[:list(groups).index("parity")]
     for first, second in zip(list_groups, list_groups[1:]):

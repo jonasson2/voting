@@ -29,10 +29,16 @@ def simulation_settings(results):
                  "data": SCALINGS[primary_scaling(settings)]})
     rows.append({"label": "Sensitivity measures calculated",
                  "data": "yes" if settings.get("sensitivity") else "no"})
+    rows.append({"label": "Single-list sensitivity calculated",
+                 "data": "yes" if settings.get("single_list_sensitivity") else "no"})
+    if settings.get("single_list_sensitivity"):
+        rows.append({"label": "Single-list perturbations per major simulation",
+                     "data": settings["single_list_simulation_count"]})
     if settings.get("sensitivity"):
+        rows.append({"label": "Number of perturbations per major simulation",
+                     "data": settings["sensitivity_simulation_count"]})
+    if settings.get("sensitivity") or settings.get("single_list_sensitivity"):
         rows.extend((
-            {"label": "Number of perturbations per major simulation",
-             "data": settings["sensitivity_simulation_count"]},
             {"label": "Sensitivity generating method",
              "data": settings["sensitivity_gen_method"]},
             {"label": "Sensitivity CoVs (%)",

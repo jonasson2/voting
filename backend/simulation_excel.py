@@ -1,6 +1,7 @@
 """Excel workbook writer for simulation results."""
 
 from reference_measures import PERCENT_MEASURES, measure_tooltip
+from sensitivity import SENSITIVITY_CHANGE_GROUPS, SENSITIVITY_PERCENT_MEASURES, SINGLE_LIST_GROUPS
 
 from datetime import datetime
 
@@ -163,7 +164,7 @@ class SimulationWorkbook:
         sensitivity = self.results["sensitivity_data"]
         rows = []
         for row_index in range(len(sensitivity["covs"])):
-            row = {}
+            row = {"measure": measure}
             for statistic in EXCEL_HEADINGS:
                 row[statistic] = list(
                     sensitivity[measure][statistic][row_index][:len(self.systems)])
@@ -201,7 +202,7 @@ class SimulationWorkbook:
                 worksheet, top, column,
                 [row[statistic] for row in rows],
                 format=[
-                    self.fmt["percentages"] if row.get("measure") in PERCENT_MEASURES
+                    self.fmt["percentages"] if row.get("measure") in PERCENT_MEASURES | SENSITIVITY_PERCENT_MEASURES
                     else self.fmt["base" if base_format else "cell"]
                     for row in rows
                 ],
@@ -254,7 +255,13 @@ class SimulationWorkbook:
                     ("sensitivityWithin", "sensitivity_within_parties",
                      "Seats displaced between lists within parties"),
                     ("sensitivityBetween", "sensitivity_between_parties",
-                     "Seats displaced between parties")):
+                     "Seats displaced between parties"),
+                    *SENSITIVITY_CHANGE_GROUPS,
+                    *((group, measure, "Single-list sensitivity: " + title)
+                      for group, measure, title, _ in SINGLE_LIST_GROUPS)):
+                if measure not in sensitivity:
+                    continue
+                title = title.replace("\n", " ")
                 top = self.write_quality_group(
                     worksheet,
                     top,

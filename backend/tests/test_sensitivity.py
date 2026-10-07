@@ -10,6 +10,7 @@ import numpy as np
 from openpyxl import load_workbook
 
 import entropy_score
+from dictionaries import SENS_MEASURES
 import noweb
 from par_util import write_sim_dict, write_sim_status
 from electionSystem import ElectionSystem
@@ -17,7 +18,8 @@ from input_util import check_simul_settings
 from noweb import load_votes
 from sensitivity import (
     generate_perturbations, seat_displacements, sensitivity_covs,
-    sensitivity_statistics)
+    sensitivity_statistics, single_list_perturbations, single_list_category,
+    SINGLE_LIST_MEASURES)
 from running_stats import Running_stats
 from simulation_excel import SimulationWorkbook
 from simulate import Sim_result, Simulation, SimulationSettings
@@ -64,6 +66,98 @@ class SensitivityTest(unittest.TestCase):
         result = Sim_result(simulation.attributes())
         result.analysis()
         return result
+
+    def test_single_list_draw_changes_only_one_positive_cell(self):
+        votes = np.array([[100., 0., 200.], [50., 0., 0.]])
+        for distribution in ("uniform", "gamma", "beta", "log-normal"):
+            first = list(single_list_perturbations(votes, 20, .01, distribution, make_rng(72)))
+            second = list(single_list_perturbations(votes, 20, .01, distribution, make_rng(72)))
+            for (c, p, draw), (c2, p2, draw2) in zip(first, second):
+                self.assertEqual((c, p), (c2, p2))
+                np.testing.assert_array_equal(draw, draw2)
+                self.assertGreater(votes[c, p], 0)
+                changed = draw != votes
+                self.assertTrue(changed[c, p])
+                self.assertEqual(changed.sum(), 1)
+                self.assertNotEqual(draw.sum(), votes.sum())
+
+    def test_single_list_categories_are_exclusive(self):
+        def election(seats):
+            return SimpleNamespace(party_vote_info={"specified": False}, results={
+                "all_const_seats": seats, "all_grand_total": np.sum(seats, axis=0)})
+        base = election([[2, 2, 2], [2, 2, 2], [2, 2, 2]])
+        cases = [
+            [[2,2,2], [2,2,2], [2,2,2]],  # unchanged
+            [[2,3,1], [2,1,3], [2,2,2]],  # other parties
+            [[2,2,2], [3,1,2], [1,3,2]],  # selected party elsewhere
+            [[3,1,2], [1,3,2], [2,2,2]],  # selected list
+            [[3,1,2], [2,2,2], [2,2,2]],  # party totals take precedence
+        ]
+        for expected, seats in enumerate(cases):
+            self.assertEqual(single_list_category(base, election(seats), 0, 0), expected)
+
+    def test_single_list_settings_and_independent_execution(self):
+        for invalid in (0, -1, 1.5, True):
+            with self.assertRaisesRegex(ValueError, "single-list"):
+                check_simul_settings(self.settings(single_list_sensitivity=True,
+                                                    single_list_simulation_count=invalid))
+        for ordinary in (False, True):
+            result = self.run_simulation(self.settings(
+                sensitivity=ordinary, single_list_sensitivity=True,
+                single_list_simulation_count=7))
+            proportions = [np.array(result.sensitivity_data[m]["avg"])
+                           for m in SINGLE_LIST_MEASURES]
+            np.testing.assert_allclose(sum(proportions), 1)
+            for measure in SINGLE_LIST_MEASURES:
+                self.assertEqual(result.stat[measure].n, 2)
+                self.assertEqual(result.stat[measure + "_perturbations"].n, 14)
+            self.assertEqual("sensitivity_within_parties" in result.stat, ordinary)
+            web = result.get_result_web(False)["vuedata"]
+            self.assertEqual(web["block_headers"]["singleListNoChange"], "Single-list sensitivity")
+            self.assertTrue(web["singleListSelected"][0]["avg"][0]["percentage"])
+
+    def test_single_list_parallel_merging(self):
+        table = load_votes("../data/2-by-2-example.csv")
+        def run(count, start):
+            simulation = Simulation(self.settings(
+                simulation_count=count, sensitivity=False, single_list_sensitivity=True,
+                single_list_simulation_count=5), [self.make_system(table)], table,
+                start_iteration=start)
+            simulation.simulate()
+            return Sim_result(simulation.attributes())
+        whole = run(4, 0)
+        merged = run(2, 0)
+        merged.combine(run(2, 2))
+        whole.analysis()
+        merged.analysis()
+        for measure in SINGLE_LIST_MEASURES:
+            for statistic in ("avg", "se", "std"):
+                np.testing.assert_allclose(whole.sensitivity_data[measure][statistic],
+                                           merged.sensitivity_data[measure][statistic])
+
+    def test_single_list_saved_statistics_and_reports(self):
+        from simulation_chunks import run_chunk, combine_chunks, write_chunk_result, read_chunk_result
+        from sim import write_csv
+        from input_files import validate_settings
+        table = load_votes("../data/2-by-2-example.csv")
+        settings = validate_settings(self.settings(
+            sensitivity=False, single_list_sensitivity=True, single_list_simulation_count=5))
+        self.assertTrue(settings["single_list_sensitivity"])
+        self.assertEqual(settings["single_list_simulation_count"], 5)
+        stats = run_chunk(table, [self.make_system(table)], settings, 2, 0)
+        with TemporaryDirectory() as directory:
+            path = Path(directory)
+            write_chunk_result(path / "stats.json", stats)
+            result = combine_chunks([read_chunk_result(path / "stats.json")])
+            write_csv(path / "results.csv", result)
+            csv = (path / "results.csv").read_text()
+            self.assertIn("Single-list sensitivity", csv)
+            self.assertIn("Changes to selected list", csv)
+            self.assertIn("Single-list perturbations per major simulation,5", csv)
+            SimulationWorkbook(result.get_result_web(False), path / "results.xlsx").write()
+            sheet = load_workbook(path / "results.xlsx")["Quality measures"]
+            titles = [row[0].value for row in sheet]
+            self.assertIn("Single-list sensitivity: Changes to selected list", titles)
 
     def test_cov_list_sorts_any_order_and_rejects_duplicates(self):
         self.assertEqual(
@@ -259,11 +353,8 @@ class SensitivityTest(unittest.TestCase):
         uninterrupted = run(4, 0)
         combined = run(2, 0)
         combined.combine(run(2, 2))
-        for measure in (
-                "sensitivity_between_parties",
-                "sensitivity_within_parties",
-                "sensitivity_between_parties_perturbations",
-                "sensitivity_within_parties_perturbations"):
+        for measure in [*SENS_MEASURES,
+                        *[m + "_perturbations" for m in SENS_MEASURES]]:
             np.testing.assert_allclose(
                 uninterrupted.stat[measure].numpy_mean(),
                 combined.stat[measure].numpy_mean())
@@ -272,11 +363,52 @@ class SensitivityTest(unittest.TestCase):
                 combined.stat[measure].numpy_std())
         uninterrupted.analysis()
         combined.analysis()
-        for measure in ("sensitivity_between_parties", "sensitivity_within_parties"):
+        for measure in SENS_MEASURES:
             for statistic in ("avg", "std", "se", "lo95", "hi95", "min", "max"):
                 np.testing.assert_allclose(
                     uninterrupted.sensitivity_data[measure][statistic],
                     combined.sensitivity_data[measure][statistic])
+
+    def test_change_fractions_and_clustered_confidence_intervals(self):
+        # Outer 1: unchanged, list-only, party-only.
+        # Outer 2: all party changes, including simultaneous list movements.
+        displacements = [(0, 0), (0, 2), (1, 0), (2, 0), (1, 3), (1, 1)]
+        with patch("simulate.seat_displacements", side_effect=[
+                (np.array([party]), np.array([within]))
+                for party, within in displacements]):
+            result = self.run_simulation(self.settings(sensitivity_covs=[1]))
+        expected = {
+            "sensitivity_list_only_change": (1/6, 1/6),
+            "sensitivity_party_change": (2/3, 1/3),
+        }
+        for measure, (mean, se) in expected.items():
+            data = result.sensitivity_data[measure]
+            self.assertAlmostEqual(data["avg"][0][0], mean)
+            self.assertAlmostEqual(data["se"][0][0], se)
+            self.assertEqual(result.stat[measure].n, 2)
+            self.assertEqual(result.stat[measure + "_perturbations"].n, 6)
+        self.assertAlmostEqual(1 - sum(value[0] for value in expected.values()), 1/6)
+        web = result.get_result_web(False)
+        vue = web["vuedata"]
+        for group, measure in (("sensitivityListOnlyChange", "sensitivity_list_only_change"),
+                               ("sensitivityPartyChange", "sensitivity_party_change")):
+            entry = vue[group][0]["avg"][0]
+            self.assertTrue(entry["percentage"])
+            self.assertAlmostEqual(entry["value"], expected[measure][0])
+            self.assertAlmostEqual(entry["ci"], 1.96 * expected[measure][1])
+        self.assertEqual(vue["block_continues"]["sensitivityBetween"],
+                         "sensitivityListOnlyChange")
+        self.assertEqual(vue["block_continues"]["sensitivityListOnlyChange"],
+                         "sensitivityPartyChange")
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "changes.xlsx"
+            SimulationWorkbook(web, path).write()
+            sheet = load_workbook(path)["Quality measures"]
+            title = next(cell for row in sheet for cell in row
+                         if cell.value == "Party totals change")
+            value = sheet.cell(title.row + 1, 3)
+            self.assertAlmostEqual(value.value, 2/3)
+            self.assertIn("%", value.number_format)
 
     def test_entropy_reference_is_not_computed_for_minor_perturbations(self):
         settings = self.settings(entropy_score=True, simulation_count=2)
@@ -290,8 +422,9 @@ class SensitivityTest(unittest.TestCase):
     def test_sensitivity_is_last_quality_block_on_web_and_in_excel(self):
         result = self.run_simulation()
         web = result.get_result_web(False)
-        self.assertEqual(web["vuedata"]["group_ids"][-2:], [
-            "sensitivityWithin", "sensitivityBetween"])
+        self.assertEqual(web["vuedata"]["group_ids"][-4:], [
+            "sensitivityWithin", "sensitivityBetween",
+            "sensitivityListOnlyChange", "sensitivityPartyChange"])
         for group in (
                 "cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty",
                 "sensitivityWithin", "sensitivityBetween"):
@@ -314,8 +447,8 @@ class SensitivityTest(unittest.TestCase):
             first_column.index("Seats displaced between lists within parties"),
             first_column.index("Seats displaced between parties"),
         )
-        self.assertEqual(first_column.count("1% CoV"), 2)
-        self.assertEqual(first_column.count("2% CoV"), 2)
+        self.assertEqual(first_column.count("1% CoV"), 4)
+        self.assertEqual(first_column.count("2% CoV"), 4)
 
 
 if __name__ == "__main__":

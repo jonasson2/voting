@@ -130,6 +130,8 @@ def check_simul_settings(sim_settings):
         value = sim_settings.get(key, False)
         sim_settings[key] = value if isinstance(value, bool) else parse_bool(str(value))
     sim_settings.setdefault("cpu_count", 4)
+    sim_settings.setdefault("single_list_sensitivity", False)
+    sim_settings.setdefault("single_list_simulation_count", 20)
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("sensitivity_simulation_count", 3)
     sim_settings.setdefault("sensitivity_gen_method", "uniform")
@@ -156,11 +158,20 @@ def check_simul_settings(sim_settings):
     if not isinstance(sensitivity, bool):
         sensitivity = parse_bool(str(sensitivity))
     sim_settings["sensitivity"] = sensitivity
+    single = sim_settings["single_list_sensitivity"]
+    if not isinstance(single, bool):
+        single = parse_bool(str(single))
+    sim_settings["single_list_sensitivity"] = single
+    if single:
+        count = sim_settings["single_list_simulation_count"]
+        if type(count) is not int or count <= 0:
+            raise ValueError("Number of single-list perturbations must be a positive integer.")
     if sensitivity:
         sensitivity_count = sim_settings["sensitivity_simulation_count"]
         if (type(sensitivity_count) is not int or sensitivity_count <= 0):
             raise ValueError(
                 "Number of sensitivity simulations must be a positive integer.")
+    if sensitivity or single:
         generating_methods = {"beta", "gamma", "log-normal", "uniform"}
         if sim_settings["sensitivity_gen_method"] not in generating_methods:
             raise ValueError("Unknown sensitivity generating distribution.")

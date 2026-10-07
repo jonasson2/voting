@@ -396,6 +396,8 @@ VOTE_MEASURES = {
 SENS_MEASURES = [
     "sensitivity_between_parties",
     "sensitivity_within_parties",
+    "sensitivity_list_only_change",
+    "sensitivity_party_change",
 ]
 
 PARTY_MEASURES = {

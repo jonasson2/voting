@@ -167,6 +167,14 @@
           </b-form-checkbox>
         </div>
         <div class="simulation-setting-row">
+          <b-form-checkbox id="single-list-sensitivity" v-model="sim_settings.single_list_sensitivity">
+            <span v-b-tooltip.hover.bottom.v-primary.ds500
+              title="Choose a party uniformly, then one of its positive-vote constituency lists uniformly. Perturb only that list, without rescaling; use the same draw for every electoral system.">
+              Compute single-list sensitivity
+            </span>
+          </b-form-checkbox>
+        </div>
+        <div class="simulation-setting-row">
           <label for="sensitivity-simulation-count"
             v-b-tooltip.hover.bottom.v-primary.ds500
             title="Number of minor vote perturbations generated at every sensitivity CoV for each simulated election.">Perturbations per simulation</label>
@@ -175,6 +183,15 @@
               type="text"
               v-autowidth="{ maxWidth: '122px', minWidth: '62px' }"
               v-model.number="sim_settings.sensitivity_simulation_count"/>
+          </span>
+        </div>
+        <div class="simulation-setting-row">
+          <label for="single-list-simulation-count" v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Number of single-list perturbations at each CoV for each simulated election. Independent of the ordinary sensitivity perturbation count.">Single-list perturbations per simulation</label>
+          <span class="compact-entry">
+            <input id="single-list-simulation-count" class="compact-entry-input" type="text"
+              v-autowidth="{ maxWidth: '122px', minWidth: '62px' }"
+              v-model.number="sim_settings.single_list_simulation_count"/>
           </span>
         </div>
         <div class="simulation-setting-row">

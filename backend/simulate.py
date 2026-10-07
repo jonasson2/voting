@@ -21,7 +21,8 @@ from sim_measures import add_vuedata
 from randomness import make_rng
 from sensitivity import (
     generate_perturbations, seat_displacements, sensitivity_covs,
-    sensitivity_statistics)
+    sensitivity_statistics, SINGLE_LIST_MEASURES, single_list_perturbations,
+    single_list_category)
 import numpy as np
 from numpy import vstack
 from math import exp
@@ -54,6 +55,8 @@ class SimulationSettings(dict):
         self["scaling"] = ["const"]
         self["show_additional"] = False
         self["show_single_seat"] = False
+        self["single_list_sensitivity"] = False
+        self["single_list_simulation_count"] = 20
         self["sensitivity"] = False
         self["sensitivity_simulation_count"] = 3
         self["sensitivity_gen_method"] = "uniform"
@@ -121,7 +124,11 @@ class Simulation():
         self.vote_table = vote_table
         self.reference_handler = ElectionHandler(vote_table, systems, use_thresholds)
         self.election_handler = ElectionHandler(vote_table, systems, use_thresholds)
-        self.sensitivity = sim_settings["sensitivity"]
+        self.sensitivity = (sim_settings["sensitivity"]
+                            or sim_settings.get("single_list_sensitivity", False))
+        self.sensitivity_measures = (
+            (SENS_MEASURES if sim_settings["sensitivity"] else [])
+            + (SINGLE_LIST_MEASURES if sim_settings.get("single_list_sensitivity") else []))
         self.sensitivity_handler = (
             ElectionHandler(vote_table, systems, use_thresholds)
             if self.sensitivity else None)
@@ -199,7 +206,7 @@ class Simulation():
                 len(self.sensitivity_covs),
                 ns,
             )
-            for measure in SENS_MEASURES:
+            for measure in self.sensitivity_measures:
                 self.stat[measure] = Running_stats(
                     sensitivity_shape, parallel, measure)
                 self.stat[measure + "_perturbations"] = Running_stats(
@@ -320,8 +327,10 @@ class Simulation():
         self.collect_seat_measures()
         self.collect_party_measures()
         self.collect_general_measures(iteration)
-        if self.sensitivity:
+        if self.sim_settings["sensitivity"]:
             self.run_sensitivity(votes, party_votes, rng)
+        if self.sim_settings.get("single_list_sensitivity"):
+            self.run_single_list_sensitivity(votes, party_votes, rng)
 
     def collect_vote_measures(self):
         for (i,election) in enumerate(self.election_handler.elections):
@@ -576,7 +585,7 @@ class Simulation():
             deviations.add(measure, difference)
 
     def run_sensitivity(self, votes, party_votes, rng):
-        """Retain individual displacements as well as each outer mean."""
+        """Retain displacements and change indicators, plus each outer mean."""
         for election in self.sensitivity_handler.elections:
             election.rng = rng
         shape = (self.sensitivity_simulation_count,
@@ -610,10 +619,34 @@ class Simulation():
 
         for measure, values in (
                 ("sensitivity_between_parties", between_values),
-                ("sensitivity_within_parties", within_values)):
+                ("sensitivity_within_parties", within_values),
+                ("sensitivity_list_only_change",
+                 (between_values == 0) & (within_values > 0)),
+                ("sensitivity_party_change", between_values > 0)):
             self.stat[measure].update(values.mean(axis=0))
             for perturbation in values:
                 self.stat[measure + "_perturbations"].update(perturbation)
+
+    def run_single_list_sensitivity(self, votes, party_votes, rng):
+        for election in self.sensitivity_handler.elections:
+            election.rng = rng
+        count = self.sim_settings["single_list_simulation_count"]
+        values = np.zeros((len(SINGLE_LIST_MEASURES), count,
+                           len(self.sensitivity_covs), self.nsys))
+        for cov_index, cov in enumerate(self.sensitivity_covs):
+            for inner, (constituency, party, perturbed) in enumerate(
+                    single_list_perturbations(votes, count, cov,
+                                              self.sensitivity_distribution, rng)):
+                self.sensitivity_handler.run_elections(
+                    self.sim_settings["use_thresholds"], perturbed.tolist(), party_votes)
+                for index, (base, changed) in enumerate(zip(
+                        self.election_handler.elections, self.sensitivity_handler.elections)):
+                    category = single_list_category(base, changed, constituency, party)
+                    values[category, inner, cov_index, index] = 1
+        for measure, outcomes in zip(SINGLE_LIST_MEASURES, values):
+            self.stat[measure].update(outcomes.mean(axis=0))
+            for outcome in outcomes:
+                self.stat[measure + "_perturbations"].update(outcome)
 
     def bias(self, election):
         (slope,corr) = find_bias(
@@ -661,10 +694,13 @@ class Sim_result:
                             val[statkey] = Running_stats.from_dict(statval)
             setattr(self, key, val)
 
+        if not hasattr(self, "sensitivity_measures"):
+            self.sensitivity_measures = SENS_MEASURES if self.sensitivity else []
+
         # Completed parallel web results contain analyzed data without stat.
         if self.sensitivity and "stat" in dictionary and any(
                 measure + "_perturbations" not in self.stat
-                for measure in SENS_MEASURES):
+                for measure in self.sensitivity_measures):
             raise ValueError(
                 "These saved sensitivity statistics lack individual perturbation "
                 "statistics. Rerun the simulation to calculate their uncertainty.")
@@ -684,7 +720,7 @@ class Sim_result:
             for (i,nc) in enumerate(nclist):
                 self.stat[measure][i].combine(sim_result.stat[measure][i])
         if self.sensitivity:
-            for measure in SENS_MEASURES:
+            for measure in self.sensitivity_measures:
                 self.stat[measure].combine(sim_result.stat[measure])
                 self.stat[measure + "_perturbations"].combine(
                     sim_result.stat[measure + "_perturbations"])
@@ -742,7 +778,7 @@ class Sim_result:
         self.sensitivity_data = {
             "covs": [100 * cov for cov in self.sensitivity_covs],
         }
-        for measure in SENS_MEASURES:
+        for measure in self.sensitivity_measures:
             self.sensitivity_data[measure] = sensitivity_statistics(
                 self.stat[measure], self.stat[measure + "_perturbations"])
 
