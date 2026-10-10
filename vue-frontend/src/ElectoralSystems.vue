@@ -29,7 +29,7 @@
     ref="downloadNameDialog"
     @confirm="confirmDownload"
   />
-  <b-button-toolbar key-nav aria-label="Electoral settings tools"
+  <b-button-toolbar class="simulator-toolbar" key-nav aria-label="Electoral settings tools"
                     style="margin-left:12px">
     <b-button-group class="mx-1">
       <b-button

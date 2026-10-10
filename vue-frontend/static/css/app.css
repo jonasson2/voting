@@ -13,6 +13,22 @@ input[inputmode="numeric"] {
   padding: 0px     !important;
 }
 
+.simulator-tabs-header.card-header {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  background-color: #f7f7f7;
+}
+
+.simulator-toolbar {
+  position: sticky;
+  top: var(--simulator-tabs-height, 0px);
+  z-index: 1010;
+  background-color: #fff;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
 .nav-tabs.simulator-tabs .nav-link,
 .nav-tabs.simulator-tabs .nav-link.active {
   color: #a02028;

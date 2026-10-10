@@ -131,7 +131,7 @@ def check_simul_settings(sim_settings):
         sim_settings[key] = value if isinstance(value, bool) else parse_bool(str(value))
     sim_settings.setdefault("cpu_count", 4)
     sim_settings.setdefault("single_list_sensitivity", False)
-    sim_settings.setdefault("single_list_simulation_count", 20)
+    sim_settings.setdefault("single_list_simulation_count", 15)
     sim_settings.setdefault("sensitivity", False)
     sim_settings.setdefault("sensitivity_simulation_count", 3)
     sim_settings.setdefault("sensitivity_gen_method", "uniform")

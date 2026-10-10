@@ -1,6 +1,6 @@
 <template>
 <div>
-  <b-button-toolbar key-nav aria-label="Instruct">
+  <b-button-toolbar class="simulator-toolbar" key-nav aria-label="Instruct">
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"

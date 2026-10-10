@@ -12,7 +12,7 @@
   </b-modal>
   <DownloadNameDialog id="simulation-settings-download-name"
     ref="settingsDownloadNameDialog" @confirm="confirmSettingsDownload" />
-  <b-button-toolbar key-nav aria-label="Simulation settings tools"
+  <b-button-toolbar class="simulator-toolbar" key-nav aria-label="Simulation settings tools"
     style="margin-left:12px; margin-bottom:12px">
     <b-button-group class="mx-1">
       <b-button v-b-modal.upload-simulation-settings class="mb-10"

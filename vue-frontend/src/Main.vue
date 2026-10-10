@@ -1,7 +1,7 @@
 <!-- https://stackoverflow.com/questions/61497825/bootstrap-vue-custom-border-column-style-and-custom-border-row-style-on-b-table -->
 
 <template>
-  <div>
+  <div ref="simulatorRoot">
   <b-modal id="upload-all-dialog" ref="uploadAllDialog"
     size="lg" title="Upload votes, electoral systems, and simulation settings">
     <p>Choose a JSON file created by Download all.</p>
@@ -12,7 +12,7 @@
       <b-button size="sm" @click="cancel()">Cancel</b-button>
     </template>
   </b-modal>
-  <b-navbar toggleable="md" type="dark" variant="info" sticky>
+  <b-navbar toggleable="md" type="dark" variant="info">
     <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
     <b-navbar-brand href="#/">Election simulator</b-navbar-brand>
   </b-navbar>
@@ -28,6 +28,7 @@
     </template>
   </b-alert>
   <b-tabs
+    nav-wrapper-class="simulator-tabs-header"
     nav-class="simulator-tabs"
     active-nav-item-class="font-weight-bold"
     no-key-nav card
@@ -121,6 +122,17 @@ export default {
   mounted: function() {
     console.log("Main created")
     this.initialize()
+    const root = this.$refs.simulatorRoot
+    const header = root.querySelector('.simulator-tabs-header')
+    const updateHeaderHeight = () => {
+      root.style.setProperty('--simulator-tabs-height', `${header.offsetHeight}px`)
+    }
+    updateHeaderHeight()
+    this.tabsHeaderObserver = new ResizeObserver(updateHeaderHeight)
+    this.tabsHeaderObserver.observe(header)
+  },
+  beforeUnmount() {
+    this.tabsHeaderObserver.disconnect()
   },
 }
 </script>

@@ -56,7 +56,7 @@ class SimulationSettings(dict):
         self["show_additional"] = False
         self["show_single_seat"] = False
         self["single_list_sensitivity"] = False
-        self["single_list_simulation_count"] = 20
+        self["single_list_simulation_count"] = 15
         self["sensitivity"] = False
         self["sensitivity_simulation_count"] = 3
         self["sensitivity_gen_method"] = "uniform"

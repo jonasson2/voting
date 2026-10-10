@@ -5,7 +5,7 @@
     ref="downloadNameDialog"
     @confirm="saveResults"
   />
-  <b-container style="margin-left:0px; margin-bottom:20px">
+  <b-container class="simulator-toolbar" style="margin-left:0px; margin-bottom:20px">
     <b-button
       class="mb-10"
       style="margin-left:0px"

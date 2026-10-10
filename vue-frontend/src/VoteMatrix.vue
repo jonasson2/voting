@@ -59,7 +59,7 @@
     @confirm="confirmDownload"
   />
   
-  <b-button-toolbar key-nav aria-label="Vote tools">
+  <b-button-toolbar class="simulator-toolbar" key-nav aria-label="Vote tools">
     <b-button-group class="mx-1">
       <b-button
         class="mb-10"
