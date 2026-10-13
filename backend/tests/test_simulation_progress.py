@@ -66,12 +66,17 @@ class SimulationProgressTest(unittest.TestCase):
             process = Mock()
             process.poll.side_effect = [None, 0]
             output = StringIO()
-            with redirect_stdout(output), patch('parsim.elja.time.sleep') as sleep:
+            with redirect_stdout(output), \
+                    patch.object(output, 'isatty', return_value=True), \
+                    patch('parsim.elja.time.sleep') as sleep:
                 wait_for_nodes([(0, process, '/job/attempt.log')],
                                [{'id': 0, 'replicates': 4}], job)
             sleep.assert_called_once_with(0.2)
-            self.assertIn('(50.0%)', output.getvalue())
-            self.assertIn('(100.0%)', output.getvalue())
+            lines = output.getvalue().splitlines(keepends=True)
+            self.assertEqual(len(lines), 2)
+            self.assertTrue(all(line.endswith('\n') for line in lines))
+            self.assertIn('(50.0%)', lines[0])
+            self.assertIn('(100.0%)', lines[1])
 
     def test_master_reports_worker_failure(self):
         process = Mock()

@@ -142,39 +142,31 @@ def wait_for_nodes(active, nodes, job_dir):
     started = time.monotonic()
     display = ProgressDisplay()
     finished = set()
-    width = 0
     next_update = started
-    terminal = sys.stdout.isatty()
-    try:
-        while True:
-            for node_id, process, log_name in active:
-                code = process.poll()
-                if code is not None:
-                    if code:
-                        raise RuntimeError(f"Node {node_id} failed; inspect {log_name}")
-                    finished.add(node_id)
-            now = time.monotonic()
-            done = len(finished) == len(active)
-            if now >= next_update or done:
-                snapshots = {}
-                for node in nodes:
-                    path = job_dir / f"progress-{node['id']:03d}.json"
-                    try:
-                        with path.open(encoding="utf-8") as file:
-                            snapshots[node['id']] = json.load(file)
-                    except FileNotFoundError:
-                        pass
-                line = display.line(nodes, snapshots, finished, now - started)
-                print(("\r" + line.ljust(width)) if terminal else line,
-                      end="" if terminal else "\n", flush=True)
-                width = max(width, len(line))
-                next_update = now + INTERVAL
-            if done:
-                break
-            time.sleep(0.2)
-    finally:
-        if terminal:
-            print(flush=True)
+    while True:
+        for node_id, process, log_name in active:
+            code = process.poll()
+            if code is not None:
+                if code:
+                    raise RuntimeError(f"Node {node_id} failed; inspect {log_name}")
+                finished.add(node_id)
+        now = time.monotonic()
+        done = len(finished) == len(active)
+        if now >= next_update or done:
+            snapshots = {}
+            for node in nodes:
+                path = job_dir / f"progress-{node['id']:03d}.json"
+                try:
+                    with path.open(encoding="utf-8") as file:
+                        snapshots[node['id']] = json.load(file)
+                except FileNotFoundError:
+                    pass
+            line = display.line(nodes, snapshots, finished, now - started)
+            print(line, flush=True)
+            next_update = now + INTERVAL
+        if done:
+            break
+        time.sleep(0.2)
 
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
