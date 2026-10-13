@@ -322,3 +322,27 @@ test("result numbers use the selected separators and precision", async () => {
   assert.equal(validIntegerEntry("-", comma, true), true)
   assert.equal(validIntegerEntry("-", comma, false), false)
 })
+
+
+test("alternative flexible seats check methods per system", async () => {
+  const {flexibleAdjustmentMethodOptions, hasIncompatibleFlexibleAdjustmentMethod}
+    = await voteTableModule()
+  const table = exampleTable()
+  table.constituencies[0].num_adj_seats = 1
+  const fixed = {seat_spec_options: {const: "refer"}, adjustment_method: "fixed-only"}
+  const flexible = {seat_spec_options: {const: "flexible"}, adjustment_method: "flexible"}
+  const methods = ["flexible"]
+  const options = [{value: "fixed-only"}, {value: "flexible"}]
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(table, [fixed, flexible], methods), false)
+  assert.equal(flexibleAdjustmentMethodOptions(table, options, methods, fixed), options)
+  assert.deepEqual(flexibleAdjustmentMethodOptions(table, options, methods, flexible), [
+    {value: "fixed-only", disabled: true}, {value: "flexible", disabled: false},
+  ])
+  flexible.adjustment_method = "fixed-only"
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(table, [fixed, flexible], methods), true)
+  table.constituencies[0].num_adj_seats = 0
+  assert.equal(hasIncompatibleFlexibleAdjustmentMethod(table, [fixed, flexible], methods), false)
+  table.max_total_adj_seats = 2
+  fixed.seat_spec_options.const = "adams"
+  assert.equal(flexibleAdjustmentMethodOptions(table, options, methods, fixed), options)
+})

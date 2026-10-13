@@ -1,4 +1,6 @@
-from reference_measures import list_measures, selected_scalings, primary_scaling
+from reference_measures import (
+    adjustment_spread, geographical_indices, list_measures, primary_scaling,
+    SCALINGS, migrate_scaling_settings, valid_region_groups)
 # import logging
 from datetime import datetime
 from measure_groups import MeasureGroups
@@ -52,8 +54,8 @@ class SimulationSettings(dict):
         self["party_vote_corr"] = CONSTANTS["PartyVoteCorr"]
         self["use_thresholds"] = True
         self["entropy_score"] = True
-        self["scaling"] = ["const"]
         self["show_additional"] = False
+        self["show_scalings"] = False
         self["show_single_seat"] = False
         self["single_list_sensitivity"] = False
         self["single_list_simulation_count"] = 15
@@ -113,8 +115,10 @@ class Simulation():
     def __init__(self, sim_settings, systems, vote_table, nr=0, start_iteration=0):
         warnings_to_errors()
         use_thresholds = sim_settings['use_thresholds']
+        sim_settings = deepcopy(sim_settings)
+        migrate_scaling_settings(sim_settings)
         self.sim_settings = sim_settings
-        self.scalings = selected_scalings(sim_settings["scaling"])
+        self.scalings = list(SCALINGS)
         self.primary_scaling = primary_scaling(sim_settings)
         self.random_seed = sim_settings.get("random_seed")
         self.start_iteration = start_iteration
@@ -136,7 +140,8 @@ class Simulation():
         self.party_votes_specified = self.vote_table["party_vote_info"]["specified"]
         self.measure_groups = MeasureGroups(
             systems, self.party_votes_specified, nr,
-            include_entropy_score=sim_settings["entropy_score"], scalings=self.scalings)
+            include_entropy_score=sim_settings["entropy_score"],
+            scalings=self.scalings, include_regions=self.regional_simulation)
         self.base_allocations = []
         self.parties = vote_table["parties"]
         self.sim_count = sim_settings["simulation_count"]
@@ -171,6 +176,10 @@ class Simulation():
             and election.total_const_seats == reference.total_const_seats
             for election, available in zip(
                 self.election_handler.elections, self.entropy_score_available)
+        ]
+        self.regional_measure_available = [
+            valid_region_groups(election) is not None
+            for election in self.election_handler.elections
         ]
         # -------- Following is used for plotting
         #self.disparity_data = [pd.DataFrame(columns=self.parties) for sys in range(self.nsys)]
@@ -433,23 +442,42 @@ class Simulation():
     def reference_measures(self, election, deviations):
         seats = np.asarray(election.results["all_const_seats"])
         totals = seats.sum()
-        for scaling in dict.fromkeys(["const", *self.scalings]):
+        for scaling in self.scalings:
             reference = (election.ref_seat_shares if scaling == self.primary_scaling
                          else election.reference_seats(scaling))
             values = list_measures(seats, reference)
             if scaling == "const":
                 deviations.add("lh_lists", values["deviation"] / (2 * totals) if totals else 0)
                 deviations.add("local_squared", values["relative_squared"])
-            if scaling in self.scalings:
-                for key, value in values.items():
-                    deviations.add(f"{scaling}_{key}", value)
+            for key, value in values.items():
+                deviations.add(f"{scaling}_{key}", value)
         party_seats = np.asarray(election.results["all_grand_total"])
         difference = party_seats - election.fractional_party_seats
         deviations.add("lh_parties", np.abs(difference).sum() / (2 * party_seats.sum()))
         deviations.add("party_total_surplus", max(0, difference.max()))
         deviations.add("party_total_shortfall", max(0, -difference.min()))
-        deviations.add("lh_constituencies",
-                       self.geographical_seat_displacement(election) / totals if totals else 0)
+        votes = self.constituency_vote_totals(election)
+        geographical_seats = np.asarray(election.final_row_sums)
+        lh, gallagher = geographical_indices(votes, geographical_seats)
+        deviations.add("lh_constituencies", lh)
+        deviations.add("gallagher_constituencies", gallagher)
+        adjustment = np.asarray(election.results["adj_const_seats"])
+        deviations.add("adjustment_constituency_spread",
+                       adjustment_spread(adjustment, party_seats))
+        groups = valid_region_groups(election)
+        if self.regional_simulation:
+            if groups is None:
+                for measure in ("lh_regions", "gallagher_regions",
+                                "adjustment_regional_spread"):
+                    deviations.add(measure, 0)
+            else:
+                region_votes = [votes[group].sum() for group in groups]
+                region_seats = [geographical_seats[group].sum() for group in groups]
+                lh, gallagher = geographical_indices(region_votes, region_seats)
+                deviations.add("lh_regions", lh)
+                deviations.add("gallagher_regions", gallagher)
+                deviations.add("adjustment_regional_spread",
+                               adjustment_spread(adjustment, party_seats, groups))
 
     def calculate_disparity(self, election):
         excess, shortage, disparity = 0, 0, 0
@@ -834,6 +862,9 @@ class Sim_result:
             "base_allocations": self.base_allocations,
             "entropy_score_available": self.entropy_score_available,
             "entropy_relative_available": self.entropy_relative_available,
+            "regional_measure_available": getattr(
+                self, "regional_measure_available",
+                [bool(self.vote_table.get("regions"))] * len(self.systems)),
             "sensitivity_data": getattr(self, "sensitivity_data", None),
             "data":         [{
                 "name":           self.systems[sysnr]["name"],

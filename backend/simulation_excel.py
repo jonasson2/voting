@@ -136,6 +136,8 @@ class SimulationWorkbook:
             "entropy_score_available", [True] * len(self.systems))
         entropy_relative_available = self.results.get(
             "entropy_relative_available", [True] * len(self.systems))
+        regional_available = self.results.get(
+            "regional_measure_available", [True] * len(self.systems))
         data = {"stats": EXCEL_HEADINGS.keys(), "stat_headings": EXCEL_HEADINGS}
         for group_id, group in groups.items():
             data[group_id] = []
@@ -143,7 +145,7 @@ class SimulationWorkbook:
                 row = {"measure": measure}
                 for statistic in data["stats"]:
                     values = [
-                        system["measures"][measure][statistic]
+                        system["measures"].get(measure, {}).get(statistic, "–")
                         for system in self.results["data"]
                     ]
                     if measure == "entropy_score":
@@ -154,6 +156,12 @@ class SimulationWorkbook:
                     elif measure == "entropy_relative":
                         values = [
                             value if entropy_relative_available[index] else "–"
+                            for index, value in enumerate(values)
+                        ]
+                    elif measure in {"lh_regions", "gallagher_regions",
+                                     "adjustment_regional_spread"}:
+                        values = [
+                            value if regional_available[index] else "–"
                             for index, value in enumerate(values)
                         ]
                     row[statistic] = values
@@ -215,7 +223,8 @@ class SimulationWorkbook:
         groups = MeasureGroups(
             self.systems, party_votes, "",
             include_entropy_score=self.results["sim_settings"]["entropy_score"],
-            scalings=self.results["sim_settings"]["scaling"])
+            scalings=self.results["sim_settings"].get("scaling", ("const", "both", "party", "total")),
+            include_regions=bool(self.results["vote_table"].get("regions")))
         data = self.quality_measure_data(groups)
         worksheet = self.workbook.add_worksheet("Quality measures")
         worksheet.freeze_panes(4, 2)

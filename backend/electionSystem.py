@@ -110,6 +110,15 @@ def set_const_fixed(constituencies):
         const["num_adj_seats"] = 0
     return all_fixed
 
+def set_const_adj_flexible(constituencies):
+    """Keep fixed seats and remove constituency adjustment-seat limits."""
+    flexible = copyconst(constituencies)
+    for constituency in flexible:
+        constituency["num_adj_seats"] = 0
+        constituency["max_adj_seats"] = None
+    return flexible
+
+
 def set_const_adj_adams(vote_table):
     """Fix the adjustment-seat distribution using constrained Adams."""
     constituencies = copyconst(vote_table["constituencies"])

@@ -33,6 +33,16 @@ test('sensitivity controls stay visible and support editing CoVs', () => {
   }
 })
 
+test('extra scaling display checkbox sits between the other display options', () => {
+  const template = descriptor.template.content
+  assert.match(template, /Double, party, and national scaling/)
+  const first = template.indexOf('sim_settings.show_additional')
+  const middle = template.indexOf('sim_settings.show_scalings')
+  const last = template.indexOf('sim_settings.show_single_seat')
+  assert.ok(first >= 0 && first < middle && middle < last)
+  assert.doesNotMatch(template, /Reference seat scaling|sim_settings\.scaling/)
+})
+
 test('sensitivity CoVs sort after editing and adding, but invalid values stay visible', () => {
   const script = descriptor.script.content
     .replace(/^import \{ mapState \} from 'vuex';\s*/m, '')

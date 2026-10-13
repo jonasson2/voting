@@ -36,7 +36,7 @@ Core measure inventory (display order follows the sections below):
 Organize the display in this order:
 
 1. **Local measures:** Loosemore-Hanby index for lists and local squared
-   deviation per reference seat. When local scaling is selected, also include
+   deviation per reference seat. Always include
    total list seat deviation and the four list surplus/shortfall maxima here.
    These all compare with local fractional seats: constituency seat count
    multiplied by the list's local vote share. Do not split the local measures
@@ -46,7 +46,7 @@ Organize the display in this order:
    before the double-scaling block. Entropy is closely related to biproportional
    allocation, but uses the feasible quotient-product optimum rather than
    doubly scaled fractional seats as its benchmark. Display it once,
-   independently of the selected scalings.
+   independently of the scaling display option.
 3. **Measures with double scaling:** total list seat deviation and the four
    list surplus/shortfall maxima, using doubly scaled fractional seats.
 4. **Measures with party scaling**, then **Measures with national scaling:**
@@ -56,8 +56,8 @@ Organize the display in this order:
 6. **Party totals:** Loosemore-Hanby index for parties, maximum party-seat
    surplus, and maximum party-seat shortfall.
 
-Show scaling-dependent rows and blocks only for the selected scalings. The
-dedicated local indices remain visible independently of those selections.
+Always show Local measures. Show the double, party, and national blocks together
+when “Double, party, and national scaling” is checked.
 Use “fractional seats” for the potentially noninteger benchmark seat counts;
 “seat shares” denotes proportions of seats.
 
@@ -69,13 +69,13 @@ Use “fractional seats” for the potentially noninteger benchmark seat counts;
   and review its readability before considering another presentation.
 - Keep the current sensitivity-analysis output unchanged for now.
 - Below “Calculate entropy score”, add a separate horizontal divider and then
-  a “Show additional measures” area containing the two optional-group
-  checkboxes: “Additional proportionality measures” and “Specifically for
-  single-seat constituencies”. This area controls display, not calculation.
+  a “Show additional measures” area containing three checkboxes, in order:
+  “Additional proportionality measures”, “Double, party, and national scaling”,
+  and “Specifically for single-seat constituencies”. This area controls display,
+  not calculation.
 - Use checkboxes instead of Yes/No selectors for boolean options, including
   threshold use, entropy calculation, sensitivity calculation, and the optional
-  display groups. The four reference-scaling choices are also independent
-  checkboxes, as described below.
+  display groups. Remove the separate Reference seat scaling selector.
 - Compute and retain the optional quality measures regardless of their display
   selections, so showing them does not require rerunning a simulation. Ordinary
   quality measures are already collected in the current implementation;
@@ -90,7 +90,7 @@ corresponding sections, rather than creating a separate output section:
 - Total squared list seat deviation (Hare quota), maximum relative
   over-representation (D'Hondt), maximum relative under-representation (Adams),
   and total absolute deviation per reference seat go into Local measures and
-  the other scaling blocks for each selected reference scaling.
+  the other scaling blocks when displayed.
 
 ### Local allocation discrepancies
 
@@ -332,22 +332,25 @@ than additions to the selectable groups at this stage.
 
 ## Reference scaling and outputs
 
-- Replace the four scaling radio buttons with independent checkboxes, allowing
-  several benchmarks simultaneously. Identify them with the section headings
-  above. Repeat total list seat deviation and the four list surplus/shortfall
-  maxima for each selected scaling, along with enabled optional list measures.
-  Keep the dedicated local indices and entropy score as single rows.
-- For now, the scaling checkboxes control calculation during the simulation,
-  not just display: compute and accumulate scaling-dependent measures only for
-  the selected benchmarks. Showing an additional scaling after a completed run
-  requires a new run. Continue computing the dedicated local indices regardless
-  of scaling selection, and retain optional measures for each computed benchmark
-  so their display checkboxes do not require a rerun. Scaling choices do not
-  affect seat allocation or sensitivity; calculate sensitivity once, independently
-  of the selected scalings. Timing may inform a later decision to compute all
-  benchmarks routinely.
+- Party and double scaling use the integer national party targets passed to
+  list allocation, including thresholds, the national allocation rule,
+  protected fixed seats and any country-specific recalculation. Individual
+  reference list seats remain fractional. Double scaling also preserves final
+  constituency totals; with separate national seats, constituency party totals
+  are capped at the integer targets and the remainder forms the national reference.
+  National scaling and the dedicated national party-proportionality measures
+  retain their fractional vote-share benchmarks.
+- Always compute and accumulate all four reference scalings and their optional
+  measures. Local measures remain visible; one checkbox shows the double, party,
+  and national blocks together. It changes completed results immediately without
+  rerunning. Repeat total list seat deviation and the four list surplus/shortfall
+  maxima in each block, along with enabled optional list measures. Keep the
+  dedicated local indices and entropy score as single rows. Scaling display
+  choices do not affect allocation or sensitivity; calculate sensitivity once
+  per replicate.
 - Use proportions for seat-share discrepancies, not percentages or percentage
-  points. Entropy score and all three Loosemore-Hanby indices use percentages.
+  points. Entropy score, all Loosemore-Hanby indices and Gallagher indices use
+  percentages.
 - Optional-group selections also control CSV output. Web, CSV and Excel use one
   shared catalogue; Excel always includes the optional and secondary measures.
 - Retain secondary measures in Excel, with clear names and definitions, even when
@@ -369,14 +372,15 @@ for names, groups, and output selection rather than separate web and CSV lists.
 
 ## Implementation choices
 
-- New simulations default to local scaling only. Older saved files with one
-  scaling retain it; the setting now stores a list. An empty selection leaves
-  the dedicated local indices, entropy (if enabled), parity and party totals.
-- Both optional display selections default to unchecked. Toggling them changes
+- New simulations compute all four scalings. New saved settings use the boolean
+  `show_scalings` instead of `scaling`. Loading older settings with any nonlocal
+  scaling enables the new display checkbox unless an explicit `show_scalings`
+  value is present. Older result files retain only their computed benchmarks;
+  rerun them to obtain missing scalings.
+- All three optional display selections default to unchecked. Toggling them changes
   the displayed completed results immediately; it does not change calculation.
 - All six single-seat diagnostics are retained. Their reference-dependent rows
-  and Excel's detailed reference matrices use the first selected benchmark in
-  the order local, double, party, national (local if none is selected). The
+  and Excel's detailed reference matrices always use local scaling in new runs. The
   benchmark is identified in the diagnostic labels and report settings.
 - Scaling statistics have separate identifiers for each benchmark. Seat
   allocation and sensitivity run once per replicate, not once per scaling.
@@ -384,3 +388,36 @@ for names, groups, and output selection rather than separate web and CSV lists.
   displayed as infinity with unavailable SD/CI rather than finite substitutes.
 - CSV uses separate section and measure fields; each average and confidence
   interval remains one cell. Excel retains secondary measures and cell comments.
+
+## Geographical balance and adjustment-seat spread
+
+For each constituency, compare its share of all valid constituency votes with
+its share of final constituency seats (fixed plus adjustment). Pruned votes are
+included; national-list votes and seats are excluded. The geographical
+Loosemore-Hanby index is half the sum of absolute share differences. The
+Gallagher index is the square root of half the sum of squared share differences.
+Both use shares from 0 to 1 internally and are displayed as percentages.
+Lower is better. The vote benchmark reflects votes, rather than population or
+statutory geographical entitlements. A zero overall vote or seat total gives
+zero for either index.
+
+When the source vote table explicitly defines valid regions, first add votes
+and final seats across the constituencies in each region, then calculate the
+same two indices for those regional totals. Regional rows are omitted when no
+regions are defined. If a system loses a valid constituency-to-region mapping,
+its regional result is shown as unavailable. These indices measure geographical
+seat distribution; they do not measure local party proportionality.
+
+Adjustment-seat spread across constituencies counts, for each party, the
+constituencies receiving at least one of its adjustment seats. Regional spread
+counts distinct recipient regions. Weight each party's count by its total
+seats, including national-list seats, and divide by total seats across parties.
+Parties without adjustment seats contribute zero to the numerator but retain
+their seat weight in the denominator. Zero total seats gives zero spread. Both
+measures are decimal weighted averages of counts; larger means wider spread.
+Regional spread follows the same regional availability rule as the indices.
+
+The Entropy score is the allocation quotient product divided by the maximum
+achievable under the system's rules and constraints. Its global optimum may
+change intermediate party-by-region totals while retaining genuine regional
+seat budgets, national party targets, protected seats and constituency bounds.

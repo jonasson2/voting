@@ -269,11 +269,6 @@ input[type="checkbox"] {
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="left"] .arrow::before {
   border-left-color: var(--tooltip-blue);
 }
-.tooltip.b-tooltip.scaling-tooltip,
-.tooltip.b-tooltip.scaling-tooltip .tooltip-inner {
-  max-width: min(600px, calc(100vw - 24px));
-}
-
 /* Fixed dropdown widths, including room for the arrow. */
 .compact-select.settings-rule { width: 280px; }
 .compact-select.settings-vote-basis { width: 220px; }
@@ -356,18 +351,13 @@ input[type="checkbox"] {
 
 @media (min-width: 992px) {
   .simulation-settings-layout > .simulation-settings-inputs {
-    flex: 0 0 37%;
-    max-width: 37%;
-  }
-
-  .simulation-settings-layout > .simulation-settings-scaling {
-    flex: 0 0 28%;
-    max-width: 28%;
+    flex: 0 0 50%;
+    max-width: 50%;
   }
 
   .simulation-settings-layout > .simulation-settings-sensitivity {
-    flex: 0 0 35%;
-    max-width: 35%;
+    flex: 0 0 50%;
+    max-width: 50%;
   }
 }
 

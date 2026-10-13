@@ -3,7 +3,7 @@
 
 from measure_groups import MeasureGroups, fractional_digits
 from measure_groups import headingType
-from reference_measures import PERCENT_MEASURES, measure_tooltip
+from reference_measures import PERCENT_MEASURES, SCALINGS, measure_tooltip, migrate_scaling_settings
 from sensitivity import SENSITIVITY_CHANGE_GROUPS, SENSITIVITY_PERCENT_MEASURES, SINGLE_LIST_GROUPS
 from dictionaries import STATISTICS_HEADINGS
 from util import disp
@@ -25,13 +25,20 @@ def normalize_negative_zero(value):
 
 def _system_display_value(
         data, system_index, measure, stat, group, nsim,
-        entropy_score_available, entropy_relative_available):
+        entropy_score_available, entropy_relative_available,
+        regional_measure_available):
     if ((measure == "entropy_score"
             and not entropy_score_available[system_index])
             or (measure == "entropy_relative"
-                and not entropy_relative_available[system_index])):
+                and not entropy_relative_available[system_index])
+            or (measure in {"lh_regions", "gallagher_regions",
+                            "adjustment_regional_spread"}
+                and not regional_measure_available[system_index])):
         return "–"
-    value = data[system_index]["measures"][measure][stat]
+    statistics = data[system_index]["measures"].get(measure)
+    if statistics is None:
+        return "–"
+    value = statistics[stat]
     if isinstance(value, str):
         return value
     value = normalize_negative_zero(value)
@@ -50,14 +57,11 @@ def _system_display_value(
 
 def _measure_row(
         data, systems, group, measure, title, nsim,
-        entropy_score_available, entropy_relative_available):
+        entropy_score_available, entropy_relative_available,
+        regional_measure_available):
     row = {"rowtitle": title, "measure": measure, "tooltip": measure_tooltip(measure)}
     if measure == "entropy_score":
         row["rowtitle"] += " (%)"
-        row["tooltip"] = (
-            "The product of the allocated-seat quotients divided by the "
-            "largest achievable product under the selected rule and "
-            "constraints. 100% is optimal.")
     elif measure == "entropy_relative":
         row["tooltip"] = (
             "Product of allocated-seat quotients divided by the product for "
@@ -77,7 +81,8 @@ def _measure_row(
                    and system["name"] == title) else
             _system_display_value(
                 data, index, measure, stat, group, nsim,
-                entropy_score_available, entropy_relative_available)
+                entropy_score_available, entropy_relative_available,
+                regional_measure_available)
             for index, system in enumerate(systems)
         ]
     return row
@@ -189,15 +194,20 @@ def add_vuedata(sim_result_dict, parallel):
     groups = MeasureGroups(
         systems, party_votes_specified, "",
         include_entropy_score=include_entropy_score,
-        scalings=sim_result_dict.get("sim_settings", {}).get("scaling", ["const"]))
+        scalings=sim_result_dict.get("sim_settings", {}).get("scaling", list(SCALINGS)),
+        include_regions=bool(sim_result_dict["vote_table"].get("regions")))
     nsim = sim_result_dict["iteration"]
     entropy_score_available = sim_result_dict.get(
         "entropy_score_available", [True] * len(systems))
     entropy_relative_available = sim_result_dict.get(
         "entropy_relative_available", [True] * len(systems))
+    regional_measure_available = sim_result_dict.get(
+        "regional_measure_available", [True] * len(systems))
     vuedata = _vue_data_header(systems)
-    vuedata["display_options"] = {key: sim_result_dict.get("sim_settings", {}).get(key, False)
-                                  for key in ("show_additional", "show_single_seat")}
+    display_settings = dict(sim_result_dict.get("sim_settings", {}))
+    migrate_scaling_settings(display_settings)
+    vuedata["display_options"] = {key: display_settings.get(key, False)
+                                  for key in ("show_additional", "show_scalings", "show_single_seat")}
     for (id, group) in groups.items():
         vuedata["group_ids"].append(id)
         vuedata["group_titles"][id] = group["title"]
@@ -214,7 +224,8 @@ def add_vuedata(sim_result_dict, parallel):
             (rowtitle, last_column1) = combine_titles(titles, last_column1)
             row = _measure_row(
                 data, systems, id, measure, rowtitle, nsim,
-                entropy_score_available, entropy_relative_available)
+                entropy_score_available, entropy_relative_available,
+                regional_measure_available)
             row["option"] = group.get("options", {}).get(measure)
             if vuedata[id] and measure in group.get("subgroup_starts", ()):
                 row["subgroup_start"] = True

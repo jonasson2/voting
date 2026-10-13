@@ -1862,7 +1862,7 @@ class CurrentApplicationTest(unittest.TestCase):
         self.assertNotIn('additional_adjustment_method', saved_system)
         self.assertNotIn('additional_adjustment_allocation_rule', saved_system)
 
-    def test_fractional_reference_ignores_thresholds_and_divider_rules(self):
+    def test_party_and_double_reference_use_allocation_party_targets(self):
         table = {
             'name': 'Fractional reference example',
             'parties': ['A', 'B'],
@@ -1887,15 +1887,19 @@ class CurrentApplicationTest(unittest.TestCase):
         system['adj_determine_divider'] = 'dhondt'
         election = ElectionHandler(
             table, [system], use_thresholds=True).elections[0]
-        election.calculate_ref_seat_shares('both')
-
         self.assertEqual(election.desired_col_sums.tolist(), [7, 0])
         np.testing.assert_allclose(election.fractional_party_seats, [4.2, 2.8])
-        np.testing.assert_allclose(
-            election.ref_seat_shares.sum(axis=0), [4.2, 2.8])
+        for scaling in ('party', 'both'):
+            with self.subTest(scaling=scaling):
+                election.calculate_ref_seat_shares(scaling)
+                np.testing.assert_allclose(
+                    election.ref_seat_shares.sum(axis=0), [7, 0])
+                np.testing.assert_array_equal(election.total_ref_seat_shares, [7, 0])
         np.testing.assert_allclose(election.ref_seat_shares.sum(axis=1), [3, 4])
+        np.testing.assert_allclose(
+            election.reference_seats('total').sum(axis=0), [4.2, 2.8])
 
-    def test_fractional_reference_accounts_for_national_seats(self):
+    def test_integer_reference_accounts_for_national_seats(self):
         table = load_votes('../data/2-by-2-example.csv')
         table['party_vote_info'] = {
             'name': 'National',
@@ -1912,12 +1916,16 @@ class CurrentApplicationTest(unittest.TestCase):
             table, [system], use_thresholds=True).elections[0]
         election.calculate_ref_seat_shares('both')
 
-        np.testing.assert_allclose(
-            election.total_ref_seat_shares, [15.1875, 11.8125])
+        np.testing.assert_array_equal(election.desired_col_sums, [15, 12])
+        np.testing.assert_array_equal(election.total_ref_seat_shares, [15, 12])
+        np.testing.assert_allclose(election.fractional_party_seats, [15.1875, 11.8125])
         np.testing.assert_allclose(
             election.ref_seat_shares.sum(axis=1), [12, 13])
         self.assertAlmostEqual(election.total_ref_nat.sum(), 2)
         self.assertTrue((election.total_ref_nat >= 0).all())
+        np.testing.assert_allclose(
+            election.ref_seat_shares.sum(axis=0) + election.total_ref_nat,
+            election.desired_col_sums)
 
     def test_simulation_reference_is_independent_of_system_order(self):
         table = load_votes('../data/2-by-2-example.csv')

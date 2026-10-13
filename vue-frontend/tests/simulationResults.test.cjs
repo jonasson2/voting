@@ -32,7 +32,7 @@ test("optional rows toggle without rerunning, with section titles in their own c
     filename, id: 'quality-measures-test', compilerOptions: {mode: 'function'}})
   assert.deepEqual(errors, [])
   const {formatNumber} = await import('../src/numberFormat.js')
-  const settings = {show_additional: false, show_single_seat: false}
+  const settings = {show_additional: false, show_scalings: false, show_single_seat: false}
   const script = descriptor.script.content.replace(/^import .*$/gm, '')
     .replace('export default', 'return')
   const component = new Function('mapState', 'formatNumber', script)(
@@ -52,6 +52,14 @@ test("optional rows toggle without rerunning, with section titles in their own c
     const: [row('Core row'), row('Additional row', 'show_additional')],
     singleSeat: [row('Single-seat diagnostic')], sensitivityWithin: [row('0.1% CoV')],
   }
+  for (const scaling of ['both', 'party', 'total']) {
+    vuedata.group_ids.splice(vuedata.group_ids.indexOf('singleSeat'), 0, scaling)
+    vuedata.group_options[scaling] = 'show_scalings'
+    vuedata.show[scaling] = true
+    vuedata.side_titles[scaling] = true
+    vuedata.group_titles[scaling] = scaling
+    vuedata[scaling] = [row(`${scaling} deviation`), row(`${scaling} optional`, 'show_additional')]
+  }
   const render = () => {
     const app = Vue.createSSRApp(component, {vuedata, ...vuedata})
     app.directive('b-tooltip', {})
@@ -68,11 +76,25 @@ test("optional rows toggle without rerunning, with section titles in their own c
   assert.match(html, /class="section-title" rowspan="1">Local measures/)
   assert.match(html, /Core row/)
   assert.doesNotMatch(html, /Additional row|Single-seat diagnostic/)
+  assert.doesNotMatch(html, /both deviation|party deviation|total deviation/)
+  settings.show_scalings = true
+  html = await render()
+  for (const scaling of ['both', 'party', 'total']) {
+    assert.ok(html.includes(`${scaling} deviation`))
+    assert.ok(!html.includes(`${scaling} optional`))
+  }
   settings.show_additional = settings.show_single_seat = true
   html = await render()
   assert.match(html, /class="section-title" rowspan="2">Local measures/)
   assert.match(html, /Additional row/)
   assert.match(html, /Single-seat diagnostic/)
+  for (const scaling of ['both', 'party', 'total']) {
+    assert.ok(html.includes(`${scaling} optional`))
+  }
+  settings.show_scalings = false
+  html = await render()
+  assert.doesNotMatch(html, /both deviation|party deviation|total deviation/)
+  assert.match(html, /Additional row/)
   const sensitivity = html.match(/<tr[^>]*>(?:(?!<\/tr>)[\s\S])*0\.1% CoV[\s\S]*?<\/tr>/)[0]
   assert.match(sensitivity, /0\.125 ± 0\.010/)
   assert.doesNotMatch(sensitivity, /0\.050/)

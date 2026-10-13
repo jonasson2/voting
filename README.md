@@ -14,6 +14,24 @@ The browser interface is built with Vue and the HTTP API with Flask. The
 allocation and simulation code is under `backend/` and can also be run without
 the browser.
 
+Simulations always calculate measures with local, double, party, and national
+scaling. Under **Show additional measures**, **Double, party, and national
+scaling** shows the three extra blocks without rerunning; Local measures stay
+visible. Saved settings use `show_scalings` (default `false`). CSV follows these
+display choices, while Excel retains all four scalings and optional measures.
+
+## Flexible adjustment-seat comparisons
+
+Under **Electoral systems → Alternative specification of fixed and adjustment
+seat numbers**, choose **Make adjustment seats flexible**. This preserves each constituency's fixed seats and the source
+adjustment-seat total, while removing constituency minima and maxima. For example,
+Norwegian data retains 150 fixed seats and a pool of 19 adjustment seats.
+The option applies to that system only, allowing fixed and flexible variants to
+share the same source data. Select an allocation method supporting flexibility;
+incompatible methods are disabled. Saved systems use
+`seat_spec_options.const: "flexible"`, also supported by `sim.py`.
+This is a hypothetical adaptation of the source seat structure.
+
 ## Offline simulations
 
 Use a vote-table CSV in the standard vote format (for example, one under `data/`).

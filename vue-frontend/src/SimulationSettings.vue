@@ -118,40 +118,15 @@
         <b-form-checkbox v-model="sim_settings.show_additional">
           Additional proportionality measures
         </b-form-checkbox>
+        <b-form-checkbox v-model="sim_settings.show_scalings">
+          <span v-b-tooltip.hover.bottom.v-primary.ds500
+            title="Show measures with double, party, and national scaling. All four scalings are calculated in every simulation, so this can be changed without rerunning.">
+            Double, party, and national scaling
+          </span>
+        </b-form-checkbox>
         <b-form-checkbox v-model="sim_settings.show_single_seat">
           Specifically for single-seat constituencies
         </b-form-checkbox>
-      </b-col>
-      <b-col class="simulation-settings-column simulation-settings-scaling">
-        <h5 class="simulation-settings-section-title" v-b-tooltip.hover.bottom.v-primary.ds500
-          title='Choose how to calculate the fractional reference seats used in the list allocation quality measures.'>
-          Reference seat scaling
-        </h5>
-        <b-form-checkbox-group
-          id="A"
-          v-model="sim_settings.scaling"
-          >
-          <div class="scaling-option"
-            v-b-tooltip.hover.top.v-primary.ds500
-            title="Compute fractional reference seats as list's share of all constituency votes multiplied by the constituency's total seats (fixed + adjustment).">
-            <b-form-checkbox value="const">Local scaling</b-form-checkbox>
-          </div>
-          <div class="scaling-option"
-            v-b-tooltip.hover.top.v-primary.ds500="{ customClass: 'scaling-tooltip' }"
-            title="Compute fractional reference seats by scaling rows and columns of the vote table so that constituency totals match their total seats and party totals match their nationally proportional fractional seats.">
-            <b-form-checkbox value="both">Double scaling</b-form-checkbox>
-          </div>
-          <div class="scaling-option"
-            v-b-tooltip.hover.top.v-primary.ds500
-            title="Compute fractional reference seats by scaling columns of the vote table so that each party’s total matches its nationally proportional fractional seats.">
-            <b-form-checkbox value="party">Party scaling</b-form-checkbox>
-          </div>
-          <div class="scaling-option"
-            v-b-tooltip.hover.top.v-primary.ds500
-            title="Compute fractional reference seats as each list’s share of all votes nationally times the overall number of constituency seats.">
-            <b-form-checkbox value="total">National scaling</b-form-checkbox>
-          </div>
-        </b-form-checkbox-group>
       </b-col>
       <b-col class="simulation-settings-column simulation-settings-sensitivity">
         <h5 class="simulation-settings-section-title">Sensitivity analysis</h5>
@@ -306,11 +281,6 @@ export default {
 </script>
 
 <style scoped>
-.scaling-option {
-  width: fit-content;
-  max-width: 100%;
-}
-
 .simulation-settings-divider {
   border: 0;
   border-top: 2px solid #000;

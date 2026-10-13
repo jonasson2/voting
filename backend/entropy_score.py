@@ -4,7 +4,6 @@ from math import exp
 import warnings
 import numpy as np
 
-from methods import regional
 from methods.optimal_lp import optimal_lp
 from table_util import entropy
 
@@ -35,7 +34,8 @@ def _problem_key(election):
         election.results["fixed_nat_seats"]
         if election.party_vote_info["specified"] else [])
     regional_totals = (
-        election.region_party_totals if election.has_regions else [])
+        [region["num_adj_seats"] for region in election.regions]
+        if election.has_regions else [])
     return (
         election.system["adj_alloc_divider"],
         enforce_party_targets,
@@ -55,22 +55,6 @@ def _problem_key(election):
 
 
 def _optimal_allocation(election, divisor_gen, enforce_party_targets):
-    if election.has_regions:
-        allocation, _ = regional.allocate_within_regions(
-            election.votes,
-            election.prepared_const_seats,
-            election.region_party_totals,
-            election.regions,
-            election.region_groups,
-            election.min_adj_seats,
-            election.max_adj_seats,
-            divisor_gen,
-            rng=None,
-            method=optimal_lp,
-            method_name="optimal-lp",
-        )
-        return allocation
-
     national_fixed = (
         election.results["fixed_nat_seats"]
         if election.party_vote_info["specified"] else None)
@@ -85,6 +69,10 @@ def _optimal_allocation(election, divisor_gen, enforce_party_targets):
         min_adj_seats=election.min_adj_seats,
         max_adj_seats=election.max_adj_seats,
         enforce_party_targets=enforce_party_targets,
+        region_groups=election.region_groups if election.has_regions else None,
+        region_adj_seats=(
+            [region["num_adj_seats"] for region in election.regions]
+            if election.has_regions else None),
     )
     return allocation
 
@@ -102,7 +90,8 @@ def calculate(election, optimum_cache=None, *, replicate=None):
         logical_votes, election.results["all_const_seats"], divisor_gen)
 
     if key not in cache:
-        if (election.system["adjustment_method"] == "optimal-lp"
+        if ((election.system["adjustment_method"] == "optimal-lp"
+             and not election.has_regions)
                 or election.num_adjustment_seats == 0):
             cache[key] = actual
         else:

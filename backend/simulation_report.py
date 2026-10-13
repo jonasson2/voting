@@ -23,7 +23,7 @@ def simulation_settings(results):
         {"label": "Entropy score calculated",
          "data": "yes" if settings["entropy_score"] else "no"},
         {"label": "Reference scaling benchmarks",
-         "data": ", ".join(SCALINGS[key] for key in selected_scalings(settings["scaling"])) or "Dedicated local indices only"},
+         "data": ", ".join(SCALINGS[key] for key in selected_scalings(settings.get("scaling", list(SCALINGS)))) or "Dedicated local indices only"},
     ]
     rows.append({"label": "Benchmark for detailed reference matrices and single-seat diagnostics",
                  "data": SCALINGS[primary_scaling(settings)]})

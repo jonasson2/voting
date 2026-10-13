@@ -121,12 +121,12 @@ def check_simul_settings(sim_settings):
         KeyError: If simulation settings are missing a component
         ValueError: If relative SD is too high
     """
-    for key in ["simulation_count", "gen_method", "scaling", "const_rsd"]:
+    for key in ["simulation_count", "gen_method", "const_rsd"]:
         if key not in sim_settings:
             raise KeyError(f"Missing data ('sim_settings.{key}')")
-    from reference_measures import selected_scalings
-    sim_settings["scaling"] = selected_scalings(sim_settings["scaling"])
-    for key in ("show_additional", "show_single_seat"):
+    from reference_measures import migrate_scaling_settings
+    migrate_scaling_settings(sim_settings)
+    for key in ("show_additional", "show_scalings", "show_single_seat"):
         value = sim_settings.get(key, False)
         sim_settings[key] = value if isinstance(value, bool) else parse_bool(str(value))
     sim_settings.setdefault("cpu_count", 4)

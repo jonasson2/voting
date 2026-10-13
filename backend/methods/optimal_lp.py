@@ -72,6 +72,19 @@ def optimal_lp(
     base_rows = prior.sum(axis=1)
     minimums, total, capacities = prepare_adjustment_bounds(
         base_rows, v_desired_row_sums, kwargs)
+    region_groups = kwargs.get("region_groups")
+    region_adj_seats = kwargs.get("region_adj_seats")
+    if (region_groups is None) != (region_adj_seats is None):
+        raise ValueError("Regional groups and adjustment totals must be supplied together.")
+    if region_groups is not None:
+        region_groups = [np.asarray(group, dtype=int) for group in region_groups]
+        region_adj_seats = np.asarray(region_adj_seats, dtype=int)
+        members = [int(c) for group in region_groups for c in group]
+        if (len(region_groups) != len(region_adj_seats)
+                or sorted(members) != list(range(nconst))
+                or (region_adj_seats < 0).any()
+                or int(region_adj_seats.sum()) != total):
+            raise ValueError("Invalid regional adjustment-seat partition or totals.")
 
     enforce_party_targets = kwargs.get("enforce_party_targets", True)
     has_national_seats = (
@@ -127,6 +140,10 @@ def optimal_lp(
             indices, [1] * len(indices),
             int(minimums[c]), int(capacities[c]),
         ))
+    if region_groups is not None:
+        for group, target in zip(region_groups, region_adj_seats):
+            indices = [index for c in group for index in by_constituency[c]]
+            constraints.append((indices, [1] * len(indices), int(target), int(target)))
     if enforce_party_targets:
         for p, indices in enumerate(by_party):
             target = int(deficits[p])
@@ -166,10 +183,14 @@ def optimal_lp(
 
     added_rows = allocation.sum(axis=1) - base_rows
     added_parties = allocation.sum(axis=0) - prior.sum(axis=0)
+    regional_ok = (region_groups is None or all(
+        int(added_rows[group].sum()) == int(target)
+        for group, target in zip(region_groups, region_adj_seats)))
     if (int(added_rows.sum()) != total
             or (added_rows < minimums).any()
             or (added_rows > capacities).any()
             or (enforce_party_targets and (added_parties > deficits).any())
+            or not regional_ok
             or (enforce_party_targets and not has_national_seats
                 and not np.array_equal(added_parties, deficits))):
         raise RuntimeError("Optimal LP returned an allocation outside its constraints.")

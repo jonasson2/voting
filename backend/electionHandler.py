@@ -1,6 +1,6 @@
 from electionSystem import ElectionSystem
 from electionSystem import (set_one_const, set_const_adj, set_const_adj_adams,
-                            set_const_fixed)
+                            set_const_fixed, set_const_adj_flexible)
 from electionSystem import set_nat_seats, set_nat_seats_adj, set_nat_seats_fixed
 from electionSystem import set_custom, set_copy
 from voting import Election
@@ -76,6 +76,7 @@ def update_constituencies(vote_table, systems):
             const = set_const_adj(voteconst) 
             if opt=="all_adj":
                 nat = set_nat_seats_adj(vote_table["party_vote_info"])
+        elif opt=="flexible":  const = set_const_adj_flexible(voteconst)
         elif opt=="adams":     const = set_const_adj_adams(vote_table)
         elif opt=="one_const": const = set_one_const(voteconst)
         elif opt=="refer":     const = set_copy(voteconst)
@@ -93,6 +94,14 @@ def update_constituencies(vote_table, systems):
 def adjustment_seat_info(vote_table, constituencies, seat_specification):
     """Return the exact total and constituency bounds for adjustment seats."""
     minimums = [constituency["num_adj_seats"] for constituency in constituencies]
+    if seat_specification == "flexible":
+        return {
+            "total": vote_table.get(
+                "max_total_adj_seats",
+                sum(c["num_adj_seats"] for c in vote_table["constituencies"])),
+            "min_per_const": [0] * len(constituencies),
+            "max_per_const": [None] * len(constituencies),
+        }
     if seat_specification == "adams":
         return {
             "total": sum(minimums),

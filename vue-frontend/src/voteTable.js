@@ -129,20 +129,32 @@ export function hasFlexibleAdjustmentPool(table) {
   return table.max_total_adj_seats > minimumTotal
 }
 
+export function hasFlexibleAdjustmentPoolForSystem(table, system) {
+  const specification = system?.seat_spec_options?.const
+  if (specification === "flexible") {
+    const total = table.max_total_adj_seats ?? sumNumbers(
+      table.constituencies.map(constituency => constituency.num_adj_seats)
+    )
+    return total > 0
+  }
+  if (specification === "adams") return false
+  return hasFlexibleAdjustmentPool(table)
+}
+
 export function hasIncompatibleFlexibleAdjustmentMethod(
   table, systems, flexibleMethods
 ) {
-  return hasFlexibleAdjustmentPool(table)
-    && Array.isArray(flexibleMethods)
+  return Array.isArray(flexibleMethods)
     && Array.isArray(systems)
     && systems.some(system =>
-      !flexibleMethods.includes(system.adjustment_method))
+      hasFlexibleAdjustmentPoolForSystem(table, system)
+      && !flexibleMethods.includes(system.adjustment_method))
 }
 
 export function flexibleAdjustmentMethodOptions(
-  table, options, flexibleMethods
+  table, options, flexibleMethods, system
 ) {
-  if (!hasFlexibleAdjustmentPool(table)
+  if (!hasFlexibleAdjustmentPoolForSystem(table, system)
       || !Array.isArray(flexibleMethods)) return options
   return options.map(option => ({
     ...option,

@@ -21,13 +21,15 @@
 
 
 from util import disp
-from reference_measures import quality_groups, selected_scalings
+from reference_measures import quality_groups, selected_scalings, SCALINGS
 
 class MeasureGroups(dict):
     def __init__(self, systems, party_votes_specified, qm_topleft2=None, nr=0,
-                 include_entropy_score=False, scalings=("const",)):
+                 include_entropy_score=False, scalings=tuple(SCALINGS),
+                 include_regions=False):
         self.update(quality_groups(selected_scalings(scalings),
-                                   include_entropy_score, len(systems) > 1))
+                                   include_entropy_score, len(systems) > 1,
+                                   include_regions))
         if party_votes_specified:
             for extension, title in (("const", "Party totals within constituencies"),
                                      ("nat", "National lists")):

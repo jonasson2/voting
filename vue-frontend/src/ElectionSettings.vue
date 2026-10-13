@@ -197,6 +197,11 @@
       v-model="const_spec_option"
       :options="capabilities.seat_spec_options.const"/>
     <div v-if='const_spec_option!="refer"' class="settings-seat-table">
+      <p v-if="const_spec_option === 'flexible'">
+        {{ flexibleAdjustmentTotal }} adjustment seats in total. Each constituency
+        may receive 0 or more, with no upper limit. Fixed seats stay as specified
+        in Source votes and seats.
+      </p>
       <table v-if="!adding_system && !waiting_for_data" class="votematrix">
         <tbody>
         <tr>
@@ -233,7 +238,7 @@
           </td>
           <td class="displayright">
             <span v-if="const_spec_option != 'custom'">
-              {{ constituency['num_adj_seats'] }}
+              {{ const_spec_option === 'flexible' ? '0–unlimited' : constituency['num_adj_seats'] }}
             </span>
             <span
               v-if="const_spec_option == 'custom'"
@@ -311,11 +316,16 @@ export default {
         this.recalc_sys_const()
       }
     },
+    flexibleAdjustmentTotal() {
+      return this.vote_table.max_total_adj_seats ?? this.vote_table.constituencies
+        .reduce((total, constituency) => total + constituency.num_adj_seats, 0)
+    },
     adjustmentMethodOptions() {
       return flexibleAdjustmentMethodOptions(
         this.vote_table,
         this.capabilities.adjustment_methods || [],
         this.capabilities.flexible_adjustment_methods,
+        this.systems[this.systemidx],
       )
     },
     hasRegions() {

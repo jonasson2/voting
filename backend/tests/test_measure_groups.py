@@ -17,8 +17,12 @@ class MeasureGroupsTest(unittest.TestCase):
             "lh_lists", "local_squared", "const_deviation", "const_surplus",
             "const_shortfall", "const_share_surplus", "const_share_shortfall"])
         self.assertEqual(list(groups["parity"]["rows"]),
-                         ["constituency_disparity", "lh_constituencies"])
+                         ["constituency_disparity", "lh_constituencies",
+                          "gallagher_constituencies",
+                          "adjustment_constituency_spread"])
         self.assertEqual(len(groups["both"]["options"]), 4)
+        for scaling in ("both", "party", "total"):
+            self.assertEqual(groups[scaling]["option"], "show_scalings")
         self.assertEqual(groups["singleSeat"]["option"], "show_single_seat")
         self.assertEqual(len(groups["singleSeat"]["rows"]), 6)
         json.dumps(groups)

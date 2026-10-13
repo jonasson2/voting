@@ -150,6 +150,41 @@ class FlexibleAllocationTest(unittest.TestCase):
         system["adjustment_method"] = method
         return table, system
 
+    def test_flexible_specification_preserves_norwegian_seat_budget(self):
+        table = load_votes("../data/norway_2025.csv")
+        original = deepcopy(table)
+        fixed = ElectionSystem()
+        fixed.copy_info_from_votes(table)
+        fixed["name"] = "Fixed"
+        fixed["adjustment_method"] = "max-const-votes"
+        flexible = deepcopy(fixed)
+        flexible["name"] = "Flexible"
+        flexible["seat_spec_options"]["const"] = "flexible"
+        handler = ElectionHandler(table, [fixed, flexible], True)
+        fixed_election, flexible_election = handler.elections
+        self.assertEqual(table, original)
+        self.assertEqual(fixed_election.min_adj_seats.tolist(), [1] * 19)
+        self.assertEqual(fixed_election.max_adj_seats, [1] * 19)
+        self.assertEqual(flexible_election.min_adj_seats.tolist(), [0] * 19)
+        self.assertEqual(flexible_election.max_adj_seats, [None] * 19)
+        self.assertEqual(flexible_election.num_adjustment_seats, 19)
+        self.assertEqual(sum(c["num_fixed_seats"] for c in
+                             flexible_election.system["constituencies"]), 150)
+        self.assertEqual(int(np.sum(flexible_election.results["all_const_seats"])), 169)
+        np.testing.assert_array_equal(
+            np.sum(fixed_election.results["all_const_seats"], axis=0),
+            np.sum(flexible_election.results["all_const_seats"], axis=0))
+
+    def test_flexible_specification_preserves_existing_pool_total(self):
+        table, system = self.table_and_system()
+        original = deepcopy(table)
+        system["seat_spec_options"]["const"] = "flexible"
+        election = ElectionHandler(table, [system], True).elections[0]
+        self.assertEqual(election.num_adjustment_seats, 4)
+        self.assertEqual(election.min_adj_seats.tolist(), [0, 0])
+        self.assertEqual(election.max_adj_seats, [None, None])
+        self.assertEqual(table, original)
+
     def test_adams_seat_specification_fixes_the_adjustment_seat_distribution(self):
         table = load_votes("../data/2-by-2-example.csv")
         table["constituencies"][0].update(num_fixed_seats=4, num_adj_seats=1)
