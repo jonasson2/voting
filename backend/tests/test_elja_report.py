@@ -72,6 +72,7 @@ class EljaReportTest(unittest.TestCase):
             expected = Path(directory) / 'expected.csv'
             write_csv(expected, direct, display)
             self.assertEqual(csv_path.read_bytes(), expected.read_bytes())
+            self.assertNotIn(b'\r', csv_path.read_bytes())
             self.assertEqual({p.name: p.read_bytes() for p in job.iterdir()}, original)
             workbook = load_workbook(excel_path)
             self.assertIn('Test system', workbook.sheetnames)

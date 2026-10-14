@@ -126,16 +126,16 @@ def write_csv(path, result, display_settings=None):
             yield stat, table["system_names"]
 
     with Path(path).open("w", encoding="utf-8", newline="") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["Input files"])
         for label, filename in getattr(result, "input_files", {}).items():
             writer.writerow([label, filename])
         writer.writerow(["Source votes and seats"])
         writer.writerows(source_settings(report))
-        writer.writerow(["Electoral systems", *table["system_names"]])
         writer.writerow(["Simulation settings"])
         writer.writerows((row["label"], row["data"])
-                         for row in simulation_settings(report))
+                         for row in simulation_settings(report)
+                         if row["label"] != "Reference scaling benchmarks")
         writer.writerow(["First replicate number (zero-based)",
                          getattr(result, "start_iteration", 0)])
         writer.writerow([""])
@@ -157,7 +157,9 @@ def write_csv(path, result, display_settings=None):
             heading_type = table["headingType"].get(group)
             if table.get("block_headers", {}).get(group):
                 names = [name for _, names in columns(group) for name in names]
-                writer.writerow([table["block_headers"][group], "", *names])
+                block_title = table["block_headers"][group].replace(
+                    "Double, party, and national scaling", "Double/party/national scaling")
+                writer.writerow([block_title, "", *names])
             if not side_title and (title or heading_type == "systems"):
                 names = [name for _, names in columns(group) for name in names]
                 writer.writerow([title, "", *names] if heading_type == "systems"

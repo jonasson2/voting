@@ -177,8 +177,8 @@ def dispv(title, value=None, ndec=3):
 def writecsv(file, L):
     # Writes list of lists L to csv-file
     import csv
-    with open(file, "w") as f:
-        writer = csv.writer(f)
+    with open(file, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerows(L)
 
 def get_cpu_count():

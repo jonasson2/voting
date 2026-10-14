@@ -36,12 +36,18 @@ from methods.switching_se import switching as swedish_switching
 from methods.swedish_style_switching import switching as swedish_style_switching
 from vote_table import check_vote_table
 from voting import Election
-from util import get_cpu_counts, get_default_cpu_count
+from util import get_cpu_counts, get_default_cpu_count, writecsv
 import web
 from web import app
 
 
 class CurrentApplicationTest(unittest.TestCase):
+    def test_csv_utility_writes_utf8_and_lf_line_endings(self):
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / 'votes.csv'
+            writecsv(output, [['Ísland', 'a,b'], [1, 2]])
+            self.assertEqual(output.read_bytes(), 'Ísland,"a,b"\n1,2\n'.encode('utf-8'))
+
     def make_system(self, table, method, threshold=0):
         system = ElectionSystem()
         system.copy_info_from_votes(table)

@@ -555,6 +555,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 self.assertEqual(saved_settings['sensitivity_gen_method'], 'uniform')
                 self.assertEqual(saved_settings['sensitivity_simulation_count'], 2)
             self.assertTrue(output.exists())
+            self.assertNotIn(b'\r', output.read_bytes())
             ready = json.loads((job_dir / 'allocation-002.json').read_text())
             self.assertEqual(ready['slurm_job_id'], '12345')
             manifest = json.loads((job_dir / 'manifest.json').read_text())

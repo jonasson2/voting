@@ -111,6 +111,8 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(main(['-v', str(VOTES), '-e', str(systems),
                                    '-s', str(settings), *options]), 0)
             separate = output.read_bytes()
+            self.assertNotIn(b'\r', separate)
+            self.assertTrue(separate.endswith(b'\n'))
             self.assertEqual(main(['-a', str(all_file), *options]), 0)
             def measures(contents):
                 return contents[contents.index(b',,Test system'):]
@@ -163,7 +165,8 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertIn('Generating method', summary)
             self.assertIn('Relative standard deviation for list votes', summary)
             self.assertIn('Thresholds used', summary)
-            self.assertIn('Reference scaling benchmarks', summary)
+            self.assertNotIn('Reference scaling benchmarks', summary)
+            self.assertNotIn('Electoral systems', summary)
 
     def test_statistics_output_can_be_read_and_reported(self):
         with TemporaryDirectory() as directory:
@@ -228,6 +231,7 @@ class OfflineSimulationTest(unittest.TestCase):
             votes, systems, settings, _ = load_inputs(
                 VOTES, systems_path, settings_path,
                 {'simulation_count': 2, 'cpu_count': 1, 'random_seed': 123})
+            settings['show_scalings'] = True
             result = run_simulation(votes, systems, settings)
             output = Path(directory) / 'results.csv'
             write_csv(output, result)
@@ -240,6 +244,9 @@ class OfflineSimulationTest(unittest.TestCase):
                 ['', '', 'Test system', 'Test system'],
             ])
             table = result.get_result_web(parallel=False)['vuedata']
+            self.assertIn('Double, party, and national scaling', table['block_headers'].values())
+            self.assertTrue(any(row[0] == 'Double/party/national scaling' for row in rows))
+            self.assertNotIn(b'Double, party, and national scaling', output.read_bytes())
             for group in table['group_ids']:
                 option = table['group_options'].get(group)
                 options = [option] if isinstance(option, str) else option or []
