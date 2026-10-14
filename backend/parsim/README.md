@@ -52,6 +52,8 @@ requires at least 100 MiB of unreserved memory for each free physical core
 100 MiB per simulation process, and shares the remaining node resources.
 `-C` also caps the CPU and memory request on mixed nodes. As with idle nodes,
 availability can change before Slurm grants the allocation.
+Mixed-node requests are submitted together for the remaining slots, then
+checked together. If a request is refused, another candidate is tried.
 Each allocation starts `worker.py`, which waits for its assigned replicate
 range and runs `backend/sim.py` once through `srun`. Slurm reserves both
 logical CPUs per physical core, while `sim.py -C` receives the physical core

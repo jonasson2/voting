@@ -294,40 +294,49 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                 break
         mixed_started = 0
         if len(nodes) < target_nodes and mixed_nodes:
-            for candidate in available_mixed_nodes(partitions, core_cap):
-                if len(nodes) == target_nodes or mixed_started == mixed_nodes:
+            candidates = iter(available_mixed_nodes(partitions, core_cap))
+            while len(nodes) < target_nodes and mixed_started < mixed_nodes:
+                pending = []
+                slots = min(target_nodes - len(nodes), mixed_nodes - mixed_started)
+                for _ in range(slots):
+                    candidate = next(candidates, None)
+                    if candidate is None:
+                        break
+                    node_id = len(launchers)
+                    log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
+                    logs.append(log)
+                    process = launch_node(
+                        job_dir, node_id, candidate["partition"],
+                        candidate["slurm_cpus"], immediate, log,
+                        node_name=candidate["node_name"],
+                        memory_mib=candidate["memory_mib"])
+                    launchers.append(process)
+                    pending.append((node_id, process, log.name, candidate))
+                if not pending:
                     break
-                node_id = len(launchers)
-                log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
-                logs.append(log)
-                process = launch_node(
-                    job_dir, node_id, candidate["partition"],
-                    candidate["slurm_cpus"], immediate, log,
-                    node_name=candidate["node_name"],
-                    memory_mib=candidate["memory_mib"])
-                launchers.append(process)
-                ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
-                                   process, immediate + 30)
-                if ready is None:
-                    process.wait()
-                    print(f"{candidate['node_name']}: no immediate allocation",
-                          flush=True)
-                    continue
-                if ready["node_id"] != node_id:
-                    raise RuntimeError("Allocation reported an unexpected node ID")
-                nodes.append({
-                    "id": node_id, "partition": candidate["partition"],
-                    "node_name": candidate["node_name"], "mode": "mixed",
-                    "cores": candidate["cores"],
-                    "slurm_cpus": candidate["slurm_cpus"],
-                    "memory_mib": candidate["memory_mib"],
-                    "speed_per_core": candidate["speed_per_core"],
-                    "slurm_job_id": ready["slurm_job_id"],
-                })
-                active.append((node_id, process, log.name))
-                mixed_started += 1
-                print(f"{candidate['node_name']}: started mixed node "
-                      f"{len(nodes)}/{target_nodes}", flush=True)
+                for node_id, process, log_name, candidate in pending:
+                    ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
+                                       process, immediate + 30)
+                    if ready is None:
+                        process.wait()
+                        print(f"{candidate['node_name']}: no immediate allocation",
+                              flush=True)
+                        continue
+                    if ready["node_id"] != node_id:
+                        raise RuntimeError("Allocation reported an unexpected node ID")
+                    nodes.append({
+                        "id": node_id, "partition": candidate["partition"],
+                        "node_name": candidate["node_name"], "mode": "mixed",
+                        "cores": candidate["cores"],
+                        "slurm_cpus": candidate["slurm_cpus"],
+                        "memory_mib": candidate["memory_mib"],
+                        "speed_per_core": candidate["speed_per_core"],
+                        "slurm_job_id": ready["slurm_job_id"],
+                    })
+                    active.append((node_id, process, log_name))
+                    mixed_started += 1
+                    print(f"{candidate['node_name']}: started mixed node "
+                          f"{len(nodes)}/{target_nodes}", flush=True)
         if len(nodes) != target_nodes:
             attempted = ("eligible idle and mixed nodes were tried" if mixed_nodes else
                          "all listed partitions were tried")

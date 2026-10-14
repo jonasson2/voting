@@ -196,7 +196,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
 
     def run_with_allocations(self, directory, outcomes, *, target_nodes=2,
                              live_processes=(), availability=(3, 3),
-                             mixed_nodes=0, mixed_candidates=()):
+                             mixed_nodes=0, mixed_candidates=(), event_order=None):
         """Exercise the master without starting processes or allocating nodes."""
         job = Path(directory) / 'job'
         processes = [Mock(pid=1000 + i) for i in range(len(outcomes))]
@@ -249,7 +249,11 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                         [call[0] for call in events.mock_calls[:3]],
                         ['launch', 'launch', 'ready'])
             except RuntimeError as error:
+                if event_order is not None:
+                    event_order.extend(call[0] for call in events.mock_calls)
                 return job, processes, launch, read, merge, write, kill, error
+            if event_order is not None:
+                event_order.extend(call[0] for call in events.mock_calls)
         return job, processes, launch, read, merge, write, kill, None
 
     def test_stops_allocating_when_enough_nodes_are_ready(self):
@@ -342,6 +346,29 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             self.assertEqual(manifest['nodes'][1]['slurm_cpus'], 32)
             self.assertEqual(manifest['nodes'][1]['memory_mib'], 1600)
             merge.assert_called_once()
+
+    def test_mixed_requests_launch_together_and_retry_failed_batch(self):
+        candidates = [
+            {'node_name': name, 'partition': 'first', 'cores': 16,
+             'slurm_cpus': 32, 'memory_mib': 1600, 'speed_per_core': 1.0}
+            for name in ('mixed-a', 'mixed-b', 'mixed-c')
+        ]
+        with TemporaryDirectory() as directory:
+            event_order = []
+            job, _, launch, _, _, _, _, error = self.run_with_allocations(
+                directory, [None, {'node_id': 1, 'slurm_job_id': '11'},
+                            {'node_id': 2, 'slurm_job_id': '12'}],
+                availability=(0, 0), mixed_nodes=2,
+                mixed_candidates=candidates, event_order=event_order)
+            self.assertIsNone(error)
+            self.assertEqual(event_order[:6],
+                             ['launch', 'launch', 'ready', 'ready',
+                              'launch', 'ready'])
+            self.assertEqual([call.kwargs['node_name']
+                              for call in launch.call_args_list],
+                             ['mixed-a', 'mixed-b', 'mixed-c'])
+            manifest = json.loads((job / 'manifest.json').read_text())
+            self.assertEqual([node['id'] for node in manifest['nodes']], [1, 2])
 
     def test_exhausted_partitions_release_acquired_allocation(self):
         with TemporaryDirectory() as directory:
