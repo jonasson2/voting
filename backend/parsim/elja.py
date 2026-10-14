@@ -104,9 +104,15 @@ def wait_ready(path, process, timeout):
     raise RuntimeError(f"Timed out waiting for allocation {path.name}")
 
 
+def worker_interpreter():
+    """Use the shared Elja environment even when the launcher uses another Python."""
+    python = HERE.parents[1] / ".venv-elja" / "bin" / "python"
+    return str(python) if python.is_file() else sys.executable
+
+
 def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log, *,
                 node_name=None, memory_mib=None):
-    child = [sys.executable, str(HERE / "worker.py"),
+    child = [worker_interpreter(), str(HERE / "worker.py"),
              "--job-dir", str(job_dir), "--node-id", str(node_id)]
     if (node_name is None) != (memory_mib is None):
         raise ValueError("Mixed allocations require a node and memory request")

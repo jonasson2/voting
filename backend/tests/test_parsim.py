@@ -72,6 +72,17 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             start_new_session=True)
         self.assertIs(process, launch.return_value)
 
+    def test_elja_environment_is_used_for_workers(self):
+        with TemporaryDirectory() as directory:
+            here = Path(directory) / 'backend' / 'parsim'
+            python = Path(directory) / '.venv-elja' / 'bin' / 'python'
+            python.parent.mkdir(parents=True)
+            python.touch()
+            with patch.object(elja, 'HERE', here), \
+                    patch.object(elja.subprocess, 'Popen') as launch:
+                elja.launch_node(Path('/job'), 3, 'mimir', 128, 5, StringIO())
+            self.assertEqual(launch.call_args.args[0][-6], str(python))
+
     def test_mixed_slurm_submission_requests_only_selected_resources(self):
         log = StringIO()
         with patch.object(elja.subprocess, 'Popen') as launch:

@@ -1,6 +1,7 @@
 # Parallel offline simulation
 
-Activate the repository's Python environment, then run from the repository root:
+Run from the repository root with a Python environment that has the project
+dependencies installed:
 
 ```sh
 ./backend/parsim/elja.py -a election.json -r 1000 -S 123 -n 10 -o results.csv
@@ -40,6 +41,9 @@ decides which nodes to allocate; availability can change after the inquiry.
 launching requests concurrently within each partition. It collects that
 partition's results before requesting any remaining nodes from the next
 partition in preference order.
+When `.venv-elja/bin/python` exists in the repository, workers use it even if
+the command itself was started with another Python. This environment must be
+on the shared filesystem and compatible with every requested node type.
 By default it uses only idle nodes. With `-m N`, it may fill a shortfall in
 the `-n` total with up to `N` mixed nodes after trying idle nodes. It queries
 `scontrol show node --json`, orders mixed candidates by free Slurm CPUs, and
