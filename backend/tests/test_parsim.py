@@ -27,7 +27,7 @@ VOTES = ROOT / 'data' / '2-by-2-example.csv'
 class ParallelSimulationScriptsTest(unittest.TestCase):
     def test_more_than_thirty_nodes_exits_before_loading_inputs(self):
         errors = StringIO()
-        with redirect_stderr(errors), \
+        with redirect_stderr(errors), patch.dict(sys.modules, {'sim': None}), \
                 patch.object(elja, 'run_distributed') as run:
             with self.assertRaises(SystemExit) as raised:
                 elja.main(['-n', '31', '-a', 'missing.json', '-o', 'out.csv'])

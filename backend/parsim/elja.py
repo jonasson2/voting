@@ -393,6 +393,13 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
 
 
 def main(argv=None):
+    limit_parser = argparse.ArgumentParser(add_help=False)
+    limit_parser.add_argument("-n", "--nodes", type=int)
+    limit_args, _ = limit_parser.parse_known_args(argv)
+    if limit_args.nodes is not None and limit_args.nodes > MAX_NODES:
+        limit_parser.exit(2, f"elja: -n must be {MAX_NODES} or less "
+                          "(Slurm job limit)\n")
+
     from sim import (UNSET, input_file_names, load_all_inputs, load_inputs, nonnegative_int,
                      positive_int, seed_value)
 
@@ -428,9 +435,6 @@ def main(argv=None):
     parser.add_argument("--immediate", type=positive_int, default=5,
                         help="Seconds allowed for each Slurm allocation")
     args = parser.parse_args(argv)
-    if args.nodes > MAX_NODES:
-        parser.exit(2, f"elja: -n must be {MAX_NODES} or less "
-                       "(Slurm job limit)\n")
     if not args.csv and not args.output:
         parser.error("provide -o/--csv or -O/--output")
     if args.csv and args.output and Path(args.csv) == Path(args.output):
