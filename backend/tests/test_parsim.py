@@ -1,4 +1,4 @@
-from contextlib import ExitStack, redirect_stdout
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from copy import deepcopy
 from io import StringIO
 import json
@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 from electionSystem import ElectionSystem
 from input_files import load_votes
 from sim import prepare_inputs
-from parsim import elja, idle_group, worker
+from parsim import elja, worker
 from parsim.elja import build_assignments, split_counts
 from simulate import SimulationSettings
 from simulation_chunks import read_chunk_result
@@ -25,6 +25,17 @@ VOTES = ROOT / 'data' / '2-by-2-example.csv'
 
 
 class ParallelSimulationScriptsTest(unittest.TestCase):
+    def test_more_than_thirty_nodes_exits_before_loading_inputs(self):
+        errors = StringIO()
+        with redirect_stderr(errors), \
+                patch.object(elja, 'run_distributed') as run:
+            with self.assertRaises(SystemExit) as raised:
+                elja.main(['-n', '31', '-a', 'missing.json', '-o', 'out.csv'])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(errors.getvalue(),
+                         'elja: -n must be 30 or less (Slurm job limit)\n')
+        run.assert_not_called()
+
     def test_replicates_follow_core_count_and_per_core_speed(self):
         nodes = [{'cores': 48, 'speed_per_core': 1.0},
                  {'cores': 64, 'speed_per_core': 1.0}]
@@ -94,20 +105,6 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             '--cpus-per-task=32', '--job-name=parsim-003',
             sys.executable, str(elja.HERE / 'worker.py'),
             '--job-dir', '/job', '--node-id', '3',
-        ], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-            start_new_session=True)
-
-    def test_grouped_idle_submission_uses_one_slurm_job(self):
-        log = StringIO()
-        with patch.object(elja.subprocess, 'Popen') as launch:
-            elja.launch_idle_group(Path('/job'), 4, 2, 'mimir', 128, 5, log)
-        launch.assert_called_once_with([
-            'salloc', '--immediate=5', '--exclusive', '--mem=0',
-            '--partition=mimir', '--nodes=2', '--ntasks=2',
-            '--ntasks-per-node=1',
-            '--cpus-per-task=128', '--job-name=parsim-004',
-            elja.worker_interpreter(), str(elja.HERE / 'idle_group.py'),
-            '--job-dir', '/job', '--first-node-id', '4', '--nodes', '2',
         ], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
             start_new_session=True)
 
@@ -200,33 +197,6 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             ready = json.loads((job / 'allocation-003.json').read_text())
             self.assertEqual(ready, {'node_id': 3, 'slurm_job_id': '5678'})
 
-    def test_worker_pins_step_to_group_node(self):
-        with TemporaryDirectory() as directory:
-            job = Path(directory)
-            (job / 'assignment-003.json').write_text(json.dumps({
-                'start': 0, 'replicates': 1, 'cores': 2,
-                'slurm_cpus': 4, 'seed': 1234,
-            }))
-            with patch.object(worker.subprocess, 'run') as run:
-                run.return_value.returncode = 0
-                self.assertEqual(worker.run_allocated(job, 3, 'compute-1'), 0)
-            self.assertIn('--nodelist=compute-1', run.call_args.args[0])
-
-    def test_idle_group_starts_one_worker_per_allocated_node(self):
-        with patch.dict(os.environ, {'SLURM_JOB_NODELIST': 'compute-[1-2]'}), \
-                patch.object(idle_group.subprocess, 'run') as query, \
-                patch.object(idle_group.subprocess, 'Popen') as launch:
-            query.return_value.stdout = 'compute-1\ncompute-2\n'
-            launch.side_effect = [Mock(poll=Mock(return_value=0)),
-                                  Mock(poll=Mock(return_value=0))]
-            self.assertEqual(idle_group.run_group(Path('/job'), 4, 2), 0)
-        query.assert_called_once_with(
-            ['scontrol', 'show', 'hostnames', 'compute-[1-2]'],
-            check=True, capture_output=True, text=True)
-        self.assertEqual([call.args[0][-4:] for call in launch.call_args_list],
-                         [['--node-id', '4', '--node-name', 'compute-1'],
-                          ['--node-id', '5', '--node-name', 'compute-2']])
-
     def test_dash_seed_clears_saved_seed_before_master_chooses_one(self):
         settings = SimulationSettings()
         settings['random_seed'] = 77
@@ -237,8 +207,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
 
     def run_with_allocations(self, directory, outcomes, *, target_nodes=2,
                              live_processes=(), availability=(3, 3),
-                             mixed_nodes=0, mixed_candidates=(), event_order=None,
-                             first_partition_nodes=3):
+                             mixed_nodes=0, mixed_candidates=(), event_order=None):
         """Exercise the master without starting processes or allocating nodes."""
         job = Path(directory) / 'job'
         processes = [Mock(pid=1000 + i) for i in range(len(outcomes))]
@@ -246,14 +215,12 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             process.poll.return_value = None if i in live_processes else 0
             process.wait.return_value = 0
         partitions = [
-            {'partition': 'first', 'total_nodes': first_partition_nodes,
-             'max_nodes': 8, 'cores_per_node': 64,
+            {'partition': 'first', 'total_nodes': 3, 'cores_per_node': 64,
              'speed_per_core': 1},
-            {'partition': 'second', 'total_nodes': 3, 'max_nodes': 8,
-             'cores_per_node': 48,
+            {'partition': 'second', 'total_nodes': 3, 'cores_per_node': 48,
              'speed_per_core': 0.5},
         ]
-        settings = {'simulation_count': max(17, target_nodes), 'random_seed': 1234}
+        settings = {'simulation_count': 17, 'random_seed': 1234}
 
         def result_for(path):
             assignment = json.loads(path.with_name(
@@ -270,17 +237,12 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 elja, 'available_node_count', side_effect=availability))
             stack.enter_context(patch.object(
                 elja, 'available_mixed_nodes', return_value=mixed_candidates))
-            process_iter = iter(processes)
             launch = stack.enter_context(patch.object(
-                elja, 'launch_node', side_effect=lambda *a, **k: next(process_iter)))
-            group_launch = stack.enter_context(patch.object(
-                elja, 'launch_idle_group',
-                side_effect=lambda *a, **k: next(process_iter)))
+                elja, 'launch_node', side_effect=processes))
             wait_ready = stack.enter_context(patch.object(
                 elja, 'wait_ready', side_effect=outcomes))
             events = Mock()
             events.attach_mock(launch, 'launch')
-            events.attach_mock(group_launch, 'group_launch')
             events.attach_mock(wait_ready, 'ready')
             read = stack.enter_context(patch(
                 'simulation_chunks.read_chunk_result', side_effect=result_for))
@@ -293,7 +255,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                     stat_path=None, job_dir=job, partitions=partitions,
                     target_nodes=target_nodes, first_replicate=37,
                     core_cap=40, immediate=5, mixed_nodes=mixed_nodes)
-                if availability[0] >= 2 and target_nodes <= 30:
+                if availability[0] >= 2:
                     self.assertEqual(
                         [call[0] for call in events.mock_calls[:3]],
                         ['launch', 'launch', 'ready'])
@@ -418,27 +380,6 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                              ['mixed-a', 'mixed-b', 'mixed-c'])
             manifest = json.loads((job / 'manifest.json').read_text())
             self.assertEqual([node['id'] for node in manifest['nodes']], [1, 2])
-
-    def test_more_than_thirty_nodes_share_idle_allocations(self):
-        outcomes = [
-            {'node_id': index, 'slurm_job_id': str(100 + index // 2)}
-            for index in range(32)
-        ]
-        with TemporaryDirectory() as directory:
-            event_order = []
-            job, _, launch, _, _, _, _, error = self.run_with_allocations(
-                directory, outcomes, target_nodes=32, availability=(32, 0),
-                first_partition_nodes=32, event_order=event_order)
-            self.assertIsNone(error)
-            launch.assert_not_called()
-            self.assertEqual(event_order.count('group_launch'), 16)
-            self.assertEqual(event_order[:17], ['group_launch'] * 16 + ['ready'])
-            manifest = json.loads((job / 'manifest.json').read_text())
-            self.assertEqual(len(manifest['nodes']), 32)
-            self.assertEqual([node['id'] for node in manifest['nodes']],
-                             list(range(32)))
-            self.assertEqual(len({node['slurm_job_id']
-                                  for node in manifest['nodes']}), 16)
 
     def test_exhausted_partitions_release_acquired_allocation(self):
         with TemporaryDirectory() as directory:

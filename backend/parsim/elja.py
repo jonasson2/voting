@@ -19,6 +19,7 @@ BACKEND = HERE.parent
 sys.path.insert(0, str(BACKEND))
 MIB_PER_PROCESS = 100
 SLURM_CPUS_PER_PROCESS = 2
+MAX_NODES = 30
 
 
 def read_partitions(path):
@@ -123,22 +124,6 @@ def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log, *,
         f"--partition={partition}", "--nodes=1", "--ntasks=1",
         f"--cpus-per-task={slurm_cpus}", f"--job-name=parsim-{node_id:03d}",
         *child,
-    ]
-    return subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                            start_new_session=True)
-
-
-def launch_idle_group(job_dir, first_id, count, partition, slurm_cpus,
-                      immediate, log):
-    child = [worker_interpreter(), str(HERE / "idle_group.py"),
-             "--job-dir", str(job_dir), "--first-node-id", str(first_id),
-             "--nodes", str(count)]
-    command = [
-        "salloc", f"--immediate={immediate}", "--exclusive", "--mem=0",
-        f"--partition={partition}", f"--nodes={count}",
-        f"--ntasks={count}", "--ntasks-per-node=1",
-        f"--cpus-per-task={slurm_cpus}",
-        f"--job-name=parsim-{first_id:03d}", *child,
     ]
     return subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                             start_new_session=True)
@@ -266,7 +251,6 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
     active = []
     logs = []
     nodes = []
-    next_node_id = 0
     try:
         for partition in partitions:
             pending = []
@@ -278,29 +262,17 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
             if not available:
                 print(f"{partition['partition']}: no eligible idle nodes", flush=True)
                 continue
-            # Request groups together, so allocation waits overlap. Grouping
-            # above 30 nodes leaves room under Elja's 30-job account limit.
-            remaining = min(available, partition["total_nodes"],
-                            target_nodes - len(nodes))
-            group_cap = (min(2, partition["max_nodes"])
-                         if target_nodes > 30 else 1)
-            while remaining:
-                count = min(group_cap, remaining)
-                node_id = next_node_id
-                next_node_id += count
-                remaining -= count
+            # Request the remaining nodes together, so allocation waits overlap.
+            for _ in range(min(available, partition["total_nodes"],
+                               target_nodes - len(nodes))):
+                node_id = len(launchers)
                 log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
                 logs.append(log)
-                process = (launch_node(job_dir, node_id, partition["partition"],
-                                       slurm_cpus, immediate, log)
-                           if count == 1 else
-                           launch_idle_group(job_dir, node_id, count,
-                                             partition["partition"], slurm_cpus,
-                                             immediate, log))
+                process = launch_node(job_dir, node_id, partition["partition"],
+                                      slurm_cpus, immediate, log)
                 launchers.append(process)
-                pending.append((range(node_id, node_id + count), process, log.name))
-            for node_ids, process, log_name in pending:
-                node_id = node_ids.start
+                pending.append((node_id, process, log.name))
+            for node_id, process, log_name in pending:
                 ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
                                    process, immediate + 30)
                 if ready is None:
@@ -308,26 +280,17 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     print(f"{partition['partition']}: no immediate allocation",
                           flush=True)
                     continue
-                for node_id in node_ids:
-                    if node_id != node_ids.start:
-                        ready = wait_ready(
-                            job_dir / f"allocation-{node_id:03d}.json",
-                            process, immediate + 30)
-                        if ready is None:
-                            raise RuntimeError(
-                                f"Allocation did not start node {node_id}; "
-                                f"inspect {log_name}")
-                    if ready["node_id"] != node_id:
-                        raise RuntimeError("Allocation reported an unexpected node ID")
-                    nodes.append({
-                        "id": node_id, "partition": partition["partition"],
-                        "cores": cores, "slurm_cpus": slurm_cpus,
-                        "speed_per_core": partition["speed_per_core"],
-                        "slurm_job_id": ready["slurm_job_id"],
-                    })
-                    active.append((node_id, process, log_name))
-                    print(f"{partition['partition']}: started node "
-                          f"{len(nodes)}/{target_nodes}", flush=True)
+                if ready["node_id"] != node_id:
+                    raise RuntimeError("Allocation reported an unexpected node ID")
+                nodes.append({
+                    "id": node_id, "partition": partition["partition"],
+                    "cores": cores, "slurm_cpus": slurm_cpus,
+                    "speed_per_core": partition["speed_per_core"],
+                    "slurm_job_id": ready["slurm_job_id"],
+                })
+                active.append((node_id, process, log_name))
+                print(f"{partition['partition']}: started node "
+                      f"{len(nodes)}/{target_nodes}", flush=True)
             if len(nodes) == target_nodes:
                 break
         mixed_started = 0
@@ -340,8 +303,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     candidate = next(candidates, None)
                     if candidate is None:
                         break
-                    node_id = next_node_id
-                    next_node_id += 1
+                    node_id = len(launchers)
                     log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
                     logs.append(log)
                     process = launch_node(
@@ -466,6 +428,9 @@ def main(argv=None):
     parser.add_argument("--immediate", type=positive_int, default=5,
                         help="Seconds allowed for each Slurm allocation")
     args = parser.parse_args(argv)
+    if args.nodes > MAX_NODES:
+        parser.exit(2, f"elja: -n must be {MAX_NODES} or less "
+                       "(Slurm job limit)\n")
     if not args.csv and not args.output:
         parser.error("provide -o/--csv or -O/--output")
     if args.csv and args.output and Path(args.csv) == Path(args.output):
