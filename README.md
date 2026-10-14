@@ -74,7 +74,9 @@ systems 1 and 2 for each shared perturbation.
 Use `-O statistics.json` to save mergeable simulation statistics. You can use
 `-O` alone or together with `-o results.csv`. The JSON can be read with
 `simulation_chunks.read_chunk_result` and combined with other replicate ranges
-using `simulation_chunks.combine_chunks`. For a separate range, pass its
+using `simulation_chunks.combine_chunks`. Statistics files use format version 2;
+earlier formats are not supported. Excel reports and saved statistics omit
+minimum and maximum replicate summaries. For a separate range, pass its
 zero-based first replicate number with `-i` (for example, `-i 1000`). Runs
 intended for merging should use the same seed and disjoint replicate ranges.
 

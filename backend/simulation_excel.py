@@ -18,6 +18,7 @@ SIMULATION_TABLES = [
     {"abbr": "v", "total": True, "heading": "Votes"},
     {"abbr": "vp", "total": False, "heading": "Vote percentages"},
     {"abbr": "rss", "total": True, "heading": "Reference seat shares"},
+    {"abbr": "drss", "total": True, "heading": "Double scaled reference seat shares"},
     {"abbr": "cs", "total": True, "heading": "Fixed seats"},
     {"abbr": "as", "total": True, "heading": "Adjustment seats"},
     {"abbr": "ts", "total": True, "heading": "Total seats"},
@@ -40,8 +41,6 @@ SUMMARY_TABLES = [
 CATEGORIES = [
     {"abbr": "base", "heading": "Values based on source votes"},
     {"abbr": "avg", "heading": "Avg. simulated values"},
-    {"abbr": "min", "heading": "Minimum values"},
-    {"abbr": "max", "heading": "Maximum values"},
     {"abbr": "std", "heading": "Standard deviations"},
 ]
 
@@ -99,7 +98,7 @@ class SimulationWorkbook:
             else self.fmt["base"])
         if heading.endswith("percentages"):
             cell_format = self.fmt["percentages"]
-        elif heading.startswith("Reference seat"):
+        elif heading in {"Reference seat shares", "Double scaled reference seat shares"}:
             cell_format = self.fmt["sim"]
         elif heading == "Votes":
             cell_format = self.fmt["base"]
@@ -158,7 +157,7 @@ class SimulationWorkbook:
                             value if entropy_relative_available[index] else "–"
                             for index, value in enumerate(values)
                         ]
-                    elif measure in {"lh_regions", "gallagher_regions",
+                    elif measure in {"lh_region_parties", "gallagher_region_parties",
                                      "adjustment_regional_spread"}:
                         values = [
                             value if regional_available[index] else "–"
@@ -202,21 +201,25 @@ class SimulationWorkbook:
                 worksheet.write_comment(top + index, 1 if side_title else 0, tooltip)
         column = 2
         for statistic in EXCEL_HEADINGS:
-            base_format = (
-                statistic in {"min", "max"}
-                and group_id in {"seatSpec", "expected", "cmpList",
-                                 "cmpParty", "cmpNationalDetails"})
             write_matrix(
                 worksheet, top, column,
                 [row[statistic] for row in rows],
                 format=[
                     self.fmt["percentages"] if row.get("measure") in PERCENT_MEASURES | SENSITIVITY_PERCENT_MEASURES
-                    else self.fmt["base" if base_format else "cell"]
+                    else self.fmt["cell"]
                     for row in rows
                 ],
                 display_zeros=True)
             column += len(self.system_names) + 1
-        return top + len(row_titles) + 1 if row_titles else top
+        return top + len(row_titles) if row_titles else top
+
+    def write_quality_block_heading(self, worksheet, top, title):
+        worksheet.merge_range(top, 0, top, 1, title, self.fmt["h"])
+        column = 2
+        for _ in EXCEL_HEADINGS:
+            worksheet.write_row(top, column, self.system_names, self.fmt["h_center"])
+            column += len(self.system_names) + 1
+        return top + 1
 
     def write_quality_measures(self):
         party_votes = self.results["vote_table"]["party_vote_info"]["specified"]
@@ -245,7 +248,16 @@ class SimulationWorkbook:
             column += 1
 
         top = 4
+        previous_block = None
         for group_id, group in groups.items():
+            if not group["rows"]:
+                continue
+            block = group.get("block", "Supplementary diagnostics")
+            if block != previous_block:
+                if previous_block is not None:
+                    top += 1
+                top = self.write_quality_block_heading(worksheet, top, block)
+                previous_block = block
             top = self.write_quality_group(
                 worksheet,
                 top,
@@ -258,8 +270,9 @@ class SimulationWorkbook:
 
         sensitivity = self.results.get("sensitivity_data")
         if sensitivity:
+            previous_block = None
             row_titles = [
-                (f"{cov:g}% CoV", "") for cov in sensitivity["covs"]]
+                (f"{cov:g}% coefficient of variation", "") for cov in sensitivity["covs"]]
             for group_id, measure, title in (
                     ("sensitivityWithin", "sensitivity_within_parties",
                      "Seats displaced between lists within parties"),
@@ -270,7 +283,14 @@ class SimulationWorkbook:
                       for group, measure, title, _ in SINGLE_LIST_GROUPS)):
                 if measure not in sensitivity:
                     continue
-                title = title.replace("\n", " ")
+                vuedata = self.results["vuedata"]
+                block = ("Single-list sensitivity" if group_id.startswith("singleList")
+                         else "Sensitivity")
+                if block != previous_block:
+                    top += 1
+                    top = self.write_quality_block_heading(worksheet, top, block)
+                    previous_block = block
+                title = vuedata["group_titles"][group_id]
                 top = self.write_quality_group(
                     worksheet,
                     top,
@@ -278,6 +298,7 @@ class SimulationWorkbook:
                     title,
                     row_titles,
                     self.sensitivity_quality_data(measure),
+                    side_title=True,
                 )
 
     def national_vote_percentages(self):
@@ -366,7 +387,7 @@ class SimulationWorkbook:
         data = self.allocation_summary_data()
         top = 5
         for category in CATEGORIES:
-            skip_total = category["abbr"] in {"std", "min", "max"}
+            skip_total = category["abbr"] == "std"
             worksheet.write(top, 0, category["heading"], self.fmt["h"])
             worksheet.write_column(top, 1, self.system_names, self.fmt["basic"])
             column = 2
@@ -434,7 +455,9 @@ class SimulationWorkbook:
             "nmp": base["neg_margins"],
             "nmc": base["neg_margin_count"],
         }}
+        data["base"]["drss"] = base["double_ref_seat_shares"]
         seat_measures = self.results["data"][index]["seat_measures"]
+        double_reference = seat_measures["double_ref_seat_shares"]
         vote_count = -1 if combined else len(
             self.results["vote_data"][index]["sim_votes"]["avg"])
         seat_count = -1 if combined else len(seat_measures["fixed_seats"]["avg"])
@@ -453,6 +476,7 @@ class SimulationWorkbook:
                 "nmp": self.results["vote_data"][index]["neg_margin"][statistic],
                 "nmc": self.results["vote_data"][index]["neg_margin_count"][statistic],
             }
+            data[statistic]["drss"] = double_reference[statistic][:seat_count]
         return data
 
     @staticmethod

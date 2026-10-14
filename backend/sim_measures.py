@@ -1,7 +1,7 @@
 # Construct titles and data to put in the measures table in
 # simulation results
 
-from measure_groups import MeasureGroups, fractional_digits
+from measure_groups import MeasureGroups
 from measure_groups import headingType
 from reference_measures import PERCENT_MEASURES, SCALINGS, measure_tooltip, migrate_scaling_settings
 from sensitivity import SENSITIVITY_CHANGE_GROUPS, SENSITIVITY_PERCENT_MEASURES, SINGLE_LIST_GROUPS
@@ -31,7 +31,7 @@ def _system_display_value(
             and not entropy_score_available[system_index])
             or (measure == "entropy_relative"
                 and not entropy_relative_available[system_index])
-            or (measure in {"lh_regions", "gallagher_regions",
+            or (measure in {"lh_region_parties", "gallagher_region_parties",
                             "adjustment_regional_spread"}
                 and not regional_measure_available[system_index])):
         return "–"
@@ -44,7 +44,7 @@ def _system_display_value(
     value = normalize_negative_zero(value)
     result = {
         "value": value,
-        "integer": fractional_digits(group, stat) == 0,
+        "integer": False,
         "ci": None,
     }
     if measure in PERCENT_MEASURES:
@@ -141,7 +141,7 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
         vuedata[group_id] = []
         for row_index, cov in enumerate(sensitivity_data["covs"]):
             row = {
-                "rowtitle": f"{cov:g}% CoV",
+                "rowtitle": f"{cov:g}% coefficient of variation",
                 "tooltip": (
                     "Seat displacements for individual perturbations, each compared "
                     "with its own base election. Confidence intervals account for "
@@ -213,7 +213,9 @@ def add_vuedata(sim_result_dict, parallel):
         vuedata["group_titles"][id] = group["title"]
         vuedata["side_titles"][id] = group.get("side_title", False)
         vuedata["group_options"][id] = group.get("option")
-        if not group.get("side_title"):
+        if "stats" in group:
+            vuedata["group_stats"][id] = group["stats"]
+        elif not group.get("side_title"):
             vuedata["group_stats"][id] = ["avg"]
         last_column1 = ""
         vuedata[id] = []
@@ -234,9 +236,10 @@ def add_vuedata(sim_result_dict, parallel):
         for group_id in ("cmpListTitle", "cmpList", "cmpPartyTitle", "cmpParty"):
             vuedata["show"][group_id] = False
     elif "cmpParty" in groups:
-        # Check maxima so even a rare difference keeps the comparison visible.
+        # Absolute seat differences are nonnegative, so any difference gives
+        # a positive mean, even when it occurred in only one replicate.
         has_party_difference = any(
-            system_data["measures"][measure]["max"] != 0
+            system_data["measures"][measure]["avg"] != 0
             for system_data in data
             for measure in groups["cmpParty"]["rows"])
         if not has_party_difference:
@@ -245,15 +248,22 @@ def add_vuedata(sim_result_dict, parallel):
                 "in this simulation.")
     _add_sensitivity_vuedata(
         vuedata, sim_result_dict.get("sensitivity_data"), systems, nsim)
-    # Adjacent sections share one system header and have no spacer between them.
-    for first, second, title in (
-            ("parity", "toPartiesTotal", "Total allocation quality measures"),
-            ("cmpList", "cmpParty", "System comparison"),
-            ("sensitivityWithin", "sensitivityBetween", "Sensitivity")):
-        vuedata["block_headers"][first] = title
-        vuedata["block_continues"][first] = second
+    # The shared catalogue owns quality/comparison block boundaries.
+    previous, block = None, None
+    for group_id, group in groups.items():
+        if not group["rows"]:
+            continue
+        title = group.get("block")
+        if title and title == block:
+            vuedata["block_continues"][previous] = group_id
+        elif title:
+            vuedata["block_headers"][group_id] = title
+        previous, block = group_id, title
+    vuedata["initial_title"] = vuedata["block_headers"].pop("const")
     sensitivity_groups = [group for group in vuedata["group_ids"]
                           if group.startswith("sensitivity")]
+    if sensitivity_groups:
+        vuedata["block_headers"][sensitivity_groups[0]] = "Sensitivity"
     for first, second in zip(sensitivity_groups, sensitivity_groups[1:]):
         vuedata["block_continues"][first] = second
     single_groups = [group for group in vuedata["group_ids"] if group.startswith("singleList")]
@@ -261,15 +271,6 @@ def add_vuedata(sim_result_dict, parallel):
         vuedata["block_headers"][single_groups[0]] = "Single-list sensitivity"
     for first, second in zip(single_groups, single_groups[1:]):
         vuedata["block_continues"][first] = second
-    list_groups = list(groups)[:list(groups).index("parity")]
-    for first, second in zip(list_groups, list_groups[1:]):
-        vuedata["block_continues"][first] = second
-    vuedata["group_titles"].update({
-        "cmpList": "Total list seat\ndifference",
-        "cmpParty": "Total party seat\ndifference",
-    })
-    for group_id in ("cmpList", "cmpParty"):
-        vuedata["side_titles"][group_id] = True
     for group_id in ("cmpListTitle", "cmpPartyTitle"):
         vuedata["show"][group_id] = False
     sim_result_dict["vuedata"] = vuedata

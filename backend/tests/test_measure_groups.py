@@ -10,28 +10,44 @@ class MeasureGroupsTest(unittest.TestCase):
         groups = MeasureGroups([{"name": "System-1"}], False,
                                include_entropy_score=True,
                                scalings=["const", "both", "party", "total"])
-        self.assertEqual(list(groups)[:8], [
-            "const", "entropy", "both", "party", "total", "parity",
-            "toPartiesTotal", "singleSeat"])
-        self.assertEqual(list(groups["const"]["rows"])[:7], [
-            "lh_lists", "local_squared", "const_deviation", "const_surplus",
+        self.assertEqual(list(groups)[:12], [
+            "const", "entropy", "parity", "toPartiesTotal",
+            "additional_const", "additional_both", "additional_party", "additional_total",
+            "additional_parties", "both", "party", "total"])
+        self.assertEqual(list(groups["const"]["rows"])[:8], [
+            "lh_lists", "gallagher_lists", "local_squared", "const_deviation", "const_surplus",
             "const_shortfall", "const_share_surplus", "const_share_shortfall"])
         self.assertEqual(list(groups["parity"]["rows"]),
                          ["constituency_disparity", "lh_constituencies",
-                          "gallagher_constituencies",
                           "adjustment_constituency_spread"])
-        self.assertEqual(len(groups["both"]["options"]), 4)
         for scaling in ("both", "party", "total"):
             self.assertEqual(groups[scaling]["option"], "show_scalings")
+            self.assertEqual(len(groups[scaling]["rows"]), 5)
+            self.assertEqual(groups[f"additional_{scaling}"]["option"],
+                             ["show_additional", "show_scalings"])
+            self.assertEqual(len(groups[f"additional_{scaling}"]["rows"]), 4)
+            self.assertEqual(groups[f"additional_{scaling}"]["block"],
+                             "Additional proportionality measures")
         self.assertEqual(groups["singleSeat"]["option"], "show_single_seat")
-        self.assertEqual(len(groups["singleSeat"]["rows"]), 6)
+        self.assertEqual(len(groups["singleSeat"]["rows"]), 4)
+        self.assertEqual(len(groups["singleSeatParties"]["rows"]), 2)
+        self.assertEqual(groups["additional_const"]["block"],
+                         "Additional proportionality measures")
+        self.assertEqual(groups["additional_parties"]["block"],
+                         groups["additional_const"]["block"])
+        self.assertNotIn("const_squared", groups["const"]["rows"])
+        self.assertIn("const_squared", groups["additional_const"]["rows"])
+        self.assertNotIn("sum_sq_party_overall", groups["toPartiesTotal"]["rows"])
+        self.assertIn("sum_sq_party_overall", groups["additional_parties"]["rows"])
+        measures = groups.get_all_measures(False)
+        self.assertEqual(len(measures), len(set(measures)))
         json.dumps(groups)
 
     def test_confidence_interval_is_retained_for_zero_mean(self):
         systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
-            measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
+            measure: {"avg": 0, "std": 0}
             for measure in groups.get_all_measures(False)
         }
         measures["const_deviation"]["std"] = 1
@@ -44,7 +60,8 @@ class MeasureGroupsTest(unittest.TestCase):
 
         add_vuedata(result, parallel=False)
 
-        displayed = result["vuedata"]["const"][2]["avg"][0]
+        displayed = next(row for row in result["vuedata"]["const"]
+                         if row["measure"] == "const_deviation")["avg"][0]
         self.assertEqual(displayed["value"], 0)
         self.assertAlmostEqual(displayed["ci"], 0.196)
 
@@ -81,7 +98,7 @@ class MeasureGroupsTest(unittest.TestCase):
         systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
-            measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
+            measure: {"avg": 0, "std": 0}
             for measure in groups.get_all_measures(False)
         }
         result = {
@@ -105,7 +122,7 @@ class MeasureGroupsTest(unittest.TestCase):
         ]
         groups = MeasureGroups(systems, party_votes_specified=False)
         measures = {
-            measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
+            measure: {"avg": 0, "std": 0}
             for measure in groups.get_all_measures(False)
         }
         result = {
@@ -156,13 +173,13 @@ class MeasureGroupsTest(unittest.TestCase):
                         has_difference=has_difference):
                     groups = MeasureGroups(systems, national_votes)
                     data = [{"measures": {
-                        measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
+                        measure: {"avg": 0, "std": 0}
                         for measure in groups.get_all_measures(national_votes)
                     }} for _ in systems]
                     measure = next(iter(groups["cmpParty"]["rows"]))
                     if has_difference:
                         data[1]["measures"][measure].update(
-                            avg=0.0002, max=2, std=0.02)
+                            avg=0.0002, std=0.02)
                     result = {
                         "data": data,
                         "iteration": 10000,
@@ -198,8 +215,8 @@ class MeasureGroupsTest(unittest.TestCase):
                                      "Total list seat\ndifference")
                     self.assertTrue(shown["toPartiesTotal"])
                     self.assertEqual(
-                        result["data"][1]["measures"][measure]["max"],
-                        2 if has_difference else 0)
+                        result["data"][1]["measures"][measure]["avg"],
+                        0.0002 if has_difference else 0)
 
     def test_entropy_score_is_included_only_when_requested(self):
         systems = [{"name": "System-1"}]
@@ -221,7 +238,7 @@ class MeasureGroupsTest(unittest.TestCase):
         systems = [{"name": "System-1"}]
         groups = MeasureGroups(systems, False, include_entropy_score=True)
         measures = {
-            measure: {"avg": 0, "min": 0, "max": 0, "std": 0}
+            measure: {"avg": 0, "std": 0}
             for measure in groups.get_all_measures(False)
         }
         result = {

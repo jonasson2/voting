@@ -20,6 +20,64 @@ from voting import Election
 
 
 class ReferenceMeasuresTest(unittest.TestCase):
+    def test_double_reference_matrices_merge_and_export_beside_local_matrices(self):
+        from openpyxl import load_workbook
+        from excel_util import simulation_to_xlsx
+        for national_votes in (False, True):
+            with self.subTest(national_votes=national_votes):
+                votes, systems, settings = self.inputs()
+                settings['sensitivity'] = False
+                if national_votes:
+                    votes['party_vote_info'].update(
+                        specified=True, name='National', votes=[4500, 3500],
+                        total=8000, num_fixed_seats=0, num_adj_seats=2)
+                    votes['party_vote_basis'] = 'party_vote_info'
+                    systems[0]['adjustment_method'] = 'max-const-seat-share'
+                chunks = [run_chunk(votes, systems, settings, 1, index)
+                          for index in range(4)]
+                matrices = np.array([
+                    Running_stats.from_dict(deepcopy(
+                        chunk['stat']['double_ref_seat_shares'][0])).mean()
+                    for chunk in chunks])
+                merged = combine_chunks(deepcopy(chunks))
+                direct = combine_chunks([run_chunk(votes, systems, settings, 4, 0)])
+                statistics = merged.seat_data[0]['double_ref_seat_shares']
+                np.testing.assert_allclose(statistics['avg'], matrices.mean(axis=0))
+                np.testing.assert_allclose(statistics['std'], matrices.std(axis=0, ddof=1), atol=1e-12)
+                np.testing.assert_allclose(statistics['avg'],
+                                           direct.seat_data[0]['double_ref_seat_shares']['avg'])
+                np.testing.assert_allclose(np.array(statistics['avg'])[:, -1],
+                    np.array(merged.seat_data[0]['total_seats']['avg'])[:, -1])
+                if national_votes:
+                    # The grand totals use integer national targets; the
+                    # national row supplies the part outside constituencies.
+                    np.testing.assert_allclose(matrices[:, -1, :-1],
+                        matrices[:, -3, :-1] + matrices[:, -2, :-1])
+                with TemporaryDirectory() as directory:
+                    path = Path(directory) / 'double-reference.xlsx'
+                    simulation_to_xlsx(merged.get_result_web(False), str(path))
+                    workbook = load_workbook(path)
+                    sheet = workbook[systems[0]['name'][:31]]
+                    header = next(cell for row in sheet for cell in row
+                                  if cell.value == 'Double scaled reference seat shares')
+                    local_header = next(cell for row in sheet for cell in row
+                                        if cell.value == 'Reference seat shares')
+                    self.assertEqual(header.row, local_header.row)
+                    self.assertEqual(header.column - local_header.column,
+                                     len(votes['parties']) + 2)
+                    for label, matrix in (
+                            ('Values based on source votes', merged.base_allocations[0]['double_ref_seat_shares']),
+                            ('Avg. simulated values', statistics['avg']),
+                            ('Standard deviations', statistics['std'])):
+                        top = next(cell.row for row in sheet for cell in row[:1]
+                                   if cell.value == label)
+                        exported = [[cell.value for cell in row] for row in sheet.iter_rows(
+                            min_row=top, max_row=top + len(matrix) - 1,
+                            min_col=header.column,
+                            max_col=header.column + len(votes['parties']))]
+                        np.testing.assert_allclose(exported, matrix, atol=1e-8)
+                    workbook.close()
+
     def inputs(self):
         votes = load_votes('../data/2-by-2-example.csv')
         system = ElectionSystem()
@@ -159,11 +217,17 @@ class ReferenceMeasuresTest(unittest.TestCase):
                     with output.open() as file:
                         rows = list(csv.reader(file))
                     labels = [row[1] for row in rows if len(row) > 1]
+                    headings = [row[0] for row in rows]
+                    self.assertEqual(headings.count('Additional proportionality measures'), int(show))
+                    self.assertEqual(headings.count('Double, party, and national scaling'), int(show_scalings))
+                    self.assertEqual(headings.count('Specifically for single-seat constituencies'), int(show))
                     self.assertEqual('Total squared list seat deviation (Hare quota)' in labels, show)
                     self.assertEqual('Potential overhang' in labels, show)
                     self.assertEqual('Total squared party-seat deviation' in labels, show)
                     self.assertEqual(labels.count('Total list seat deviation'), 4 if show_scalings else 1)
                     self.assertEqual(labels.count('Local squared deviation per reference seat'), 1)
+                    self.assertEqual(labels.count('Total squared list seat deviation (Hare quota)'),
+                                     (4 if show_scalings else 1) if show else 0)
 
     def test_excel_retains_optional_and_secondary_rows_with_percent_formats(self):
         import openpyxl
@@ -184,6 +248,20 @@ class ReferenceMeasuresTest(unittest.TestCase):
             self.assertIn('%', local_index[2].number_format)
             self.assertIsNotNone(local_index[1].comment)
             labels = [cell.value for row in sheet for cell in row[:2]]
+            blocks = [row[0].value for row in sheet]
+            for title in ('List allocation quality measures',
+                          'Total allocation quality measures',
+                          'Additional proportionality measures',
+                          'Double, party, and national scaling',
+                          'Specifically for single-seat constituencies'):
+                self.assertEqual(blocks.count(title), 1)
+            local_squared_row = rows['Total squared list seat deviation (Hare quota)'][1].row
+            additional_start = blocks.index('Additional proportionality measures') + 1
+            scaling_start = blocks.index('Double, party, and national scaling') + 1
+            # All four named-method variants belong to the additional block.
+            self.assertGreater(local_squared_row, additional_start)
+            self.assertLess(local_squared_row, scaling_start)
+            self.assertLess(additional_start, scaling_start)
             self.assertIn('Over-allocation per reference seat', labels)
             self.assertIn('Measures with\ndouble scaling', labels)
             self.assertIn('Measures with\nparty scaling', labels)

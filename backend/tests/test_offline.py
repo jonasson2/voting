@@ -118,7 +118,7 @@ class OfflineSimulationTest(unittest.TestCase):
             with output.open(newline='', encoding='utf-8') as file:
                 rows = list(csv.reader(file))
             self.assertEqual(len([row for row in rows
-                                  if (len(row) > 1 and row[1].endswith('% CoV'))]), 12)
+                                  if (len(row) > 1 and row[1].endswith('% coefficient of variation'))]), 12)
 
     def test_chunk_ranges_cover_replicates_once(self):
         self.assertEqual(split_replicates(7, 3), [(3, 0), (2, 3), (2, 5)])
@@ -159,7 +159,7 @@ class OfflineSimulationTest(unittest.TestCase):
             self.assertEqual(summary['Random seed'], ['123'])
             self.assertEqual(summary['First replicate number (zero-based)'], ['7'])
             self.assertEqual(summary['Sensitivity measures calculated'], ['yes'])
-            self.assertEqual(summary['Sensitivity CoVs (%)'], ['0.3, 1, 3'])
+            self.assertEqual(summary['Sensitivity CoVs (%)'], ['0.3 1 3'])
             self.assertIn('Generating method', summary)
             self.assertIn('Relative standard deviation for list votes', summary)
             self.assertIn('Thresholds used', summary)
@@ -242,7 +242,8 @@ class OfflineSimulationTest(unittest.TestCase):
             table = result.get_result_web(parallel=False)['vuedata']
             for group in table['group_ids']:
                 option = table['group_options'].get(group)
-                if not table['show'][group] or (option and not table['display_options'].get(option)):
+                options = [option] if isinstance(option, str) else option or []
+                if not table['show'][group] or not all(table['display_options'].get(key) for key in options):
                     continue
                 if table['group_titles'][group]:
                     self.assertTrue(any(row[0] == table['group_titles'][group].replace('\n', ' ')
@@ -265,7 +266,7 @@ class OfflineSimulationTest(unittest.TestCase):
                     self.assertIn(expected, [row[1:] for row in rows])
             self.assertNotIn(['Quality measures'], rows)
             self.assertNotIn(['Average & 95% confidence interval'], rows)
-            self.assertEqual(sum((len(row) > 1 and row[1].endswith('% CoV')) for row in rows), 12)
+            self.assertEqual(sum((len(row) > 1 and row[1].endswith('% coefficient of variation')) for row in rows), 12)
             self.assertFalse(any('all seats as fixed' in row[0] for row in rows))
 
     def test_relative_entropy_is_a_ratio_and_survives_statistics_reload(self):
@@ -298,7 +299,7 @@ class OfflineSimulationTest(unittest.TestCase):
             report = result.get_result_web(parallel=False)
             self.assertAlmostEqual(report['data'][0]['measures']['entropy_relative']['avg'], 1)
             self.assertAlmostEqual(report['data'][1]['measures']['entropy_relative']['avg'], 1)
-            sensitivity = [row for row in rows if (len(row) > 1 and row[1].endswith('% CoV'))]
+            sensitivity = [row for row in rows if (len(row) > 1 and row[1].endswith('% coefficient of variation'))]
             self.assertEqual(len(sensitivity), 12)
             self.assertTrue(all(len(row) == 5 for row in sensitivity))
             write_csv(output, combine_chunks([read_chunk_result(statfile)]))

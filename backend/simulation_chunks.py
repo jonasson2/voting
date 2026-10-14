@@ -11,7 +11,7 @@ import numpy as np
 from simulate import Sim_result, Simulation
 
 
-CHUNK_FORMAT_VERSION = 1
+CHUNK_FORMAT_VERSION = 2
 
 
 def _json_value(value):

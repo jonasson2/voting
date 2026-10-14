@@ -25,6 +25,36 @@ VOTES = ROOT / 'data' / '2-by-2-example.csv'
 
 
 class ParallelSimulationScriptsTest(unittest.TestCase):
+    def test_excel_option_allows_excel_only_and_preserves_precision(self):
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / 'all.json'
+            source.write_text(json.dumps({
+                'vote_table': load_votes(VOTES),
+                'systems': [ElectionSystem()],
+                'sim_settings': SimulationSettings(),
+                'display_settings': {'fractional_digits': 5, 'percentage_digits': 2},
+            }))
+            for option in ('-x', '--excel'):
+                with self.subTest(option=option), patch.object(elja, 'run_distributed') as run:
+                    self.assertEqual(elja.main([
+                        '-n', '2', '-a', str(source), option, 'results.xlsx']), 0)
+                    arguments = run.call_args.kwargs
+                    self.assertEqual(arguments['excel_path'], 'results.xlsx')
+                    self.assertIsNone(arguments['csv_path'])
+                    self.assertIsNone(arguments['stat_path'])
+                    self.assertEqual(arguments['display_settings'],
+                                     {'fractional_digits': 5, 'percentage_digits': 2})
+
+    def test_outputs_cannot_share_a_path(self):
+        for first, second in (('-o', '-x'), ('-x', '-O'), ('-o', '-O')):
+            errors = StringIO()
+            with self.subTest(outputs=(first, second)), redirect_stderr(errors):
+                with self.assertRaises(SystemExit) as raised:
+                    elja.main(['-n', '2', '-a', 'unused.json',
+                               first, 'results', second, './results'])
+            self.assertEqual(raised.exception.code, 2)
+            self.assertIn('files must have different paths', errors.getvalue())
+
     def test_more_than_thirty_nodes_exits_before_loading_inputs(self):
         errors = StringIO()
         with redirect_stderr(errors), patch.dict(sys.modules, {'sim': None}), \
@@ -213,7 +243,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
 
     def run_with_allocations(self, directory, outcomes, *, target_nodes=2,
                              live_processes=(), availability=(3, 3),
-                             mixed_nodes=0, mixed_candidates=(), event_order=None):
+                             mixed_nodes=0, mixed_candidates=(), event_order=None,
+                             excel_path=None):
         """Exercise the master without starting processes or allocating nodes."""
         job = Path(directory) / 'job'
         processes = [Mock(pid=1000 + i) for i in range(len(outcomes))]
@@ -259,6 +290,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                 elja.run_distributed(
                     {}, [], settings, csv_path=Path(directory) / 'report.csv',
                     stat_path=None, job_dir=job, partitions=partitions,
+                    excel_path=excel_path,
                     target_nodes=target_nodes, first_replicate=37,
                     core_cap=40, immediate=5, mixed_nodes=mixed_nodes)
                 if availability[0] >= 2 and mixed_nodes == 0:
@@ -272,6 +304,22 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             if event_order is not None:
                 event_order.extend(call[0] for call in events.mock_calls)
         return job, processes, launch, read, merge, write, kill, None
+
+    def test_csv_and_excel_use_the_same_merged_result(self):
+        with TemporaryDirectory() as directory, \
+                patch('excel_util.simulation_to_xlsx') as export:
+            path = Path(directory) / 'results.xlsx'
+            _, _, _, read, merge, write, _, error = self.run_with_allocations(
+                directory, [{'node_id': 0, 'slurm_job_id': '10'},
+                            {'node_id': 1, 'slurm_job_id': '11'}], excel_path=path)
+            self.assertIsNone(error)
+            self.assertEqual(read.call_count, 2)
+            merge.assert_called_once()
+            combined = merge.return_value
+            self.assertIs(write.call_args.args[1], combined)
+            combined.get_result_web.assert_called_once_with(False)
+            export.assert_called_once_with(combined.get_result_web.return_value,
+                str(path), {'fractional_digits': 3, 'percentage_digits': 1})
 
     def test_stops_allocating_when_enough_nodes_are_ready(self):
         with TemporaryDirectory() as directory:

@@ -12,6 +12,7 @@ from input_files import (
     load_all, load_section, load_votes, prepare_simulation_inputs, validate_display_settings,
 )
 from simulation_report import simulation_settings, source_settings
+from reference_measures import option_enabled
 
 from simulation_chunks import (
     combine_chunks, run_chunk, split_replicates, write_chunk_result,
@@ -149,7 +150,7 @@ def write_csv(path, result, display_settings=None):
             if group == "shareTitle" or not table["show"][group]:
                 continue
             option = table["group_options"].get(group)
-            if option and not table["display_options"].get(option):
+            if not option_enabled(table["display_options"], option):
                 continue
             side_title = table["side_titles"].get(group)
             title = table["group_titles"][group].replace("\n", " ")

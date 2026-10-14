@@ -16,7 +16,7 @@ from excel_util import simulation_to_xlsx
 from methods.optimal_lp import optimal_lp
 from division_rules import dhondt_gen
 from noweb import load_votes
-from reference_measures import adjustment_spread, geographical_indices
+from reference_measures import adjustment_spread, geographical_indices, local_indices
 from sim import write_csv
 from simulate import Collect, Simulation, SimulationSettings
 from simulation_chunks import (
@@ -41,6 +41,26 @@ def regional_example():
 
 
 class GeographicalMeasuresTest(unittest.TestCase):
+    def test_local_indices_weight_units_by_seats_and_aggregate_regions_first(self):
+        votes = [[50, 30, 20], [100, 0, 0]]
+        seats = [[12, 5, 3], [0, 2, 0]]
+        lh, gallagher = local_indices(votes, seats)
+        self.assertAlmostEqual(lh, (20 * .1 + 2) / 22)
+        self.assertAlmostEqual(gallagher, (20 * np.sqrt(.0075) + 2) / 22)
+        # National geographical shares match, but local party shares do not.
+        votes = [[60, 40], [40, 60]]
+        seats = [[1, 0], [0, 1]]
+        self.assertEqual(geographical_indices([100, 100], [1, 1]), (0, 0))
+        np.testing.assert_allclose(local_indices(votes, seats), [.4, .4])
+        self.assertEqual(local_indices(votes, seats, [[0, 1]]), (0, 0))
+        self.assertEqual(local_indices([[0, 0]], [[1, 0]]), (0, 0))
+        self.assertEqual(local_indices([[1, 0]], [[0, 0]]), (0, 0))
+        # A zero-seat unit has zero weight; a positive-vote zero-seat party
+        # in an occupied unit remains part of the discrepancy.
+        np.testing.assert_allclose(
+            local_indices([[60, 20, 20], [0, 100, 0]], [[1, 0, 0], [0, 0, 0]]),
+            [.4, np.sqrt(.12)])
+
     def test_indices_normalization_cancellation_and_zero_totals(self):
         lh, gallagher = geographical_indices([60, 40], [55, 45])
         self.assertAlmostEqual(lh, .05)
@@ -141,19 +161,21 @@ class GeographicalMeasuresTest(unittest.TestCase):
         simulation.reference_measures(election, deviations)
         expected = geographical_indices([180, 140], [1, 1])
         self.assertAlmostEqual(deviations['lh_constituencies'][0], expected[0])
-        self.assertAlmostEqual(deviations['gallagher_constituencies'][0], expected[1])
+        self.assertAlmostEqual(deviations['gallagher_lists'][0],
+                               (60 / 160 + 90 / 140) / 2)
 
-    def test_one_explicit_region_is_reported_with_zero_regional_indices(self):
+    def test_one_region_measures_party_proportionality_not_geography(self):
         votes, system = regional_example()
         votes['regions'] = [
             {'abbreviation': 'all', 'name': 'All', 'num_adj_seats': 2}]
         for constituency in votes['constituencies']:
             constituency['region'] = 'all'
         settings = SimulationSettings()
-        settings.update(random_seed=41, simulation_count=1, cpu_count=1)
+        settings.update(random_seed=41, simulation_count=1, cpu_count=1,
+                        const_rsd=0)
         result = combine_chunks([run_chunk(votes, [system], settings, 1, 0)])
-        self.assertEqual(result.data[0]['lh_regions']['avg'], 0)
-        self.assertEqual(result.data[0]['gallagher_regions']['avg'], 0)
+        self.assertAlmostEqual(result.data[0]['lh_region_parties']['avg'], 2 / 15)
+        self.assertAlmostEqual(result.data[0]['gallagher_region_parties']['avg'], 2 / 15)
 
     def test_all_reports_and_chunk_merge(self):
         settings = SimulationSettings()
@@ -164,8 +186,8 @@ class GeographicalMeasuresTest(unittest.TestCase):
             run_chunk(votes, [system], settings, 2, 0),
             run_chunk(votes, [system], settings, 2, 2),
         ])
-        new_measures = ('lh_regions', 'gallagher_regions',
-                        'gallagher_constituencies',
+        new_measures = ('lh_region_parties', 'gallagher_region_parties',
+                        'gallagher_lists',
                         'adjustment_regional_spread',
                         'adjustment_constituency_spread')
         for measure in new_measures:
@@ -173,7 +195,14 @@ class GeographicalMeasuresTest(unittest.TestCase):
                 self.assertAlmostEqual(direct.data[0][measure][statistic],
                                        merged.data[0][measure][statistic])
         report = merged.get_result_web(False)
-        measures = {row['measure'] for row in report['vuedata']['parity']}
+        local_measures = {row['measure'] for row in report['vuedata']['const']}
+        self.assertTrue({'gallagher_lists', 'lh_region_parties',
+                         'gallagher_region_parties'} <= local_measures)
+        self.assertNotIn('gallagher_constituencies', direct.MEASURES)
+        self.assertNotIn('lh_regions', direct.MEASURES)
+        self.assertNotIn('gallagher_regions', direct.MEASURES)
+        measures = {row['measure'] for group in ('const', 'parity')
+                    for row in report['vuedata'][group]}
         self.assertTrue(set(new_measures) <= measures)
         with TemporaryDirectory() as directory:
             csv_path = Path(directory) / 'result.csv'
@@ -209,9 +238,11 @@ class GeographicalMeasuresTest(unittest.TestCase):
         for constituency in votes['constituencies']:
             constituency.pop('region')
         plain = combine_chunks([run_chunk(votes, [system], settings, 1, 0)])
-        measures = {row['measure'] for row in plain.get_result_web(False)['vuedata']['parity']}
-        self.assertIn('gallagher_constituencies', measures)
-        self.assertNotIn('gallagher_regions', measures)
+        report = plain.get_result_web(False)
+        measures = {row['measure'] for group in ('const', 'parity')
+                    for row in report['vuedata'][group]}
+        self.assertIn('gallagher_lists', measures)
+        self.assertNotIn('gallagher_region_parties', measures)
         self.assertNotIn('adjustment_regional_spread', measures)
         with TemporaryDirectory() as directory:
             csv_path = Path(directory) / 'plain.csv'

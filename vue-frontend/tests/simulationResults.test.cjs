@@ -50,7 +50,7 @@ test("optional rows toggle without rerunning, with section titles in their own c
     side_titles: {const: true, singleSeat: true}, group_options: {singleSeat: 'show_single_seat'},
     headingType: {sensitivityWithin: 'systems'}, group_stats: {sensitivityWithin: ['avg']},
     const: [row('Core row'), row('Additional row', 'show_additional')],
-    singleSeat: [row('Single-seat diagnostic')], sensitivityWithin: [row('0.1% CoV')],
+    singleSeat: [row('Single-seat diagnostic')], sensitivityWithin: [row('0.1% coefficient of variation')],
   }
   for (const scaling of ['both', 'party', 'total']) {
     vuedata.group_ids.splice(vuedata.group_ids.indexOf('singleSeat'), 0, scaling)
@@ -95,12 +95,61 @@ test("optional rows toggle without rerunning, with section titles in their own c
   html = await render()
   assert.doesNotMatch(html, /both deviation|party deviation|total deviation/)
   assert.match(html, /Additional row/)
-  const sensitivity = html.match(/<tr[^>]*>(?:(?!<\/tr>)[\s\S])*0\.1% CoV[\s\S]*?<\/tr>/)[0]
+  const sensitivity = html.match(/<tr[^>]*>(?:(?!<\/tr>)[\s\S])*0\.1% coefficient of variation[\s\S]*?<\/tr>/)[0]
   assert.match(sensitivity, /0\.125 ± 0\.010/)
   assert.doesNotMatch(sensitivity, /0\.050/)
 
+  // Hiding trailing scaling sections must not remove the inter-block gap.
+  vuedata.group_ids = ['const', 'both', 'party', 'total', 'parity']
+  vuedata.parity = [row('Constituency disparity')]
+  vuedata.show.parity = vuedata.side_titles.parity = true
+  vuedata.group_titles.parity = 'Geographical balance'
+  vuedata.block_headers = {parity: 'Total allocation quality measures'}
+  vuedata.block_continues = {const: 'both', both: 'party', party: 'total'}
+  for (const showScalings of [false, true, false]) {
+    settings.show_scalings = showScalings
+    html = await render()
+    const beforeTotals = html.split('Total allocation quality measures')[0]
+    assert.equal((beforeTotals.match(/class="section-spacer"/g) || []).length, 1)
+  }
+
+  // Additional scaling measures require both checkboxes and share one block.
+  const additional = ['const', 'both', 'party', 'total'].map(scaling => `additional_${scaling}`)
+  vuedata.group_ids = ['const', ...additional, 'both', 'party', 'total', 'parity']
+  vuedata.block_headers.additional_const = 'Additional proportionality measures'
+  vuedata.block_headers.both = 'Double, party, and national scaling'
+  vuedata.block_continues = {additional_const: 'additional_both',
+    additional_both: 'additional_party', additional_party: 'additional_total',
+    both: 'party', party: 'total'}
+  for (const scaling of ['const', 'both', 'party', 'total']) {
+    const id = `additional_${scaling}`
+    vuedata[id] = [row(`extra ${scaling}`)]
+    vuedata.show[id] = vuedata.side_titles[id] = true
+    vuedata.group_titles[id] = scaling
+    vuedata.group_options[id] = scaling === 'const' ? 'show_additional'
+      : ['show_additional', 'show_scalings']
+  }
+  for (const showAdditional of [false, true]) {
+    for (const showScalings of [false, true]) {
+      settings.show_additional = showAdditional
+      settings.show_scalings = showScalings
+      html = await render()
+      assert.equal(html.includes('extra const'), showAdditional)
+      for (const scaling of ['both', 'party', 'total']) {
+        assert.equal(html.includes(`extra ${scaling}`), showAdditional && showScalings)
+      }
+      if (showAdditional && showScalings) {
+        const extraBlock = html.split('Additional proportionality measures')[1]
+          .split('Double, party, and national scaling')[0]
+        assert.match(extraBlock, /extra both/)
+        assert.match(extraBlock, /extra party/)
+        assert.match(extraBlock, /extra total/)
+      }
+    }
+  }
+
   vuedata.group_ids = ['sensitivityWithin', 'sensitivityBetween']
-  vuedata.sensitivityBetween = [row('0.1% CoV')]
+  vuedata.sensitivityBetween = [row('0.1% coefficient of variation')]
   vuedata.show.sensitivityBetween = true
   vuedata.group_stats.sensitivityBetween = ['avg']
   vuedata.side_titles.sensitivityWithin = vuedata.side_titles.sensitivityBetween = true
@@ -124,5 +173,5 @@ test("optional rows toggle without rerunning, with section titles in their own c
   assert.match(html, /class="section-title">party seat displacements/)
   assert.match(html, /class="group-message" colspan="2"/)
   assert.match(html, /Identical totals/)
-  assert.equal((html.match(/0\.1% CoV/g) || []).length, 1)
+  assert.equal((html.match(/0\.1% coefficient of variation/g) || []).length, 1)
 })

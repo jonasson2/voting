@@ -157,7 +157,8 @@ class SensitivityTest(unittest.TestCase):
             SimulationWorkbook(result.get_result_web(False), path / "results.xlsx").write()
             sheet = load_workbook(path / "results.xlsx")["Quality measures"]
             titles = [row[0].value for row in sheet]
-            self.assertIn("Single-list sensitivity: Changes to selected list", titles)
+            self.assertIn("Single-list sensitivity", titles)
+            self.assertIn("Changes to selected list", titles)
 
     def test_cov_list_sorts_any_order_and_rejects_duplicates(self):
         self.assertEqual(
@@ -260,8 +261,6 @@ class SensitivityTest(unittest.TestCase):
         np.testing.assert_allclose(data["avg"], [[1, 1]])
         np.testing.assert_allclose(data["std"], [[np.sqrt(4/3), np.sqrt(4/3)]])
         np.testing.assert_allclose(data["se"], [[np.sqrt(1/3), np.sqrt(1/3)]])
-        self.assertEqual(data["min"], [[0, 0]])
-        self.assertEqual(data["max"], [[2, 2]])
         self.assertAlmostEqual(data["lo95"][0][0], 1 - 1.96*np.sqrt(1/3))
         web = result.get_result_web(False)["vuedata"]["sensitivityWithin"][0]
         self.assertAlmostEqual(web["avg"][0]["ci"], 1.96*np.sqrt(1/3))
@@ -300,7 +299,7 @@ class SensitivityTest(unittest.TestCase):
         self.assertIsNone(web["avg"][0]["ci"])
         self.assertEqual(web["std"], ["–"])
 
-    def test_old_saved_sensitivity_cannot_supply_missing_inner_statistics(self):
+    def test_missing_inner_statistics_are_rejected(self):
         table = load_votes("../data/2-by-2-example.csv")
         simulation = Simulation(self.settings(), [self.make_system(table)], table)
         simulation.simulate()
@@ -364,7 +363,7 @@ class SensitivityTest(unittest.TestCase):
         uninterrupted.analysis()
         combined.analysis()
         for measure in SENS_MEASURES:
-            for statistic in ("avg", "std", "se", "lo95", "hi95", "min", "max"):
+            for statistic in ("avg", "std", "se", "lo95", "hi95"):
                 np.testing.assert_allclose(
                     uninterrupted.sensitivity_data[measure][statistic],
                     combined.sensitivity_data[measure][statistic])
@@ -406,7 +405,7 @@ class SensitivityTest(unittest.TestCase):
             sheet = load_workbook(path)["Quality measures"]
             title = next(cell for row in sheet for cell in row
                          if cell.value == "Party totals change")
-            value = sheet.cell(title.row + 1, 3)
+            value = sheet.cell(title.row, 3)
             self.assertAlmostEqual(value.value, 2/3)
             self.assertIn("%", value.number_format)
 
@@ -434,7 +433,7 @@ class SensitivityTest(unittest.TestCase):
         self.assertEqual(
             [row["rowtitle"]
              for row in web["vuedata"]["sensitivityWithin"]],
-            ["1% CoV", "2% CoV"],
+            ["1% coefficient of variation", "2% coefficient of variation"],
         )
 
         with TemporaryDirectory() as directory:
@@ -443,12 +442,15 @@ class SensitivityTest(unittest.TestCase):
             sheet = load_workbook(path, read_only=True)["Quality measures"]
             first_column = [
                 row[0].value for row in sheet.iter_rows(min_col=1, max_col=1)]
+            cov_column = [
+                row[0].value for row in sheet.iter_rows(min_col=2, max_col=2)]
         self.assertLess(
-            first_column.index("Seats displaced between lists within parties"),
-            first_column.index("Seats displaced between parties"),
+            first_column.index("list seat\ndisplacements"),
+            first_column.index("party seat\ndisplacements"),
         )
-        self.assertEqual(first_column.count("1% CoV"), 4)
-        self.assertEqual(first_column.count("2% CoV"), 4)
+        self.assertEqual(first_column.count("Sensitivity"), 1)
+        self.assertEqual(cov_column.count("1% coefficient of variation"), 4)
+        self.assertEqual(cov_column.count("2% coefficient of variation"), 4)
 
 
 if __name__ == "__main__":

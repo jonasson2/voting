@@ -319,15 +319,11 @@ EXCEL_HEADINGS = {
     "avg":  "AVERAGE",
     "lo95": "LOWER 95%-CI",
     "hi95": "UPPER 95%-CI",
-    "min":  "MINIMUM",
-    "max":  "MAXIMUM",
     "std":  "STD.DEV."
 }
 
 STATISTICS_HEADINGS = {
     "avg": "Average & 95% confidence interval",
-    "min": "MINIMUM",
-    "max": "MAXIMUM",
     "std": "STD.DEV."
 }
 
@@ -382,6 +378,7 @@ THRESHOLD_CHOICE = [
 
 SEAT_MEASURES = {
     "ref_seat_shares": "reference seat shares",
+    "double_ref_seat_shares": "double scaled reference seat shares",
     "fixed_seats": "fixed seats",
     "adj_seats": "adjustment seats",
     "total_seats": "constituency and adjustment seats combined",

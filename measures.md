@@ -18,6 +18,8 @@ and 95% confidence intervals. Explain formulas and reference scaling in tooltips
 Core measure inventory (display order follows the sections below):
 
 1. Loosemore-Hanby index for lists.
+   Also Gallagher index for lists, and regional Loosemore-Hanby and Gallagher
+   when regions are defined.
 2. Entropy score.
 3. Local squared deviation per reference seat.
 4. Total list seat deviation.
@@ -33,10 +35,34 @@ Core measure inventory (display order follows the sections below):
 
 ### Display sections
 
+The shared catalogue now organizes output into these blocks:
+
+- **List allocation quality measures:** Local measures and Quotient optimality.
+- **Total allocation quality measures:** Geographical balance and Party totals.
+- **Additional proportionality measures** (`show_additional`): the four extra
+  local proportionality measures under Local measures, and total squared
+  party-seat deviation under Party totals. When `show_scalings` is also checked,
+  include the four extra measures for each of double, party and national scaling
+  here, in their own scaling subblocks.
+- **Double, party, and national scaling** (`show_scalings`): one subblock for
+  each of these scalings, containing the five seat-deviation measures.
+- **Specifically for single-seat constituencies** (`show_single_seat`): Local
+  measures (slope, correlation, maximum negative margin and constituency count)
+  and Party totals (total excess and potential overhang).
+- **System comparison**, **Sensitivity**, and **Single-list sensitivity** retain
+  their existing subblocks when applicable.
+
+Each output block has its own title, system header and separating space.
+Checkboxes affect completed web and CSV display. Excel includes all optional
+measures, organized into the same blocks and subblocks; its existing extra
+diagnostics remain in a Supplementary diagnostics block. Catalogue metadata
+defines the quality/comparison block boundaries for all three reports.
+
 Organize the display in this order:
 
-1. **Local measures:** Loosemore-Hanby index for lists and local squared
-   deviation per reference seat. Always include
+1. **Local measures:** Loosemore-Hanby and Gallagher indices for lists,
+   the corresponding regional party-proportionality indices when regions exist,
+   and local squared deviation per reference seat. Always include
    total list seat deviation and the four list surplus/shortfall maxima here.
    These all compare with local fractional seats: constituency seat count
    multiplied by the list's local vote share. Do not split the local measures
@@ -375,8 +401,7 @@ for names, groups, and output selection rather than separate web and CSV lists.
 - New simulations compute all four scalings. New saved settings use the boolean
   `show_scalings` instead of `scaling`. Loading older settings with any nonlocal
   scaling enables the new display checkbox unless an explicit `show_scalings`
-  value is present. Older result files retain only their computed benchmarks;
-  rerun them to obtain missing scalings.
+  value is present.
 - All three optional display selections default to unchecked. Toggling them changes
   the displayed completed results immediately; it does not change calculation.
 - All six single-seat diagnostics are retained. Their reference-dependent rows
@@ -389,24 +414,46 @@ for names, groups, and output selection rather than separate web and CSV lists.
 - CSV uses separate section and measure fields; each average and confidence
   interval remains one cell. Excel retains secondary measures and cell comments.
 
+Each electoral-system Excel sheet includes Double scaled reference seat shares
+immediately to the right of Reference seat shares. Store per-replicate matrices
+using the already computed double-scaling benchmark, so means and standard deviations are computed before export, rather than by scaling
+averaged votes. Include source-vote values, national rows and totals when
+applicable. Statistics files use format version 2; earlier formats are not
+supported. Minimum and maximum replicate summaries are neither accumulated
+nor included in Excel reports or saved statistics.
+
 ## Geographical balance and adjustment-seat spread
 
-For each constituency, compare its share of all valid constituency votes with
-its share of final constituency seats (fixed plus adjustment). Pruned votes are
-included; national-list votes and seats are excluded. The geographical
-Loosemore-Hanby index is half the sum of absolute share differences. The
-Gallagher index is the square root of half the sum of squared share differences.
-Both use shares from 0 to 1 internally and are displayed as percentages.
-Lower is better. The vote benchmark reflects votes, rather than population or
-statutory geographical entitlements. A zero overall vote or seat total gives
-zero for either index.
+Local proportionality indices compare parties' vote and final seat shares
+within each constituency. For unit u, let v[u,p] and s[u,p] be the within-unit
+vote and seat shares of party p, and S[u] its final seat total:
 
-When the source vote table explicitly defines valid regions, first add votes
-and final seats across the constituencies in each region, then calculate the
-same two indices for those regional totals. Regional rows are omitted when no
-regions are defined. If a system loses a valid constituency-to-region mapping,
-its regional result is shown as unavailable. These indices measure geographical
-seat distribution; they do not measure local party proportionality.
+    LH[u] = 0.5 * sum over parties(abs(s[u,p] - v[u,p]))
+    Gallagher[u] = sqrt(0.5 * sum over parties((s[u,p] - v[u,p])**2))
+    reported index = sum over units(S[u] * index[u]) / sum over units(S[u])
+
+“Gallagher index for lists (%)” uses constituencies as units. The existing
+“Loosemore-Hanby index for lists (%)” is equivalent to the seat-weighted local
+LH average. Both use retained parties after pruning, and final fixed plus
+adjustment seats; separate national-list votes and seats are excluded.
+
+“Loosemore-Hanby index for regions (%)” and “Gallagher index for regions (%)”
+first aggregate each party's votes and final seats across constituencies in
+its region, then compute within-region party shares and average the regional
+indices weighted by regional seats. Both appear under Local measures only
+when the source defines valid regions. A single region measures national
+party proportionality and need not give zero. Invalid transformed geography
+is displayed as unavailable. These measures are independent of reference
+scaling. Zero-seat units have zero weight; zero-vote units contribute zero.
+All indices use proportions internally and are displayed as percentages.
+
+Geographical balance retains constituency disparity, constituency
+Loosemore-Hanby, and adjustment-seat spread. Constituency Loosemore-Hanby
+compares constituency shares of national valid votes and final constituency
+seats, includes pruned votes, and excludes national-list votes and seats.
+The former geographical Gallagher and regional geographical Loosemore-Hanby
+measures have been removed. The new local indices have separate statistics keys from the removed
+geographical measures.
 
 Adjustment-seat spread across constituencies counts, for each party, the
 constituencies receiving at least one of its adjustment seats. Regional spread

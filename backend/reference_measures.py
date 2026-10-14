@@ -77,8 +77,33 @@ LIST_ROWS = {
 OPTIONAL_LIST_ROWS = set(list(LIST_ROWS)[5:])
 PERCENT_MEASURES = {
     "entropy_score", "lh_lists", "lh_constituencies", "lh_parties",
-    "lh_regions", "gallagher_constituencies", "gallagher_regions",
+    "gallagher_lists", "lh_region_parties", "gallagher_region_parties",
 }
+
+
+def local_indices(votes, seats, groups=None):
+    """Seat-weighted mean of within-unit party LH and Gallagher indices."""
+    votes = np.asarray(votes, dtype=float)
+    seats = np.asarray(seats, dtype=float)
+    if votes.shape != seats.shape or votes.ndim != 2:
+        raise ValueError("Local vote and seat matrices must align.")
+    if groups is not None:
+        votes = np.array([votes[group].sum(axis=0) for group in groups])
+        seats = np.array([seats[group].sum(axis=0) for group in groups])
+    vote_totals = votes.sum(axis=1)
+    seat_totals = seats.sum(axis=1)
+    if seat_totals.sum() == 0:
+        return 0.0, 0.0
+    vote_shares = np.divide(votes, vote_totals[:, None],
+                            out=np.zeros_like(votes), where=vote_totals[:, None] > 0)
+    seat_shares = np.divide(seats, seat_totals[:, None],
+                            out=np.zeros_like(seats), where=seat_totals[:, None] > 0)
+    difference = seat_shares - vote_shares
+    difference[vote_totals == 0] = 0
+    lh = np.abs(difference).sum(axis=1) / 2
+    gallagher = np.sqrt((difference ** 2).sum(axis=1) / 2)
+    return (float(np.dot(seat_totals, lh) / seat_totals.sum()),
+            float(np.dot(seat_totals, gallagher) / seat_totals.sum()))
 
 
 def geographical_indices(votes, seats):
@@ -121,75 +146,97 @@ def valid_region_groups(election):
     return groups
 
 
+def option_enabled(settings, option):
+    """A group may require one display checkbox or several."""
+    if isinstance(option, (list, tuple)):
+        return all(option_enabled(settings, item) for item in option)
+    return not option or settings.get(option, False)
+
+
 def quality_groups(scalings, include_entropy, multiple_systems,
                    include_regions=False):
     """Single catalogue for computed statistics, web, CSV and Excel."""
     groups = {}
-    for scaling in ["const", *[s for s in scalings if s != "const"]]:
-        rows = {}
-        if scaling == "const":
-            rows = {
-                "lh_lists": ("Loosemore-Hanby index for lists (%)", ""),
-                "local_squared": ("Local squared deviation per reference seat", ""),
-            }
-        if scaling in scalings:
-            rows.update({f"{scaling}_{key}": (title, "")
-                         for key, title in LIST_ROWS.items()})
-        titles = {"const": "Local measures", "both": "Measures with\ndouble scaling",
-                  "party": "Measures with\nparty scaling",
-                  "total": "Measures with\nnational scaling"}
-        groups[scaling] = {
-            "title": titles[scaling], "rows": rows, "side_title": True,
-            "options": {f"{scaling}_{key}": "show_additional"
-                        for key in OPTIONAL_LIST_ROWS if scaling in scalings},
-        }
-        if scaling != "const":
-            groups[scaling]["option"] = "show_scalings"
-        if scaling == "const" and include_entropy:
-            groups["entropy"] = {"title": "Quotient optimality", "side_title": True,
-                                 "rows": {"entropy_score": ("Entropy score", "")}}
-            if multiple_systems:
-                groups["entropy"]["rows"]["entropy_relative"] = (
-                    "Entropy relative to system 1", "")
-    geographical_rows = {
+    titles = {"const": "Local measures", "both": "Measures with\ndouble scaling",
+              "party": "Measures with\nparty scaling",
+              "total": "Measures with\nnational scaling"}
+
+    def add(group_id, title, rows, block, option=None, only_excel=False):
+        groups[group_id] = {"title": title, "rows": rows, "block": block,
+                            "side_title": True}
+        if option:
+            groups[group_id]["option"] = option
+        if only_excel:
+            groups[group_id]["onlyExcel"] = True
+
+    def scaling_rows(scaling, additional):
+        return {f"{scaling}_{key}": (title, "")
+                for key, title in LIST_ROWS.items()
+                if (key in OPTIONAL_LIST_ROWS) == additional}
+
+    local = {
+        "lh_lists": ("Loosemore-Hanby index for lists (%)", ""),
+        "gallagher_lists": ("Gallagher index for lists (%)", ""),
+        "local_squared": ("Local squared deviation per reference seat", ""),
+    }
+    if include_regions:
+        local.update({
+            "lh_region_parties": ("Loosemore-Hanby index for regions (%)", ""),
+            "gallagher_region_parties": ("Gallagher index for regions (%)", ""),
+        })
+    if "const" in scalings:
+        local.update(scaling_rows("const", False))
+    add("const", titles["const"], local, "List allocation quality measures")
+    if include_entropy:
+        rows = {"entropy_score": ("Entropy score", "")}
+        if multiple_systems:
+            rows["entropy_relative"] = ("Entropy relative to system 1", "")
+        add("entropy", "Quotient optimality", rows, "List allocation quality measures")
+
+    geographical = {
         "constituency_disparity": ("Constituency disparity", ""),
         "lh_constituencies": ("Loosemore-Hanby index for constituencies (%)", ""),
-        "gallagher_constituencies": ("Gallagher index for constituencies (%)", ""),
         "adjustment_constituency_spread":
             ("Adjustment-seat spread across constituencies", ""),
     }
     if include_regions:
-        geographical_rows.update({
-            "lh_regions": ("Loosemore-Hanby index for regions (%)", ""),
-            "gallagher_regions": ("Gallagher index for regions (%)", ""),
-            "adjustment_regional_spread":
-                ("Adjustment-seat spread across regions", ""),
-        })
-    groups["parity"] = {
-        "title": "Geographical balance", "side_title": True,
-        "rows": geographical_rows,
-    }
-    groups["toPartiesTotal"] = {
-        "title": "Party totals", "side_title": True,
-        "rows": {"lh_parties": ("Loosemore-Hanby index for parties (%)", ""),
-                 "party_total_surplus": ("Maximum party-seat surplus", ""),
-                 "party_total_shortfall": ("Maximum party-seat shortfall", ""),
-                 "sum_sq_party_overall": ("Total squared party-seat deviation", "")},
-        "options": {"sum_sq_party_overall": "show_additional"},
-    }
+        geographical["adjustment_regional_spread"] = (
+            "Adjustment-seat spread across regions", "")
+    add("parity", "Geographical balance", geographical, "Total allocation quality measures")
+    add("toPartiesTotal", "Party totals", {
+        "lh_parties": ("Loosemore-Hanby index for parties (%)", ""),
+        "party_total_surplus": ("Maximum party-seat surplus", ""),
+        "party_total_shortfall": ("Maximum party-seat shortfall", ""),
+    }, "Total allocation quality measures")
+
+    for scaling in ["const", *[key for key in scalings if key != "const"]]:
+        if scaling not in scalings:
+            continue
+        option = ("show_additional" if scaling == "const"
+                  else ["show_additional", "show_scalings"])
+        add(f"additional_{scaling}", titles[scaling], scaling_rows(scaling, True),
+            "Additional proportionality measures", option)
+    add("additional_parties", "Party totals", {
+        "sum_sq_party_overall": ("Total squared party-seat deviation", ""),
+    }, "Additional proportionality measures", "show_additional")
+
+    for scaling in scalings:
+        if scaling != "const":
+            add(scaling, titles[scaling], scaling_rows(scaling, False),
+                "Double, party, and national scaling", "show_scalings")
+
     benchmark = SCALINGS[next(iter(scalings), "const")].lower()
-    groups["singleSeat"] = {
-        "title": "Specifically for\nsingle-seat constituencies", "side_title": True,
-        "rows": {
-            "bias_slope": (f"Slope of seat excess ({benchmark})", ""),
-            "bias_corr": (f"Correlation of seat excess and fractional seats ({benchmark})", ""),
-            "excess": ("Total party-seat excess over integer national allocation", ""),
-            "max_neg_margin": (f"Maximum negative margin ({benchmark})", ""),
-            "freq_neg_margin": (f"Number of constituencies with negative margin ({benchmark})", ""),
-            "total_overhang": ("Potential overhang", ""),
-        },
-        "option": "show_single_seat",
-    }
+    add("singleSeat", "Local measures", {
+        "bias_slope": (f"Slope of seat excess ({benchmark})", ""),
+        "bias_corr": (f"Correlation of seat excess and fractional seats ({benchmark})", ""),
+        "max_neg_margin": (f"Maximum negative margin ({benchmark})", ""),
+        "freq_neg_margin": (f"Number of constituencies with negative margin ({benchmark})", ""),
+    }, "Specifically for single-seat constituencies", "show_single_seat")
+    add("singleSeatParties", "Party totals", {
+        "excess": ("Total party-seat excess over integer national allocation", ""),
+        "total_overhang": ("Potential overhang", ""),
+    }, "Specifically for single-seat constituencies", "show_single_seat")
+
     secondary = {}
     for scaling in scalings:
         for key, title in (("relative_surplus", "Over-allocation per reference seat"),
@@ -198,8 +245,9 @@ def quality_groups(scalings, include_entropy, multiple_systems,
             if key == "relative_squared" and scaling == "const":
                 continue
             secondary[f"{scaling}_{key}"] = (title, SCALINGS[scaling])
-    groups["secondary"] = {"title": "Secondary proportionality measures",
-                           "rows": secondary, "onlyExcel": True}
+    add("secondary", "Secondary proportionality measures", secondary,
+        "Supplementary diagnostics", only_excel=True)
+    groups["secondary"]["side_title"] = False
     return groups
 
 
@@ -208,9 +256,9 @@ def measure_tooltip(measure):
         "lh_lists": "Half the total absolute list-seat deviation, divided by total constituency seats. Uses local vote shares and each constituency's final seats. Lower is better.",
         "local_squared": "Sum of (allocated seats − local fractional seats) squared, divided by local fractional seats. Local fractional seats equal the local vote share times the constituency's final seats. Zero-reference lists contribute zero if they receive no seats, otherwise infinity. Lower is better.",
         "lh_constituencies": "Half the absolute deviation of constituency seat totals from their share of all constituency votes, divided by total constituency seats. Includes pruned votes. Lower is better.",
-        "gallagher_constituencies": "Square root of half the sum of squared differences between constituency shares of final seats and valid votes, including pruned votes. Lower is better.",
-        "lh_regions": "Half the sum of absolute differences between regional shares of final constituency seats and valid constituency votes, including pruned votes. Lower is better.",
-        "gallagher_regions": "Square root of half the sum of squared differences between regional shares of final constituency seats and valid constituency votes, including pruned votes. Lower is better.",
+        "gallagher_lists": "Within each constituency, take the square root of half the sum of squared differences between parties' seat and vote shares. Average these indices weighted by final constituency seats. Uses retained parties after pruning, as does local Loosemore-Hanby. Independent of reference scaling. Lower is better.",
+        "lh_region_parties": "Within each region, half the sum of absolute differences between parties' seat and vote shares. Average these indices weighted by final regional seats. Aggregate retained parties' votes and seats within regions first. Independent of reference scaling. Lower is better.",
+        "gallagher_region_parties": "Within each region, take the square root of half the sum of squared differences between parties' seat and vote shares. Average these indices weighted by final regional seats. Aggregate retained parties' votes and seats within regions first. Independent of reference scaling. Lower is better.",
         "adjustment_constituency_spread": "For each party, count constituencies receiving its adjustment seats, then average these counts weighted by the party's total seats, including national seats. Parties without adjustment seats contribute zero spread. Larger means wider spread.",
         "adjustment_regional_spread": "For each party, count regions receiving its adjustment seats, then average these counts weighted by the party's total seats, including national seats. Parties without adjustment seats contribute zero spread. Larger means wider spread.",
         "entropy_score": "Allocation quotient product divided by the maximum achievable under the system's rules and constraints.",

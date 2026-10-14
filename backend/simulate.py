@@ -1,5 +1,5 @@
 from reference_measures import (
-    adjustment_spread, geographical_indices, list_measures, primary_scaling,
+    adjustment_spread, geographical_indices, local_indices, list_measures, primary_scaling,
     SCALINGS, migrate_scaling_settings, valid_region_groups)
 # import logging
 from datetime import datetime
@@ -255,12 +255,16 @@ class Simulation():
                 "neg_margins": const_party_margins,
                 "neg_margin_count": cpm_counts,
                 "ref_seat_shares": ids.tolist(),
+                "double_ref_seat_shares": self.extended_ref_seat_shares(
+                    election, election.reference_seats("both")).tolist(),
             })
 
-    def extended_ref_seat_shares(self, election):
-        shares = np_add_totals(election.ref_seat_shares)
+    def extended_ref_seat_shares(self, election, reference=None):
+        shares = np_add_totals(election.ref_seat_shares if reference is None else reference)
         if self.party_votes_specified:
-            shares = vstack((shares, np_add_total(election.total_ref_nat)))
+            national = (election.total_ref_nat if reference is None else
+                        np.maximum(0, election.desired_col_sums - reference.sum(axis=0)))
+            shares = vstack((shares, np_add_total(national)))
             shares = vstack((shares, shares[-2] + shares[-1]))
         return shares
 
@@ -434,17 +438,22 @@ class Simulation():
             self.other_seat_spec_measures(election, system, deviations)
             self.party_reference_measures(election, deviations)
             self.specific_measures(election, deviations)
-            self.reference_measures(election, deviations)
+            self.reference_measures(election, deviations, i)
         for m in deviations.keys():
             if m in self.stat:
                 self.stat[m].update(deviations[m])
 
-    def reference_measures(self, election, deviations):
+    def reference_measures(self, election, deviations, system_index=0):
         seats = np.asarray(election.results["all_const_seats"])
         totals = seats.sum()
+        _, gallagher = local_indices(election.votes, seats)
+        deviations.add("gallagher_lists", gallagher)
         for scaling in self.scalings:
             reference = (election.ref_seat_shares if scaling == self.primary_scaling
                          else election.reference_seats(scaling))
+            if scaling == "both":
+                self.stat["double_ref_seat_shares"][system_index].update(
+                    self.extended_ref_seat_shares(election, reference))
             values = list_measures(seats, reference)
             if scaling == "const":
                 deviations.add("lh_lists", values["deviation"] / (2 * totals) if totals else 0)
@@ -458,24 +467,21 @@ class Simulation():
         deviations.add("party_total_shortfall", max(0, -difference.min()))
         votes = self.constituency_vote_totals(election)
         geographical_seats = np.asarray(election.final_row_sums)
-        lh, gallagher = geographical_indices(votes, geographical_seats)
+        lh, _ = geographical_indices(votes, geographical_seats)
         deviations.add("lh_constituencies", lh)
-        deviations.add("gallagher_constituencies", gallagher)
         adjustment = np.asarray(election.results["adj_const_seats"])
         deviations.add("adjustment_constituency_spread",
                        adjustment_spread(adjustment, party_seats))
         groups = valid_region_groups(election)
         if self.regional_simulation:
             if groups is None:
-                for measure in ("lh_regions", "gallagher_regions",
+                for measure in ("lh_region_parties", "gallagher_region_parties",
                                 "adjustment_regional_spread"):
                     deviations.add(measure, 0)
             else:
-                region_votes = [votes[group].sum() for group in groups]
-                region_seats = [geographical_seats[group].sum() for group in groups]
-                lh, gallagher = geographical_indices(region_votes, region_seats)
-                deviations.add("lh_regions", lh)
-                deviations.add("gallagher_regions", gallagher)
+                lh, gallagher = local_indices(election.votes, seats, groups)
+                deviations.add("lh_region_parties", lh)
+                deviations.add("gallagher_region_parties", gallagher)
                 deviations.add("adjustment_regional_spread",
                                adjustment_spread(adjustment, party_seats, groups))
 
@@ -722,9 +728,6 @@ class Sim_result:
                             val[statkey] = Running_stats.from_dict(statval)
             setattr(self, key, val)
 
-        if not hasattr(self, "sensitivity_measures"):
-            self.sensitivity_measures = SENS_MEASURES if self.sensitivity else []
-
         # Completed parallel web results contain analyzed data without stat.
         if self.sensitivity and "stat" in dictionary and any(
                 measure + "_perturbations" not in self.stat
@@ -788,7 +791,7 @@ class Sim_result:
             dd = self.find_datadict(self.stat[m], self.MEASURE_LIST)
             for i in range(self.nsys):
                 self.data[i][m] = {
-                    s: ("∞" if s in {"avg", "max"} else "–")
+                    s: ("∞" if s == "avg" else "–")
                     if self.stat[m].infinite[i] else dd[s][i]
                     for s in self.MEASURE_LIST}
 
@@ -837,8 +840,6 @@ class Sim_result:
             "hi95": statentry.hi95ci,
             "skw": statentry.skewness,
             "kur": statentry.kurtosis,
-            "min": statentry.minimum,
-            "max": statentry.maximum
         }
         datadict = {}
         for stat in stat_list:
@@ -862,9 +863,7 @@ class Sim_result:
             "base_allocations": self.base_allocations,
             "entropy_score_available": self.entropy_score_available,
             "entropy_relative_available": self.entropy_relative_available,
-            "regional_measure_available": getattr(
-                self, "regional_measure_available",
-                [bool(self.vote_table.get("regions"))] * len(self.systems)),
+            "regional_measure_available": self.regional_measure_available,
             "sensitivity_data": getattr(self, "sensitivity_data", None),
             "data":         [{
                 "name":           self.systems[sysnr]["name"],

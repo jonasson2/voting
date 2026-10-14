@@ -1,7 +1,6 @@
 """Settings summaries shared by CSV and Excel simulation reports."""
 
-from reference_measures import selected_scalings, primary_scaling, SCALINGS
-
+from reference_measures import selected_scalings, SCALINGS
 
 
 def simulation_settings(results):
@@ -14,24 +13,26 @@ def simulation_settings(results):
          "data": settings["const_rsd"]},
         {"label": "Correlation between list votes within each party",
          "data": settings["const_corr"]},
-        {"label": "Relative standard deviation for national party votes",
-         "data": settings["party_vote_rsd"]},
-        {"label": "Correlation between list votes and national party votes",
-         "data": settings["party_vote_corr"]},
+    ]
+    if results["vote_table"]["party_vote_info"]["specified"]:
+        rows.extend((
+            {"label": "Relative standard deviation for national party votes",
+             "data": settings["party_vote_rsd"]},
+            {"label": "Correlation between list votes and national party votes",
+             "data": settings["party_vote_corr"]},
+        ))
+    rows.extend((
         {"label": "Thresholds used",
          "data": "yes" if settings["use_thresholds"] else "no"},
         {"label": "Entropy score calculated",
          "data": "yes" if settings["entropy_score"] else "no"},
         {"label": "Reference scaling benchmarks",
          "data": ", ".join(SCALINGS[key] for key in selected_scalings(settings.get("scaling", list(SCALINGS)))) or "Dedicated local indices only"},
-    ]
-    rows.append({"label": "Benchmark for detailed reference matrices and single-seat diagnostics",
-                 "data": SCALINGS[primary_scaling(settings)]})
-    rows.append({"label": "Sensitivity measures calculated",
-                 "data": "yes" if settings.get("sensitivity") else "no"})
-    rows.append({"label": "Single-list sensitivity calculated",
-                 "data": "yes" if settings.get("single_list_sensitivity") else "no"})
+    ))
+    if settings.get("sensitivity"):
+        rows.append({"label": "Sensitivity measures calculated", "data": "yes"})
     if settings.get("single_list_sensitivity"):
+        rows.append({"label": "Single-list sensitivity calculated", "data": "yes"})
         rows.append({"label": "Single-list perturbations per major simulation",
                      "data": settings["single_list_simulation_count"]})
     if settings.get("sensitivity"):
@@ -42,7 +43,7 @@ def simulation_settings(results):
             {"label": "Sensitivity generating method",
              "data": settings["sensitivity_gen_method"]},
             {"label": "Sensitivity CoVs (%)",
-             "data": ", ".join(
+             "data": " ".join(
                  f"{value:g}" for value in settings["sensitivity_covs"])},
         ))
     return rows

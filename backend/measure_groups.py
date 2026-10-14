@@ -81,7 +81,8 @@ class MeasureGroups(dict):
             "onlyExcel": True
         }
         self["cmpList"] = {
-            "title": "",
+            "title": "Total list seat\ndifference", "side_title": True,
+            "block": "System comparison", "stats": ["avg"],
             "rows": {}
         }
         self["cmpPartyTitle"] = {
@@ -89,7 +90,8 @@ class MeasureGroups(dict):
             "rows": {}
         }
         self["cmpParty"] = {
-            "title": "",
+            "title": "Total party seat\ndifference", "side_title": True,
+            "block": "System comparison", "stats": ["avg"],
             "rows": {}
         }
         if party_votes_specified:
@@ -144,10 +146,3 @@ headingType = {
     "expected":   "empty",
     "cmpNationalDetails": "empty"
 }
-
-def fractional_digits(group, stat):
-    if group in {"seatSpec", "expected", "cmpList", "cmpParty",
-                 "cmpNationalDetails"} and stat in {"min", "max"}:
-        return 0
-    else:
-        return 3

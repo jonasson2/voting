@@ -103,7 +103,7 @@
               <span class="footnote-text">{{footnotes[id]}}</span>
             </td>
           </tr>
-          <tr v-if="!vuedata.block_continues?.[id] && (vuedata[id].length > 0 || vuedata.group_messages?.[id])"
+          <tr v-if="!hasVisibleContinuation(id) && (vuedata[id].length > 0 || vuedata.group_messages?.[id])"
               class="section-spacer"
               aria-hidden="true">
             <td :colspan="2 + totalDataColumns">&nbsp;</td>
@@ -140,6 +140,7 @@ export default {
   },
   methods: {
     optionEnabled(option) {
+      if (Array.isArray(option)) return option.every(item => this.optionEnabled(item))
       return !option || (this.sim_settings?.[option]
         ?? this.vuedata.display_options?.[option] ?? false)
     },
@@ -148,6 +149,14 @@ export default {
     },
     groupVisible(id) {
       return this.show[id] && this.optionEnabled(this.vuedata.group_options?.[id])
+    },
+    hasVisibleContinuation(id) {
+      let next = this.vuedata.block_continues?.[id]
+      while (next) {
+        if (this.groupVisible(next)) return true
+        next = this.vuedata.block_continues?.[next]
+      }
+      return false
     },
     format(entry) {
       if (entry === null || typeof entry !== "object") return entry

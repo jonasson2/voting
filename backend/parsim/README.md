@@ -7,6 +7,13 @@ dependencies installed:
 ./backend/parsim/elja.py -a election.json -r 1000 -S 123 -n 10 -o results.csv
 ```
 
+Add `-x results.xlsx` (`--excel results.xlsx`) to also write an Excel workbook
+from the same merged results. It uses the web simulator's Excel writer, with
+the quality-measure blocks, electoral-system tables and saved display precision.
+CSV, Excel and statistics outputs may be requested separately or together;
+their paths must differ. Excel is written once by the master after merging,
+not by individual workers.
+
 Use `-v votes.csv -e systems.json -s settings.json` instead of `-a` for
 separate input files. The `-r`, `-i`, `-S`, `-o`, and `-O` options have
 the same meanings as in `backend/sim.py`. Here `-C` caps simulation processes
@@ -69,6 +76,21 @@ tries the next partition.
 The job directory contains a frozen input snapshot, a manifest, allocation
 logs, and one mergeable JSON result per node. `elja.py` checks each node's
 seed and replicate range before combining the results.
+
+To create reports later from a retained job, without allocating nodes or
+rerunning any simulations:
+
+```sh
+./backend/parsim/elja-report.py <job-id> -o results.csv -x results.xlsx
+```
+
+The argument may instead be a path to a job directory. A bare job ID is looked
+up under `backend/parsim/jobs/`. Either output may be requested alone. The script
+reads the manifest's node files, checks their seeds and complete replicate
+coverage, and uses the frozen inputs' display precision. Missing or invalid
+node results cause an error before reports are written. Extra node files not
+listed in the manifest are ignored. Job files are preserved, and no additional
+statistics JSON is created. Only the current statistics format is supported.
 
 During simulation, each node writes an atomic `progress-NNN.json` file
 every 15 seconds, with completed and assigned replicates and elapsed time.

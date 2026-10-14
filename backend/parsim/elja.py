@@ -230,11 +230,11 @@ def wait_for_nodes(active, nodes, job_dir):
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     partitions, target_nodes, first_replicate, core_cap, immediate,
-                    display_settings=None, input_files=None, mixed_nodes=0):
-    from parsim.common import atomic_json
-    from sim import write_csv
+                    display_settings=None, input_files=None, mixed_nodes=0,
+                    excel_path=None):
+    from parsim.common import atomic_json, read_node_results, write_reports
     from input_files import validate_display_settings
-    from simulation_chunks import combine_chunks, read_chunk_result, write_chunk_result
+    from simulation_chunks import combine_chunks, write_chunk_result
 
     if settings["random_seed"] is None:
         settings["random_seed"] = secrets.randbelow(2**31)
@@ -350,12 +350,13 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                 f"{mixed_started}/{mixed_nodes} mixed)")
 
         build_assignments(settings["simulation_count"], nodes, first_replicate)
-        atomic_json(job_dir / "manifest.json", {
+        manifest = {
             "job_id": job_dir.name, "seed": settings["random_seed"],
             "replicates": settings["simulation_count"],
             "first_replicate": first_replicate, "nodes": nodes,
             "input_files": input_files or {},
-        })
+        }
+        atomic_json(job_dir / "manifest.json", manifest)
         print(f"Job: {job_dir}", flush=True)
         print(f"Seed: {settings['random_seed']}", flush=True)
         for node in nodes:
@@ -367,18 +368,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         wait_for_nodes(active, nodes, job_dir)
         print("Combining node results...", flush=True)
 
-        results = []
-        for node in nodes:
-            result = read_chunk_result(job_dir / f"node-{node['id']:03d}.json")
-            expected = (node["start"], node["start"] + node["replicates"],
-                        node["replicates"], settings["random_seed"])
-            actual = (result["start_iteration"],
-                      result["next_global_iteration"], result["iteration"],
-                      result["random_seed"])
-            if actual != expected:
-                raise ValueError(f"Node {node['id']} returned the wrong "
-                                 "replicate range or seed")
-            results.append(result)
+        results = read_node_results(job_dir, manifest)
         if stat_path:
             combined, statistics = combine_chunks(results, return_statistics=True)
             statistics["input_files"] = input_files or {}
@@ -386,9 +376,8 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         else:
             combined = combine_chunks(results)
         combined.input_files = input_files or {}
-        if csv_path:
-            write_csv(csv_path, combined, display_settings)
-            print(f"Report: {csv_path}", flush=True)
+        write_reports(combined, csv_path=csv_path, excel_path=excel_path,
+                      display_settings=display_settings)
         if stat_path:
             print(f"Statistics: {stat_path}", flush=True)
     finally:
@@ -423,6 +412,8 @@ def main(argv=None):
                         help="Electoral system description (JSON)")
     parser.add_argument("-s", "--settings", help="Simulation settings (JSON)")
     parser.add_argument("-o", "--csv", help="Output CSV file")
+    parser.add_argument("-x", "--excel", metavar="FILE",
+                        help="Output Excel workbook (.xlsx)")
     parser.add_argument("-O", "--output", metavar="STATFILE",
                         help="Output mergeable statistics (JSON)")
     parser.add_argument("-r", "--replicates", type=positive_int,
@@ -440,10 +431,12 @@ def main(argv=None):
     parser.add_argument("--immediate", type=positive_int, default=5,
                         help="Seconds allowed for each Slurm allocation")
     args = parser.parse_args(argv)
-    if not args.csv and not args.output:
-        parser.error("provide -o/--csv or -O/--output")
-    if args.csv and args.output and Path(args.csv) == Path(args.output):
-        parser.error("CSV and statistics files must have different paths")
+    outputs = [Path(path).expanduser().resolve()
+               for path in (args.csv, args.excel, args.output) if path]
+    if not outputs:
+        parser.error("provide -o/--csv, -x/--excel, or -O/--output")
+    if len(set(outputs)) != len(outputs):
+        parser.error("CSV, Excel, and statistics files must have different paths")
     if args.mixed_nodes > args.nodes:
         parser.error("-m/--mixed-nodes cannot exceed -n/--nodes")
     if args.all:
@@ -461,6 +454,7 @@ def main(argv=None):
         partitions = read_partitions(args.partitions)
         run_distributed(
             votes, systems, settings, csv_path=args.csv, stat_path=args.output,
+            excel_path=args.excel,
             job_dir=args.job_dir or HERE / "jobs" / uuid4().hex,
             partitions=partitions, target_nodes=args.nodes,
             first_replicate=args.first_replicate, core_cap=args.cores,

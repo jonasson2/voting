@@ -5,7 +5,7 @@ from util import disp
 
 class Running_stats:
     members = ["parallel", "name", "options", "shape", "n"]
-    np_members = ["M1", "M2", "M3", "M4", "big", "small"]
+    np_members = ["M1", "M2", "M3", "M4"]
     def __init__(self, shape=1, parallel=False, name="", options=None):
         # name may be a list of length shape. When shape is not two-dimensional,
         self.parallel = parallel
@@ -25,8 +25,6 @@ class Running_stats:
         self.M2 = np.zeros(self.shape)
         self.M3 = np.zeros(self.shape)
         self.M4 = np.zeros(self.shape)
-        self.big = np.zeros(self.shape)
-        self.small = np.zeros(self.shape)
 
     def __repr__(self):
         s = [f"Running_stats:",
@@ -46,7 +44,7 @@ class Running_stats:
             setattr(self, m, dictionary[m])
         for m in cls.np_members:
             setattr(self, m, np.array(dictionary[m]))
-        self.infinite = np.array(dictionary.get("infinite", np.zeros(self.shape)), dtype=bool)
+        self.infinite = np.array(dictionary["infinite"], dtype=bool)
         return self
 
     def to_dict(self):
@@ -128,12 +126,6 @@ class Running_stats:
                         6 * delta_n2 * self.M2 - 4 * delta_n * self.M3)
             self.M3 += term1 * delta_n * (n - 2) - 3 * delta_n * self.M2
         self.M2 += term1
-        if n == 1:
-            self.big = A
-            self.small = A
-        else:
-            self.big = np.maximum(self.big, A)
-            self.small = np.minimum(self.small, A)
 
     def combine(self, running_stats):
         self.infinite |= running_stats.infinite
@@ -145,8 +137,6 @@ class Running_stats:
             print(f"**** zero n for {self.name} in running_stats combine ****")
         self.M1 = (n1*self.M1 + n2*running_stats.M1)/max(1,self.n)
         self.M2 += running_stats.M2 + delta**2*n1*n2/max(1,self.n)
-        self.big = np.maximum(self.big, running_stats.big)
-        self.small = np.minimum(self.small, running_stats.small)
 
     def mean(self):
         return self.M1.tolist()
@@ -187,12 +177,6 @@ class Running_stats:
     def kurtosis(self):
         n = self.n
         return (n*self.M4/np.maximum(1,self.M2**2) - 3).tolist()
-
-    def maximum(self):
-        return self.big.tolist()
-
-    def minimum(self):
-        return self.small.tolist()
 
 def combine_stat(stat1, stat2):
     # stat1 and stat2 are Running_stats or dictionaries of Running_stats with same keys

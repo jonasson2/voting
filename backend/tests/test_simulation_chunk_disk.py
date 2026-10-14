@@ -1,4 +1,5 @@
 import csv
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -35,6 +36,17 @@ class SimulationChunkDiskTest(unittest.TestCase):
             for path, (count, start) in zip(paths, ((2, 37), (3, 39))):
                 write_chunk_result(path, run_chunk(
                     votes, systems, settings, count, start))
+                payload = json.loads(path.read_text())
+                self.assertEqual(payload['format_version'], 2)
+                def assert_no_extrema(value):
+                    if isinstance(value, dict):
+                        self.assertFalse({'min', 'max', 'big', 'small'} & value.keys())
+                        for child in value.values():
+                            assert_no_extrema(child)
+                    elif isinstance(value, list):
+                        for child in value:
+                            assert_no_extrema(child)
+                assert_no_extrema(payload)
             loaded = [read_chunk_result(path) for path in paths]
             self.assertEqual([result['start_iteration'] for result in loaded],
                              [37, 39])
@@ -45,7 +57,7 @@ class SimulationChunkDiskTest(unittest.TestCase):
             self.assertEqual(merged.iteration, 5)
             for measure in ('sensitivity_between_parties',
                             'sensitivity_within_parties'):
-                for statistic in ('avg', 'std', 'se', 'lo95', 'hi95', 'min', 'max'):
+                for statistic in ('avg', 'std', 'se', 'lo95', 'hi95'):
                     for expected, actual in zip(
                             uninterrupted.sensitivity_data[measure][statistic][0],
                             merged.sensitivity_data[measure][statistic][0]):
@@ -63,6 +75,34 @@ class SimulationChunkDiskTest(unittest.TestCase):
             with actual_path.open(newline='', encoding='utf-8') as file:
                 actual = list(csv.reader(file))
             self.assertEqual(actual, expected)
+
+            from excel_util import simulation_to_xlsx
+            from openpyxl import load_workbook
+            excel_path = Path(directory) / 'result.xlsx'
+            simulation_to_xlsx(merged.get_result_web(False), str(excel_path))
+            workbook = load_workbook(excel_path, read_only=True)
+            for sheet in workbook:
+                values = {cell.value for row in sheet for cell in row
+                          if isinstance(cell.value, str)}
+                self.assertFalse({'MINIMUM', 'MAXIMUM', 'Minimum values',
+                                  'Maximum values'} & values)
+            workbook.close()
+
+            _, combined_statistics = combine_chunks(
+                [read_chunk_result(path) for path in paths], return_statistics=True)
+            combined_path = Path(directory) / 'combined.json'
+            write_chunk_result(combined_path, combined_statistics)
+            assert_no_extrema(json.loads(combined_path.read_text()))
+            restored = combine_chunks([read_chunk_result(combined_path)])
+            self.assertEqual(restored.iteration, merged.iteration)
+            self.assertEqual(restored.sensitivity_data, merged.sensitivity_data)
+
+    def test_old_statistics_format_is_rejected(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / 'old.json'
+            path.write_text(json.dumps({'format_version': 1, 'result': {'stat': {}}}))
+            with self.assertRaisesRegex(ValueError, 'Unrecognized'):
+                read_chunk_result(path)
 
     def test_failed_write_preserves_previous_result(self):
         with TemporaryDirectory() as directory:

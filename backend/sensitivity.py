@@ -23,11 +23,7 @@ def sensitivity_statistics(outer, perturbations):
     For one outer election, report conditional spread and uncertainty only.
     Both accumulators can be merged before applying these formulas.
     """
-    result = {
-        "avg": outer.mean(),
-        "min": perturbations.minimum(),
-        "max": perturbations.maximum(),
-    }
+    result = {"avg": outer.mean()}
     if perturbations.n < 2:
         for key in ("std", "se", "lo95", "hi95"):
             result[key] = np.full(outer.shape, None).tolist()
