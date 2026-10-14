@@ -19,6 +19,7 @@ BACKEND = HERE.parent
 sys.path.insert(0, str(BACKEND))
 MIB_PER_PROCESS = 100
 SLURM_CPUS_PER_PROCESS = 2
+MIXED_SPEED_FACTOR = 0.6
 MAX_NODES = 30
 
 
@@ -185,7 +186,8 @@ def available_mixed_nodes(partitions, core_cap):
             "memory_mib": MIB_PER_PROCESS * cores,
             "free_cpus": free_cpus,
             "free_memory_mib": free_memory,
-            "speed_per_core": partition["speed_per_core"],
+            "speed_per_core": (partition["speed_per_core"]
+                               * MIXED_SPEED_FACTOR),
         })
     candidates.sort(key=lambda node: (
         -node["free_cpus"], partition_order[node["partition"]],

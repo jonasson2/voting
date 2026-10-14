@@ -173,6 +173,12 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                          [32, 32, 32])
         self.assertEqual([node['memory_mib'] for node in candidates],
                          [1600, 1600, 1600])
+        self.assertEqual([node['speed_per_core'] for node in candidates],
+                         [0.6, 0.8 * 0.6, 0.6])
+        self.assertEqual(split_counts(160, [
+            {'cores': 40, 'speed_per_core': 1.0},
+            {'cores': 40, 'speed_per_core': candidates[0]['speed_per_core']},
+        ]), [100, 60])
 
     def test_worker_passes_range_seed_and_core_count_to_sim(self):
         with TemporaryDirectory() as directory:
