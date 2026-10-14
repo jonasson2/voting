@@ -130,12 +130,26 @@
         title="None: Use the selected rule and qualification settings without country-specific modifications. Danish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions, and apply the statutory recalculation when fixed seats exceed provisional entitlements. Swedish: Apportion national party totals from zero, then reallocate fixed seats that exceed those entitlements.">Special rules</span>
       <b-form-select class="compact-select settings-special-rules"
         v-model="systems[systemidx].special_rules"
+        @change="checkRegionalRules"
         :options="capabilities.special_rules"/>
     </label>
   </div>
 
   <!-- REGIONAL ADJUSTMENT SEAT ALLOCATION -->
   <template v-if="hasRegions">
+    <div class="settings-row">
+      <b-form-checkbox v-model="systems[systemidx].ignore_regions"
+        :disabled="systems[systemidx].special_rules === 'danish'">
+        Ignore regions
+      </b-form-checkbox>
+      <span v-if="systems[systemidx].special_rules === 'danish'"
+        class="small text-muted">Danish special rules require regions.</span>
+    </div>
+    <p v-if="systems[systemidx].ignore_regions" class="small text-muted">
+      Allocate nationally without regional constraints, using the selected
+      constituency seat settings.
+    </p>
+    <template v-if="!systems[systemidx].ignore_regions">
     <legend class="settings-heading"
       v-b-tooltip.hover.top.v-primary.ds500
       title="Distributes parties’ national adjustment-seat entitlements among regions while respecting each region’s seat total.">
@@ -159,6 +173,7 @@
           :options="capabilities.divider_rules"/>
       </label>
     </div>
+    </template>
   </template>
 
   <!-- ADJUSTMENT SEAT ALLOCATION -->
@@ -354,6 +369,10 @@ export default {
     },
   },
   methods: {
+    checkRegionalRules() {
+      const system = this.systems[this.systemidx]
+      if (system.special_rules === 'danish') system.ignore_regions = false
+    },
     thresholdDisplay: function(key) {
       return this.systems[this.systemidx][key] === 0 ? '-' : this.systems[this.systemidx][key]
     },

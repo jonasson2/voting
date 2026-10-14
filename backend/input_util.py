@@ -14,6 +14,7 @@ def normalize_system(system):
     system.setdefault("fixed_seat_national_threshold", 0)
     system.setdefault("require_votes_in_all_constituencies", False)
     system.setdefault("special_rules", "none")
+    system.setdefault("ignore_regions", False)
     system.setdefault("regional_adjustment_method", "max-const-votes")
     system.setdefault("regional_adjustment_divider", "sainte-lague")
     system.pop("compare_with", None)  # Ignore selections in older settings files.
@@ -75,6 +76,10 @@ def check_systems(electoral_systems):
         if not isinstance(electoral_system["require_votes_in_all_constituencies"], bool):
             raise ValueError("Standing in all constituencies must be Yes or No.")
         special_rules = electoral_system["special_rules"]
+        if not isinstance(electoral_system["ignore_regions"], bool):
+            raise ValueError("Ignore regions must be Yes or No.")
+        if special_rules == "danish" and electoral_system["ignore_regions"]:
+            raise ValueError("Danish special rules require regions; cannot ignore regions.")
         if special_rules not in {
                 item["value"] for item in SPECIAL_RULE_NAMES}:
             raise ValueError(f"Unknown special rules: {special_rules}")

@@ -49,7 +49,8 @@ class ElectionHandler:
                                 vote_table_name=vote_table["name"],
                                 pruned_votes=vote_table.get(
                                     "pruned", [0] * len(self.votes)),
-                                regions=vote_table.get("regions"),
+                                regions=(None if system["ignore_regions"]
+                                         else vote_table.get("regions")),
                                 independent_candidates=vote_table.get("independent_candidates"),
                                 adjustment_seat_info=adjustment_seat_info(
                                     vote_table, constituencies,

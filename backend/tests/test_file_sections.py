@@ -29,6 +29,7 @@ class FileSectionsTest(unittest.TestCase):
     def test_system_download_and_upload_contain_only_systems(self):
         system = self.system()
         system['compare_with'] = False
+        system['ignore_regions'] = True
         response = self.client.post('/api/systems/save/',
                                     json={'systems': [system],
                                           'sim_settings': SimulationSettings()})
@@ -36,6 +37,7 @@ class FileSectionsTest(unittest.TestCase):
         response.close()
         self.assertEqual(set(saved), {'systems'})
         self.assertNotIn('compare_with', saved['systems'][0])
+        self.assertTrue(saved['systems'][0]['ignore_regions'])
         self.assertEqual(self.upload('/api/systems/upload/', saved), saved)
         self.assertIn('error', self.upload('/api/systems/upload/',
                                          {'systems': [system],

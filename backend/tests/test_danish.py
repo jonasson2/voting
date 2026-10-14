@@ -161,6 +161,97 @@ class DanishTest(unittest.TestCase):
             self.assertEqual(reloaded["regions"], table["regions"])
             self.assertEqual(reloaded["constituencies"], table["constituencies"])
 
+    def test_norwegian_method_with_exact_seats_in_regions(self):
+        rows = list(csv.reader([
+            "Example,fixed,adj,region,A,B",
+            "North 1,2,1,N,70,30",
+            "South 1,3,1,S,60,40",
+            "North 2,1,1,N,20,80",
+            "South 2,1,1,S,30,70",
+            ",,,,,",
+            "Regions,Name,adj,,,",
+            "N,North,2,,,",
+            "S,South,2,,,",
+        ]))
+        table = check_vote_table(process_vote_table(rows, "test.csv"))
+        system = ElectionSystem()
+        system.copy_info_from_votes(table)
+        preset = next(p["settings"] for p in ELECTION_LAW_PRESETS
+                      if p["value"] == "norway")
+        system.update({key: value for key, value in preset.items()
+                       if key != "constituency_seat_specification"})
+        settings = SimulationSettings()
+        settings.update(simulation_count=3, cpu_count=1, random_seed=123)
+        simulation = Simulation(settings, [system], deepcopy(table))
+        simulation.simulate()
+        election = simulation.election_handler.elections[0]
+        allocation = np.asarray(election.results["all_const_seats"])
+        np.testing.assert_array_equal(allocation.sum(axis=1), [3, 4, 2, 2])
+        for group, totals in zip(election.region_groups, election.region_party_totals):
+            np.testing.assert_array_equal(allocation[group].sum(axis=0), totals)
+        self.assertEqual(simulation.iteration, 3)
+
+    def test_ignore_regions_matches_input_without_regions(self):
+        national_table = deepcopy(self.table)
+        national_table.pop("regions")
+        for constituency in national_table["constituencies"]:
+            constituency.pop("region")
+        for preset_name, seats in [("norway", "adams"),
+                                   ("sweden-2018", "flexible")]:
+            with self.subTest(preset=preset_name):
+                system = ElectionSystem()
+                system.copy_info_from_votes(self.table)
+                preset = next(p["settings"] for p in ELECTION_LAW_PRESETS
+                              if p["value"] == preset_name)
+                system.update({key: value for key, value in preset.items()
+                               if key != "constituency_seat_specification"})
+                system["seat_spec_options"]["const"] = seats
+                system["ignore_regions"] = True
+                system["name"] = "National"
+                expected = ElectionHandler(
+                    national_table, [deepcopy(system)], True).elections[0]
+                single = ElectionHandler(
+                    self.table, [deepcopy(system)], True).elections[0]
+                np.testing.assert_array_equal(single.results["all_const_seats"],
+                                              expected.results["all_const_seats"])
+                settings = SimulationSettings()
+                settings.update(simulation_count=2, cpu_count=1,
+                                random_seed=123, const_rsd=0,
+                                gen_method="uniform")
+                simulation = Simulation(settings, [system], deepcopy(self.table))
+                simulation.simulate()
+                actual = simulation.election_handler.elections[0]
+                self.assertFalse(actual.has_regions)
+                columns = [self.table["parties"].index(party)
+                           for party in actual.system["parties"]]
+                np.testing.assert_array_equal(
+                    actual.results["all_const_seats"],
+                    np.asarray(expected.results["all_const_seats"])[:, columns])
+                self.assertTrue(self.table["regions"])
+
+    def test_ignore_regions_is_per_system_and_requires_non_danish_rules(self):
+        system = system_for(self.table)
+        with self.assertRaisesRegex(ValueError, "Danish special rules require regions"):
+            ElectionHandler(self.table, [dict(system, ignore_regions=True)], True)
+        with self.assertRaisesRegex(ValueError, "Ignore regions must be Yes or No"):
+            ElectionHandler(self.table, [dict(system, ignore_regions="false")], True)
+        national = deepcopy(system)
+        national.update(name="National", special_rules="none", ignore_regions=True)
+        handler = ElectionHandler(self.table, [system, national], True)
+        self.assertTrue(handler.elections[0].has_regions)
+        self.assertFalse(handler.elections[1].has_regions)
+
+    def test_default_system_accepts_regional_flexible_votes(self):
+        system = ElectionSystem()
+        system.copy_info_from_votes(self.table)
+        self.assertEqual(system["adjustment_method"], "max-const-votes")
+        election = ElectionHandler(self.table, [system], True).elections[0]
+        self.assertTrue(election.has_regions)
+        for group, region in zip(election.region_groups, election.regions):
+            allocated = np.asarray(election.results["all_const_seats"])[group]
+            fixed = np.asarray(election.results["fixed_const_seats"])[group]
+            self.assertEqual(int((allocated - fixed).sum()), region["num_adj_seats"])
+
     def test_constituency_bounds_are_enforced_inside_regions(self):
         table = deepcopy(self.table)
         table["constituencies"][0]["num_adj_seats"] = 4

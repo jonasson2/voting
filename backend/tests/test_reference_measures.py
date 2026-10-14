@@ -219,7 +219,7 @@ class ReferenceMeasuresTest(unittest.TestCase):
                     labels = [row[1] for row in rows if len(row) > 1]
                     headings = [row[0] for row in rows]
                     self.assertEqual(headings.count('Additional proportionality measures'), int(show))
-                    self.assertEqual(headings.count('Double, party, and national scaling'), int(show_scalings))
+                    self.assertEqual(headings.count('Double/party/national scaling'), int(show_scalings))
                     self.assertEqual(headings.count('Specifically for single-seat constituencies'), int(show))
                     self.assertEqual('Total squared list seat deviation (Hare quota)' in labels, show)
                     self.assertEqual('Potential overhang' in labels, show)

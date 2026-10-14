@@ -87,9 +87,10 @@ DEFAULT_ELECTION_SETTINGS = {
     "adj_threshold_choice": 1,
     "require_votes_in_all_constituencies": False,
     "special_rules": "none",
+    "ignore_regions": False,
     "regional_adjustment_method": "max-const-votes",
     "regional_adjustment_divider": "sainte-lague",
-    "adjustment_method": "max-const-seat-share",
+    "adjustment_method": "max-const-votes",
     "adj_alloc_divider": "dhondt",
 }
 

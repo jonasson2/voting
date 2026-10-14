@@ -13,6 +13,7 @@ function normalizeSystem(system) {
     system.fixed_seat_threshold_choice = 1
   }
   if (system.special_rules === undefined) system.special_rules = 'none'
+  if (system.ignore_regions === undefined) system.ignore_regions = false
   if (system.require_votes_in_all_constituencies === undefined) {
     system.require_votes_in_all_constituencies = false
   }
@@ -107,6 +108,7 @@ const store = new Vuex.Store({
           system[key] = value
         }
       }
+      if (system.special_rules === 'danish') system.ignore_regions = false
     },
     addSystem(state, system) {
       normalizeSystem(system)
@@ -116,6 +118,7 @@ const store = new Vuex.Store({
         system.primary_divider = state.systems[idx-1].primary_divider
         system.adj_determine_divider = state.systems[idx-1].adj_determine_divider
         system.special_rules = state.systems[idx-1].special_rules
+        system.ignore_regions = state.systems[idx-1].ignore_regions
         system.regional_adjustment_method =
           state.systems[idx-1].regional_adjustment_method
         system.regional_adjustment_divider =

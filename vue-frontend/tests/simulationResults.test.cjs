@@ -44,7 +44,7 @@ test("optional rows toggle without rerunning, with section titles in their own c
   const vuedata = {
     stats: ['avg', 'std'], stat_headings: {avg: 'Average & 95% confidence interval', std: 'STD.DEV.'},
     system_names: ['System A'], group_ids: ['const', 'singleSeat', 'sensitivityWithin'],
-    group_titles: {const: 'Local measures', singleSeat: 'Specifically for\nsingle-seat constituencies',
+    group_titles: {const: 'Constituency measures', singleSeat: 'Specifically for\nsingle-seat constituencies',
       sensitivityWithin: 'Seats displaced between lists within parties'},
     show: {const: true, singleSeat: true, sensitivityWithin: true}, footnotes: {},
     side_titles: {const: true, singleSeat: true}, group_options: {singleSeat: 'show_single_seat'},
@@ -73,7 +73,7 @@ test("optional rows toggle without rerunning, with section titles in their own c
   assert.match(header, /system-heading data-heading[^\"]*header-start/)
   assert.match(html, /\(2\.2 ± 0\.1\)%/)
   assert.match(html, /0\.3%/)
-  assert.match(html, /class="section-title" rowspan="1">Local measures/)
+  assert.match(html, /class="section-title" rowspan="1">Constituency measures/)
   assert.match(html, /Core row/)
   assert.doesNotMatch(html, /Additional row|Single-seat diagnostic/)
   assert.doesNotMatch(html, /both deviation|party deviation|total deviation/)
@@ -85,7 +85,7 @@ test("optional rows toggle without rerunning, with section titles in their own c
   }
   settings.show_additional = settings.show_single_seat = true
   html = await render()
-  assert.match(html, /class="section-title" rowspan="2">Local measures/)
+  assert.match(html, /class="section-title" rowspan="2">Constituency measures/)
   assert.match(html, /Additional row/)
   assert.match(html, /Single-seat diagnostic/)
   for (const scaling of ['both', 'party', 'total']) {

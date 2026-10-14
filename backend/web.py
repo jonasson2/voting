@@ -123,7 +123,7 @@ SYSTEM_DOWNLOAD_KEYS = [
     "fixed_seat_threshold_choice",
     "adjustment_threshold", "adjustment_threshold_seats",
     "adj_threshold_choice", "require_votes_in_all_constituencies",
-    "special_rules", "regional_adjustment_method",
+    "special_rules", "ignore_regions", "regional_adjustment_method",
     "adjustment_method", "primary_divider",
     "adj_determine_divider", "regional_adjustment_divider",
     "adj_alloc_divider", "nat_seats"
@@ -131,7 +131,8 @@ SYSTEM_DOWNLOAD_KEYS = [
 
 def downloadable_systems(systems):
     check_system_names(systems)
-    return [{key: system[key] for key in SYSTEM_DOWNLOAD_KEYS}
+    return [{key: system.get(key, False) if key == "ignore_regions" else system[key]
+             for key in SYSTEM_DOWNLOAD_KEYS}
             for system in systems]
 
 

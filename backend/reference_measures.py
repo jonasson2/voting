@@ -3,7 +3,7 @@
 import numpy as np
 
 SCALINGS = {
-    "const": "Local scaling",
+    "const": "Constituency scaling",
     "both": "Double scaling",
     "party": "Party scaling",
     "total": "National scaling",
@@ -157,7 +157,7 @@ def quality_groups(scalings, include_entropy, multiple_systems,
                    include_regions=False):
     """Single catalogue for computed statistics, web, CSV and Excel."""
     groups = {}
-    titles = {"const": "Local measures", "both": "Measures with\ndouble scaling",
+    titles = {"const": "Constituency measures", "both": "Measures with\ndouble scaling",
               "party": "Measures with\nparty scaling",
               "total": "Measures with\nnational scaling"}
 
@@ -226,7 +226,7 @@ def quality_groups(scalings, include_entropy, multiple_systems,
                 "Double, party, and national scaling", "show_scalings")
 
     benchmark = SCALINGS[next(iter(scalings), "const")].lower()
-    add("singleSeat", "Local measures", {
+    add("singleSeat", "Constituency measures", {
         "bias_slope": (f"Slope of seat excess ({benchmark})", ""),
         "bias_corr": (f"Correlation of seat excess and fractional seats ({benchmark})", ""),
         "max_neg_margin": (f"Maximum negative margin ({benchmark})", ""),

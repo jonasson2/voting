@@ -16,7 +16,7 @@ the browser.
 
 Simulations always calculate measures with local, double, party, and national
 scaling. Under **Show additional measures**, **Double, party, and national
-scaling** shows the three extra blocks without rerunning; Local measures stay
+scaling** shows the three extra blocks without rerunning; Constituency measures stay
 visible. Saved settings use `show_scalings` (default `false`). CSV follows these
 display choices, while Excel retains all four scalings and optional measures.
 

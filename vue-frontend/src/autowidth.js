@@ -1,4 +1,6 @@
 let measurementContext
+const pending = new Map()
+let scheduled = false
 
 function getMeasurementContext() {
   if (!measurementContext) {
@@ -7,7 +9,7 @@ function getMeasurementContext() {
   return measurementContext
 }
 
-function measuredText(el, value) {
+function measuredText(el, value, cache) {
   const styles = window.getComputedStyle(el)
   const context = getMeasurementContext()
   context.font = styles.font
@@ -17,7 +19,12 @@ function measuredText(el, value) {
   else if (styles.textTransform === "lowercase") text = text.toLowerCase()
 
   const spacing = Number.parseFloat(styles.letterSpacing) || 0
-  return context.measureText(text).width + spacing * Math.max(text.length - 1, 0)
+  const key = [styles.font, spacing, text].join("\0")
+  if (!cache.has(key)) {
+    cache.set(key,
+      context.measureText(text).width + spacing * Math.max(text.length - 1, 0))
+  }
+  return cache.get(key)
 }
 
 function optionsFor(binding) {
@@ -34,21 +41,41 @@ function update(el, binding) {
   const value = el.value || el.placeholder || ""
   const cacheKey = [value, options.maxWidth, options.minWidth,
     options.comfortZone].join("\0")
-  if (el.autowidthCacheKey === cacheKey) return
+  if (el.autowidthCacheKey === cacheKey) {
+    pending.delete(el)
+    return
+  }
+  pending.set(el, {el, options, value, cacheKey})
+  if (!scheduled) {
+    scheduled = true
+    queueMicrotask(flush)
+  }
+}
 
-  el.style.boxSizing = "content-box"
-  el.style.maxWidth = options.maxWidth
-  el.style.minWidth = options.minWidth
-  let width = measuredText(el, value) + options.comfortZone + 2
-  el.style.width = `${width}px`
-  // Native inputs can need a pixel more than canvas reports, especially after
-  // an edited integer gains its thousands separator again on blur.
-  const overflow = el.scrollWidth - el.clientWidth
-  if (overflow > 0) {
-    width += overflow
+function flush() {
+  scheduled = false
+  const entries = [...pending.values()]
+  pending.clear()
+  const cache = new Map()
+  // Read all styles before changing widths: each input belongs to a large table.
+  for (const entry of entries) {
+    entry.width = measuredText(entry.el, entry.value, cache)
+      + entry.options.comfortZone + 2
+  }
+  for (const {el, options, width} of entries) {
+    el.style.boxSizing = "content-box"
+    el.style.maxWidth = options.maxWidth
+    el.style.minWidth = options.minWidth
     el.style.width = `${width}px`
   }
-  el.autowidthCacheKey = cacheKey
+  // Keep the native-input overflow correction, with one layout read phase.
+  for (const entry of entries) {
+    entry.overflow = entry.el.scrollWidth - entry.el.clientWidth
+  }
+  for (const {el, width, overflow, cacheKey} of entries) {
+    if (overflow > 0) el.style.width = `${width + overflow}px`
+    el.autowidthCacheKey = cacheKey
+  }
 }
 
 export default {
@@ -57,5 +84,8 @@ export default {
   },
   updated(el, binding) {
     update(el, binding)
+  },
+  unmounted(el) {
+    pending.delete(el)
   },
 }

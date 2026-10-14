@@ -96,6 +96,7 @@ def allocate_within_regions(votes, fixed, regional_totals, regions, groups,
         local, demo = method(
             votes[group], fixed[group].sum(axis=1) + minimums[group],
             regional_totals[r], fixed[group], divisor_gen,
+            v_fixed_seats=fixed[group].sum(axis=1),
             num_adjustment_seats=region["num_adj_seats"],
             min_adj_seats=minimums[group],
             max_adj_seats=[maxima[c] for c in group],

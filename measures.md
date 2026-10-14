@@ -37,10 +37,10 @@ Core measure inventory (display order follows the sections below):
 
 The shared catalogue now organizes output into these blocks:
 
-- **List allocation quality measures:** Local measures and Quotient optimality.
+- **List allocation quality measures:** Constituency measures and Quotient optimality.
 - **Total allocation quality measures:** Geographical balance and Party totals.
 - **Additional proportionality measures** (`show_additional`): the four extra
-  local proportionality measures under Local measures, and total squared
+  local proportionality measures under Constituency measures, and total squared
   party-seat deviation under Party totals. When `show_scalings` is also checked,
   include the four extra measures for each of double, party and national scaling
   here, in their own scaling subblocks.
@@ -60,15 +60,15 @@ defines the quality/comparison block boundaries for all three reports.
 
 Organize the display in this order:
 
-1. **Local measures:** Loosemore-Hanby and Gallagher indices for lists,
+1. **Constituency measures:** Loosemore-Hanby and Gallagher indices for lists,
    the corresponding regional party-proportionality indices when regions exist,
    and local squared deviation per reference seat. Always include
    total list seat deviation and the four list surplus/shortfall maxima here.
    These all compare with local fractional seats: constituency seat count
-   multiplied by the list's local vote share. Do not split the local measures
+   multiplied by the list's local vote share. Do not split the constituency measures
    into separate proportionality and seat-deviation blocks.
 2. **Quotient optimality:** entropy score and, when comparing multiple systems,
-   entropy relative to system 1, immediately after Local measures,
+   entropy relative to system 1, immediately after Constituency measures,
    before the double-scaling block. Entropy is closely related to biproportional
    allocation, but uses the feasible quotient-product optimum rather than
    doubly scaled fractional seats as its benchmark. Display it once,
@@ -82,7 +82,7 @@ Organize the display in this order:
 6. **Party totals:** Loosemore-Hanby index for parties, maximum party-seat
    surplus, and maximum party-seat shortfall.
 
-Always show Local measures. Show the double, party, and national blocks together
+Always show Constituency measures. Show the double, party, and national blocks together
 when “Double, party, and national scaling” is checked.
 Use “fractional seats” for the potentially noninteger benchmark seat counts;
 “seat shares” denotes proportions of seats.
@@ -115,7 +115,7 @@ corresponding sections, rather than creating a separate output section:
 - Total squared party-seat deviation goes into Party totals.
 - Total squared list seat deviation (Hare quota), maximum relative
   over-representation (D'Hondt), maximum relative under-representation (Adams),
-  and total absolute deviation per reference seat go into Local measures and
+  and total absolute deviation per reference seat go into Constituency measures and
   the other scaling blocks when displayed.
 
 ### Local allocation discrepancies
@@ -367,7 +367,7 @@ than additions to the selectable groups at this stage.
   National scaling and the dedicated national party-proportionality measures
   retain their fractional vote-share benchmarks.
 - Always compute and accumulate all four reference scalings and their optional
-  measures. Local measures remain visible; one checkbox shows the double, party,
+  measures. Constituency measures remain visible; one checkbox shows the double, party,
   and national blocks together. It changes completed results immediately without
   rerunning. Repeat total list seat deviation and the four list surplus/shortfall
   maxima in each block, along with enabled optional list measures. Keep the
@@ -405,7 +405,7 @@ for names, groups, and output selection rather than separate web and CSV lists.
 - All three optional display selections default to unchecked. Toggling them changes
   the displayed completed results immediately; it does not change calculation.
 - All six single-seat diagnostics are retained. Their reference-dependent rows
-  and Excel's detailed reference matrices always use local scaling in new runs. The
+  and Excel's detailed reference matrices always use constituency scaling in new runs. The
   benchmark is identified in the diagnostic labels and report settings.
 - Scaling statistics have separate identifiers for each benchmark. Seat
   allocation and sensitivity run once per replicate, not once per scaling.
@@ -440,7 +440,7 @@ adjustment seats; separate national-list votes and seats are excluded.
 “Loosemore-Hanby index for regions (%)” and “Gallagher index for regions (%)”
 first aggregate each party's votes and final seats across constituencies in
 its region, then compute within-region party shares and average the regional
-indices weighted by regional seats. Both appear under Local measures only
+indices weighted by regional seats. Both appear under Constituency measures only
 when the source defines valid regions. A single region measures national
 party proportionality and need not give zero. Invalid transformed geography
 is displayed as unavailable. These measures are independent of reference
