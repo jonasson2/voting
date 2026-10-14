@@ -239,7 +239,8 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
     if settings["simulation_count"] < target_nodes:
         raise ValueError("Replicates must be at least the requested node count")
     if not 0 <= mixed_nodes <= target_nodes:
-        raise ValueError("Mixed node limit must be between zero and the node count")
+        raise ValueError("Mixed node count must be between zero and the node count")
+    idle_target = target_nodes - mixed_nodes
     job_dir = Path(job_dir).resolve()
     job_dir.mkdir(parents=True, exist_ok=False)
     display_settings = validate_display_settings(display_settings)
@@ -253,6 +254,8 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
     nodes = []
     try:
         for partition in partitions:
+            if len(nodes) == idle_target:
+                break
             pending = []
             cores = partition["cores_per_node"]
             if core_cap:
@@ -264,7 +267,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                 continue
             # Request the remaining nodes together, so allocation waits overlap.
             for _ in range(min(available, partition["total_nodes"],
-                               target_nodes - len(nodes))):
+                               idle_target - len(nodes))):
                 node_id = len(launchers)
                 log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
                 logs.append(log)
@@ -291,7 +294,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                 active.append((node_id, process, log_name))
                 print(f"{partition['partition']}: started node "
                       f"{len(nodes)}/{target_nodes}", flush=True)
-            if len(nodes) == target_nodes:
+            if len(nodes) == idle_target:
                 break
         mixed_started = 0
         if len(nodes) < target_nodes and mixed_nodes:
@@ -339,10 +342,10 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     print(f"{candidate['node_name']}: started mixed node "
                           f"{len(nodes)}/{target_nodes}", flush=True)
         if len(nodes) != target_nodes:
-            attempted = ("eligible idle and mixed nodes were tried" if mixed_nodes else
-                         "all listed partitions were tried")
-            raise RuntimeError(f"Started {len(nodes)} of {target_nodes} requested "
-                               f"nodes; {attempted}")
+            raise RuntimeError(
+                f"Started {len(nodes)} of {target_nodes} requested nodes "
+                f"({len(nodes) - mixed_started}/{idle_target} idle, "
+                f"{mixed_started}/{mixed_nodes} mixed)")
 
         build_assignments(settings["simulation_count"], nodes, first_replicate)
         atomic_json(job_dir / "manifest.json", {
@@ -411,7 +414,7 @@ def main(argv=None):
     parser.add_argument("-n", "--nodes", type=positive_int, required=True,
                         help="Number of nodes to start")
     parser.add_argument("-m", "--mixed-nodes", type=nonnegative_int, default=0,
-                        help="Maximum mixed nodes to use if idle nodes are insufficient")
+                        help="Number of mixed nodes to use within the -n total")
     parser.add_argument("-a", "--all", help="Download all file (JSON)")
     parser.add_argument("-v", "--votes", help="Vote table CSV")
     parser.add_argument("-e", "--systems",

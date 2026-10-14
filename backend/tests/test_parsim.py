@@ -255,7 +255,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                     stat_path=None, job_dir=job, partitions=partitions,
                     target_nodes=target_nodes, first_replicate=37,
                     core_cap=40, immediate=5, mixed_nodes=mixed_nodes)
-                if availability[0] >= 2:
+                if availability[0] >= 2 and mixed_nodes == 0:
                     self.assertEqual(
                         [call[0] for call in events.mock_calls[:3]],
                         ['launch', 'launch', 'ready'])
@@ -328,7 +328,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             launch.assert_not_called()
             merge.assert_not_called()
 
-    def test_mixed_nodes_fill_idle_shortfall_and_retry_refusal(self):
+    def test_mixed_nodes_retry_refusal(self):
         candidates = [
             {'node_name': 'mixed-a', 'partition': 'second', 'cores': 20,
              'slurm_cpus': 40, 'memory_mib': 2000, 'speed_per_core': 0.5},
@@ -357,6 +357,33 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             self.assertEqual(manifest['nodes'][1]['slurm_cpus'], 32)
             self.assertEqual(manifest['nodes'][1]['memory_mib'], 1600)
             merge.assert_called_once()
+
+    def test_mixed_count_is_reserved_even_when_idle_nodes_are_available(self):
+        candidate = {'node_name': 'mixed-a', 'partition': 'first',
+                     'cores': 16, 'slurm_cpus': 32, 'memory_mib': 1600,
+                     'speed_per_core': 1.0}
+        with TemporaryDirectory() as directory:
+            job, _, launch, _, _, _, _, error = self.run_with_allocations(
+                directory, [{'node_id': 0, 'slurm_job_id': '10'},
+                            {'node_id': 1, 'slurm_job_id': '11'}],
+                availability=(3, 3), mixed_nodes=1,
+                mixed_candidates=[candidate])
+            self.assertIsNone(error)
+            self.assertEqual([call.kwargs.get('node_name')
+                              for call in launch.call_args_list],
+                             [None, 'mixed-a'])
+            manifest = json.loads((job / 'manifest.json').read_text())
+            self.assertEqual([node.get('mode') for node in manifest['nodes']],
+                             [None, 'mixed'])
+
+    def test_missing_mixed_node_does_not_consume_extra_idle_node(self):
+        with TemporaryDirectory() as directory:
+            job, _, launch, _, _, _, _, error = self.run_with_allocations(
+                directory, [{'node_id': 0, 'slurm_job_id': '10'}],
+                availability=(3, 3), mixed_nodes=1)
+            self.assertRegex(str(error), r'1/1 idle, 0/1 mixed')
+            self.assertEqual(launch.call_count, 1)
+            self.assertFalse((job / 'manifest.json').exists())
 
     def test_mixed_requests_launch_together_and_retry_failed_batch(self):
         candidates = [

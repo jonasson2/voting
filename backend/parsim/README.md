@@ -46,8 +46,9 @@ partition in preference order.
 When `.venv-elja/bin/python` exists in the repository, workers use it even if
 the command itself was started with another Python. This environment must be
 on the shared filesystem and compatible with every requested node type.
-By default it uses only idle nodes. With `-m N`, it may fill a shortfall in
-the `-n` total with up to `N` mixed nodes after trying idle nodes. It queries
+By default it uses only idle nodes. With `-n T -m N`, it requests `T - N`
+idle nodes and `N` mixed nodes. If either target cannot be met, it releases
+the allocations and exits. It queries
 `scontrol show node --json`, orders mixed candidates by free Slurm CPUs, and
 requires at least 100 MiB of unreserved memory for each free physical core
 (two Slurm CPUs on Elja). Each mixed request is pinned to its node, reserves
