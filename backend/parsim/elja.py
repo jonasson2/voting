@@ -135,7 +135,8 @@ def launch_idle_group(job_dir, first_id, count, partition, slurm_cpus,
              "--nodes", str(count)]
     command = [
         "salloc", f"--immediate={immediate}", "--exclusive", "--mem=0",
-        f"--partition={partition}", f"--nodes={count}", "--ntasks=1",
+        f"--partition={partition}", f"--nodes={count}",
+        f"--ntasks={count}", "--ntasks-per-node=1",
         f"--cpus-per-task={slurm_cpus}",
         f"--job-name=parsim-{first_id:03d}", *child,
     ]

@@ -103,7 +103,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             elja.launch_idle_group(Path('/job'), 4, 2, 'mimir', 128, 5, log)
         launch.assert_called_once_with([
             'salloc', '--immediate=5', '--exclusive', '--mem=0',
-            '--partition=mimir', '--nodes=2', '--ntasks=1',
+            '--partition=mimir', '--nodes=2', '--ntasks=2',
+            '--ntasks-per-node=1',
             '--cpus-per-task=128', '--job-name=parsim-004',
             elja.worker_interpreter(), str(elja.HERE / 'idle_group.py'),
             '--job-dir', '/job', '--first-node-id', '4', '--nodes', '2',
