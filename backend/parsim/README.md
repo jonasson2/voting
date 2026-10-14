@@ -40,6 +40,14 @@ decides which nodes to allocate; availability can change after the inquiry.
 launching requests concurrently within each partition. It collects that
 partition's results before requesting any remaining nodes from the next
 partition in preference order.
+By default it uses only idle nodes. With `-m N`, it may fill a shortfall in
+the `-n` total with up to `N` mixed nodes after trying idle nodes. It queries
+`scontrol show node --json`, orders mixed candidates by free Slurm CPUs, and
+requires at least 100 MiB of unreserved memory for each free physical core
+(two Slurm CPUs on Elja). Each mixed request is pinned to its node, reserves
+100 MiB per simulation process, and shares the remaining node resources.
+`-C` also caps the CPU and memory request on mixed nodes. As with idle nodes,
+availability can change before Slurm grants the allocation.
 Each allocation starts `worker.py`, which waits for its assigned replicate
 range and runs `backend/sim.py` once through `srun`. Slurm reserves both
 logical CPUs per physical core, while `sim.py -C` receives the physical core

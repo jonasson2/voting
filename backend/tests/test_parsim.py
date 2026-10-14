@@ -72,6 +72,20 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             start_new_session=True)
         self.assertIs(process, launch.return_value)
 
+    def test_mixed_slurm_submission_requests_only_selected_resources(self):
+        log = StringIO()
+        with patch.object(elja.subprocess, 'Popen') as launch:
+            elja.launch_node(Path('/job'), 3, 'mimir', 32, 5, log,
+                             node_name='compute-66', memory_mib=1600)
+        launch.assert_called_once_with([
+            'salloc', '--immediate=5', '--nodelist=compute-66', '--mem=1600M',
+            '--partition=mimir', '--nodes=1', '--ntasks=1',
+            '--cpus-per-task=32', '--job-name=parsim-003',
+            sys.executable, str(elja.HERE / 'worker.py'),
+            '--job-dir', '/job', '--node-id', '3',
+        ], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+            start_new_session=True)
+
     def test_availability_counts_only_eligible_idle_nodes_once(self):
         with patch.object(elja.subprocess, 'run') as query:
             query.return_value.stdout = (
@@ -99,6 +113,44 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             query.return_value.stdout = 'unexpected output'
             with self.assertRaisesRegex(ValueError, 'Unexpected sinfo row'):
                 elja.available_node_count('mimir', 128)
+
+    def test_mixed_candidates_filter_memory_and_sort_by_free_cpus(self):
+        partitions = [
+            {'partition': 'first', 'speed_per_core': 1.0},
+            {'partition': 'second', 'speed_per_core': 0.8},
+        ]
+
+        def node(name, free_cpus, free_memory, *, partition='first',
+                 state=None, threads=2):
+            return {
+                'name': name, 'state': state or ['MIXED'], 'threads': threads,
+                'partitions': ['any_cpu', partition],
+                'effective_cpus': 128, 'alloc_cpus': 128 - free_cpus,
+                'real_memory': 252000,
+                'alloc_memory': 252000 - free_memory,
+            }
+
+        records = [
+            node('low-memory', 128, 6399),
+            node('small', 64, 3200),
+            node('largest', 96, 4800, partition='second'),
+            node('same-cpus', 96, 4800),
+            node('one-thread', 64, 3200, threads=1),
+            node('not-mixed', 128, 6400, state=['IDLE']),
+        ]
+        with patch.object(elja.subprocess, 'run') as query:
+            query.return_value.stdout = json.dumps({'nodes': records})
+            candidates = elja.available_mixed_nodes(partitions, core_cap=16)
+        query.assert_called_once_with(
+            ['scontrol', 'show', 'node', '--json'],
+            check=True, capture_output=True, text=True)
+        self.assertEqual([node['node_name'] for node in candidates],
+                         ['same-cpus', 'largest', 'small'])
+        self.assertEqual([node['cores'] for node in candidates], [16, 16, 16])
+        self.assertEqual([node['slurm_cpus'] for node in candidates],
+                         [32, 32, 32])
+        self.assertEqual([node['memory_mib'] for node in candidates],
+                         [1600, 1600, 1600])
 
     def test_worker_passes_range_seed_and_core_count_to_sim(self):
         with TemporaryDirectory() as directory:
@@ -132,7 +184,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
         self.assertIsNone(prepared['random_seed'])
 
     def run_with_allocations(self, directory, outcomes, *, target_nodes=2,
-                             live_processes=(), availability=(3, 3)):
+                             live_processes=(), availability=(3, 3),
+                             mixed_nodes=0, mixed_candidates=()):
         """Exercise the master without starting processes or allocating nodes."""
         job = Path(directory) / 'job'
         processes = [Mock(pid=1000 + i) for i in range(len(outcomes))]
@@ -160,6 +213,8 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             stack.enter_context(redirect_stdout(StringIO()))
             stack.enter_context(patch.object(
                 elja, 'available_node_count', side_effect=availability))
+            stack.enter_context(patch.object(
+                elja, 'available_mixed_nodes', return_value=mixed_candidates))
             launch = stack.enter_context(patch.object(
                 elja, 'launch_node', side_effect=processes))
             wait_ready = stack.enter_context(patch.object(
@@ -177,7 +232,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
                     {}, [], settings, csv_path=Path(directory) / 'report.csv',
                     stat_path=None, job_dir=job, partitions=partitions,
                     target_nodes=target_nodes, first_replicate=37,
-                    core_cap=40, immediate=5)
+                    core_cap=40, immediate=5, mixed_nodes=mixed_nodes)
                 if availability[0] >= 2:
                     self.assertEqual(
                         [call[0] for call in events.mock_calls[:3]],
@@ -246,6 +301,36 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             self.assertRegex(str(error), 'Started 0 of 2 requested nodes')
             launch.assert_not_called()
             merge.assert_not_called()
+
+    def test_mixed_nodes_fill_idle_shortfall_and_retry_refusal(self):
+        candidates = [
+            {'node_name': 'mixed-a', 'partition': 'second', 'cores': 20,
+             'slurm_cpus': 40, 'memory_mib': 2000, 'speed_per_core': 0.5},
+            {'node_name': 'mixed-b', 'partition': 'first', 'cores': 16,
+             'slurm_cpus': 32, 'memory_mib': 1600, 'speed_per_core': 1.0},
+        ]
+        with TemporaryDirectory() as directory:
+            job, _, launch, _, merge, _, _, error = self.run_with_allocations(
+                directory, [{'node_id': 0, 'slurm_job_id': '10'}, None,
+                            {'node_id': 2, 'slurm_job_id': '12'}],
+                availability=(1, 0), mixed_nodes=1,
+                mixed_candidates=candidates)
+            self.assertIsNone(error)
+            self.assertEqual([call.args[2] for call in launch.call_args_list],
+                             ['first', 'second', 'first'])
+            self.assertEqual([call.kwargs.get('node_name')
+                              for call in launch.call_args_list],
+                             [None, 'mixed-a', 'mixed-b'])
+            self.assertEqual([call.kwargs.get('memory_mib')
+                              for call in launch.call_args_list],
+                             [None, 2000, 1600])
+            manifest = json.loads((job / 'manifest.json').read_text())
+            self.assertEqual([node['id'] for node in manifest['nodes']], [0, 2])
+            self.assertEqual(manifest['nodes'][1]['node_name'], 'mixed-b')
+            self.assertEqual(manifest['nodes'][1]['cores'], 16)
+            self.assertEqual(manifest['nodes'][1]['slurm_cpus'], 32)
+            self.assertEqual(manifest['nodes'][1]['memory_mib'], 1600)
+            merge.assert_called_once()
 
     def test_exhausted_partitions_release_acquired_allocation(self):
         with TemporaryDirectory() as directory:

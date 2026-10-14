@@ -17,6 +17,8 @@ from uuid import uuid4
 HERE = Path(__file__).resolve().parent
 BACKEND = HERE.parent
 sys.path.insert(0, str(BACKEND))
+MIB_PER_PROCESS = 100
+SLURM_CPUS_PER_PROCESS = 2
 
 
 def read_partitions(path):
@@ -102,11 +104,16 @@ def wait_ready(path, process, timeout):
     raise RuntimeError(f"Timed out waiting for allocation {path.name}")
 
 
-def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log):
+def launch_node(job_dir, node_id, partition, slurm_cpus, immediate, log, *,
+                node_name=None, memory_mib=None):
     child = [sys.executable, str(HERE / "worker.py"),
              "--job-dir", str(job_dir), "--node-id", str(node_id)]
+    if (node_name is None) != (memory_mib is None):
+        raise ValueError("Mixed allocations require a node and memory request")
+    allocation = (["--exclusive", "--mem=0"] if node_name is None else
+                  [f"--nodelist={node_name}", f"--mem={memory_mib}M"])
     command = [
-        "salloc", f"--immediate={immediate}", "--exclusive", "--mem=0",
+        "salloc", f"--immediate={immediate}", *allocation,
         f"--partition={partition}", "--nodes=1", "--ntasks=1",
         f"--cpus-per-task={slurm_cpus}", f"--job-name=parsim-{node_id:03d}",
         *child,
@@ -134,6 +141,49 @@ def available_node_count(partition, slurm_cpus):
         if state == "idle" and int(cpus) >= slurm_cpus:
             nodes.add(name)
     return len(nodes)
+
+
+def available_mixed_nodes(partitions, core_cap):
+    """Find shareable nodes, ordered by available Slurm CPUs."""
+    try:
+        result = subprocess.run(
+            ["scontrol", "show", "node", "--json"],
+            check=True, capture_output=True, text=True)
+        records = json.loads(result.stdout)["nodes"]
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError) as error:
+        raise RuntimeError(f"Cannot query mixed node availability: {error}") from error
+
+    partition_order = {row["partition"]: index
+                       for index, row in enumerate(partitions)}
+    candidates = []
+    for record in records:
+        if record["state"] != ["MIXED"] or record["threads"] != 2:
+            continue
+        partition = next((row for row in partitions
+                          if row["partition"] in record["partitions"]), None)
+        if partition is None:
+            continue
+        free_cpus = record["effective_cpus"] - record["alloc_cpus"]
+        free_memory = record["real_memory"] - record["alloc_memory"]
+        available_cores = free_cpus // SLURM_CPUS_PER_PROCESS
+        if (available_cores < 1
+                or free_memory < MIB_PER_PROCESS * available_cores):
+            continue
+        cores = min(available_cores, core_cap) if core_cap else available_cores
+        candidates.append({
+            "node_name": record["name"],
+            "partition": partition["partition"],
+            "cores": cores,
+            "slurm_cpus": SLURM_CPUS_PER_PROCESS * cores,
+            "memory_mib": MIB_PER_PROCESS * cores,
+            "free_cpus": free_cpus,
+            "free_memory_mib": free_memory,
+            "speed_per_core": partition["speed_per_core"],
+        })
+    candidates.sort(key=lambda node: (
+        -node["free_cpus"], partition_order[node["partition"]],
+        -node["free_memory_mib"], node["node_name"]))
+    return candidates
 
 
 def wait_for_nodes(active, nodes, job_dir):
@@ -171,7 +221,7 @@ def wait_for_nodes(active, nodes, job_dir):
 
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     partitions, target_nodes, first_replicate, core_cap, immediate,
-                    display_settings=None, input_files=None):
+                    display_settings=None, input_files=None, mixed_nodes=0):
     from parsim.common import atomic_json
     from sim import write_csv
     from input_files import validate_display_settings
@@ -181,6 +231,8 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
         settings["random_seed"] = secrets.randbelow(2**31)
     if settings["simulation_count"] < target_nodes:
         raise ValueError("Replicates must be at least the requested node count")
+    if not 0 <= mixed_nodes <= target_nodes:
+        raise ValueError("Mixed node limit must be between zero and the node count")
     job_dir = Path(job_dir).resolve()
     job_dir.mkdir(parents=True, exist_ok=False)
     display_settings = validate_display_settings(display_settings)
@@ -234,9 +286,47 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                       f"{len(nodes)}/{target_nodes}", flush=True)
             if len(nodes) == target_nodes:
                 break
+        mixed_started = 0
+        if len(nodes) < target_nodes and mixed_nodes:
+            for candidate in available_mixed_nodes(partitions, core_cap):
+                if len(nodes) == target_nodes or mixed_started == mixed_nodes:
+                    break
+                node_id = len(launchers)
+                log = (job_dir / f"attempt-{node_id:03d}.log").open("x")
+                logs.append(log)
+                process = launch_node(
+                    job_dir, node_id, candidate["partition"],
+                    candidate["slurm_cpus"], immediate, log,
+                    node_name=candidate["node_name"],
+                    memory_mib=candidate["memory_mib"])
+                launchers.append(process)
+                ready = wait_ready(job_dir / f"allocation-{node_id:03d}.json",
+                                   process, immediate + 30)
+                if ready is None:
+                    process.wait()
+                    print(f"{candidate['node_name']}: no immediate allocation",
+                          flush=True)
+                    continue
+                if ready["node_id"] != node_id:
+                    raise RuntimeError("Allocation reported an unexpected node ID")
+                nodes.append({
+                    "id": node_id, "partition": candidate["partition"],
+                    "node_name": candidate["node_name"], "mode": "mixed",
+                    "cores": candidate["cores"],
+                    "slurm_cpus": candidate["slurm_cpus"],
+                    "memory_mib": candidate["memory_mib"],
+                    "speed_per_core": candidate["speed_per_core"],
+                    "slurm_job_id": ready["slurm_job_id"],
+                })
+                active.append((node_id, process, log.name))
+                mixed_started += 1
+                print(f"{candidate['node_name']}: started mixed node "
+                      f"{len(nodes)}/{target_nodes}", flush=True)
         if len(nodes) != target_nodes:
+            attempted = ("eligible idle and mixed nodes were tried" if mixed_nodes else
+                         "all listed partitions were tried")
             raise RuntimeError(f"Started {len(nodes)} of {target_nodes} requested "
-                               "nodes; all listed partitions were tried")
+                               f"nodes; {attempted}")
 
         build_assignments(settings["simulation_count"], nodes, first_replicate)
         atomic_json(job_dir / "manifest.json", {
@@ -297,6 +387,8 @@ def main(argv=None):
     )
     parser.add_argument("-n", "--nodes", type=positive_int, required=True,
                         help="Number of nodes to start")
+    parser.add_argument("-m", "--mixed-nodes", type=nonnegative_int, default=0,
+                        help="Maximum mixed nodes to use if idle nodes are insufficient")
     parser.add_argument("-a", "--all", help="Download all file (JSON)")
     parser.add_argument("-v", "--votes", help="Vote table CSV")
     parser.add_argument("-e", "--systems",
@@ -324,6 +416,8 @@ def main(argv=None):
         parser.error("provide -o/--csv or -O/--output")
     if args.csv and args.output and Path(args.csv) == Path(args.output):
         parser.error("CSV and statistics files must have different paths")
+    if args.mixed_nodes > args.nodes:
+        parser.error("-m/--mixed-nodes cannot exceed -n/--nodes")
     if args.all:
         if any((args.votes, args.systems, args.settings)):
             parser.error("-a cannot be combined with -v, -e, or -s")
@@ -343,7 +437,7 @@ def main(argv=None):
             partitions=partitions, target_nodes=args.nodes,
             first_replicate=args.first_replicate, core_cap=args.cores,
             immediate=args.immediate, display_settings=display_settings,
-            input_files=input_file_names(args))
+            input_files=input_file_names(args), mixed_nodes=args.mixed_nodes)
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, f"elja: {error}\n")
     return 0
