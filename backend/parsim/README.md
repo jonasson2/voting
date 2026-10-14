@@ -37,10 +37,14 @@ The inquiry is refreshed for each partition, so nodes already allocated
 through an earlier partition are no longer counted as idle. Slurm still
 decides which nodes to allocate; availability can change after the inquiry.
 
-`elja.py` makes separate one-node requests with `salloc --immediate`,
-launching requests concurrently within each partition. It collects that
+`elja.py` makes `salloc --immediate` requests, launching requests concurrently
+within each partition. It collects that
 partition's results before requesting any remaining nodes from the next
 partition in preference order.
+For requests above 30 nodes, pairs of idle nodes share one Slurm allocation
+where the partition permits it. Elja limits the account to 30 running jobs;
+grouping leaves job slots for mixed nodes. Each paired node still runs its
+own worker and receives its own replicate range.
 When `.venv-elja/bin/python` exists in the repository, workers use it even if
 the command itself was started with another Python. This environment must be
 on the shared filesystem and compatible with every requested node type.

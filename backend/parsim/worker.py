@@ -14,7 +14,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
 
-def run_allocated(job_dir, node_id):
+def run_allocated(job_dir, node_id, node_name=None):
     from parsim.common import atomic_json
 
     job_dir = Path(job_dir)
@@ -40,8 +40,11 @@ def run_allocated(job_dir, node_id):
         "-O", str(job_dir / f"node-{node_id:03d}.json"),
         "--progress", str(job_dir / f"progress-{node_id:03d}.json"),
     ]
-    command = ["srun", "--nodes=1", "--ntasks=1",
-               f"--cpus-per-task={work['slurm_cpus']}", "--exact", *command]
+    srun = ["srun", "--nodes=1", "--ntasks=1",
+            f"--cpus-per-task={work['slurm_cpus']}", "--exact"]
+    if node_name:
+        srun.append(f"--nodelist={node_name}")
+    command = [*srun, *command]
     return subprocess.run(command, check=False).returncode
 
 
@@ -49,11 +52,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job-dir", type=Path, required=True)
     parser.add_argument("--node-id", type=int, required=True)
+    parser.add_argument("--node-name")
     args = parser.parse_args(argv)
     if args.node_id < 0:
         parser.error("node ID must be nonnegative")
     try:
-        return run_allocated(args.job_dir, args.node_id)
+        return run_allocated(args.job_dir, args.node_id, args.node_name)
     except (OSError, ValueError, KeyError, RuntimeError) as error:
         parser.exit(1, f"worker: {error}\n")
 
