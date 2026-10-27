@@ -1,5 +1,7 @@
 """Excel workbook writer for simulation results."""
 
+from terminology import label
+
 from reference_measures import PERCENT_MEASURES, measure_tooltip
 from sensitivity import SENSITIVITY_CHANGE_GROUPS, SENSITIVITY_PERCENT_MEASURES, SINGLE_LIST_GROUPS
 
@@ -119,15 +121,15 @@ class SimulationWorkbook:
         source = source_settings(self.results)
         row = 2
         worksheet.write(row, 0, "Source votes and seats", self.fmt["h"])
-        for label, value in source:
+        for title, value in source:
             row += 1
-            worksheet.write(row, 0, label, self.fmt["basic"])
+            worksheet.write(row, 0, label(title), self.fmt["basic"])
             worksheet.write(row, 1, value, self.fmt["basic"])
         row += 2
         worksheet.write(row, 0, "Simulation settings", self.fmt["h"])
         for setting in simulation_settings(self.results):
             row += 1
-            worksheet.write(row, 0, setting["label"], self.fmt["basic"])
+            worksheet.write(row, 0, label(setting["label"]), self.fmt["basic"])
             worksheet.write(row, 1, setting["data"], self.fmt["basic"])
 
     def quality_measure_data(self, groups):
@@ -182,15 +184,19 @@ class SimulationWorkbook:
             self, worksheet, top, group_id, title, row_titles, rows, side_title=False):
         from excel_util import write_matrix
 
+        row_titles = [
+            (first if group_id in {"cmpList", "cmpParty"} else label(first),
+             second if group_id == "cmpNationalDetails" else label(second))
+            for first, second in row_titles]
         if side_title:
             if title and len(rows) > 1:
                 worksheet.merge_range(top, 0, top + len(rows) - 1, 0,
-                                      title, self.quality_title_format)
+                                      label(title), self.quality_title_format)
             else:
-                worksheet.write(top, 0, title, self.quality_title_format)
+                worksheet.write(top, 0, label(title), self.quality_title_format)
             worksheet.write_column(top, 1, [title[0] for title in row_titles])
         elif title:
-            worksheet.write(top, 0, title, self.fmt["h"])
+            worksheet.write(top, 0, label(title), self.fmt["h"])
             top += 1
         if not side_title:
             worksheet.write_column(top, 0, [title[0] for title in row_titles])
@@ -198,7 +204,7 @@ class SimulationWorkbook:
         for index, row in enumerate(rows):
             tooltip = measure_tooltip(row.get("measure", ""))
             if tooltip:
-                worksheet.write_comment(top + index, 1 if side_title else 0, tooltip)
+                worksheet.write_comment(top + index, 1 if side_title else 0, label(tooltip))
         column = 2
         for statistic in EXCEL_HEADINGS:
             write_matrix(
@@ -214,7 +220,7 @@ class SimulationWorkbook:
         return top + len(row_titles) if row_titles else top
 
     def write_quality_block_heading(self, worksheet, top, title):
-        worksheet.merge_range(top, 0, top, 1, title, self.fmt["h"])
+        worksheet.merge_range(top, 0, top, 1, label(title), self.fmt["h"])
         column = 2
         for _ in EXCEL_HEADINGS:
             worksheet.write_row(top, column, self.system_names, self.fmt["h_center"])
@@ -377,7 +383,7 @@ class SimulationWorkbook:
         column = 2
         for table in SUMMARY_TABLES:
             no_total = self.summary_has_no_total(table)
-            worksheet.write(3, column, table["heading"], self.fmt["h"])
+            worksheet.write(3, column, label(table["heading"]), self.fmt["h"])
             worksheet.write_row(
                 4, column, self.parties[:-1] if no_total else self.parties,
                 self.fmt["h_center"])
@@ -395,7 +401,7 @@ class SimulationWorkbook:
                 no_total = self.summary_has_no_total(table)
                 total = "hide" if skip_total and not no_total else "show"
                 self.draw_sim_block(
-                    worksheet, top, column, table["heading"],
+                    worksheet, top, column, label(table["heading"]),
                     data[category["abbr"]][table["abbr"]],
                     category["abbr"], total)
                 column += len(self.parties) + (0 if no_total else 1)
@@ -409,7 +415,7 @@ class SimulationWorkbook:
         data = np.reshape(
             self.results["histogram_data"][key],
             (len(self.systems), party_count))
-        worksheet.write(0, 0, title, self.fmt["h"])
+        worksheet.write(0, 0, label(title), self.fmt["h"])
         worksheet.write(1, 0, description, self.fmt["h"])
         worksheet.write(2, 2, "Frequencies", self.fmt["h"])
         worksheet.write(3, 0, "System", self.fmt["h"])
@@ -502,7 +508,7 @@ class SimulationWorkbook:
             ]},
             {"left_span": 2, "center_span": 2, "right_span": 0, "info": [
                 {"label": "Specification of seat numbers:",
-                 "rule": SCONST[system["seat_spec_options"]["const"]]},
+                 "rule": label(SCONST[system["seat_spec_options"]["const"]])},
             ]},
             {"left_span": 2, "center_span": 2, "right_span": 0, "info": [
                 {"label": "Votes used as basis:",
@@ -531,8 +537,8 @@ class SimulationWorkbook:
             rule_column = group["left_span"]
             threshold_column = rule_column + group["center_span"]
             for info in group["info"]:
-                worksheet.write(top, 0, info["label"], self.fmt["h"])
-                worksheet.write(top, rule_column, info["rule"], self.fmt["basic"])
+                worksheet.write(top, 0, label(info["label"]), self.fmt["h"])
+                worksheet.write(top, rule_column, label(info["rule"]), self.fmt["basic"])
                 if group["right_span"]:
                     worksheet.write(
                         top, threshold_column, info["threshold"], self.fmt["basic"])
@@ -542,7 +548,7 @@ class SimulationWorkbook:
         worksheet.write(top, 0, "Simulation results", self.fmt["h"])
         column = 2
         for table in SIMULATION_TABLES:
-            worksheet.write(top, column, table["heading"], self.fmt["h"])
+            worksheet.write(top, column, label(table["heading"]), self.fmt["h"])
             worksheet.write_row(
                 top + 1, column,
                 parties if table["total"] else parties[:-1],
@@ -560,7 +566,7 @@ class SimulationWorkbook:
             column = 2
             for table in SIMULATION_TABLES:
                 self.draw_sim_block(
-                    worksheet, row, column, table["heading"],
+                    worksheet, row, column, label(table["heading"]),
                     data[category["abbr"]][table["abbr"]],
                     category["abbr"], "show" if table["total"] else "hide")
                 column += len(parties) + int(table["total"])

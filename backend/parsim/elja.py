@@ -231,7 +231,7 @@ def wait_for_nodes(active, nodes, job_dir):
 def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
                     partitions, target_nodes, first_replicate, core_cap, immediate,
                     display_settings=None, input_files=None, mixed_nodes=0,
-                    excel_path=None):
+                    excel_path=None, terminology=None):
     from parsim.common import atomic_json, read_node_results, write_reports
     from input_files import validate_display_settings
     from simulation_chunks import combine_chunks, write_chunk_result
@@ -377,7 +377,7 @@ def run_distributed(votes, systems, settings, *, csv_path, stat_path, job_dir,
             combined = combine_chunks(results)
         combined.input_files = input_files or {}
         write_reports(combined, csv_path=csv_path, excel_path=excel_path,
-                      display_settings=display_settings)
+                      display_settings=display_settings, terminology=terminology)
         if stat_path:
             print(f"Statistics: {stat_path}", flush=True)
     finally:
@@ -430,6 +430,8 @@ def main(argv=None):
                         help="Ordered tab-separated partition list")
     parser.add_argument("--immediate", type=positive_int, default=5,
                         help="Seconds allowed for each Slurm allocation")
+    from terminology import add_terminology_option, terminology_from_args
+    add_terminology_option(parser)
     args = parser.parse_args(argv)
     outputs = [Path(path).expanduser().resolve()
                for path in (args.csv, args.excel, args.output) if path]
@@ -454,7 +456,7 @@ def main(argv=None):
         partitions = read_partitions(args.partitions)
         run_distributed(
             votes, systems, settings, csv_path=args.csv, stat_path=args.output,
-            excel_path=args.excel,
+            excel_path=args.excel, terminology=terminology_from_args(args),
             job_dir=args.job_dir or HERE / "jobs" / uuid4().hex,
             partitions=partitions, target_nodes=args.nodes,
             first_replicate=args.first_replicate, core_cap=args.cores,

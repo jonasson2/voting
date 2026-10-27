@@ -19,13 +19,13 @@
   <!-- FIXED SEAT ALLOCATION -->
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
-    title="Information on how to allocate fixed seats to lists in each constituency, and national fixed seats if present">
-    Allocation of fixed seats in the constituencies
+    :title="$terms('How to allocate fixed seats to lists in each constituency, and national fixed seats if present')">
+    {{ $terms("Allocation of fixed seats") }}
   </legend>
   <div class="settings-row">
     <label class="settings-field">
       <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Formula used for allocating fixed seats to party lists within each constituency, and national fixed seats to parties if present.">Rule</span>
+        :title="$terms('Set divisor sequence for allocating fixed seats to party lists, and national fixed seats to parties if present.')">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].primary_divider"
         :options="capabilities.systems"/>
@@ -34,7 +34,8 @@
   <div class="settings-row">
     <label class="settings-field">
       <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="National vote share required for fixed seats. Enter - to disable this threshold; then only the local threshold applies.">National threshold</span>
+            title="National vote share required for fixed seats; – for no threshold.">
+        National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -49,12 +50,10 @@
         aria-label="Fixed-seat threshold combination"
         v-model="systems[systemidx].fixed_seat_threshold_choice"
         :options="capabilities.adj_threshold_choice"
-        :disabled="!bothThresholdsEnabled('fixed_seat_national_threshold', 'constituency_threshold')"
-        v-b-tooltip.hover.bottom.v-primary.ds500
-        title="When both thresholds are enabled, choose whether a party must meet both or either one."/>
+        :disabled="!bothThresholdsEnabled('fixed_seat_national_threshold', 'constituency_threshold')"/>
       <label class="settings-field">
-        <span v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Share of constituency votes required for fixed seats. Enter - to disable this threshold; then only the national threshold applies. Also applies to national fixed seats when present.">local threshold</span>
+        <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }"
+              :title="$terms('Constituency vote share required for fixed seats; – for no threshold.\nAlso applies to national fixed seats when present.')">local threshold</span>
         <span class="compact-entry">
           <input class="compact-entry-input" type="text"
             v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -70,13 +69,13 @@
   <!-- APPORTIONMENT -->
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
-    title="Information on how to calculate the total number of seats which each party receives">
+    title="How to calculate the total number of seats which each party receives">
     Apportionment of total seats to parties
   </legend>
   <div class="settings-row">
     <label class="settings-field">
       <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Formula used to apportion adjustment seats between parties based on chosen votes.">Rule</span>
+        :title="$terms('Set divisor sequence for apportionment of adjustment seats.')">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_determine_divider"
         :options="capabilities.systems"/>
@@ -85,7 +84,8 @@
   <div class="settings-row">
     <label class="settings-field">
       <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="National vote share required for adjustment seats. Enter - to disable this threshold; then only the fixed-seat threshold applies.">National threshold</span>
+            :title="$terms('National vote share required for adjustment seats; – for no threshold.')">
+        National threshold</span>
       <span class="compact-entry">
         <input class="compact-entry-input" type="text"
           v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
@@ -99,12 +99,10 @@
       aria-label="Threshold combination"
       v-model="systems[systemidx].adj_threshold_choice"
       :options="capabilities.adj_threshold_choice"
-      :disabled="!bothThresholdsEnabled('adjustment_threshold', 'adjustment_threshold_seats')"
-      v-b-tooltip.hover.bottom.v-primary.ds500
-      title="When both thresholds are enabled, choose whether a party must meet both or either one."/>
+      :disabled="!bothThresholdsEnabled('adjustment_threshold', 'adjustment_threshold_seats')"/>
     <label class="compact-entry"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Fixed seats required to qualify for adjustment seats. Enter - to disable this threshold; then only the national threshold applies.">
+      :title="$terms('Number of fixed seats required to qualify for adjustment seats; – for none.')">
       <input class="compact-entry-input" type="text"
         v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
         :value="thresholdDisplay('adjustment_threshold_seats')"
@@ -117,7 +115,7 @@
   <div class="settings-row">
     <label class="settings-field">
       <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Yes: a party must have positive votes in every constituency to qualify for further seats. A party that does not qualify retains its fixed seats.">Stand in all constituencies</span>
+        :title="$terms('Yes: a party must have positive votes in every constituency to qualify for further seats.')">{{ $terms("Stand in all constituencies") }}</span>
       <b-form-select class="compact-select settings-yes-no"
         v-model="systems[systemidx].require_votes_in_all_constituencies"
         :options="[{ value: false, text: 'No' }, { value: true, text: 'Yes' }]"/>
@@ -126,11 +124,9 @@
 
   <div class="settings-row">
     <label class="settings-field">
-      <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="None: Use the selected rule and qualification settings without country-specific modifications. Danish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions, and apply the statutory recalculation when fixed seats exceed provisional entitlements. Swedish: Apportion national party totals from zero, then reallocate fixed seats that exceed those entitlements.">Special rules</span>
-      <b-form-select class="compact-select settings-special-rules"
-        v-model="systems[systemidx].special_rules"
-        @change="checkRegionalRules"
+      <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }" :title="'None: No further requirements.\n\nDanish: Also qualify a party whose votes reach the average votes per fixed seat in at least two regions; also parties retain fixed seats exceeding their national entitlements; remaining seats are distributed among the other parties (Danish Parliamentary Elections Act, section 77(4)–(5)).\n\nSwedish: Calculate national entitlement from scratch, remove excess fixed seats, fill vacated seats using Maximum votes (Swedish Elections Act, ch. 14, §§ 4–4b).'">
+        Special rules</span> <b-form-select class="compact-select settings-special-rules"
+        v-model="systems[systemidx].special_rules" @change="checkRegionalRules"
         :options="capabilities.special_rules"/>
     </label>
   </div>
@@ -146,22 +142,21 @@
         class="small text-muted">Danish special rules require regions.</span>
     </div>
     <p v-if="systems[systemidx].ignore_regions" class="small text-muted">
-      Allocate nationally without regional constraints, using the selected
-      constituency seat settings.
+      {{ $terms("Allocate nationally without regional constraints, using the selected\n      constituency seat settings.") }}
     </p>
     <template v-if="!systems[systemidx].ignore_regions">
     <legend class="settings-heading"
       v-b-tooltip.hover.top.v-primary.ds500
-      title="Distributes parties’ national adjustment-seat entitlements among regions while respecting each region’s seat total.">
-      Regional allocation of adjustment seats
+      :title="$terms('Distributes parties’ national adjustment-seat entitlements among regions while respecting each region’s seat total.')">
+      {{ $terms("Regional allocation of adjustment seats") }}
     </legend>
     <div class="settings-row">
       <label class="settings-field">
         <span v-b-tooltip.hover.bottom.v-primary.ds500
-          title="Method used to allocate each party’s adjustment seats among regions.">Allocation method</span>
+          :title="$terms('Method used to allocate each party’s adjustment seats among regions.')">Allocation method</span>
         <b-form-select class="compact-select settings-method"
           v-model="systems[systemidx].regional_adjustment_method"
-          :options="capabilities.regional_adjustment_methods"/>
+          :options="$termOptions(capabilities.regional_adjustment_methods)"/>
       </label>
     </div>
     <div class="settings-row">
@@ -179,43 +174,64 @@
   <!-- ADJUSTMENT SEAT ALLOCATION -->
   <legend class="settings-heading"
     v-b-tooltip.hover.top.v-primary.ds500
-    title="Allocation of adjustment seats to individual party lists in constituencies">
-    Allocation of adjustment seats to lists
+    :title="$terms('How to allocate adjustment seats to individual party lists in constituencies')">
+    {{ $terms("Allocation of adjustment seats to lists") }}
   </legend>
   <div class="settings-row">
     <label class="settings-field">
-      <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Method used to allocate adjustment seats to party lists.">Allocation method</span>
+      <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }"
+        :title="$terms(allocationFamilyHelp)">Method family</span>
       <b-form-select class="compact-select settings-method"
-        v-model="systems[systemidx].adjustment_method"
-        :options="adjustmentMethodOptions"/>
+        v-model="adjustmentFamily"
+        :options="$termOptions(adjustmentFamilyOptions)"/>
     </label>
   </div>
   <div class="settings-row">
     <label class="settings-field">
-      <span v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Formula used to allocate adjustment seats to constituency lists.">Rule</span>
+      <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }"
+        :title="$terms(adjustmentOverviewTooltip)">Allocation method</span>
+      <b-form-select class="compact-select settings-method"
+        v-model="adjustmentChoice"
+        :options="alphabeticalOptions($termOptions(stagedAdjustmentMethodOptions))"/>
+    </label>
+    <b-button variant="link" size="sm" class="allocation-help-button"
+        :aria-label="$terms('Help for the selected allocation method')"
+        v-b-tooltip.hover.focus.right.v-primary.ds500="{ customClass: 'allocation-help' }"
+        :title="$terms(adjustmentMethodTooltip)"
+        >?</b-button>
+  </div>
+  <div v-if="adjustmentScaling" class="settings-row">
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }"
+        :title="$terms(allocationScalingHelp)">Scaling</span>
+      <b-form-select class="compact-select settings-method"
+        v-model="adjustmentScaling"
+        :options="alphabeticalOptions($termOptions(adjustmentScalingOptions))"/>
+    </label>
+  </div>
+  <div v-else class="settings-row">
+    <label class="settings-field">
+      <span v-b-tooltip.hover.bottom.v-primary.ds500="{ customClass: 'allocation-help' }"
+        :title="$terms(adjustmentRuleTooltip)">Rule</span>
       <b-form-select class="compact-select settings-rule"
         v-model="systems[systemidx].adj_alloc_divider"
-        :options="capabilities.divider_rules"/>
+        :options="alphabeticalOptions(capabilities.divider_rules)"/>
     </label>
   </div>
   <!-- FIXED AND ADJUSTMENT SEAT NUMBERS -->
   <legend class="settings-heading">
-    Alternative specification of fixed and adjustment seat numbers
+    {{ $terms("Alternative specification of fixed and adjustment seat numbers") }}
   </legend>
   <div class="settings-row">
     <b-form-select class="compact-select settings-seat-spec"
-      aria-label="Fixed and adjustment seat numbers"
+      :aria-label="$terms('Fixed and adjustment seat numbers')"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="Numbers of fixed and adjustment seats in this electoral system"
+      :title="$terms('Numbers of fixed and adjustment seats in this electoral system')"
       v-model="const_spec_option"
-      :options="capabilities.seat_spec_options.const"/>
+      :options="$termOptions(capabilities.seat_spec_options.const)"/>
     <div v-if='const_spec_option!="refer"' class="settings-seat-table">
       <p v-if="const_spec_option === 'flexible'">
-        {{ flexibleAdjustmentTotal }} adjustment seats in total. Each constituency
-        may receive 0 or more, with no upper limit. Fixed seats stay as specified
-        in Source votes and seats.
+        {{ flexibleAdjustmentTotal }} {{ $terms("adjustment seats in total. Each constituency\n        may receive 0 or more, with no upper limit. Fixed seats stay as specified\n        in Source votes and seats.") }}
       </p>
       <table v-if="!adding_system && !waiting_for_data" class="votematrix">
         <tbody>
@@ -228,8 +244,8 @@
           </th>
           <th class="displaycenter"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Adjustment seats">
-            # Adj.
+              :title="$terms('Adjustment seats')">
+            {{ $terms("# Adj.") }}
           </th>
         </tr>
         <tr v-for="constituency in systems[systemidx].constituencies">
@@ -312,10 +328,14 @@
 <script>
 import { mapState, mapMutations, mapActions } from 'vuex';
 import { flexibleAdjustmentMethodOptions } from './voteTable.js';
+import {methodFamily, methodChoice, rsssScaling, familyOptions, methodOptions, alphabeticalOptions,
+  scalingOptions, selectMethod, allocationFamilyHelp, allocationScalingHelp, methodHelp, methodOverview, allocationRuleHelp} from './adjustmentMethods.js';
 export default {
   data: function() {
     return {
-      created: false
+      created: false,
+      allocationFamilyHelp,
+      allocationScalingHelp
     }
   },
   computed: {
@@ -343,6 +363,41 @@ export default {
         this.systems[this.systemidx],
       )
     },
+    adjustmentFamily: {
+      get() { return methodFamily(this.systems[this.systemidx].adjustment_method) },
+      set(family) {
+        const first = methodOptions(this.adjustmentMethodOptions, family).find(option => !option.disabled)
+        if (first) this.adjustmentChoice = first.value
+      },
+    },
+    adjustmentChoice: {
+      get() { return methodChoice(this.systems[this.systemidx].adjustment_method) },
+      set(choice) {
+        const system = this.systems[this.systemidx]
+        system.adjustment_method = selectMethod(this.adjustmentMethodOptions, choice, system.adjustment_method)
+      },
+    },
+    adjustmentScaling: {
+      get() { return rsssScaling(this.systems[this.systemidx].adjustment_method) },
+      set(scaling) {
+        const method = `${this.adjustmentChoice}-${scaling}`
+        if (this.adjustmentMethodOptions.some(option => option.value === method && !option.disabled)) {
+          this.systems[this.systemidx].adjustment_method = method
+        }
+      },
+    },
+    adjustmentFamilyOptions() { return familyOptions(this.adjustmentMethodOptions) },
+    stagedAdjustmentMethodOptions() { return methodOptions(this.adjustmentMethodOptions, this.adjustmentFamily) },
+    adjustmentScalingOptions() { return scalingOptions(this.adjustmentMethodOptions, this.adjustmentChoice) },
+    adjustmentOverviewTooltip() {
+      return methodOverview(this.adjustmentMethodOptions, this.adjustmentFamily)
+    },
+    adjustmentMethodTooltip() {
+      return methodHelp(this.systems[this.systemidx].adjustment_method)
+    },
+    adjustmentRuleTooltip() {
+      return allocationRuleHelp(this.systems[this.systemidx].adjustment_method)
+    },
     hasRegions() {
       return Array.isArray(this.vote_table.regions) &&
         this.vote_table.regions.length > 0
@@ -369,6 +424,7 @@ export default {
     },
   },
   methods: {
+    alphabeticalOptions,
     checkRegionalRules() {
       const system = this.systems[this.systemidx]
       if (system.special_rules === 'danish') system.ignore_regions = false

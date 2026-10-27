@@ -44,7 +44,7 @@
               of lots could give a different result.</p>
             <ul class="mb-0">
               <li v-for="(tie, index) in results[activeTabIndex].ties" :key="index">
-                {{tie.stage}}: {{tie.candidates.join('; ')}}.
+                {{$terms(tie.stage)}}: {{tie.candidates.join('; ')}}.
                 Selected: {{tie.selected}}.
                 Tied {{tie.scores.length === 1 ? 'score' : 'scores'}}:
                 {{tie.scores.map(formatTieScore).join('; ')}}.
@@ -142,6 +142,7 @@ export default {
           vote_table:     this.vote_table,
           systems:        this.systems,
           display_settings: this.display_settings,
+          terminology: this.$store.state.terminology,
         },
         responseType: "arraybuffer",
       });

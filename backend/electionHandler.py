@@ -57,9 +57,9 @@ class ElectionHandler:
                                     system["seat_spec_options"]["const"]))
             self.elections.append(election)
 
-    def to_xlsx(self, filename, display_settings=None):
+    def to_xlsx(self, filename, display_settings=None, terminology=None):
         elections_to_xlsx(
-            self.elections, filename, self.party_names, display_settings)
+            self.elections, filename, self.party_names, display_settings, terminology=terminology)
 
 def update_constituencies(vote_table, systems):
     constituencies = []

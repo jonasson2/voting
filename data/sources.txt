@@ -101,3 +101,11 @@ Danish national party-total recalculation regression fixture, 2022
 data/denmark/national-results_2022.json: votes, fixed seats and final totals
 transcribed from tables 1 and 3 of the official allocation report:
 https://www.valg.im.dk/Media/638040301540778324/Danmarks%20Statistiks%20opg%C3%B8relse%20af%20folketingsvalget%20den%201.%20november%202022.pdf
+
+Ricca, Scozzari, Serafini and Simeone (2012), Error minimization methods in
+biproportional apportionment, TOP 20, 547-577, DOI 10.1007/s11750-012-0252-x.
+data/ricca/consistency_check.py checks the 2008 allocations in Table 1 against
+the 2x2 consistency procedure described in section 11. The printed fair shares
+are approximate; the check includes conservative bounds for their precision.
+Local source: ../kosningagrein/references/ricca-et-al.pdf
+Author manuscript: https://users.dimi.uniud.it/~paolo.serafini/TOPMINERR.pdf

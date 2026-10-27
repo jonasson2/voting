@@ -44,13 +44,7 @@
       rank the election systems in terms of their qualities.</p>
 
       <p>
-      The simulator is mainly intended for bidimensional elections, i.e.
-      parlamentary elections with constituencies and parties but can also be
-      used for one dimensional elections, like elections to municipalities. The
-      focus is on proportional representation with multimember constituencies
-      and two types of seats; pure constitency seats and adjustment seats tied
-      to the constituencies. The adjusment seats can also be located nationally.
-      Elections in one-man constituencies can also be addressed.</p>
+      {{ $terms("The simulator is mainly intended for bidimensional elections, i.e.\n      parlamentary elections with constituencies and parties but can also be\n      used for one dimensional elections, like elections to municipalities. The\n      focus is on proportional representation with multimember constituencies\n      and two types of seats; pure constituency seats and adjustment seats tied\n      to the constituencies. The adjustment seats can also be located nationally.\n      Elections in one-man constituencies can also be addressed.") }}</p>
 
       <p>
       The project has been developed in Iceland. The main contributers to the

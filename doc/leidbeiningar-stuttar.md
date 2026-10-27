@@ -56,8 +56,8 @@ Alls eru því tvö kjördæmi, tveir flokkar, 25 sæti, og 8000 atkvæði. Hald
 Í *Electoral systems* gefurðu kerfinu nafnið *D'Hondt*. Bættu síðan við öðru
 kerfi með *+*, gefðu því nafnið *Sainte-Laguë* og veldu *Sainte-Laguë* í
 öllum þremur *Rule* reitunum. Aðrar stillingar eru þær sömu í báðum kerfum:
-engir þröskuldar, *None* við undirbúning og *Maximum constituency seat
-share* sem aðferð við úthlutun jöfnunarsæta.
+engir þröskuldar, *None* við undirbúning og *Maximum fair share*
+sem aðferð við úthlutun jöfnunarsæta.
 
 Opnaðu svo *Single election* og skoðaðu bæði kerfin. Bæði gefa A 13 sæti og B
 12, en skipta þeim ólíkt milli kjördæma. Með D'Hondt fær A 5 sæti í kjördæmi I
@@ -119,7 +119,7 @@ hvers kerfis og *Allocation method* undir *Allocation of adjustment seats to
 lists* sem hér segir:
 
 - Nafn *Optimal* og aðferð *Optimal LP*,
-- *Max seat share* og *Maximum constituency seat share*,
+- *Max seat share* og *Maximum fair share*,
 - *Switching* og *Switching of seats*,
 - *Rel-sup-simple* og *Relative superiority, simplified*.
 

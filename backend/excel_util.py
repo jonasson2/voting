@@ -1,3 +1,4 @@
+from terminology import label, report_terminology
 import xlsxwriter
 from datetime import datetime
 from measure_groups import MeasureGroups
@@ -50,7 +51,7 @@ def adjustment_qualification_text(system):
     else:
         text = "-"
     if system["require_votes_in_all_constituencies"]:
-        text += "; must stand in all constituencies"
+        text += label("; must stand in all constituencies")
     if system["special_rules"] != "none":
         text += "; special rules: " + system["special_rules"].title()
     return text
@@ -220,20 +221,23 @@ def demo_table_to_xlsx(
         fractional_digits=DEFAULT_FRACTIONAL_DIGITS,
         percentage_digits=DEFAULT_PERCENTAGE_DIGITS,
 ):
-    headers = demo_table["headers"]
+    headers = [label(header) for header in demo_table["headers"]]
     steps = demo_table["steps"]
     row += 1
     if len(steps) == 0:
         worksheet.write(row, col, "There are no steps to show")
         return col+1
     if demo_table["sup_header"]:
-        worksheet.write(row, col, demo_table["sup_header"], fmt["h"])
+        worksheet.write(row, col, label(demo_table["sup_header"]), fmt["h"])
         row += 1
     worksheet.write_row(row, col, headers, fmt["step_h"])
     width = [len(h) for h in headers]
     row += 1
     for i in range(len(steps)):
         for j,(stp,f) in enumerate(zip(steps[i], demo_table["format"])):
+            # Translate explanations, but preserve user-supplied names in other columns.
+            if demo_table["headers"][j] == "Criteria":
+                stp = label(stp)
             if f=="s": #special
                 maxw = max(len(s[j]) for s in steps)
                 f = "c" if maxw <= 2 else "l"
@@ -267,7 +271,7 @@ def _draw_election_block(
     cell_format = cell_format or fmt["cell"]
     if heading.endswith("percentages"):
         cell_format = fmt["percentages"]
-    worksheet.write(row, col, heading, fmt["h"])
+    worksheet.write(row, col, label(heading), fmt["h"])
     worksheet.write(row + 1, col, topleft, fmt["basic"])
     worksheet.write_row(row + 1, col + 1, xheaders, fmt["center"])
     worksheet.write_column(row + 2, col, yheaders, fmt["basic"])
@@ -303,7 +307,7 @@ def _election_information(result):
         ("Rule for allocating adjustment seats:",
          DRN[system["adj_alloc_divider"]]),
         ("Method for allocating adjustment seats:",
-         AMN[system["adjustment_method"]]),
+         label(AMN[system["adjustment_method"]])),
     ]
 
 
@@ -322,7 +326,7 @@ def _write_election_sheet(
     parties = system["parties"] + ["Total"]
     row = 0
     for title, item in _election_information(result):
-        worksheet.write(row, 0, title, fmt["h"])
+        worksheet.write(row, 0, label(title), fmt["h"])
         worksheet.write(row, 1, item, fmt["basic"])
         row += 1
     row += 1
@@ -331,7 +335,7 @@ def _write_election_sheet(
     yheaders = results["row_names"]
     row = _draw_election_block(
         worksheet, fmt, row, 0, "Required number of seats",
-        ["Const.", "Adj.", "Total"], yheaders, results["seats"],
+        [label("Constituency"), label("Adj."), "Total"], yheaders, results["seats"],
         cell_format=fmt["base"])
     vote_matrix = results["votes"]
     party_percentages, constituency_percentages = _vote_percentages(vote_matrix)
@@ -365,13 +369,14 @@ def _write_election_sheet(
     column = len(parties) + 2
     worksheet.set_column(1, column - 1, 10)
     worksheet.write(
-        0, column, "Allocation of adjustment seats step-by-step", fmt["h"])
+        0, column, label("Allocation of adjustment seats step-by-step"), fmt["h"])
     for demo_table in result["demo_tables"]:
         column = demo_table_to_xlsx(
             worksheet, 1, column, fmt, demo_table,
             fractional_digits, percentage_digits)
 
 
+@report_terminology
 def elections_to_xlsx(elections, filename, party_names=None, display_settings=None):
     """Write one vote table evaluated under multiple electoral systems."""
     workbook = xlsxwriter.Workbook(filename)
@@ -387,6 +392,7 @@ def elections_to_xlsx(elections, filename, party_names=None, display_settings=No
         workbook, fmt, elections[0].system["parties"], party_names)
     workbook.close()
 
+@report_terminology
 def simulation_to_xlsx(results, filename, display_settings=None,
                        include_histogram_sheets=False):
     """Write detailed information about a simulation to an xlsx file."""

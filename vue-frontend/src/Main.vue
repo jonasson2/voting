@@ -24,7 +24,7 @@
     >
     <template v-for="(line, idx) in server_error">
       <br v-if="idx>0">
-      {{line}}
+      {{ $terms(line) }}
     </template>
   </b-alert>
   <b-tabs

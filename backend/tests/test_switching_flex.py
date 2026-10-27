@@ -12,7 +12,7 @@ from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from methods.max_const_votes import max_const_votes
 from methods.switching_flex import switching_flex
-from methods.switching_plus import improve_by_exchanges
+from methods.switching_flex import improve_by_exchanges
 from noweb import load_votes
 from table_util import entropy
 
@@ -42,8 +42,8 @@ class SwitchingFlexTest(unittest.TestCase):
     def test_registration_and_order(self):
         names = [item['value'] for item in ADJUSTMENT_METHOD_NAMES]
         start = names.index('switching')
-        self.assertEqual(names[start:start + 3],
-                         ['switching', 'switching-plus', 'switching-flex'])
+        self.assertEqual(names[start:start + 2],
+                         ['switching', 'switching-flex'])
         self.assertIs(ADJUSTMENT_METHODS['switching-flex'], switching_flex)
         self.assertIn('switching-flex', FLEXIBLE_ADJUSTMENT_METHODS)
 

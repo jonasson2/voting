@@ -56,6 +56,22 @@ class EljaReportTest(unittest.TestCase):
         (job / 'node-099.json').write_text('unused')
         return job, votes, [system], settings, display, files
 
+    def test_terminology_option_does_not_change_any_job_files(self):
+        with TemporaryDirectory() as directory:
+            job, *_ = self.make_job(directory)
+            before = {path.name: path.read_bytes() for path in job.iterdir()}
+            csv_path = Path(directory) / 'district.csv'
+            excel_path = Path(directory) / 'district.xlsx'
+            process = self.command(job, '-o', csv_path, '-x', excel_path,
+                                   '--constituency-term', 'district')
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertIn('District disparity', csv_path.read_text())
+            book = load_workbook(excel_path)
+            values = [cell.value for sheet in book for row in sheet for cell in row]
+            self.assertIn('District disparity', values)
+            book.close()
+            self.assertEqual(before, {path.name: path.read_bytes() for path in job.iterdir()})
+
     def command(self, job, *outputs):
         return subprocess.run([sys.executable, str(SCRIPT), str(job), *map(str, outputs)],
                               capture_output=True, text=True)

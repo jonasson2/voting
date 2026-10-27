@@ -319,7 +319,7 @@ class ParallelSimulationScriptsTest(unittest.TestCase):
             self.assertIs(write.call_args.args[1], combined)
             combined.get_result_web.assert_called_once_with(False)
             export.assert_called_once_with(combined.get_result_web.return_value,
-                str(path), {'fractional_digits': 3, 'percentage_digits': 1})
+                str(path), {'fractional_digits': 3, 'percentage_digits': 1}, terminology=None)
 
     def test_stops_allocating_when_enough_nodes_are_ready(self):
         with TemporaryDirectory() as directory:

@@ -9,7 +9,7 @@
   Remove several vulnerabilities by upgrading the Vue frontend.
 - Various cleanup of unused files.
 - Support fractional reference values in simulations.
-- Move the party-vote basis control to the source settings and refine its behavior.
+- Move the party-vote basis control to the source settings and refine its behaviour.
 - Preserve pruned vote totals in a `Pruned` column and use them only when
   calculating percentage thresholds.
 - When a national pruning cutoff would remove every party from a seat-bearing

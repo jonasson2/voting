@@ -4,7 +4,8 @@ import numpy as np
 
 from common_allocate import prepare_adjustment_bounds
 from methods.max_const_votes import max_const_votes, print_demo_table
-from methods.switching_plus import improve_by_exchanges, print_exchanges
+from methods.seat_switching import improve_by_costs, print_exchanges
+from methods.provisional_allocation import divisor_values
 
 
 def switching_flex(votes, row_totals, party_totals, prior, divisor_gen, **kwargs):
@@ -35,3 +36,15 @@ def print_improvements(system, steps):
     if not steps["exchanges"]:
         rows[0][1] = "No improving exchange or move"
     return headers, rows, "Improving exchanges and moves"
+
+
+def improve_by_exchanges(votes, allocation, prior, divisor_gen, *, row_bounds=None):
+    """Maximize log quotient product using the shared cost-reduction engine."""
+    allocation = np.asarray(allocation, dtype=int)
+    upper = allocation.sum(axis=1) if row_bounds is None else np.asarray(row_bounds[1])
+    largest_row = min(int(upper.max()), int(allocation.sum()))
+    log_divisors = np.log(divisor_values(divisor_gen, largest_row + 1))
+    log_votes = np.log(np.maximum(np.asarray(votes, dtype=float), 1))
+    return improve_by_costs(
+        allocation, prior, lambda seats: log_divisors[seats] - log_votes,
+        row_bounds=row_bounds, gain_key="log_gain")

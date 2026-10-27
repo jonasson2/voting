@@ -13,7 +13,7 @@
             <th>Abbreviation</th>
             <th>Name</th>
             <th v-b-tooltip.hover.top.v-primary.ds500
-              title="A single candidate may have votes in only one constituency and receive at most one fixed seat, but no adjustment or national seats. Single candidates are excluded from simulations; their votes remain in threshold totals. In Denmark they are called independents.">
+              :title="$terms('A single candidate may have votes in only one constituency and receive at most one fixed seat, but no adjustment or national seats. Single candidates are excluded from simulations; their votes remain in threshold totals. In Denmark they are called independents.')">
               Single candidate
             </th>
           </tr>

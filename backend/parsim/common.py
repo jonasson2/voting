@@ -39,12 +39,14 @@ def read_node_results(job_dir, manifest):
     return results
 
 
-def write_reports(result, *, csv_path=None, excel_path=None, display_settings=None):
+def write_reports(result, *, csv_path=None, excel_path=None, display_settings=None,
+                  terminology=None):
     if csv_path:
         from sim import write_csv
-        write_csv(csv_path, result, display_settings)
+        write_csv(csv_path, result, display_settings, terminology=terminology)
         print(f"Report: {csv_path}", flush=True)
     if excel_path:
         from excel_util import simulation_to_xlsx
-        simulation_to_xlsx(result.get_result_web(False), str(excel_path), display_settings)
+        simulation_to_xlsx(result.get_result_web(False), str(excel_path), display_settings,
+                           terminology=terminology)
         print(f"Excel: {excel_path}", flush=True)

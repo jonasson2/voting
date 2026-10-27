@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run offline simulations from votes, electoral systems, and simulation settings."""
 
+from terminology import add_terminology_option, terminology_from_args, label, label_table, report_terminology
+
 import argparse
 import csv
 from copy import deepcopy
@@ -115,10 +117,11 @@ def format_csv_entry(entry, display_settings):
     return f"({interval})%" if entry.get("percentage") else interval
 
 
+@report_terminology
 def write_csv(path, result, display_settings=None):
     """Write the visible web table as comma-separated cells."""
     report = result.get_result_web(parallel=False)
-    table = report["vuedata"]
+    table = label_table(report["vuedata"])
     display_settings = validate_display_settings(display_settings)
 
     def columns(group):
@@ -128,12 +131,12 @@ def write_csv(path, result, display_settings=None):
     with Path(path).open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["Input files"])
-        for label, filename in getattr(result, "input_files", {}).items():
-            writer.writerow([label, filename])
+        for title, filename in getattr(result, "input_files", {}).items():
+            writer.writerow([title, filename])
         writer.writerow(["Source votes and seats"])
-        writer.writerows(source_settings(report))
+        writer.writerows((label(title), value) for title, value in source_settings(report))
         writer.writerow(["Simulation settings"])
-        writer.writerows((row["label"], row["data"])
+        writer.writerows((label(row["label"]), row["data"])
                          for row in simulation_settings(report)
                          if row["label"] != "Reference scaling benchmarks")
         writer.writerow(["First replicate number (zero-based)",
@@ -231,6 +234,7 @@ def main(argv=None):
                         help="Override the number of CPUs")
     parser.add_argument("-S", "--seed", type=seed_value, default=UNSET,
                         help="Random seed override; - chooses one at random")
+    add_terminology_option(parser)
     args = parser.parse_args(argv)
     if not args.csv and not args.output:
         parser.error("provide -o/--csv or -O/--output")
@@ -269,7 +273,8 @@ def main(argv=None):
                 progress_path=args.progress)
         result.input_files = input_file_names(args)
         if args.csv:
-            write_csv(args.csv, result, display_settings)
+            write_csv(args.csv, result, display_settings,
+                      terminology=terminology_from_args(args))
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     return 0

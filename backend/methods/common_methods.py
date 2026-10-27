@@ -11,8 +11,7 @@ def max_const_vote_percentage(*args, **kwargs):
                            flex_scores=vote_percentage_scores, **kwargs)
 
 def max_const_seat_share(*args, **kwargs):
-    # print('in max_const_seat_share')
-    heading = "Const. seat share score"
+    heading = "Fair-share quotient"
     reason = "Max over all lists"
     return common_allocate(*args, seat_share, heading, reason,
                            nat_prior_allocations=kwargs.get("nat_prior_allocations"))

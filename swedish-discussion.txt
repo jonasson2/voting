@@ -73,7 +73,7 @@ Possible simulator design
 
 Stage 2 could offer two modes:
 
-* Treat fixed seats as prior allocations (the current behavior).
+* Treat fixed seats as prior allocations (the current behaviour).
 * Allocate party totals independently, then reconcile excess fixed seats.
 
 The second mode is not complete without a reconciliation rule. Sweden's rule
@@ -221,7 +221,7 @@ The Swedish version should become:
 Suggested implementation order:
 
 1. Add the independent party-total mode and tests without changing the
-   default current behavior.
+   default current behaviour.
 2. Add fixed-seat quotient history and a standalone reconciliation function
    with small hand-checkable tests.
 3. Add Maximum constituency votes with unbounded constituency adjustment
@@ -232,7 +232,7 @@ Suggested implementation order:
 Related Norwegian eligibility rule
 ----------------------------------
 
-Norwegian parliamentary leveling seats are available only to a party that
+Norwegian parliamentary levelling seats are available only to a party that
 stands in every electoral district as well as reaching the national 4 percent
 threshold. The Norwegian-law implementation has no separate candidacy data. It
 therefore treats a party as standing everywhere when it has positive votes in
@@ -243,7 +243,7 @@ votes in every district is a reasonable practical proxy for standing in every
 district. It is not legally exact: a party can stand in a district and receive
 zero votes. Exact modelling would require party-list participation data, for
 example a constituency-party candidacy matrix. This eligibility condition
-applies only to Norwegian leveling seats, not district seats.
+applies only to Norwegian levelling seats, not district seats.
 
 Source material
 ---------------

@@ -3,7 +3,7 @@
   <table style="position:relative">
     <thead> 
       <tr class="block-heading">                <!-- STATISTICS HEADING -->
-        <th rowspan="2" colspan="2" class="block-title simulator-title">{{vuedata.initial_title}}</th>
+        <th rowspan="2" colspan="2" class="block-title simulator-title">{{ $terms(vuedata.initial_title) }}</th>
         <template v-for="stat in stats" :key="stat">
           <th :colspan="nsys" class="data-heading stat-edge"
               :class="{'header-start': stat === stats[0]}">
@@ -26,7 +26,7 @@
       <template v-for="id in group_ids" :key="id">
         <template v-if="groupVisible(id)">
           <tr v-if="vuedata.block_headers?.[id]" class="block-heading">
-            <th class="block-title simulator-title" colspan="2">{{vuedata.block_headers[id]}}</th>
+            <th class="block-title simulator-title" colspan="2">{{ $terms(vuedata.block_headers[id]) }}</th>
             <template v-for="stat in statsForGroup(id)" :key="stat">
               <th v-for="(sysname, s) in system_names" :key="s"
                   class="system-heading data-heading"
@@ -39,7 +39,7 @@
               :class="{'block-heading': group_titles[id]}">
             <th v-if="group_titles[id]" class="firstcol" colspan="2"
                 :rowspan="headingType[id] === 'stats' ? 2 : null">
-              {{group_titles[id]}}                     <!-- GROUP TITLE -->
+              {{ $terms(group_titles[id]) }}                     <!-- GROUP TITLE -->
             </th>
             <template v-if="headingType[id]=='systems'">
               <template v-for="stat in statsForGroup(id)" :key="stat">
@@ -65,11 +65,11 @@
           </tr>
           <tr v-if="vuedata.group_messages?.[id]">
             <th v-if="vuedata.side_titles?.[id]" class="section-title">
-              {{group_titles[id]}}
+              {{ $terms(group_titles[id]) }}
             </th>
             <td class="group-message"
                 :colspan="(vuedata.side_titles?.[id] ? 1 : 2) + dataColumnsForGroup(id)">
-              <span class="footnote-text">{{vuedata.group_messages[id]}}</span>
+              <span class="footnote-text">{{ $terms(vuedata.group_messages[id]) }}</span>
             </td>
           </tr>
           <tr v-for="(row, rowidx) in (vuedata.group_messages?.[id] ? [] : visibleRows(id))"
@@ -81,12 +81,12 @@
               }">
             <th v-if="vuedata.side_titles?.[id] && rowidx === 0"
                 class="section-title" :rowspan="visibleRows(id).length">
-              {{group_titles[id]}}
+              {{ $terms(group_titles[id]) }}
             </th>
             <td v-else-if="!vuedata.side_titles?.[id]" class="section-blank"></td>
             <td class="firstcol">
-              <span v-b-tooltip.hover.top.v-primary.ds500 :title="row.tooltip">
-                {{row["rowtitle"]}}
+              <span v-b-tooltip.hover.top.v-primary.ds500 :title="$terms(row.tooltip)">
+                {{ row.measure?.startsWith('cmp_') ? row["rowtitle"] : $terms(row["rowtitle"]) }}
               </span>
             </td>
             <template v-for="stat in statsForGroup(id)" :key="stat">
@@ -100,7 +100,7 @@
           <tr v-if="id in footnotes">
             <td class="footnote"
                 :colspan="2 + totalDataColumns">
-              <span class="footnote-text">{{footnotes[id]}}</span>
+              <span class="footnote-text">{{ $terms(footnotes[id]) }}</span>
             </td>
           </tr>
           <tr v-if="!hasVisibleContinuation(id) && (vuedata[id].length > 0 || vuedata.group_messages?.[id])"

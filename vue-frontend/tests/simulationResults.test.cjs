@@ -60,9 +60,16 @@ test("optional rows toggle without rerunning, with section titles in their own c
     vuedata.group_titles[scaling] = scaling
     vuedata[scaling] = [row(`${scaling} deviation`), row(`${scaling} optional`, 'show_additional')]
   }
+  const terminologySource = fs.readFileSync(path.join(__dirname, '../src/terminology.js'), 'utf8')
+    .replace("import catalog from './terminology.json'", 'const catalog = ' +
+      fs.readFileSync(path.join(__dirname, '../src/terminology.json'), 'utf8'))
+  const {formatTerminology} = await import(
+    `data:text/javascript;base64,${Buffer.from(terminologySource).toString('base64')}`)
+  const terminology = {constituency: 'constituency'}
   const render = () => {
     const app = Vue.createSSRApp(component, {vuedata, ...vuedata})
-    app.directive('b-tooltip', {})
+    app.config.globalProperties.$terms = text => formatTerminology(text, terminology)
+  app.directive('b-tooltip', {})
     return renderToString(app)
   }
   vuedata.const[0].avg = [{value: 0.022, ci: 0.001, percentage: true}]
@@ -77,6 +84,14 @@ test("optional rows toggle without rerunning, with section titles in their own c
   assert.match(html, /Core row/)
   assert.doesNotMatch(html, /Additional row|Single-seat diagnostic/)
   assert.doesNotMatch(html, /both deviation|party deviation|total deviation/)
+  terminology.constituency = 'district'
+  vuedata.const.push({...row('Constituency system'), measure: 'cmp_Constituency system_const'})
+  html = await render()
+  assert.match(html, /District measures/)
+  assert.match(html, /Constituency system/)
+  assert.doesNotMatch(html, /District system/)
+  vuedata.const.pop()
+  terminology.constituency = 'constituency'
   settings.show_scalings = true
   html = await render()
   for (const scaling of ['both', 'party', 'total']) {
@@ -113,7 +128,8 @@ test("optional rows toggle without rerunning, with section titles in their own c
     assert.equal((beforeTotals.match(/class="section-spacer"/g) || []).length, 1)
   }
 
-  // Additional scaling measures require both checkboxes and share one block.
+  // All four absolute deviations appear with additional measures; other
+  // non-constituency rows still require the extra-scalings checkbox.
   const additional = ['const', 'both', 'party', 'total'].map(scaling => `additional_${scaling}`)
   vuedata.group_ids = ['const', ...additional, 'both', 'party', 'total', 'parity']
   vuedata.block_headers.additional_const = 'Additional proportionality measures'
@@ -123,11 +139,11 @@ test("optional rows toggle without rerunning, with section titles in their own c
     both: 'party', party: 'total'}
   for (const scaling of ['const', 'both', 'party', 'total']) {
     const id = `additional_${scaling}`
-    vuedata[id] = [row(`extra ${scaling}`)]
+    vuedata[id] = [row(`absolute ${scaling}`),
+      row(`extra ${scaling}`, scaling === 'const' ? undefined : 'show_scalings')]
     vuedata.show[id] = vuedata.side_titles[id] = true
     vuedata.group_titles[id] = scaling
-    vuedata.group_options[id] = scaling === 'const' ? 'show_additional'
-      : ['show_additional', 'show_scalings']
+    vuedata.group_options[id] = 'show_additional'
   }
   for (const showAdditional of [false, true]) {
     for (const showScalings of [false, true]) {
@@ -135,6 +151,9 @@ test("optional rows toggle without rerunning, with section titles in their own c
       settings.show_scalings = showScalings
       html = await render()
       assert.equal(html.includes('extra const'), showAdditional)
+      for (const scaling of ['const', 'both', 'party', 'total']) {
+        assert.equal(html.includes(`absolute ${scaling}`), showAdditional)
+      }
       for (const scaling of ['both', 'party', 'total']) {
         assert.equal(html.includes(`extra ${scaling}`), showAdditional && showScalings)
       }

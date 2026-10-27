@@ -2,6 +2,12 @@
   <b-container fluid class="settings-pane">
     <h4 class="simulator-title">Settings</h4>
     <div class="settings-grid">
+      <label for="constituency-term">Term for electoral area</label>
+      <b-form-select id="constituency-term" v-model="constituencyTerm"
+                     :options="constituencyTermOptions" />
+      <label for="adjustment-seat-term">Term for compensating seat</label>
+      <b-form-select id="adjustment-seat-term" v-model="adjustmentSeatTerm"
+                     :options="adjustmentSeatTermOptions" />
       <label for="number-separators">Thousands and decimal separators</label>
       <b-form-select
         id="number-separators"
@@ -34,11 +40,22 @@
 
 <script>
 import { mapMutations, mapState } from "vuex"
+import { terminologyOptions } from "./terminology.js"
 import { NUMBER_SEPARATOR_OPTIONS } from "./numberFormat.js"
 
 export default {
   computed: {
-    ...mapState(["display_settings"]),
+    ...mapState(["display_settings", "terminology"]),
+    constituencyTermOptions() { return terminologyOptions('constituency') },
+    adjustmentSeatTermOptions() { return terminologyOptions('adjustment_seat') },
+    adjustmentSeatTerm: {
+      get() { return this.terminology.adjustment_seat },
+      set(value) { this.updateTerminology({...this.terminology, adjustment_seat: value}) },
+    },
+    constituencyTerm: {
+      get() { return this.terminology.constituency },
+      set(value) { this.updateTerminology({...this.terminology, constituency: value}) },
+    },
     separatorOptions() {
       return NUMBER_SEPARATOR_OPTIONS.map(({value, text}) => ({value, text}))
     },
@@ -82,7 +99,7 @@ export default {
       },
     },
   },
-  methods: mapMutations(["updateDisplaySettings"]),
+  methods: mapMutations(["updateDisplaySettings", "updateTerminology"]),
 }
 </script>
 

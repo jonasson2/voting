@@ -13,7 +13,7 @@
         </th>
         <th class="displaycenter"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Total constituency votes, including pruned votes, divided by final seats (fixed and adjustment).">
+            :title="$terms('Total constituency votes, including pruned votes, divided by final seats (fixed and adjustment).')">
           Votes per seat
         </th>
       </tr>
@@ -61,7 +61,7 @@
     </table>
   </div>
   <p style="margin:5px 0px 0px; font-size:90%">
-    The table shows total seats including adjustment seats (in brackets).
+    {{ $terms("The table shows total seats including adjustment seats (in brackets).") }}
   </p>
 </b-container>
 </template>

@@ -14,9 +14,9 @@
           <th
             class="seatnumberheading"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            :title="hasMaximums ? 'Minimum adjustment seats' : 'Adjustment seats'"
+            :title="$terms(hasMaximums ? 'Minimum adjustment seats' : 'Adjustment seats')"
             >
-            {{ hasMaximums ? '# Min adj.' : '# Adj.' }}
+            {{ $terms(hasMaximums ? '# Min adj.' : '# Adj.') }}
             <b-button
               v-if="!hasMaximums"
               class="xbutton split-adjustment-button"
@@ -24,7 +24,7 @@
               size="sm"
               variant="link"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Split adjustment seats into minimum and maximum seats"
+              :title="$terms('Split adjustment seats into minimum and maximum seats')"
               @click="$emit('add-maximums')"
               ><span class="add-button-symbol">+</span>
             </b-button>
@@ -33,16 +33,16 @@
             v-if="hasMaximums"
             class="seatnumberheading"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Maximum adjustment seats. Use a hyphen (-) for unlimited."
+            :title="$terms('Maximum adjustment seats. Use a hyphen (-) for unlimited.')"
             >
-            # Max adj.
+            {{ $terms("# Max adj.") }}
             <b-button
               class="xbutton"
               style="padding: 0; margin-left: 2px"
               size="sm"
               variant="link"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Remove maximum adjustment-seat constraints; retain the minimum as the exact number of adjustment seats"
+              :title="$terms('Remove maximum adjustment-seat constraints; retain the minimum as the exact number of adjustment seats')"
               @click="$emit('remove-maximums')"
               >X
             </b-button>
@@ -100,7 +100,7 @@
               size="sm"
               variant="link"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Remove constituency"
+              :title="$terms('Remove constituency')"
               @click="$emit('remove-constituency', constituencyIndex)"
               >X</b-button>
             <input
@@ -203,7 +203,7 @@
             <b-button
               size="sm"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Add constituency"
+              :title="$terms('Add constituency')"
               @click="$emit('add-constituency')"
               ><span class="add-button-symbol">+</span></b-button>
           </th>

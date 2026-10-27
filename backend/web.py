@@ -98,7 +98,7 @@ def api_election_save():
         vote_table = check_vote_table(vote_table)
         handler = ElectionHandler(vote_table, systems, use_thresholds=True)
         tmpfilename = tempfile.mktemp(prefix='election-')
-        handler.to_xlsx(tmpfilename, payload.get('display_settings'))
+        handler.to_xlsx(tmpfilename, payload.get('display_settings'), payload.get('terminology'))
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name=f"Election-{date}.xlsx"
         return save_file(tmpfilename, download_name)
@@ -372,7 +372,8 @@ def api_simdownload():
         simulation = noweb.SIMULATIONS[simid]
         result = simulation['result'].get_result_web(
             simulation['kind'] == 'parallel')
-        simulation_to_xlsx(result, tmpfilename, payload.get('display_settings'))
+        simulation_to_xlsx(result, tmpfilename, payload.get('display_settings'),
+                           terminology=payload.get('terminology'))
         date = datetime.now().strftime('%Y.%m.%dT%H.%M.%S')
         download_name = f"simulation-{date}.xlsx"
         return save_file(tmpfilename, download_name);

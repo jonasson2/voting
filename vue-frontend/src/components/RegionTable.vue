@@ -4,7 +4,7 @@
     <div class="table-scroll">
       <table class="votematrix region-table" v-grid-navigation>
         <thead v-if="voteTable.regions && voteTable.regions.length">
-          <tr><th>Abbreviation</th><th>Name</th><th># Adj.</th><th></th></tr>
+          <tr><th>Abbreviation</th><th>Name</th><th>{{ $terms("# Adj.") }}</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="(region, index) in voteTable.regions" :key="index">
@@ -19,7 +19,7 @@
               v-autowidth="{minWidth: '80px', maxWidth: '350px'}" /></td>
             <td class="numerical"><IntegerInput v-model="region.num_adj_seats"
               :data-grid-row="index" data-grid-column="2"
-              :aria-label="`Region ${region.abbreviation}: adjustment seats`"
+              :aria-label="`Region ${region.abbreviation}: ${$terms('adjustment seats')}`"
               max-width="100px" /></td>
             <td><b-button variant="link" size="sm" class="xbutton"
               v-b-tooltip.hover.bottom.v-primary.ds500 title="Remove region"

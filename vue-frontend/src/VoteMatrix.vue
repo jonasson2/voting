@@ -7,15 +7,13 @@
     title="Upload CSV or XLSX file"
     >
     <p>
-      The first row contains the table name, seat-column headings, and party
-      abbreviations. Constituency names appear in the first column.
+      {{ $terms("The first row contains the table name, seat-column headings, and party\n      abbreviations. Constituency names appear in the first column.") }}
     </p>
     <b-img rounded fluid src="static/img/parties_xlsx.png" />
     <p>
-      Use <code>fixed,adj</code> for exact adjustment-seat counts, or
+      Use <code>fixed,adj</code> {{ $terms("for exact adjustment-seat counts, or") }}
       <code>fixed,min_adj,max_adj</code> with a <code>Max adj seats</code> row
-      for bounds; <code>-</code> means that a constituency maximum is unlimited.
-      Optional <code>Party names</code> and <code>Pruned</code>
+      for bounds; <code>-</code> {{ $terms("means that a constituency maximum is unlimited.\n      Optional") }} <code>Party names</code> and <code>Pruned</code>
       fields are preserved.
     </p>
     <b-form-file
@@ -126,7 +124,7 @@
       <b-button
         class="mb-10"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Remove parties whose constituency vote total is below the specified percentage of all constituency votes."
+        :title="$terms('Remove parties whose constituency vote total is below the specified percentage of all constituency votes.')"
         @click="pruneSmallParties()"
         >
         Prune small parties
@@ -143,9 +141,7 @@
       v-autowidth="{ maxWidth: '600px', minWidth: '25px' }"
       v-model="vote_table.name"
       v-b-tooltip.hover.bottom.v-primary.ds500
-      title="The votes-and-seats table consists of the Constituency
-             votes and seats, and the National party votes and seats
-             (if specified)"
+      :title="$terms('The votes-and-seats table consists of the Constituency\n             votes and seats, and the National party votes and seats\n             (if specified)')"
       />
     <label for="prune-small-parties-percent">Small party cutoff</label>
     <span class="compact-entry">
@@ -156,15 +152,15 @@
         v-autowidth="{ maxWidth: '70px', minWidth: '25px' }"
         v-model.number="prune_percent"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Parties with less than this percentage of all constituency votes are removed from the table."
+        :title="$terms('Parties with less than this percentage of all constituency votes are removed from the table.')"
         />
       <span class="compact-entry-unit">%</span>
     </span>
     <template v-if="hasMaxAdjustmentSeats">
       <label for="adjustment-seats-to-allocate"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Total adjustment seats to allocate among constituencies, between the sum of their minima and the sum of their maxima when all maxima are finite.">
-        Adjustment seats to allocate
+        :title="$terms('Total adjustment seats to allocate among constituencies, between the sum of their minima and the sum of their maxima when all maxima are finite.')">
+        {{ $terms("Adjustment seats to allocate") }}
       </label>
       <IntegerInput
         id="adjustment-seats-to-allocate"
@@ -177,12 +173,9 @@
     <b-col cols="auto">
       <legend class="vote-table-section-heading"
         v-b-tooltip.hover.bottom.v-primary.ds500
-        title="Seat numbers and votes in each constituency.
-               These, and the following national party votes and seats (if specified)
-               are used as basis for allocation in the Single election tab 
-               and as expected values in the Simulated elections tab"
+        :title="$terms('Seat numbers and votes in each constituency.\n               These, and the following national party votes and seats (if specified)\n               are used as basis for allocation in the Single election tab \n               and as expected values in the Simulated elections tab')"
         >
-        Constituency votes and seats
+        {{ $terms("Constituency votes and seats") }}
       </legend>    
     </b-col>
   </b-row>
@@ -199,27 +192,20 @@
     @remove-party="deleteParty"
     />
   <b-alert :show="checkVoteSeats()==false">
-    Seat counts must be non-negative integers, and each constituency # Max adj.
-    must be at least its # Min adj. Adjustment seats to allocate must be at
-    least the sum of minima and, when all maxima are finite, no more than their
-    sum. A hyphen (-) is allowed only in a
-    constituency # Max adj. cell, where it means unlimited. Thousands separators
-    may be omitted; if used, they must match Settings and group digits in threes.
+    {{ $terms("Seat counts must be non-negative integers, and each constituency # Max adj.\n    must be at least its # Min adj. Adjustment seats to allocate must be at\n    least the sum of minima and, when all maxima are finite, no more than their\n    sum. A hyphen (-) is allowed only in a\n    constituency # Max adj. cell, where it means unlimited. Thousands separators\n    may be omitted; if used, they must match Settings and group digits in threes.") }}
   </b-alert>
   <b-alert :show="hasIncompatibleFlexibleMethod">
-    Flexible adjustment-seat totals cannot be used with one or more selected
-    allocation methods. Choose a compatible method in the Electoral systems
-    tab, or use fixed constituency totals.
+    {{ $terms("Flexible adjustment-seat totals cannot be used with one or more selected\n    allocation methods. Choose a compatible method in the Electoral systems\n    tab, or use fixed constituency totals.") }}
   </b-alert>
   <b-alert :show="checkVoteInput()==false">
     Votes must be non-negative integers. Thousands separators may be omitted; if
     used, they must match Settings and group digits in threes.
   </b-alert>
   <b-alert :show="checkVoteInput() && !validSingleCandidateInput">
-    A single candidate may have votes in only one constituency.
+    {{ $terms("A single candidate may have votes in only one constituency.") }}
   </b-alert>
   <b-alert :show="checkVoteLabels()==false">
-    Table, party, and constituency names must not be blank
+    {{ $terms("Table, party, and constituency names must not be blank") }}
   </b-alert>
   
   
@@ -239,7 +225,7 @@
 
   <region-table v-if="hasRegions || !vote_table.party_vote_info.specified"
     :vote-table="vote_table" />
-  <b-alert :show="Boolean(regionsError)">{{ regionsError }}</b-alert>
+  <b-alert :show="Boolean(regionsError)">{{ $terms(regionsError) }}</b-alert>
 
   <party-names-table
     :vote-table="vote_table"

@@ -39,8 +39,7 @@
         <div class="simulation-setting-row">
           <label for="simulation-distribution"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Distribution used to vary list support before each
-                 constituency is rescaled to its source vote total.">Generating distribution</label>
+            :title="$terms('Distribution used to vary list support before each\n                 constituency is rescaled to its source vote total.')">Generating distribution</label>
           <span class="compact-entry simulation-distribution-control">
             <b-form-select id="simulation-distribution"
               class="compact-select simulation-distribution-select"
@@ -51,10 +50,7 @@
         <div class="simulation-setting-row">
           <label for="simulation-const-rsd"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Relative standard deviation (coefficient of variation; CoV)
-                 of list-vote draws before each constituency is rescaled to its source vote total.
-                 Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),
-                 0–0.577 (uniform).">Relative standard deviation for list votes</label>
+            :title="$terms('Relative standard deviation (coefficient of variation; CoV)\n                 of list-vote draws before each constituency is rescaled to its source vote total.\n                 Valid range 0-1 (lognormal), 0–0.75 (beta), 0–1 (gamma),\n                 0–0.577 (uniform).')">Relative standard deviation for list votes</label>
           <span class="compact-entry">
             <input id="simulation-const-rsd" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
@@ -64,9 +60,7 @@
         <div class="simulation-setting-row">
           <label for="simulation-const-corr"
             v-b-tooltip.hover.bottom.v-primary.ds500
-            title="Correlation used to generate list-vote draws within each
-                 party before constituency totals are rescaled. Use only
-                 with lognormal distribution; otherwise 0 is used.">Correlation between list votes within each party</label>
+            :title="$terms('Correlation used to generate list-vote draws within each\n                 party before constituency totals are rescaled. Use only\n                 with lognormal distribution; otherwise 0 is used.')">Correlation between list votes within each party</label>
           <span class="compact-entry">
             <input id="simulation-const-corr" class="compact-entry-input" type="text"
               v-autowidth="{ maxWidth: '100px', minWidth: '50px' }"
@@ -100,7 +94,7 @@
         <div class="simulation-setting-row">
           <b-form-checkbox id="simulation-thresholds" v-model="sim_settings.use_thresholds">
             <span v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Unchecking disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.">
+              :title="$terms('Unchecking disables all thresholds and other party-qualification rules, except &quot;Stand in all constituencies&quot;.')">
               Simulate with thresholds
             </span>
           </b-form-checkbox>
@@ -125,7 +119,7 @@
           </span>
         </b-form-checkbox>
         <b-form-checkbox v-model="sim_settings.show_single_seat">
-          Specifically for single-seat constituencies
+          {{ $terms("Specifically for single-seat constituencies") }}
         </b-form-checkbox>
       </b-col>
       <b-col class="simulation-settings-column simulation-settings-sensitivity">
@@ -141,7 +135,7 @@
         <div class="simulation-setting-row">
           <b-form-checkbox id="single-list-sensitivity" v-model="sim_settings.single_list_sensitivity">
             <span v-b-tooltip.hover.bottom.v-primary.ds500
-              title="Choose a party uniformly, then one of its positive-vote constituency lists uniformly. Perturb only that list, without rescaling; use the same draw for every electoral system.">
+              :title="$terms('Choose a party uniformly, then one of its positive-vote constituency lists uniformly. Perturb only that list, without rescaling; use the same draw for every electoral system.')">
               Compute single-list sensitivity
             </span>
           </b-form-checkbox>

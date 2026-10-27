@@ -24,11 +24,14 @@ from methods.icelandic_law_based_on_shares import icelandic_share_apportionment
 #from methods.farthest_from_next import farthest_from_next
 from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
-from methods.switching_plus import switching_plus
 from methods.switching_flex import switching_flex
 from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
+from methods.seat_share import exact as seat_share_lp, switching as seat_share_switching
+from methods.rsss import (min_l1_const, min_l1_double, min_l2_const, min_l2_double,
+    min_l1_const_switching, min_l1_double_switching,
+    min_l2_const_switching, min_l2_double_switching)
 from methods.adjustment_as_fixed import adjustment_as_fixed
 #from methods.gurobi_optimal import gurobi_optimal
 from util import get_default_cpu_count
@@ -222,14 +225,23 @@ ELECTION_LAW_PRESETS = [
 ]
 
 ADJUSTMENT_METHOD_NAMES = [
-    {"value": "optimal-lp",                "text": "Optimal LP"},
+    {"value": "optimal-lp",                "text": "Biproportional rounding"},
+    {"value": "rsss-minl1-const", "text": "MinL1 with constituency scaling"},
+    {"value": "rsss-minl1-double", "text": "MinL1 with double scaling"},
+    {"value": "rsss-minl2-const", "text": "MinL2 with constituency scaling"},
+    {"value": "rsss-minl2-double", "text": "MinL2 with double scaling"},
+    {"value": "seat-share-lp", "text": "Seat-share optimization (LP)"},
+    {"value": "seat-share-switching", "text": "Seat-share switching"},
+    {"value": "rsss-minl1-switching-const", "text": "MinL1 switching with constituency scaling"},
+    {"value": "rsss-minl1-switching-double", "text": "MinL1 switching with double scaling"},
+    {"value": "rsss-minl2-switching-const", "text": "MinL2 switching with constituency scaling"},
+    {"value": "rsss-minl2-switching-double", "text": "MinL2 switching with double scaling"},
     {"value": "alternating-scaling",       "text": "Alternating scaling"},
-    {"value": "max-const-votes",           "text": "Maximum constituency votes"},
-    {"value": "max-const-seat-share",      "text": "Maximum constituency seat share"},
-    {"value": "max-const-vote-percentage", "text": "Maximum constituency vote percentage"},
+    {"value": "max-const-votes",           "text": "Maximum votes"},
+    {"value": "max-const-seat-share",      "text": "Maximum fair share"},
+    {"value": "max-const-vote-percentage", "text": "Maximum vote percentage"},
     {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching-plus",            "text": "Switching+"},
-    {"value": "switching-flex",            "text": "Flexible switching"},
+    {"value": "switching-flex",            "text": "Entropy switching"},
     {"value": "swedish-style-switching",   "text": "Swedish-style switching"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     {"value": "relative-superiority",      "text": "Relative superiority"},
@@ -239,7 +251,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-absolute-margin",       "text": "Maximum absolute margin (in single const.)"},
     {"value": "icelandic-law",             "text": "Icelandic law 112/2021"},
     {"value": "ice-shares",                "text": "Icelandic law based on constituency seat shares"},
-    {"value": "norwegian-law",             "text": "Norwegian law 20/2002"},
+    {"value": "norwegian-law",             "text": "Norwegian weighted quotient"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 
@@ -250,13 +262,13 @@ SPECIAL_RULE_NAMES = [
 ]
 
 REGIONAL_ADJUSTMENT_METHOD_NAMES = [
-    {"value": "max-const-votes", "text": "Maximum regional votes"},
+    {"value": "max-const-votes", "text": "Maximum votes"},
     {"value": "max-const-vote-percentage",
-     "text": "Maximum regional vote percentage"},
-    {"value": "max-const-seat-share", "text": "Maximum regional seat share"},
+     "text": "Maximum vote percentage"},
+    {"value": "max-const-seat-share", "text": "Maximum fair share"},
     {"value": "switching", "text": "Switching of seats"},
     {"value": "swedish-style-switching", "text": "Swedish-style switching"},
-    {"value": "optimal-lp", "text": "Optimal LP"},
+    {"value": "optimal-lp", "text": "Biproportional rounding"},
 ]
 
 DEMO_TABLE_FORMATS = {
@@ -273,15 +285,24 @@ DEMO_TABLE_FORMATS = {
     "max-absolute-margin":       "clcl1",
     "max-relative-margin":       "clcl3",
     "switching":                 ("sccc","clss3"),
-    "switching-plus":            ("sccc", "clss3", "clsslss3"),
     "switching-flex":            ("clsl3", "clsslss3"),
     "swedish-style-switching":   ("sccc", "clss33"),
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     "optimal-lp":                "",
+    "seat-share-lp": "",
+    "rsss-minl1-const": "",
+    "rsss-minl1-double": "",
+    "rsss-minl2-const": "",
+    "rsss-minl2-double": "",
+    "rsss-minl1-switching-const": ("clsl3", "clsslss3"),
+    "rsss-minl1-switching-double": ("clsl3", "clsslss3"),
+    "rsss-minl2-switching-const": ("clsl3", "clsslss3"),
+    "rsss-minl2-switching-double": ("clsl3", "clsslss3"),
+    "seat-share-switching": ("clsl3", "clsslss3"),
     #"gurobi":                    "",
     }
-# s = special, center if all party names are less than 2 chars, else left
+# s = special, centre if all party names are less than 2 chars, else left
 
 SEAT_SPECIFICATION_OPTIONS = {
     "const":
@@ -347,12 +368,21 @@ ADJUSTMENT_METHODS = {
     "max-absolute-margin":       max_absolute_margin,
     "max-relative-margin":       max_relative_margin,
     "switching":                 switching,
-    "switching-plus":            switching_plus,
     "switching-flex":            switching_flex,
     "swedish-style-switching":   swedish_style_switching,
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     "optimal-lp":                optimal_lp,
+    "seat-share-lp": seat_share_lp,
+    "rsss-minl1-const": min_l1_const,
+    "rsss-minl1-double": min_l1_double,
+    "rsss-minl2-const": min_l2_const,
+    "rsss-minl2-double": min_l2_double,
+    "rsss-minl1-switching-const": min_l1_const_switching,
+    "rsss-minl1-switching-double": min_l1_double_switching,
+    "rsss-minl2-switching-const": min_l2_const_switching,
+    "rsss-minl2-switching-double": min_l2_double_switching,
+    "seat-share-switching": seat_share_switching,
     # "gurobi":                    gurobi_optimal,
     # "monge": monge,
 }

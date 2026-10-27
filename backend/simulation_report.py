@@ -55,13 +55,13 @@ def source_settings(results):
         ("Votes-and-seats table", vote_table["name"]),
         ("Number of constituencies", len(vote_table["constituencies"])),
         ("Number of parties", len(vote_table["parties"])),
-        ("Total number of const. seats", sum(
+        ("Total number of fixed seats", sum(
             constituency["num_fixed_seats"]
             for constituency in vote_table["constituencies"])),
         ("Total number of adj. seats", sum(
             constituency["num_adj_seats"]
             for constituency in vote_table["constituencies"])),
-        ("Total number of const. votes",
+        ("Total number of constituency votes",
          sum(map(sum, vote_table["votes"])) + sum(vote_table.get("pruned", []))),
         ("Total number of national party votes",
          vote_table["party_vote_info"]["total"]),

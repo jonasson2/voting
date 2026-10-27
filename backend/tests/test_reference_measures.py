@@ -113,13 +113,23 @@ class ReferenceMeasuresTest(unittest.TestCase):
         self.assertEqual(values['share_surplus'], .5)
         self.assertEqual(values['share_shortfall'], .5)
         self.assertEqual(values['overrepresentation'], 2)
-        self.assertEqual(values['underrepresentation'], 1)
+        self.assertNotIn('underrepresentation', values)
         self.assertEqual(values['relative_absolute'], 4)
         zero = list_measures([[0, 1]], [[0, 1]])
         self.assertEqual(zero['relative_squared'], 0)
         penalty = list_measures([[1, 0]], [[0, 1]])
         self.assertEqual(penalty['relative_squared'], float('inf'))
         self.assertEqual(penalty['overrepresentation'], float('inf'))
+
+    def test_relative_shortfall_counts_each_unrepresented_positive_reference_list(self):
+        for reference, allocation, expected in [
+                ([9.9, .1], [10, 0], 1),
+                ([8, 2], [10, 0], 1),
+                ([9] + [.05] * 20, [10] + [0] * 20, 20),
+                ([10, 0], [10, 0], 0)]:
+            with self.subTest(reference=reference):
+                self.assertEqual(list_measures([allocation], [reference])['relative_shortfall'],
+                                 expected)
 
     def test_integer_party_reference_follows_national_divisor_rounding(self):
         table, _, _ = self.inputs()
@@ -224,8 +234,20 @@ class ReferenceMeasuresTest(unittest.TestCase):
                     self.assertEqual('Total squared list seat deviation (Hare quota)' in labels, show)
                     self.assertEqual('Potential overhang' in labels, show)
                     self.assertEqual('Total squared party-seat deviation' in labels, show)
-                    self.assertEqual(labels.count('Total list seat deviation'), 4 if show_scalings else 1)
+                    self.assertEqual(labels.count('Total list seat deviation'),
+                                     1 + 3 * int(show_scalings) + 4 * int(show))
+                    table = merged.get_result_web(False)['vuedata']
+                    for scaling in SCALINGS:
+                        row = next(row for row in table[f'additional_{scaling}']
+                                   if row['measure'] == f'{scaling}_deviation')
+                        self.assertIsNone(row['option'])
+                        self.assertAlmostEqual(row['avg'][0]['value'],
+                                               merged.data[0][f'{scaling}_deviation']['avg'])
                     self.assertEqual(labels.count('Local squared deviation per reference seat'), 1)
+                    self.assertNotIn('Maximum relative under-representation (Adams)', labels)
+                    self.assertNotIn('Total relative seat shortfall', labels)
+                    self.assertFalse(any(row.get('measure', '').endswith('_underrepresentation')
+                                         for group in table['group_ids'] for row in table[group]))
                     self.assertEqual(labels.count('Total squared list seat deviation (Hare quota)'),
                                      (4 if show_scalings else 1) if show else 0)
 
@@ -248,6 +270,18 @@ class ReferenceMeasuresTest(unittest.TestCase):
             self.assertIn('%', local_index[2].number_format)
             self.assertIsNotNone(local_index[1].comment)
             labels = [cell.value for row in sheet for cell in row[:2]]
+            self.assertNotIn('Maximum relative under-representation (Adams)', labels)
+            self.assertNotIn('Under-allocation per reference seat', labels)
+            shortfalls = [row for row in sheet if row[0].value == 'Total relative seat shortfall']
+            self.assertEqual(len(shortfalls), 4)
+            for row, scaling in zip(shortfalls, SCALINGS):
+                self.assertEqual(row[1].value, SCALINGS[scaling])
+                self.assertAlmostEqual(row[2].value,
+                                       result.data[0][f'{scaling}_relative_shortfall']['avg'])
+                self.assertIsNotNone(row[0].comment)
+                self.assertIn('Each zero-seat list with positive fractional seats contributes 1, '
+                              'regardless of its size.', row[0].comment.text)
+                self.assertIn('Zero-reference lists contribute zero.', row[0].comment.text)
             blocks = [row[0].value for row in sheet]
             for title in ('List allocation quality measures',
                           'Total allocation quality measures',
@@ -258,6 +292,13 @@ class ReferenceMeasuresTest(unittest.TestCase):
             local_squared_row = rows['Total squared list seat deviation (Hare quota)'][1].row
             additional_start = blocks.index('Additional proportionality measures') + 1
             scaling_start = blocks.index('Double, party, and national scaling') + 1
+            additional_deviations = [row for row in sheet
+                                     if additional_start < row[1].row < scaling_start
+                                     and row[1].value == 'Total list seat deviation']
+            self.assertEqual(len(additional_deviations), 4)
+            for row, scaling in zip(additional_deviations, SCALINGS):
+                self.assertAlmostEqual(row[2].value,
+                                       result.data[0][f'{scaling}_deviation']['avg'])
             # All four named-method variants belong to the additional block.
             self.assertGreater(local_squared_row, additional_start)
             self.assertLess(local_squared_row, scaling_start)

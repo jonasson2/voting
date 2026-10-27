@@ -4,12 +4,12 @@
     <tbody>
     <tr class="sup-headers" v-if="table.sup_header">
       <th v-bind:colspan="table.headers.length">
-        {{table.sup_header}}
+        {{ $terms(table.sup_header) }}
       </th>
     </tr>
     <tr>
       <th v-for="header in table.headers">
-        {{ header }}
+        {{ $terms(header) }}
       </th>
     </tr>
     <tr v-for="(step, stepidx) in table.steps">
@@ -22,8 +22,7 @@
     </tbody>
   </table>
   <p v-else>
-    Table demonstrating the step-by-step allocation of adjustment seats
-    is not applicable as there are no steps to show.
+    {{ $terms("Table demonstrating the step-by-step allocation of adjustment seats is not applicable as there are no steps to show.") }}
   </p>
 </div>
 </template>
@@ -41,6 +40,8 @@ export default {
       return "text-align: " + (c=="l" ? "left" : "center")
     },
     format: function(value, colidx) {
+      // Criteria are application text; other text cells can be user-supplied names.
+      if (this.table.headers[colidx] === "Criteria") return this.$terms(value)
       var fmt = this.table.format[colidx]
       if (fmt == "%") {
         let number = parseFloat(value)

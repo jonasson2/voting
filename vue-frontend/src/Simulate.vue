@@ -310,6 +310,7 @@ export default {
         data: {
           simid: this.simid,
           display_settings: this.display_settings,
+          terminology: this.$store.state.terminology,
         },
         responseType: "arraybuffer",
       });

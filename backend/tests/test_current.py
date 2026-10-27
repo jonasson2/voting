@@ -701,20 +701,9 @@ class CurrentApplicationTest(unittest.TestCase):
             for seat, reference in zip(seat_row, reference_row)
             if seat
         )
-        expected_under = max(
-            max(0, (reference - seat) / reference)
-            for seat_row, reference_row in zip(
-                election.results['all_const_seats'],
-                election.ref_seat_shares)
-            for seat, reference in zip(seat_row, reference_row)
-            if reference
-        )
-
         self.assertAlmostEqual(
             simulation.stat['const_overrepresentation'].mean()[0], expected)
-        self.assertAlmostEqual(
-            simulation.stat['const_underrepresentation'].mean()[0],
-            expected_under)
+        self.assertFalse(any(key.endswith('_underrepresentation') for key in simulation.stat))
         self.assertNotIn('min_seat_val', simulation.stat)
         values = list_measures(election.results["all_const_seats"], election.ref_seat_shares)
         surplus, shortfall = values["share_surplus"], values["share_shortfall"]

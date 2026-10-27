@@ -1,0 +1,20 @@
+{
+  "constituency": {
+    "default": "constituency",
+    "choices": {
+      "constituency": {"singular": "constituency", "plural": "constituencies", "short": "const."},
+      "district": {"singular": "district", "plural": "districts", "short": "dist."},
+      "electorate": {"singular": "electorate", "plural": "electorates", "short": "elect."}
+    }
+  },
+  "adjustment_seat": {
+    "default": "adjustment",
+    "choices": {
+      "adjustment": {"singular": "adjustment seat", "plural": "adjustment seats", "adjective": "adjustment", "short": "adj."},
+      "compensatory": {"singular": "compensatory seat", "plural": "compensatory seats", "adjective": "compensatory", "short": "comp."},
+      "equalisation": {"singular": "equalization seat", "plural": "equalization seats", "adjective": "equalization", "short": "equal."},
+      "levelling": {"singular": "levelling seat", "plural": "levelling seats", "adjective": "levelling", "short": "lev."},
+      "top-up": {"singular": "top-up seat", "plural": "top-up seats", "adjective": "top-up", "short": "top-up"}
+    }
+  }
+}

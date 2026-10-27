@@ -26,9 +26,9 @@
             <th
               class="seatnumberheading"
               v-b-tooltip.hover.bottom.v-primary.ds500
-              title="National adjustment seats. These are allocated last, by filling each party's remaining seats after the allocation of all other seats (no votes are used for this allocation)"
+              :title="$terms('National adjustment seats. These are allocated last, by filling each party\'s remaining seats after the allocation of all other seats (no votes are used for this allocation)')"
               >
-              # Adj.
+              {{ $terms("# Adj.") }}
             </th>
             <th
               v-for="(party, partyIndex) in voteTable.parties"
@@ -103,7 +103,7 @@
         <b-form-select
           v-model="voteTable.party_vote_basis"
           class="compact-select settings-vote-basis"
-          :options="basisOptions"
+          :options="$termOptions(basisOptions)"
           v-b-tooltip.hover.bottom.v-primary.ds500
           title="The total number of seats for each party is computed using the votes selected here."
           />

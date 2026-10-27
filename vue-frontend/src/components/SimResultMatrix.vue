@@ -7,7 +7,7 @@
         <th class="topleft"></th>
         <th :colspan="stddev ? 2 * parties.length + 1 : parties.length + 1"
             class="displaycenter">
-          {{title}}
+          {{ $terms(title) }}
         </th>
       </tr>
       <tr>

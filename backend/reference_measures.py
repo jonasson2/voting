@@ -55,7 +55,6 @@ def list_measures(seats, reference):
         "share_shortfall": float(max(0, -shares.min())),
         "squared": float(squared.sum()),
         "overrepresentation": float(relative(seats).max()),
-        "underrepresentation": float(relative(negative).max()),
         "relative_absolute": float(relative(absolute).sum()),
         "relative_squared": float(relative(squared).sum()),
         "relative_surplus": float(relative(positive).sum()),
@@ -71,7 +70,6 @@ LIST_ROWS = {
     "share_shortfall": "Maximum seat-share shortfall",
     "squared": "Total squared list seat deviation (Hare quota)",
     "overrepresentation": "Maximum relative over-representation (D'Hondt)",
-    "underrepresentation": "Maximum relative under-representation (Adams)",
     "relative_absolute": "Total absolute deviation per reference seat",
 }
 OPTIONAL_LIST_ROWS = set(list(LIST_ROWS)[5:])
@@ -212,10 +210,14 @@ def quality_groups(scalings, include_entropy, multiple_systems,
     for scaling in ["const", *[key for key in scalings if key != "const"]]:
         if scaling not in scalings:
             continue
-        option = ("show_additional" if scaling == "const"
-                  else ["show_additional", "show_scalings"])
-        add(f"additional_{scaling}", titles[scaling], scaling_rows(scaling, True),
-            "Additional proportionality measures", option)
+        rows = {f"{scaling}_deviation": (LIST_ROWS["deviation"], ""),
+                **scaling_rows(scaling, True)}
+        group_id = f"additional_{scaling}"
+        add(group_id, titles[scaling], rows,
+            "Additional proportionality measures", "show_additional")
+        if scaling != "const":
+            groups[group_id]["options"] = {
+                measure: "show_scalings" for measure in scaling_rows(scaling, True)}
     add("additional_parties", "Party totals", {
         "sum_sq_party_overall": ("Total squared party-seat deviation", ""),
     }, "Additional proportionality measures", "show_additional")
@@ -240,7 +242,7 @@ def quality_groups(scalings, include_entropy, multiple_systems,
     secondary = {}
     for scaling in scalings:
         for key, title in (("relative_surplus", "Over-allocation per reference seat"),
-                           ("relative_shortfall", "Under-allocation per reference seat"),
+                           ("relative_shortfall", "Total relative seat shortfall"),
                            ("relative_squared", "Squared deviation per reference seat")):
             if key == "relative_squared" and scaling == "const":
                 continue
@@ -254,7 +256,7 @@ def quality_groups(scalings, include_entropy, multiple_systems,
 def measure_tooltip(measure):
     fixed = {
         "lh_lists": "Half the total absolute list-seat deviation, divided by total constituency seats. Uses local vote shares and each constituency's final seats. Lower is better.",
-        "local_squared": "Sum of (allocated seats − local fractional seats) squared, divided by local fractional seats. Local fractional seats equal the local vote share times the constituency's final seats. Zero-reference lists contribute zero if they receive no seats, otherwise infinity. Lower is better.",
+        "local_squared": "Sum of (allocated seats − local fractional seats) squared, divided by local fractional seats. Local fractional seats equal the local vote share times the constituency's final seats. Zero-reference lists contribute zero if they receive no seats, otherwise infinity. Sainte-Laguë minimizes this in ordinary single-constituency apportionment. Lower is better.",
         "lh_constituencies": "Half the absolute deviation of constituency seat totals from their share of all constituency votes, divided by total constituency seats. Includes pruned votes. Lower is better.",
         "gallagher_lists": "Within each constituency, take the square root of half the sum of squared differences between parties' seat and vote shares. Average these indices weighted by final constituency seats. Uses retained parties after pruning, as does local Loosemore-Hanby. Independent of reference scaling. Lower is better.",
         "lh_region_parties": "Within each region, half the sum of absolute differences between parties' seat and vote shares. Average these indices weighted by final regional seats. Aggregate retained parties' votes and seats within regions first. Independent of reference scaling. Lower is better.",
@@ -278,15 +280,15 @@ def measure_tooltip(measure):
         if measure.startswith(prefix):
             key = measure[len(prefix):]
             formulas = {
-                "deviation": "Sum of absolute differences between allocated and fractional seats across all constituency lists (not halved).",
+                "deviation": "Sum of absolute differences between allocated and fractional seats across all constituency lists (not halved). Hare quota minimizes this in ordinary single-constituency apportionment.",
                 "surplus": "Largest positive list difference: allocated seats minus fractional seats.",
                 "shortfall": "Largest positive list difference: fractional seats minus allocated seats.",
                 "share_surplus": "Largest list surplus divided by the constituency's final total seats (fixed plus adjustment). Expressed as a proportion. Constituencies with no seats are excluded.",
                 "share_shortfall": "Largest list shortfall divided by the constituency's final total seats (fixed plus adjustment). Expressed as a proportion. Constituencies with no seats are excluded.",
-                "squared": "Sum of squared list-seat deviations. Hare with largest remainders minimizes this in an unconstrained single constituency.",
-                "overrepresentation": "Maximum allocated seats divided by fractional seats. D'Hondt minimizes this in an unconstrained single constituency.",
-                "underrepresentation": "Maximum positive shortfall divided by fractional seats. Equals 1 whenever a positive-reference list receives no seats; Adams minimizes it in an unconstrained single constituency.",
+                "squared": "Sum of squared list-seat deviations. Hare quota minimizes this in ordinary single-constituency apportionment.",
+                "overrepresentation": "Maximum allocated seats divided by fractional seats. D'Hondt minimizes this in ordinary single-constituency apportionment.",
                 "relative_absolute": "Sum of absolute list-seat deviations divided by each list's fractional seats. A zero-seat list with positive fractional seats contributes 1.",
+                "relative_shortfall": "Sum of max(fractional seats − allocated seats, 0) divided by each list's fractional seats. Each zero-seat list with positive fractional seats contributes 1, regardless of its size. Zero-reference lists contribute zero. Dimensionless; lower is better.",
             }
             return f"{label}: {formulas.get(key, '')}"
     return None

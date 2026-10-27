@@ -6,12 +6,16 @@ import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 import Main from './Main.vue'
 import store from './store.js'
+import { installTerminology } from './terminology.js'
+import { installDisplayPreferences } from './displayPreferences.js'
 import autowidth from './autowidth.js'
 import { gridNavigation } from './keyboardNavigation.js'
 
 const app = createApp(Main)
 app.config.compatConfig = { MODE: 2 }
 app.use(store)
+installTerminology(app, store)
+installDisplayPreferences(store)
 app.use(VueResource)
 // vue-resource is a Vue 2 plugin. Its HTTP client is installed on the Vue 3
 // compatibility app, while legacy store code accesses it through Vue.http.

@@ -32,6 +32,22 @@ incompatible methods are disabled. Saved systems use
 `seat_spec_options.const: "flexible"`, also supported by `sim.py`.
 This is a hypothetical adaptation of the source seat structure.
 
+## Seat-share allocation methods
+
+**Seat-share optimization (LP)** and **Seat-share switching** use local fractional
+seats `q = constituency seats × local vote share`. Each successive seat has cost
+`d(k)/q`, using the selected adjustment-seat divisor rule. The LP minimizes the
+sum of these costs exactly. The switching approximation fills seats by largest
+`q/d(k)`, then makes improving reciprocal exchanges between constituency pairs.
+It can miss improvements involving longer cycles.
+
+With Sainte-Laguë, the exact method minimizes **Local squared deviation per
+reference seat**. With D'Hondt, it minimizes `sum(s(s+1)/(2q))`. Both require
+prescribed constituency totals and preserve protected fixed seats and party
+targets; flexible adjustment-seat pools are not supported. Zero-vote lists
+cannot receive seats. See [measures.md](measures.md#local-sainte-laguë-measure-and-candidate-methods)
+for the definitions and weighting.
+
 ## Offline simulations
 
 Use a vote-table CSV in the standard vote format (for example, one under `data/`).
@@ -196,7 +212,7 @@ npm run build-production
 - `deploy/`: systemd and reverse-proxy production-service examples
 - `doc/`: technical and user documentation
 
-## License and authors
+## Licence and authors
 
 Released under the [GNU Affero General Public License version 3](LICENSE).
 
@@ -211,3 +227,23 @@ Lilja Steinunn Jónsdóttir
 Kristján Jónasson
 
 Current maintainer: **Kristján Jónasson**.
+
+### Display terminology
+
+The Settings tab offers constituency, district, or electorate, and adjustment,
+compensatory, equalization, levelling, or top-up seats. Preferences are stored
+in the browser and apply to interface text and Excel reports. Uploaded
+and downloaded election files retain their existing format; user-entered names
+are preserved. Offline CSV and Excel reports accept `--constituency-term district`
+(or `electorate`) in `backend/sim.py`, `backend/parsim/elja.py`, and
+`backend/parsim/elja-report.py`. These scripts also accept
+`--adjustment-seat-term compensatory` (or `equalisation`, `levelling`, `top-up`).
+Omitting the options retains constituency and adjustment-seat terminology.
+Terminology is applied when writing reports and is not saved in job statistics.
+The shared catalogue is `vue-frontend/src/terminology.json`; the JavaScript and
+Python helpers format application-owned labels only.
+
+Decimal precision and thousands/decimal separators are also remembered in the
+browser between sessions. Download all includes precision for offline reports;
+it omits terminology and separators. Upload all restores the file's precision
+while retaining the browser's terminology and separators.

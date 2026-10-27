@@ -11,7 +11,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 
-def report_job(job_dir, *, csv_path=None, excel_path=None):
+def report_job(job_dir, *, csv_path=None, excel_path=None, terminology=None):
     from input_files import validate_display_settings
     from parsim.common import read_node_results, write_reports
     from simulation_chunks import combine_chunks
@@ -33,7 +33,7 @@ def report_job(job_dir, *, csv_path=None, excel_path=None):
     print(f"Job: {job_dir}", flush=True)
     print(f"Replicates: {combined.iteration}; seed: {manifest['seed']}", flush=True)
     write_reports(combined, csv_path=csv_path, excel_path=excel_path,
-                  display_settings=display_settings)
+                  display_settings=display_settings, terminology=terminology)
 
 
 def main(argv=None):
@@ -43,6 +43,8 @@ def main(argv=None):
     parser.add_argument("job", help="Job ID under backend/parsim/jobs, or job directory")
     parser.add_argument("-o", "--csv", metavar="FILE", help="Output CSV file")
     parser.add_argument("-x", "--excel", metavar="FILE", help="Output Excel workbook (.xlsx)")
+    from terminology import add_terminology_option, terminology_from_args
+    add_terminology_option(parser)
     args = parser.parse_args(argv)
     outputs = [Path(path).expanduser().resolve() for path in (args.csv, args.excel) if path]
     if not outputs:
@@ -53,7 +55,8 @@ def main(argv=None):
     if not job_dir.is_dir() and job_dir.name == str(job_dir):
         job_dir = HERE / "jobs" / job_dir
     try:
-        report_job(job_dir, csv_path=args.csv, excel_path=args.excel)
+        report_job(job_dir, csv_path=args.csv, excel_path=args.excel,
+                   terminology=terminology_from_args(args))
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         parser.exit(1, f"elja-report: {error}\n")
     return 0

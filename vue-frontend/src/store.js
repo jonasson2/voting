@@ -66,6 +66,7 @@ const store = new Vuex.Store({
     sim_settings: {},
     default_sim_settings: {},
     display_settings: defaultDisplaySettings(),
+    terminology: {constituency: "constituency", adjustment_seat: "adjustment"},
     all_filename: "",
     all_file_handle: null,
     sim_capabilities: {},
@@ -157,6 +158,10 @@ const store = new Vuex.Store({
 
     updateSimSettings(state, sim_settings) {
       state.sim_settings = sim_settings
+    },
+
+    updateTerminology(state, preferences) {
+      state.terminology = preferences
     },
 
     updateDisplaySettings(state, settings) {

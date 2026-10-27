@@ -58,7 +58,7 @@ Næst skal fara í *Electoral systems* og láta *Election law preset* vera *Swed
 Veldu *Sweden (2018–)* undir *Election-law preset*. Fyrirmyndin
 stillir meðal annars 4% landsþröskuld, 12% staðbundinn þröskuld og breyttu
 Sainte-Laguë-regluna með fyrsta deili 1,2. Hún velur einnig *Swedish switching*
-sem undirbúning fyrir úthlutun jöfnunarsæta og *Maximum constituency votes*
+sem undirbúning fyrir úthlutun jöfnunarsæta og *Maximum votes*
 sem aðferð við lokaúthlutun þeirra.
 
 Reiknaðu úrslitin og skoðaðu skrefatöflurnar. Fyrst eru föstu sæti hvers
@@ -71,7 +71,7 @@ hvernig jöfnunarsætunum 39 er úthlutað eitt af öðru.
 Til að kanna áhrif lokaúthlutunarinnar skaltu bæta við öðru kerfi og velja þar
 einnig *Sweden (2018–)*. Nefndu kerfin til dæmis *Swedish method* og *Vote
 percentage*. Í seinna kerfinu breytirðu aðeins *Allocation method* úr *Maximum
-constituency votes* í *Maximum constituency vote percentage*. Landsúthlutun
+votes* í *Maximum vote percentage*. Landsúthlutun
 flokkanna og hugsanleg sænsk skipti eru þá óbreytt, en önnur regla ræður í hvaða
 kjördæmum jöfnunarsætin lenda.
 

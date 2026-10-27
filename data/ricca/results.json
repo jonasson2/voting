@@ -1,0 +1,174 @@
+{
+  "source": "/Users/jonasson/drive/kosningagrein/references/ricca-et-al.pdf",
+  "example3_reference": [
+    2.4891019760117548,
+    7.510898023988245,
+    2.5108980239882452,
+    8.489101976011755
+  ],
+  "example3_verified": true,
+  "methods": {
+    "MinMaxLexBest": {
+      "all": {
+        "total": 6825,
+        "pass": 6804,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 6799,
+            "certain_fail": 13,
+            "uncertain": 13,
+            "percent_bounds": [
+              99.61904761904762,
+              99.80952380952381
+            ]
+          },
+          "2": {
+            "certain_pass": 6788,
+            "certain_fail": 8,
+            "uncertain": 29,
+            "percent_bounds": [
+              99.45787545787546,
+              99.88278388278388
+            ]
+          }
+        },
+        "percent": 99.6923076923077
+      },
+      "four_positive": {
+        "total": 2578,
+        "pass": 2557,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 2552,
+            "certain_fail": 13,
+            "uncertain": 13,
+            "percent_bounds": [
+              98.99146625290923,
+              99.49573312645461
+            ]
+          },
+          "2": {
+            "certain_pass": 2541,
+            "certain_fail": 8,
+            "uncertain": 29,
+            "percent_bounds": [
+              98.56477889837083,
+              99.68968192397207
+            ]
+          }
+        },
+        "percent": 99.18541505042668
+      }
+    },
+    "MinL1": {
+      "all": {
+        "total": 6825,
+        "pass": 6815,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 6812,
+            "certain_fail": 7,
+            "uncertain": 6,
+            "percent_bounds": [
+              99.80952380952381,
+              99.8974358974359
+            ]
+          },
+          "2": {
+            "certain_pass": 6804,
+            "certain_fail": 4,
+            "uncertain": 17,
+            "percent_bounds": [
+              99.6923076923077,
+              99.94139194139194
+            ]
+          }
+        },
+        "percent": 99.85347985347985
+      },
+      "four_positive": {
+        "total": 2578,
+        "pass": 2568,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 2565,
+            "certain_fail": 7,
+            "uncertain": 6,
+            "percent_bounds": [
+              99.49573312645461,
+              99.72847168347556
+            ]
+          },
+          "2": {
+            "certain_pass": 2557,
+            "certain_fail": 4,
+            "uncertain": 17,
+            "percent_bounds": [
+              99.18541505042668,
+              99.84484096198604
+            ]
+          }
+        },
+        "percent": 99.61210240496509
+      }
+    },
+    "MinL2": {
+      "all": {
+        "total": 6825,
+        "pass": 6815,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 6812,
+            "certain_fail": 7,
+            "uncertain": 6,
+            "percent_bounds": [
+              99.80952380952381,
+              99.8974358974359
+            ]
+          },
+          "2": {
+            "certain_pass": 6804,
+            "certain_fail": 4,
+            "uncertain": 17,
+            "percent_bounds": [
+              99.6923076923077,
+              99.94139194139194
+            ]
+          }
+        },
+        "percent": 99.85347985347985
+      },
+      "four_positive": {
+        "total": 2578,
+        "pass": 2568,
+        "ties": 0,
+        "rounding": {
+          "1": {
+            "certain_pass": 2565,
+            "certain_fail": 7,
+            "uncertain": 6,
+            "percent_bounds": [
+              99.49573312645461,
+              99.72847168347556
+            ]
+          },
+          "2": {
+            "certain_pass": 2557,
+            "certain_fail": 4,
+            "uncertain": 17,
+            "percent_bounds": [
+              99.18541505042668,
+              99.84484096198604
+            ]
+          }
+        },
+        "percent": 99.61210240496509
+      }
+    }
+  }
+}

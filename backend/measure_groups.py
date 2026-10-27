@@ -131,7 +131,8 @@ class MeasureGroups(dict):
                    # næsta if þarf hugsanlega ekki
                 if party_votes_specified or not x.endswith(('_nat', '_grand'))]
             measures.extend(add)
-        return measures
+        # A measure can appear in several display groups, but is collected once.
+        return list(dict.fromkeys(measures))
 
 headingType = {
     "shareTitle": "systems",

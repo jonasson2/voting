@@ -312,7 +312,7 @@ class SensitivityTest(unittest.TestCase):
         from web import app
 
         result = self.run_simulation(self.settings(cpu_count=2))
-        # parsim.py sends analyzed results without the raw accumulators.
+        # parsim.py sends analysed results without the raw accumulators.
         summary = dict(vars(result))
         del summary["stat"]
         simid = "sensitivity-result"

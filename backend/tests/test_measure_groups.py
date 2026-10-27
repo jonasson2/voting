@@ -23,9 +23,13 @@ class MeasureGroupsTest(unittest.TestCase):
         for scaling in ("both", "party", "total"):
             self.assertEqual(groups[scaling]["option"], "show_scalings")
             self.assertEqual(len(groups[scaling]["rows"]), 5)
-            self.assertEqual(groups[f"additional_{scaling}"]["option"],
-                             ["show_additional", "show_scalings"])
-            self.assertEqual(len(groups[f"additional_{scaling}"]["rows"]), 4)
+            additional = groups[f"additional_{scaling}"]
+            self.assertEqual(additional["option"], "show_additional")
+            self.assertEqual(len(additional["rows"]), 4)
+            self.assertEqual(next(iter(additional["rows"])), f"{scaling}_deviation")
+            self.assertEqual(additional["options"], {
+                measure: "show_scalings" for measure in additional["rows"]
+                if measure != f"{scaling}_deviation"})
             self.assertEqual(groups[f"additional_{scaling}"]["block"],
                              "Additional proportionality measures")
         self.assertEqual(groups["singleSeat"]["option"], "show_single_seat")
@@ -37,10 +41,12 @@ class MeasureGroupsTest(unittest.TestCase):
                          groups["additional_const"]["block"])
         self.assertNotIn("const_squared", groups["const"]["rows"])
         self.assertIn("const_squared", groups["additional_const"]["rows"])
+        self.assertIn("const_deviation", groups["additional_const"]["rows"])
         self.assertNotIn("sum_sq_party_overall", groups["toPartiesTotal"]["rows"])
         self.assertIn("sum_sq_party_overall", groups["additional_parties"]["rows"])
         measures = groups.get_all_measures(False)
         self.assertEqual(len(measures), len(set(measures)))
+        self.assertFalse(any(measure.endswith('_underrepresentation') for measure in measures))
         json.dumps(groups)
 
     def test_confidence_interval_is_retained_for_zero_mean(self):

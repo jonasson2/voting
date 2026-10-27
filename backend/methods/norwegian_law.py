@@ -58,7 +58,7 @@ def norwegian_apportionment(m_votes,
 
 def print_demo_table(rules, allocation_sequence):
     headers = ["Adj. seat #", "Constituency", "Party",
-        "Criteria", "Special const. seat share score"]
+        "Criteria", "Norwegian weighted quotient"]
     data = []
     seat_number = 0
 

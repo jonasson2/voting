@@ -728,7 +728,7 @@ class Sim_result:
                             val[statkey] = Running_stats.from_dict(statval)
             setattr(self, key, val)
 
-        # Completed parallel web results contain analyzed data without stat.
+        # Completed parallel web results contain analysed data without stat.
         if self.sensitivity and "stat" in dictionary and any(
                 measure + "_perturbations" not in self.stat
                 for measure in self.sensitivity_measures):

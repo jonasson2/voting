@@ -246,28 +246,31 @@ input[type="checkbox"] {
 
 /* Shared tooltip appearance; anchors belong on the relevant text or control. */
 .tooltip.b-tooltip {
-  --tooltip-blue: #174a78;
+  --tooltip-background: #663355;
 }
 .tooltip.b-tooltip.b-tooltip-primary .tooltip-inner {
   max-width: min(300px, calc(100vw - 24px));
-  background-color: var(--tooltip-blue);
+  background-color: var(--tooltip-background);
   text-align: left;
+}
+.tooltip.allocation-help .tooltip-inner {
+  white-space: pre-line;
 }
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-top .arrow::before,
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="top"] .arrow::before {
-  border-top-color: var(--tooltip-blue);
+  border-top-color: var(--tooltip-background);
 }
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-right .arrow::before,
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="right"] .arrow::before {
-  border-right-color: var(--tooltip-blue);
+  border-right-color: var(--tooltip-background);
 }
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-bottom .arrow::before,
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
-  border-bottom-color: var(--tooltip-blue);
+  border-bottom-color: var(--tooltip-background);
 }
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-left .arrow::before,
 .tooltip.b-tooltip.b-tooltip-primary.bs-tooltip-auto[x-placement^="left"] .arrow::before {
-  border-left-color: var(--tooltip-blue);
+  border-left-color: var(--tooltip-background);
 }
 /* Fixed dropdown widths, including room for the arrow. */
 .compact-select.settings-rule { width: 280px; }

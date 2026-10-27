@@ -69,6 +69,7 @@ test('each election result appears under its own named tab', async () => {
     props: ['values'],
     render() { return Vue.h('pre', JSON.stringify(this.values)) },
   })
+  app.config.globalProperties.$terms = text => text
   app.directive('b-tooltip', {})
 
   const html = await renderToString(app)
@@ -104,6 +105,7 @@ test('seat table renders votes per seat, including total and national rows', asy
     party_votes_specified: true, party_votes_name: 'National',
   })
   app.component('b-container', {render() { return Vue.h('div', this.$slots.default?.()) }})
+  app.config.globalProperties.$terms = text => text
   app.directive('b-tooltip', {})
   const html = await renderToString(app)
   assert.match(html, /Votes per seat/)

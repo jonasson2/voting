@@ -114,7 +114,7 @@ corresponding sections, rather than creating a separate output section:
 
 - Total squared party-seat deviation goes into Party totals.
 - Total squared list seat deviation (Hare quota), maximum relative
-  over-representation (D'Hondt), maximum relative under-representation (Adams),
+  over-representation (D'Hondt),
   and total absolute deviation per reference seat go into Constituency measures and
   the other scaling blocks when displayed.
 
@@ -206,20 +206,90 @@ duplicate rows; if a version using two-way references is also displayed, label
 the benchmarks explicitly. For q_local = 0, a zero allocation contributes zero;
 a positive allocation has an infinite penalty.
 
-Possible future methods, not yet approved for implementation:
+Implemented methods (19 October 2026), with provisional names:
 
-- Exact generalized Sainte-Laguë: minimize E using its LP formulation, subject
-  to prescribed constituency and party totals and protected fixed seats.
-- A switching approximation: preserve those constraints and choose exchanges
-  that reduce E, using additive marginal costs (2k - 1) / q_local. Pairwise
-  switches alone need not reach the global optimum.
+- **Seat-share optimization (LP)** (`seat-share-lp`): minimize cumulative
+  marginal costs `d(k) / q_local`, subject to prescribed constituency and party
+  totals and protected fixed seats. The increasing seat costs permit an exact
+  continuous network LP, sharing the solver machinery with Optimal LP.
+- **Seat-share switching** (`seat-share-switching`): start by selecting the
+  largest available `q_local / d(k)` while respecting the totals, then choose
+  the reciprocal two-constituency exchange giving the greatest additive cost
+  reduction. Pairwise switches alone need not reach the global optimum. If
+  zero-vote lists cause a greedy dead end, a feasibility LP supplies a starting
+  allocation before switching.
 
-The seat weighting is the preferred choice for these candidates. Equal
-constituency and equal voter weighting need not become separate methods now.
-Review and prune the existing method list before adding more choices.
+Both require prescribed final constituency totals: flexible adjustment seats
+are excluded. The adjustment-seat rule remains selectable and determines
+`d(k)`; the fixed-seat and national party-total rules remain independent.
+With Sainte-Laguë, cumulative cost is `sum(s²/q_local)`, equal to E plus the
+constant total number of seats. With D'Hondt, cumulative cost is
+`sum(s(s+1)/(2q_local))`. This is a generalized D'Hondt objective, rather than a
+claim that it minimizes maximum relative over-representation under arbitrary
+multi-constituency constraints. Other supported divisor rules work in the same
+way. No additional weighting factor is applied: the seat weighting remains the
+agreed choice. Equal constituency and equal voter weighting are not separate
+methods.
+
+Use actual fractional votes without a one-vote floor. Zero-reference lists
+cannot receive seats in these methods; incompatible protected seats or totals
+produce an explicit error rather than silently changing that convention.
+The methods work with prescribed regional party totals when regions are used.
+Their entropy score retains its ordinary quotient-product definition; an exact
+optimum of this additive objective need not have an entropy score of 100%.
 
 Derivation and the three weighting alternatives are described in
 [generalized-sainte-lague.md](/Users/jonasson/drive/kosningagrein/notes/generalized-sainte-lague.md).
+
+### Ricca et al. methods
+
+Implemented under Optimal methods as RSSS MinL1 and RSSS MinL2, each with
+a separate constituency scaling or double scaling choice. Only the absolute objectives are
+offered; the relative versions, MinMax and MinMaxLexBest are not included.
+Both methods use the network LP with prescribed constituency totals and
+protected fixed seats. Their objectives do not use the adjustment divisor or
+extra constituency weights. The method's scaling is independent of the
+reference scaling selected for quality-measure display.
+
+| Method | Absolute deviations | Relative deviations |
+| --- | --- | --- |
+| MinL1 | `sum abs(s-q)` | `sum abs(s-q)/q` |
+| MinL2 | `sum (s-q)^2` | `sum (s-q)^2/q^2` |
+| MinMax | `max abs(s-q)` | `max abs(s-q)/q` |
+
+Here s is a list's allocated seats and q its fractional reference seats.
+The paper allows constituency-scaled or doubly scaled q. Compare its methods
+using constituency-scaled q with our GSL, which minimizes `sum (s-q)^2/q`.
+The paper discusses relative deviations in section 9; its Italian-election
+comparisons use absolute deviations and doubly scaled q.
+
+### Switching approximations
+
+The approximation family offers Entropy switching, Seat-share switching,
+RSSS MinL1 switching and RSSS MinL2 switching. Switching+ has been removed;
+Entropy switching uses the former Flexible switching method (`switching-flex`).
+
+All four share an improvement engine. It chooses the reciprocal two-party,
+two-constituency exchange with the largest objective improvement. Entropy
+switching additionally considers moving one party's seat between constituencies
+within their bounds. Fixed seats and the starting party totals are preserved.
+Only strictly improving moves are accepted; longer cycles can still improve
+an allocation after the algorithm stops.
+
+Entropy maximizes the quotient product (computed through its logarithm).
+Seat-share minimizes `sum [d(1)+...+d(s)]/q` for the chosen divisor sequence.
+Both retain the full divisor selector. RSSS switching uses the same `q` and
+absolute MinL1 or MinL2 objective as its exact counterpart, with a separate
+constituency/double scaling choice and no divisor dependence.
+
+Seat-share and RSSS switching require prescribed constituency totals; their
+reference seats remain fixed during switching. Flexible reference-seat
+objectives need a separate decision before those methods can support flexible
+totals. Greedy starting allocations use quotient scores (Entropy and Seat-share)
+or minimum marginal costs (RSSS). Seat-share and RSSS fall back to a feasibility
+LP if sparse votes prevent greedy completion. Reports show the initial
+allocation and each improving exchange, with its objective reduction (or
+log-product increase for Entropy).
 
 ### Other core measures
 
@@ -285,9 +355,13 @@ indices and the local squared-deviation measure override that display setting.
 ## Optional groups
 
 Use independent checkboxes to show or hide whole groups. Proposed default: core
-visible, optional groups unchecked. A measure that belongs to multiple selected
-groups should appear once. Checking a group should also avoid repeating a measure
-already in the core.
+visible, optional groups unchecked. Avoid duplicate rows except for the agreed
+repeat of Total list seat deviation: keep its constituency-scaled row in the
+core and include all four reference scalings in Additional proportionality
+measures. Those four additional rows appear whenever Show additional measures
+is checked, independently of the Double, party, and national scaling checkbox.
+Other additional measures for the three non-constituency scalings continue to
+require both checkboxes.
 
 ### Specifically for single-seat constituencies
 
@@ -320,7 +394,7 @@ Display its rows in the corresponding list and party sections, not in a
 separate additional-measures section.
 
 Decision: retain the unweighted absolute-deviation measure in the core. Put
-maximum relative over- and under-representation in this optional group. The local
+maximum relative over-representation in this optional group. The local
 generalized Sainte-Laguë squared-deviation measure remains core; its membership
 in this group should not create a duplicate row. The unweighted squared-deviation
 measure remains optional.
@@ -336,13 +410,13 @@ additional constraints in a multi-constituency system can change what is optimal
 | --- | --- |
 | Total squared list seat deviation (Hare quota) | `sum_sq` |
 | Maximum relative over-representation (D'Hondt) | `max_overrepresentation` |
-| Maximum relative under-representation (Adams) | `max_underrepresentation` |
 | Total absolute deviation per reference seat | `sum_absshare`; depends on both allocation method and reference scaling |
 | Total squared party-seat deviation | National party-total squared deviation; independent of local reference scaling |
 
 Hare's absolute-deviation measure overlaps with the core. Avoid duplicate rows.
-Adams' under-representation measure reaches 1 whenever a positive-reference list
-receives no seats, so it often provides little discrimination in that setting.
+Maximum relative under-representation is removed from all reports and from the
+collected measures. It reaches 1 whenever a positive-reference list receives no
+seats, which makes it uninformative in many of our applications.
 Decision: remove “Squared values per allocated seat” entirely, including from
 the optional named-method group. Its Hill–Huntington interpretation requires
 positive allocations for positive-reference lists; zero-seat lists are routine
@@ -352,9 +426,16 @@ measure unhelpful, and a finite replacement would lose that interpretation.
 The two party-seat maxima are core measures alongside the party index; squared
 party-seat deviation is optional. Present the current signed minimum as a
 positive maximum shortfall.
-Under- and over-allocation per reference seat and a separate squared-deviation
-measure using two-way references remain undecided secondary candidates, rather
-than additions to the selectable groups at this stage.
+Retain the former Under-allocation per reference seat in Excel only, renamed
+**Total relative seat shortfall**, for each reference scaling:
+
+    sum over lists(max(q - s, 0) / q), for q > 0
+
+Zero-reference lists contribute zero. The Excel comment must explain that every
+unrepresented positive-reference list contributes 1, regardless of its size.
+The measure is dimensionless, not a count of missing seats. Its calculation is
+unchanged. Over-allocation per reference seat and the secondary squared-deviation
+measures also remain Excel-only.
 
 ## Reference scaling and outputs
 
@@ -385,16 +466,14 @@ than additions to the selectable groups at this stage.
 - System-comparison tables are separate from this proposed core/optional-group
   redesign. Keep the current sensitivity-analysis output unchanged for now.
 
-## Decisions to make next
+## Design decisions completed
 
-1. Reconsider retaining both raw and constituency seat-share maxima after review?
-2. Review the optional squared party-seat deviation after implementation?
-3. Retain any other relative-deviation measures as secondary outputs?
-4. Include entropy relative to system 1 in the core?
+The former decisions on maxima, optional squared party-seat deviation,
+secondary relative-deviation measures and entropy relative to system 1 are
+complete. Current follow-up work is recorded in [TODO.md](TODO.md).
 
-
-Implementation should follow these decisions, using one shared measure catalogue
-for names, groups, and output selection rather than separate web and CSV lists.
+The implementation uses one shared measure catalogue for names, groups and
+output selection rather than separate web and CSV lists.
 
 ## Implementation choices
 

@@ -17,9 +17,9 @@ or several adjustment seats per constituency.
   scoped CSS adjustments, inspect the diff and run only a directly relevant
   syntax or focused check when one exists; do not automatically run full test
   suites or a production build.
-- Run focused tests after behavioral changes. Run `python test.py` from
+- Run focused tests after behavioural changes. Run `python test.py` from
   `backend/`, the frontend suite, and the frontend build before a substantial
-  checkpoint, or when shared/core behavior has changed.
+  checkpoint, or when shared/core behaviour has changed.
 - Keep parsers and generated election data under `data/` and record sources in
   `data/sources.txt`.
 
@@ -33,6 +33,11 @@ or several adjustment seats per constituency.
 
 ## Responses
 
+- Use British spelling in prose and displayed text. Where the American spelling
+  is also accepted in British English, use it (for example, optimization,
+  minimize, normalized and equalization). Preserve code identifiers, API
+  keywords, official titles and quotations.
+- Do not use horizontal lines to separate entries in tables in your output.
 - Never append generated follow-up links or action links. They are not rendered
   as functional links in the command-line interface used for this project and
   are therefore useless to the user.
