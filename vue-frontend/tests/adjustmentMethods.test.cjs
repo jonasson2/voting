@@ -52,6 +52,8 @@ test('every offered method stays reachable in exactly one family', async () => {
   assert.equal(h.methodFamily('switching-flex'), 'approximation')
   assert.equal(h.methodFamily('max-absolute-margin'), 'single')
   assert.equal(h.methodFamily('norwegian-law'), 'country')
+  assert.equal(h.methodFamily('optimal-exact-parties'), 'optimal')
+  assert.equal(h.methodFamily('optimal-one-way'), 'optimal')
 })
 
 test('every method has help and family overviews put each description on its own line', async () => {

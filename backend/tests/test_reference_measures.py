@@ -232,6 +232,7 @@ class ReferenceMeasuresTest(unittest.TestCase):
                     self.assertEqual(headings.count('Double/party/national scaling'), int(show_scalings))
                     self.assertEqual(headings.count('Specifically for single-seat constituencies'), int(show))
                     self.assertEqual('Total squared list seat deviation (Hare quota)' in labels, show)
+                    self.assertEqual("Generalized D'Hondt objective" in labels, show)
                     self.assertEqual('Potential overhang' in labels, show)
                     self.assertEqual('Total squared party-seat deviation' in labels, show)
                     self.assertEqual(labels.count('Total list seat deviation'),

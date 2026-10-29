@@ -445,8 +445,8 @@ class SensitivityTest(unittest.TestCase):
             cov_column = [
                 row[0].value for row in sheet.iter_rows(min_col=2, max_col=2)]
         self.assertLess(
-            first_column.index("list seat\ndisplacements"),
-            first_column.index("party seat\ndisplacements"),
+            first_column.index("List seat\ndisplacements only"),
+            first_column.index("Party seat\ndisplacements"),
         )
         self.assertEqual(first_column.count("Sensitivity"), 1)
         self.assertEqual(cov_column.count("1% coefficient of variation"), 4)

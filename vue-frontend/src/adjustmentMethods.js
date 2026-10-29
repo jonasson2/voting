@@ -9,7 +9,8 @@ export const methodFamilies = [
 
 const families = {
   country: ['max-const-votes', 'norwegian-law', 'icelandic-law'],
-  optimal: ['optimal-lp', 'seat-share-lp', 'rsss-minl1-const', 'rsss-minl1-double',
+  optimal: ['optimal-lp', 'optimal-exact-parties', 'optimal-one-way',
+    'seat-share-lp', 'rsss-minl1-const', 'rsss-minl1-double',
     'rsss-minl2-const', 'rsss-minl2-double'],
   approximation: ['switching-flex', 'seat-share-switching',
     'rsss-minl1-switching-const', 'rsss-minl1-switching-double',
@@ -107,6 +108,14 @@ const methodDescriptions = {
   'optimal-lp': {
     summary: 'Maximize the product of allocated-seat quotients.',
     detail: 'Maximize the product of votes/d(k) over allocated seats, calculated through its logarithm. Honour party targets, protected fixed seats and constituency seat bounds. Supports prescribed or flexible constituency totals. The selected divisor rule defines the objective.',
+  },
+  'optimal-exact-parties': {
+    summary: 'Maximize the quotient product with exactly represented parties intact.',
+    detail: 'First retain fixed seats and fill the remaining seats independently within each constituency using the selected divisor rule, ignoring national party targets. Preserve every list allocation of parties whose resulting totals equal their prescribed targets.\nThen maximize the product of allocated-seat quotients votes/divisor for the remaining parties using a network LP.\nRequires prescribed constituency and party totals; retains all original fixed seats.',
+  },
+  'optimal-one-way': {
+    summary: 'Maximize the quotient product allowing only one-way constituency corrections.',
+    detail: 'First retain fixed seats and fill the remaining seats independently within each constituency using the selected divisor rule, ignoring national party targets. Keep exactly represented parties intact. Initially overrepresented parties may only lose seats from their lists; initially underrepresented parties may only gain seats.\nMaximize the product of allocated-seat quotients votes/divisor subject to these restrictions using a network LP.\nRequires prescribed constituency and party totals; retains all original fixed seats.',
   },
   'seat-share-lp': {
     summary: 'Minimize cumulative divisor costs divided by fair shares.',

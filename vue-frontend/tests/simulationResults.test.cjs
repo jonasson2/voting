@@ -172,8 +172,8 @@ test("optional rows toggle without rerunning, with section titles in their own c
   vuedata.show.sensitivityBetween = true
   vuedata.group_stats.sensitivityBetween = ['avg']
   vuedata.side_titles.sensitivityWithin = vuedata.side_titles.sensitivityBetween = true
-  vuedata.group_titles.sensitivityWithin = 'list seat displacements'
-  vuedata.group_titles.sensitivityBetween = 'party seat displacements'
+  vuedata.group_titles.sensitivityWithin = 'List seat displacements only'
+  vuedata.group_titles.sensitivityBetween = 'Party seat displacements'
   vuedata.initial_title = 'List allocation quality measures'
   vuedata.block_headers = {sensitivityWithin: 'Sensitivity'}
   vuedata.block_continues = {sensitivityWithin: 'sensitivityBetween'}
@@ -184,12 +184,12 @@ test("optional rows toggle without rerunning, with section titles in their own c
   assert.match(html, /class="block-title simulator-title">List allocation quality measures/)
   assert.match(body, /class="block-title simulator-title" colspan="2">Sensitivity/)
   assert.match(body, /system-heading data-heading[^\"]*header-start/)
-  assert.match(body, /class="section-title" rowspan="1">list seat displacements/)
-  assert.match(body, /class="section-title" rowspan="1">party seat displacements/)
+  assert.match(body, /class="section-title" rowspan="1">List seat displacements only/)
+  assert.match(body, /class="section-title" rowspan="1">Party seat displacements/)
 
   vuedata.group_messages = {sensitivityBetween: 'Identical totals'}
   html = await render()
-  assert.match(html, /class="section-title">party seat displacements/)
+  assert.match(html, /class="section-title">Party seat displacements/)
   assert.match(html, /class="group-message" colspan="2"/)
   assert.match(html, /Identical totals/)
   assert.equal((html.match(/0\.1% coefficient of variation/g) || []).length, 1)

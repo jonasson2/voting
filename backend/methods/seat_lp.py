@@ -50,7 +50,8 @@ def _constraint_matrices(num_variables, constraints):
 
 def allocate_by_marginal_costs(
         row_totals, party_totals, prior, marginal_costs, *, eligible=None,
-        nat_prior_allocations=None, name="Seat LP", **kwargs):
+        nat_prior_allocations=None, list_lower_bounds=None, list_upper_bounds=None,
+        name="Seat LP", **kwargs):
     """Minimize separable seat costs on unit-capacity party-to-constituency arcs.
 
     marginal_costs receives (constituency, party, zero-based seat index) tuples.
@@ -61,6 +62,20 @@ def allocate_by_marginal_costs(
     base_rows = prior.sum(axis=1)
     minimums, total, capacities = prepare_adjustment_bounds(
         base_rows, row_totals, kwargs)
+    lower_lists = prior if list_lower_bounds is None else np.asarray(list_lower_bounds)
+    upper_lists = (prior + total if list_upper_bounds is None
+                   else np.asarray(list_upper_bounds))
+    if (lower_lists.shape != prior.shape or upper_lists.shape != prior.shape
+            or not np.isfinite(lower_lists).all() or not np.isfinite(upper_lists).all()
+            or (lower_lists != np.floor(lower_lists)).any()
+            or (upper_lists != np.floor(upper_lists)).any()
+            or (lower_lists < prior).any() or (upper_lists < lower_lists).any()):
+        raise ValueError("Invalid list-seat bounds or bounds below protected fixed seats.")
+    if ((lower_lists.sum(axis=1) > base_rows + capacities).any()
+            or int((lower_lists - prior).sum()) > total
+            or (eligible is not None and
+                ((lower_lists > prior) & ~np.asarray(eligible, dtype=bool)).any())):
+        raise ValueError(f"{name} has infeasible list-seat lower bounds.")
     region_groups = kwargs.get("region_groups")
     region_adj_seats = kwargs.get("region_adj_seats")
     if (region_groups is None) != (region_adj_seats is None):
@@ -86,6 +101,8 @@ def allocate_by_marginal_costs(
         deficits = party_targets - prior.sum(axis=0)
         if (deficits < 0).any():
             raise ValueError("Party targets are below seats already allocated.")
+        if (lower_lists.sum(axis=0) > party_targets).any():
+            raise ValueError(f"{name} list-seat lower bounds exceed party targets.")
         if int(deficits.sum()) < total:
             raise ValueError(
                 "Party deficits are smaller than the adjustment-seat total.")
@@ -98,15 +115,18 @@ def allocate_by_marginal_costs(
     variables = []
     by_constituency = [[] for _ in range(nconst)]
     by_party = [[] for _ in range(nparty)]
+    variable_bounds = []
     for c in range(nconst):
         for p in range(nparty):
             if eligible is not None and not eligible[c, p]:
                 continue
-            upper = min(int(capacities[c]), int(deficits[p]), total)
+            upper = min(int(capacities[c]), int(deficits[p]), total,
+                        int(upper_lists[c, p] - prior[c, p]))
             for offset in range(upper):
                 index = len(variables)
                 final_seat_index = int(prior[c, p]) + offset
                 variables.append((c, p, final_seat_index))
+                variable_bounds.append((int(final_seat_index < lower_lists[c, p]), 1))
                 by_constituency[c].append(index)
                 by_party[p].append(index)
 
@@ -149,7 +169,7 @@ def allocate_by_marginal_costs(
         b_ub=inequality_bounds,
         A_eq=equality_matrix,
         b_eq=equality_bounds,
-        bounds=(0, 1),
+        bounds=variable_bounds,
         method="highs",
         options={"presolve": False},
     )
@@ -172,6 +192,7 @@ def allocate_by_marginal_costs(
         int(added_rows[group].sum()) == int(target)
         for group, target in zip(region_groups, region_adj_seats)))
     if (int(added_rows.sum()) != total
+            or (allocation < lower_lists).any() or (allocation > upper_lists).any()
             or (added_rows < minimums).any()
             or (added_rows > capacities).any()
             or (enforce_party_targets and (added_parties > deficits).any())

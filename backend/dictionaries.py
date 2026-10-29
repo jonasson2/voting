@@ -28,6 +28,7 @@ from methods.switching_flex import switching_flex
 from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
+from methods.constituency_optimal import exact_parties_intact, one_way
 from methods.seat_share import exact as seat_share_lp, switching as seat_share_switching
 from methods.rsss import (min_l1_const, min_l1_double, min_l2_const, min_l2_double,
     min_l1_const_switching, min_l1_double_switching,
@@ -226,6 +227,8 @@ ELECTION_LAW_PRESETS = [
 
 ADJUSTMENT_METHOD_NAMES = [
     {"value": "optimal-lp",                "text": "Biproportional rounding"},
+    {"value": "optimal-exact-parties", "text": "Exactly represented parties intact"},
+    {"value": "optimal-one-way", "text": "One-way maximisation"},
     {"value": "rsss-minl1-const", "text": "MinL1 with constituency scaling"},
     {"value": "rsss-minl1-double", "text": "MinL1 with double scaling"},
     {"value": "rsss-minl2-const", "text": "MinL2 with constituency scaling"},
@@ -290,6 +293,8 @@ DEMO_TABLE_FORMATS = {
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     "optimal-lp":                "",
+    "optimal-exact-parties": "",
+    "optimal-one-way": "",
     "seat-share-lp": "",
     "rsss-minl1-const": "",
     "rsss-minl1-double": "",
@@ -373,6 +378,8 @@ ADJUSTMENT_METHODS = {
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     "optimal-lp":                optimal_lp,
+    "optimal-exact-parties": exact_parties_intact,
+    "optimal-one-way": one_way,
     "seat-share-lp": seat_share_lp,
     "rsss-minl1-const": min_l1_const,
     "rsss-minl1-double": min_l1_double,

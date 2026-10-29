@@ -42,6 +42,8 @@ class MeasureGroupsTest(unittest.TestCase):
         self.assertNotIn("const_squared", groups["const"]["rows"])
         self.assertIn("const_squared", groups["additional_const"]["rows"])
         self.assertIn("const_deviation", groups["additional_const"]["rows"])
+        self.assertNotIn("local_dhondt", groups["const"]["rows"])
+        self.assertIn("local_dhondt", groups["additional_const"]["rows"])
         self.assertNotIn("sum_sq_party_overall", groups["toPartiesTotal"]["rows"])
         self.assertIn("sum_sq_party_overall", groups["additional_parties"]["rows"])
         measures = groups.get_all_measures(False)

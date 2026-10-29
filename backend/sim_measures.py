@@ -119,9 +119,9 @@ def _add_sensitivity_vuedata(vuedata, sensitivity_data, systems, nsim):
         return
     groups = (
         ("sensitivityWithin", "sensitivity_within_parties",
-         "list seat\ndisplacements"),
+         "List seat\ndisplacements only"),
         ("sensitivityBetween", "sensitivity_between_parties",
-         "party seat\ndisplacements"),
+         "Party seat\ndisplacements"),
     )
     groups += SENSITIVITY_CHANGE_GROUPS
     groups += tuple((group, measure, title) for group, measure, title, _ in SINGLE_LIST_GROUPS)

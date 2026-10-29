@@ -1,6 +1,6 @@
 from reference_measures import (
     adjustment_spread, geographical_indices, local_indices, list_measures, primary_scaling,
-    SCALINGS, migrate_scaling_settings, valid_region_groups)
+    SCALINGS, migrate_scaling_settings, valid_region_groups, dhondt_objective)
 # import logging
 from datetime import datetime
 from measure_groups import MeasureGroups
@@ -458,6 +458,7 @@ class Simulation():
             if scaling == "const":
                 deviations.add("lh_lists", values["deviation"] / (2 * totals) if totals else 0)
                 deviations.add("local_squared", values["relative_squared"])
+                deviations.add("local_dhondt", dhondt_objective(seats, reference))
             for key, value in values.items():
                 deviations.add(f"{scaling}_{key}", value)
         party_seats = np.asarray(election.results["all_grand_total"])

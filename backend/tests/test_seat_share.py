@@ -14,7 +14,7 @@ from electionHandler import ElectionHandler
 from electionSystem import ElectionSystem
 from noweb import load_votes
 from methods.seat_share import exact, switching, improve_by_exchanges
-from reference_measures import list_measures
+from reference_measures import dhondt_objective, list_measures
 from simulate import SimulationSettings
 from simulation_chunks import run_chunk, combine_chunks
 
@@ -36,6 +36,9 @@ class SeatShareTest(unittest.TestCase):
                 allocations.append(allocation)
                 value = lambda a: float((cumulative(a) / reference).sum())
                 self.assertAlmostEqual(value(allocation), min(value(a) for a in feasible))
+                if rule is dhondt_gen:
+                    self.assertAlmostEqual(dhondt_objective(allocation, reference),
+                                           min(value(a) for a in feasible))
                 approx, _ = switching(votes, [2, 4], [3, 3], np.zeros((2, 2), int), rule)
                 self.assertAlmostEqual(value(approx), value(allocation))
         self.assertFalse(np.array_equal(allocations[0], allocations[1]))
@@ -94,10 +97,36 @@ class SeatShareTest(unittest.TestCase):
                 self.assertEqual([system["adj_alloc_divider"] for system in imported], [rule] * 2)
                 write_csv(folder / "results.csv", result)
                 self.assertIn("Local squared deviation per reference seat", (folder / "results.csv").read_text())
+                self.assertNotIn("Generalized D'Hondt objective",
+                                 (folder / "results.csv").read_text())
+                result.sim_settings['show_additional'] = True
+                write_csv(folder / "results.csv", result)
+                self.assertIn("Generalized D'Hondt objective",
+                              (folder / "results.csv").read_text())
                 simulation_to_xlsx(result.get_result_web(False), str(folder / "results.xlsx"))
                 workbook = openpyxl.load_workbook(folder / "results.xlsx")
                 self.assertIn("Quality measures", workbook.sheetnames)
+                self.assertIn("Generalized D'Hondt objective", [
+                    cell.value for row in workbook['Quality measures'] for cell in row])
                 workbook.close()
+
+    def test_reported_dhondt_objective_includes_fixed_seats_and_handles_zero_lists(self):
+        self.assertEqual(dhondt_objective([[2, 0], [0, 2]], [[1, 1], [1, 1]]), 6)
+        self.assertEqual(dhondt_objective([[0, 1]], [[0, 2]]), .5)
+        self.assertEqual(dhondt_objective([[1, 0]], [[0, 2]]), float('inf'))
+        table = load_votes('../data/2-by-2-example.csv')
+        systems = self.systems(table, 'dhondt')
+        elections = ElectionHandler(table, deepcopy(systems), True).elections
+        settings = dict(SimulationSettings(), simulation_count=2, cpu_count=1,
+                        random_seed=123, const_rsd=0, sensitivity=False)
+        result = combine_chunks([run_chunk(table, systems, settings, 2, 0)])
+        for election, data in zip(elections, result.data):
+            seats = np.asarray(election.results['all_const_seats'])
+            q = election.reference_seats('const')
+            expected = sum(sum(range(1, int(s) + 1)) / fair
+                           for s, fair in zip(seats.flat, q.flat))
+            self.assertAlmostEqual(data['local_dhondt']['avg'], expected)
+            self.assertEqual(data['local_dhondt']['std'], 0)
 
     def test_election_handler_rejects_flexible_pool(self):
         table = load_votes("../data/2-by-2-example.csv")

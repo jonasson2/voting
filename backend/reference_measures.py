@@ -62,6 +62,16 @@ def list_measures(seats, reference):
     }
 
 
+def dhondt_objective(seats, reference):
+    """Cumulative D'Hondt divisor costs per constituency fair share."""
+    seats = np.asarray(seats, dtype=float)
+    reference = np.asarray(reference, dtype=float)
+    numerator = seats * (seats + 1) / 2
+    return float(np.divide(
+        numerator, reference, out=np.where(numerator > 0, np.inf, 0.),
+        where=reference > 0).sum())
+
+
 LIST_ROWS = {
     "deviation": "Total list seat deviation",
     "surplus": "Maximum seat surplus",
@@ -212,6 +222,8 @@ def quality_groups(scalings, include_entropy, multiple_systems,
             continue
         rows = {f"{scaling}_deviation": (LIST_ROWS["deviation"], ""),
                 **scaling_rows(scaling, True)}
+        if scaling == "const":
+            rows["local_dhondt"] = ("Generalized D'Hondt objective", "")
         group_id = f"additional_{scaling}"
         add(group_id, titles[scaling], rows,
             "Additional proportionality measures", "show_additional")
@@ -257,6 +269,13 @@ def measure_tooltip(measure):
     fixed = {
         "lh_lists": "Half the total absolute list-seat deviation, divided by total constituency seats. Uses local vote shares and each constituency's final seats. Lower is better.",
         "local_squared": "Sum of (allocated seats − local fractional seats) squared, divided by local fractional seats. Local fractional seats equal the local vote share times the constituency's final seats. Zero-reference lists contribute zero if they receive no seats, otherwise infinity. Sainte-Laguë minimizes this in ordinary single-constituency apportionment. Lower is better.",
+        "local_dhondt": (
+            "Sum of s(s + 1)/(2q) over constituency lists, where s is allocated seats "
+            "(fixed + adjustment) and q is the list's fair share: its share of "
+            "constituency votes times the constituency's final seats. This is the "
+            "objective minimized by seat-share optimization with D'Hondt divisors. "
+            "Zero-reference lists contribute zero if they receive no seats, "
+            "otherwise infinity. Lower is better."),
         "lh_constituencies": "Half the absolute deviation of constituency seat totals from their share of all constituency votes, divided by total constituency seats. Includes pruned votes. Lower is better.",
         "gallagher_lists": "Within each constituency, take the square root of half the sum of squared differences between parties' seat and vote shares. Average these indices weighted by final constituency seats. Uses retained parties after pruning, as does local Loosemore-Hanby. Independent of reference scaling. Lower is better.",
         "lh_region_parties": "Within each region, half the sum of absolute differences between parties' seat and vote shares. Average these indices weighted by final regional seats. Aggregate retained parties' votes and seats within regions first. Independent of reference scaling. Lower is better.",
