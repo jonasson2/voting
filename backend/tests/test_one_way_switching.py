@@ -23,7 +23,7 @@ METHODS = ('simple-one-way-switching', 'one-way-switching')
 
 
 class OneWaySwitchingTest(unittest.TestCase):
-    def test_greedy_choices_and_restricted_local_optimum(self):
+    def test_greedy_choices_and_bounded_local_optimum(self):
         rng = np.random.default_rng(735)
         prior = np.eye(3, 4, dtype=int)
         targets = np.array([4, 4, 4, 3])
@@ -61,15 +61,14 @@ class OneWaySwitchingTest(unittest.TestCase):
 
                 def neighbour_scores():
                     for c, d in permutations(range(3), 2):
-                        for p in np.flatnonzero(difference > 0):
-                            for q in np.flatnonzero(difference < 0):
-                                candidate = current.copy()
-                                candidate[c, p] -= 1
-                                candidate[d, p] += 1
-                                candidate[d, q] -= 1
-                                candidate[c, q] += 1
-                                if (candidate >= lower).all() and (candidate <= upper).all():
-                                    yield score(candidate)
+                        for p, q in permutations(range(4), 2):
+                            candidate = current.copy()
+                            candidate[c, p] -= 1
+                            candidate[d, p] += 1
+                            candidate[d, q] -= 1
+                            candidate[c, q] += 1
+                            if (candidate >= lower).all() and (candidate <= upper).all():
+                                yield score(candidate)
 
                 for step in demo['data']['exchanges']:
                     rectangles_seen += 1
@@ -77,7 +76,7 @@ class OneWaySwitchingTest(unittest.TestCase):
                     before = score(current)
                     c, d = step['from_constituency'], step['to_constituency']
                     p, q = step['from_party'], step['to_party']
-                    self.assertLess(difference[p] * difference[q], 0)
+                    self.assertNotEqual(difference[p] * difference[q], 0)
                     current[c, p] -= 1
                     current[d, p] += 1
                     current[d, q] -= 1
@@ -95,6 +94,29 @@ class OneWaySwitchingTest(unittest.TestCase):
                 self.assertLessEqual(score(final), score(optimum) + 1e-10)
         self.assertGreater(rectangles_seen, 0)
         self.assertGreater(exact_seen, 0)
+
+    def test_exchanges_within_overrepresented_and_underrepresented_groups(self):
+        cases = [
+            (1, [[174, 912, 328, 531], [220, 911, 730, 406], [534, 391, 497, 764]],
+             [[1, 2, 1, 1], [1, 2, 2, 0], [2, 0, 1, 2]]),
+            (-1, [[705, 663, 728, 336], [162, 515, 856, 323], [403, 351, 170, 737]],
+             [[3, 1, 1, 0], [0, 2, 2, 1], [1, 1, 1, 2]]),
+        ]
+        prior, targets = np.eye(3, 4, dtype=int), np.array([4, 4, 4, 3])
+        for sign, votes, expected in cases:
+            with self.subTest(group='O' if sign > 0 else 'U'):
+                args = (votes, [5]*3, targets, prior, dhondt_gen)
+                baseline, _ = adjustment_as_fixed(*args)
+                simple, _ = simple_one_way_switching(*args)
+                final, demo = one_way_switching(*args)
+                np.testing.assert_array_equal(final, expected)
+                self.assertGreater(entropy(votes, final, dhondt_gen),
+                                   entropy(votes, simple, dhondt_gen))
+                difference = baseline.sum(0) - targets
+                self.assertEqual(len(demo['data']['exchanges']), 1)
+                step = demo['data']['exchanges'][0]
+                for party in (step['from_party'], step['to_party']):
+                    self.assertEqual(np.sign(difference[party]), sign)
 
     def test_edge_cases_and_unsupported_bounds(self):
         for name in METHODS:

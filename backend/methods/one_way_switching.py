@@ -1,4 +1,4 @@
-"""Greedy one-way corrections, optionally followed by O–U rectangles."""
+"""Greedy one-way corrections, optionally improved within the same list bounds."""
 
 from functools import partial
 
@@ -51,16 +51,14 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
             "ratio": float(np.exp(-gains[constituency])),
         })
 
-    # O and U refer to the original baseline, never to the corrected totals.
-    pairs = (over[:, None] & under[None, :]) | (under[:, None] & over[None, :])
+    # The baseline bounds allow O–U, O–O and U–U pairs; E lists stay fixed.
     while rectangles:
         incoming = log_votes - log_divisors[allocation]
         incoming[allocation >= upper] = -np.inf
         outgoing = log_votes - log_divisors[np.maximum(allocation - 1, 0)]
         donors = [np.flatnonzero(row > bound)
                   for row, bound in zip(allocation, lower)]
-        gain, exchange = find_best_exchange(
-            incoming, outgoing, donors, party_pairs=pairs)
+        gain, exchange = find_best_exchange(incoming, outgoing, donors)
         if exchange is None:
             break
         c, d, p, q = exchange

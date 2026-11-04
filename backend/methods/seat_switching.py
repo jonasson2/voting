@@ -52,7 +52,7 @@ def improve_by_costs(allocation, prior, marginal_costs, *, row_bounds=None,
     return allocation, exchanges
 
 
-def find_best_exchange(incoming, outgoing, donors, *, party_pairs=None):
+def find_best_exchange(incoming, outgoing, donors):
     """Find the reciprocal exchange with the greatest additive gain."""
     best_gain, best = MIN_GAIN, None
     for c, d in combinations(range(len(donors)), 2):
@@ -63,8 +63,6 @@ def find_best_exchange(incoming, outgoing, donors, *, party_pairs=None):
         gains = ((incoming[d, p] - outgoing[c, p])[:, None]
                  + (incoming[c, q] - outgoing[d, q])[None, :])
         gains[p[:, None] == q[None, :]] = -np.inf
-        if party_pairs is not None:
-            gains[~party_pairs[p[:, None], q[None, :]]] = -np.inf
         i, j = np.unravel_index(np.argmax(gains), gains.shape)
         if gains[i, j] > best_gain:
             best_gain = float(gains[i, j])
