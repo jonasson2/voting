@@ -5,7 +5,8 @@
   <b-modal id="upload-all-dialog" ref="uploadAllDialog"
     size="lg" title="Upload votes, electoral systems, and simulation settings">
     <p>Choose a JSON file created by Download all.</p>
-    <b-form-file v-model="allUploadFile" accept=".json"
+    <b-button v-if="canChooseUploadLocation" @click="chooseAllFile">Choose a file...</b-button>
+    <b-form-file v-else v-model="allUploadFile" accept=".json"
       :state="Boolean(allUploadFile)" placeholder="Choose a file..."
       @input="loadAll" />
     <template #modal-footer="{ cancel }">
@@ -73,11 +74,12 @@ import Simulate from './Simulate.vue'
 import VoteMatrix from './VoteMatrix.vue'
 import Intro from './Intro.vue'
 import Settings from './Settings.vue'
+import { canChooseOpenLocation, chooseOpenLocation } from './downloadName'
 import { mapState, mapMutations, mapActions } from 'vuex';
 
 export default {
   data() {
-    return { allUploadFile: null }
+    return { allUploadFile: null, canChooseUploadLocation: canChooseOpenLocation() }
   },
   components: {
     VoteMatrix,
@@ -90,7 +92,7 @@ export default {
   
   computed: {
     ...mapState([
-      'server_error'
+      'server_error', 'all_file_handle'
     ]),
   },
   //computed: mapState(['server_error']),
@@ -98,6 +100,7 @@ export default {
   methods: {
     ...mapMutations([
       "clearServerError",
+      "serverError",
       "showVoteMatrix",
     ]),
     ...mapActions([
@@ -110,12 +113,21 @@ export default {
     showHelp: function() {
       window.open("static/leidbeiningar.pdf", "_blank");
     },
-    loadAll(file) {
+    async chooseAllFile() {
+      try {
+        const fileHandle = await chooseOpenLocation(this.all_file_handle)
+        const file = await fileHandle.getFile()
+        this.loadAll(file, fileHandle)
+      } catch (error) {
+        if (error.name !== 'AbortError') this.serverError(`Could not open file: ${error.message}`)
+      }
+    },
+    loadAll(file, fileHandle = null) {
       if (!file) return
       this.$refs.uploadAllDialog.hide()
       const formData = new FormData()
       formData.append("file", file, file.name)
-      this.uploadAll({formData, filename: file.name})
+      this.uploadAll({formData, filename: file.name, fileHandle})
       this.allUploadFile = null
     },
   },

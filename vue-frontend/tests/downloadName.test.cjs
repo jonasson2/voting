@@ -76,3 +76,23 @@ test("selected file handle receives the downloaded data", async () => {
   await writeDownload(fileHandle, blob)
   assert.deepEqual(calls, ["open", blob, "close"])
 })
+
+test('open picker retains a file handle and starts from the previous location', async () => {
+  const handle = {name: 'experiment.json'}
+  let options
+  global.window = {showOpenFilePicker: async value => { options = value; return [handle] }}
+  try {
+    const h = await downloadNameModule()
+    assert.equal(h.canChooseOpenLocation(), true)
+    assert.equal(await h.chooseOpenLocation(), handle)
+    assert.equal(options.multiple, false)
+    assert.deepEqual(options.types[0].accept, {'application/json': ['.json']})
+    assert.equal(options.startIn, undefined)
+    await h.chooseOpenLocation(handle)
+    assert.equal(options.startIn, handle)
+    global.window = {}
+    assert.equal(h.canChooseOpenLocation(), false)
+  } finally {
+    delete global.window
+  }
+})

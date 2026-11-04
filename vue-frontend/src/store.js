@@ -316,7 +316,7 @@ const store = new Vuex.Store({
         JSON.parse(JSON.stringify(context.state.default_sim_settings)))
       context.commit("addBeforeunload")
     },
-    uploadAll: function (context, {formData, filename}) {
+    uploadAll: function (context, {formData, filename, fileHandle = null}) {
       context.commit("setWaitingForData")
       Vue.http.post("api/uploadall/", formData).then(
         (response) => {
@@ -327,7 +327,7 @@ const store = new Vuex.Store({
             context.commit("updateVoteTable", response.data.vote_table)
             context.commit("updateSystems", response.data.systems)
             context.commit("updateSimSettings", response.data.sim_settings)
-            context.commit("setAllFile", {filename: filename || ""})
+            context.commit("setAllFile", {filename: filename || "", fileHandle})
             if (response.data.display_settings) {
               context.commit("updateDisplaySettings", {
                 ...context.state.display_settings,

@@ -97,3 +97,23 @@ test('simulation toolbar offers all five controls', () => {
     assert.match(descriptor.template.content, new RegExp(`>${label}</b-button>`))
   }
 })
+
+test('upload all remembers the source handle only after a successful upload', async () => {
+  const {store, context, requests} = uploadStore()
+  const old = {name: 'old.json'}
+  const source = {name: 'new.json'}
+  store.mutations.setAllFile(context.state, {filename: old.name, fileHandle: old})
+  context.commit = (name, value) => {
+    if (name === 'setAllFile') store.mutations[name](context.state, value)
+  }
+  store.actions.uploadAll(context, {formData: {}, filename: source.name, fileHandle: source})
+  assert.equal(context.state.all_file_handle, old)
+  requests[0].resolve({body: {error: 'Invalid input'}})
+  await requests[0].promise
+  assert.equal(context.state.all_file_handle, old)
+  store.actions.uploadAll(context, {formData: {}, filename: source.name, fileHandle: source})
+  requests[1].resolve({body: {}, data: {vote_table: {}, systems: [], sim_settings: {}}})
+  await requests[1].promise
+  assert.equal(context.state.all_filename, source.name)
+  assert.equal(context.state.all_file_handle, source)
+})

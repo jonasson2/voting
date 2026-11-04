@@ -23,6 +23,20 @@ export function canChooseSaveLocation() {
     && typeof window.showSaveFilePicker === "function"
 }
 
+export function canChooseOpenLocation() {
+  return typeof window !== "undefined"
+    && typeof window.showOpenFilePicker === "function"
+}
+
+export async function chooseOpenLocation(previousFile = null) {
+  const [fileHandle] = await window.showOpenFilePicker({
+    multiple: false,
+    types: [{description: "Simulator JSON file", accept: {"application/json": [".json"]}}],
+    ...(previousFile ? {startIn: previousFile} : {}),
+  })
+  return fileHandle
+}
+
 export function chooseSaveLocation(basename, extension, previousFile = null) {
   return window.showSaveFilePicker({
     suggestedName: downloadFilename(basename, extension),
