@@ -9,9 +9,8 @@ from methods.optimal_lp import optimal_lp, _divisors
 from methods.provisional_allocation import allocate_provisionally
 
 
-def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
-             one_way=False, **kwargs):
-    prior = np.asarray(prior, dtype=int)
+def prepare_baseline(votes, row_totals, party_totals, prior, divisor_gen, kwargs):
+    """Retain fixed seats, then fill constituencies as adjustment-as-fixed does."""
     minimums, total, _ = prepare_adjustment_bounds(
         prior.sum(axis=1), row_totals, kwargs)
     if total != int(minimums.sum()):
@@ -33,6 +32,15 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
     _divisors(divisor_gen, int(rows.max(initial=0)))
     baseline = allocate_provisionally(
         votes, rows, prior, divisor_gen, kwargs.get("on_tie"))
+    return votes, rows, targets, baseline
+
+
+def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
+             one_way=False, **kwargs):
+    prior = np.asarray(prior, dtype=int)
+    votes, rows, targets, baseline = prepare_baseline(
+        votes, row_totals, party_totals, prior, divisor_gen, kwargs)
+    total = int((rows - prior.sum(axis=1)).sum())
     difference = baseline.sum(axis=0) - targets
     lower = prior.copy()
     upper = prior + total

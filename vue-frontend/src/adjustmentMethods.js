@@ -12,7 +12,7 @@ const families = {
   optimal: ['optimal-lp', 'optimal-exact-parties', 'optimal-one-way',
     'seat-share-lp', 'rsss-minl1-const', 'rsss-minl1-double',
     'rsss-minl2-const', 'rsss-minl2-double'],
-  approximation: ['switching-flex', 'seat-share-switching',
+  approximation: ['switching-flex', 'one-way-switching', 'simple-one-way-switching', 'seat-share-switching',
     'rsss-minl1-switching-const', 'rsss-minl1-switching-double',
     'rsss-minl2-switching-const', 'rsss-minl2-switching-double'],
   single: ['max-relative-margin', 'max-absolute-margin'],
@@ -116,6 +116,14 @@ const methodDescriptions = {
   'optimal-one-way': {
     summary: 'Maximize the quotient product allowing only one-way constituency corrections.',
     detail: 'First retain fixed seats and fill the remaining seats independently within each constituency using the selected divisor rule, ignoring national party targets. Keep exactly represented parties intact. Initially overrepresented parties may only lose seats from their lists; initially underrepresented parties may only gain seats.\nMaximize the product of allocated-seat quotients votes/divisor subject to these restrictions using a network LP.\nRequires prescribed constituency and party totals; retains all original fixed seats.',
+  },
+  'one-way-switching': {
+    summary: 'Correct party totals, then improve by restricted one-way exchanges.',
+    detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule. Identify initially overrepresented, underrepresented and exactly represented parties by comparison with national targets.\nGreedily transfer seats within constituencies from parties still above their targets to parties still below them, choosing the greatest change in the log quotient product. Then repeatedly choose the best improving rectangular exchange between one initially overrepresented and one initially underrepresented party.\nKeep exactly represented parties intact. Never take an initially overrepresented list above its baseline allocation or an initially underrepresented list below it. Retain protected fixed seats and prescribed constituency and party totals.\nApproximates One-way maximisation; may stop short of its global optimum.',
+  },
+  'simple-one-way-switching': {
+    summary: 'Greedily correct party totals from the independent constituency allocation.',
+    detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule.\nTransfer one seat at a time within a constituency from a party above its national target to a party below its target, choosing the greatest change in the log quotient product. Stop as soon as all party targets are satisfied.\nKeep initially exactly represented parties intact. Initially overrepresented lists may only lose seats; initially underrepresented lists may only gain seats. Retain protected fixed seats and prescribed constituency totals.\nThis is the first phase of One-way switching, without subsequent rectangular exchanges.',
   },
   'seat-share-lp': {
     summary: 'Minimize cumulative divisor costs divided by fair shares.',
