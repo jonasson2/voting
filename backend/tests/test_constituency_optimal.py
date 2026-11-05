@@ -22,7 +22,7 @@ from table_util import entropy
 
 
 METHODS = {key: ADJUSTMENT_METHODS[key]
-           for key in ('optimal-exact-parties', 'optimal-one-way')}
+           for key in ('optimal-one-way',)}
 
 
 class ConstituencyOptimalTest(unittest.TestCase):
@@ -55,17 +55,14 @@ class ConstituencyOptimalTest(unittest.TestCase):
                         entropy(votes, allocation, rule),
                         max(entropy(votes, a, rule) for a in feasible))
 
-    def test_both_restrictions_can_strictly_reduce_the_optimum(self):
+    def test_one_way_restrictions_can_strictly_reduce_the_optimum(self):
         prior = np.eye(3, dtype=int)
-        for votes, strict_pair in (
-                ([[99, 90, 4], [72, 116, 47], [149, 3, 77]], 0),
-                ([[52, 116, 139], [139, 130, 30], [104, 33, 4]], 1)):
+        for votes in ([[99, 90, 4], [72, 116, 47], [149, 3, 77]],
+                      [[52, 116, 139], [139, 130, 30], [104, 33, 4]]):
             scores = [entropy(votes, method(votes, [3]*3, [3]*3, prior,
                                           dhondt_gen)[0], dhondt_gen)
-                      for method in (optimal_lp, *METHODS.values())]
-            self.assertGreater(scores[strict_pair], scores[strict_pair + 1] + 1e-8)
-            self.assertGreaterEqual(scores[0] + 1e-8, scores[1])
-            self.assertGreaterEqual(scores[1] + 1e-8, scores[2])
+                      for method in (optimal_lp, METHODS['optimal-one-way'])]
+            self.assertGreater(scores[0], scores[1] + 1e-8)
 
     def test_worked_example_and_national_fixed_seats(self):
         for method in METHODS.values():
@@ -135,13 +132,12 @@ class ConstituencyOptimalTest(unittest.TestCase):
             handler.to_xlsx(path)
             workbook = load_workbook(path)
             text = [cell.value for sheet in workbook for row in sheet for cell in row]
-            self.assertIn('Exactly represented parties intact', text)
-            self.assertIn('One-way maximisation', text)
+            self.assertIn('One-way optimization', text)
             workbook.close()
         settings = dict(SimulationSettings(), simulation_count=2, cpu_count=1,
                         random_seed=123, sensitivity=True, sensitivity_simulation_count=2,
                         sensitivity_covs=[.01], single_list_sensitivity=False)
         result = combine_chunks([run_chunk(table, systems, settings, 2, 0)])
-        self.assertEqual(len(result.data), 2)
+        self.assertEqual(len(result.data), 1)
         for data in result.data:
             self.assertTrue(np.isfinite(data['local_squared']['avg']))

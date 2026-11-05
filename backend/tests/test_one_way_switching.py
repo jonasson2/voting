@@ -165,8 +165,8 @@ class OneWaySwitchingTest(unittest.TestCase):
             handler.to_xlsx(path)
             workbook = load_workbook(path)
             text = [cell.value for sheet in workbook for row in sheet for cell in row]
-            self.assertIn('One-way switching', text)
-            self.assertIn('Simple one-way switching', text)
+            self.assertIn('One-way cross-switching', text)
+            self.assertIn('Classical switching', text)
             workbook.close()
         settings = dict(SimulationSettings(), simulation_count=2, cpu_count=1,
                         random_seed=123, sensitivity=True, sensitivity_simulation_count=2,

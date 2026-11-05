@@ -29,7 +29,7 @@ from methods.swedish_style_switching import switching as swedish_style_switching
 from methods.modified_swedish_switching import switching as modified_swedish_switching
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
-from methods.constituency_optimal import exact_parties_intact, one_way
+from methods.constituency_optimal import one_way
 from methods.one_way_switching import one_way_switching, simple_one_way_switching, regret_one_way_switching
 from methods.seat_share import exact as seat_share_lp, switching as seat_share_switching
 from methods.rsss import (min_l1_const, min_l1_double, min_l2_const, min_l2_double,
@@ -229,17 +229,16 @@ ELECTION_LAW_PRESETS = [
 
 ADJUSTMENT_METHOD_NAMES = [
     {"value": "optimal-lp",                "text": "Biproportional rounding"},
-    {"value": "optimal-exact-parties", "text": "Exactly represented parties intact"},
-    {"value": "optimal-one-way", "text": "One-way maximisation"},
-    {"value": "one-way-switching", "text": "One-way switching"},
-    {"value": "simple-one-way-switching", "text": "Simple one-way switching"},
-    {"value": "regret-one-way-switching", "text": "Regret one-way switching"},
+    {"value": "optimal-one-way", "text": "One-way optimization"},
+    {"value": "one-way-switching", "text": "One-way cross-switching"},
+    {"value": "simple-one-way-switching", "text": "Classical switching"},
+    {"value": "regret-one-way-switching", "text": "Priority switching"},
     {"value": "rsss-minl1-const", "text": "MinL1 with constituency scaling"},
     {"value": "rsss-minl1-double", "text": "MinL1 with double scaling"},
     {"value": "rsss-minl2-const", "text": "MinL2 with constituency scaling"},
     {"value": "rsss-minl2-double", "text": "MinL2 with double scaling"},
-    {"value": "seat-share-lp", "text": "Seat-share optimization (LP)"},
-    {"value": "seat-share-switching", "text": "Seat-share switching"},
+    {"value": "seat-share-lp", "text": "Seat-share optimization"},
+    {"value": "seat-share-switching", "text": "Seat-share cross-switching"},
     {"value": "rsss-minl1-switching-const", "text": "MinL1 switching with constituency scaling"},
     {"value": "rsss-minl1-switching-double", "text": "MinL1 switching with double scaling"},
     {"value": "rsss-minl2-switching-const", "text": "MinL2 switching with constituency scaling"},
@@ -249,7 +248,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "max-const-seat-share",      "text": "Maximum fair share"},
     {"value": "max-const-vote-percentage", "text": "Maximum vote percentage"},
     {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching-flex",            "text": "Entropy switching"},
+    {"value": "switching-flex",            "text": "Entropy cross-switching"},
     {"value": "swedish-style-switching",   "text": "Swedish-style switching"},
     {"value": "modified-swedish-switching", "text": "Modified Swedish switching"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
@@ -300,7 +299,6 @@ DEMO_TABLE_FORMATS = {
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     "optimal-lp":                "",
-    "optimal-exact-parties": "",
     "optimal-one-way": "",
     "one-way-switching": ("sccc", "clss3", "clsslss3"),
     "simple-one-way-switching": ("sccc", "clss3"),
@@ -389,7 +387,6 @@ ADJUSTMENT_METHODS = {
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     "optimal-lp":                optimal_lp,
-    "optimal-exact-parties": exact_parties_intact,
     "optimal-one-way": one_way,
     "one-way-switching": one_way_switching,
     "simple-one-way-switching": simple_one_way_switching,

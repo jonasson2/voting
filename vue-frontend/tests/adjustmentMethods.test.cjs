@@ -53,7 +53,7 @@ test('every offered method stays reachable in exactly one family', async () => {
   assert.equal(h.methodFamily('switching-flex'), 'approximation')
   assert.equal(h.methodFamily('max-absolute-margin'), 'single')
   assert.equal(h.methodFamily('norwegian-law'), 'country')
-  assert.equal(h.methodFamily('optimal-exact-parties'), 'optimal')
+  assert.ok(!options.some(option => option.value === 'optimal-exact-parties'))
   assert.equal(h.methodFamily('optimal-one-way'), 'optimal')
 })
 
@@ -96,14 +96,14 @@ test('disabled methods remain disabled at every stage', async () => {
 test('approximation family includes both one-way methods, no Switching+, and RSSS scaling', async () => {
   const h = await helpers()
   assert.deepEqual(h.methodOptions(options, 'approximation').map(option => option.text),
-    ['Entropy switching', 'MinL1 switching', 'MinL2 switching', 'One-way switching',
-      'Regret one-way switching', 'Seat-share switching', 'Simple one-way switching'])
+    ['Classical switching', 'Entropy cross-switching', 'MinL1 switching', 'MinL2 switching',
+      'One-way cross-switching', 'Priority switching', 'Seat-share cross-switching'])
   assert.equal(h.methodFamily('one-way-switching'), 'approximation')
   assert.equal(h.methodFamily('simple-one-way-switching'), 'approximation')
   assert.ok(!options.some(option => option.value === 'switching-plus'))
   const context = await settingsContext()
   context.adjustmentFamily = 'approximation'
-  assert.equal(context.adjustmentChoice, 'switching-flex')
+  assert.equal(context.adjustmentChoice, 'simple-one-way-switching')
   context.adjustmentChoice = 'rsss-minl1-switching'
   context.adjustmentScaling = 'double'
   context.adjustmentChoice = 'rsss-minl2-switching'

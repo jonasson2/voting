@@ -1,7 +1,5 @@
 """Logarithmic optima protecting independent constituency allocations."""
 
-from functools import partial
-
 import numpy as np
 
 from common_allocate import prepare_adjustment_bounds
@@ -35,8 +33,7 @@ def prepare_baseline(votes, row_totals, party_totals, prior, divisor_gen, kwargs
     return votes, rows, targets, baseline
 
 
-def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
-             one_way=False, **kwargs):
+def one_way(votes, row_totals, party_totals, prior, divisor_gen, **kwargs):
     prior = np.asarray(prior, dtype=int)
     votes, rows, targets, baseline = prepare_baseline(
         votes, row_totals, party_totals, prior, divisor_gen, kwargs)
@@ -47,13 +44,8 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
     exact = difference == 0
     lower[:, exact] = baseline[:, exact]
     upper[:, exact] = baseline[:, exact]
-    if one_way:
-        lower[:, difference < 0] = baseline[:, difference < 0]
-        upper[:, difference > 0] = baseline[:, difference > 0]
+    lower[:, difference < 0] = baseline[:, difference < 0]
+    upper[:, difference > 0] = baseline[:, difference > 0]
     return optimal_lp(
         votes, rows, party_totals, prior, divisor_gen,
         list_lower_bounds=lower, list_upper_bounds=upper, **kwargs)
-
-
-exact_parties_intact = partial(allocate, one_way=False)
-one_way = partial(allocate, one_way=True)
