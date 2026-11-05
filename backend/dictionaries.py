@@ -30,7 +30,7 @@ from methods.modified_swedish_switching import switching as modified_swedish_swi
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
 from methods.constituency_optimal import exact_parties_intact, one_way
-from methods.one_way_switching import one_way_switching, simple_one_way_switching
+from methods.one_way_switching import one_way_switching, simple_one_way_switching, regret_one_way_switching
 from methods.seat_share import exact as seat_share_lp, switching as seat_share_switching
 from methods.rsss import (min_l1_const, min_l1_double, min_l2_const, min_l2_double,
     min_l1_const_switching, min_l1_double_switching,
@@ -233,6 +233,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "optimal-one-way", "text": "One-way maximisation"},
     {"value": "one-way-switching", "text": "One-way switching"},
     {"value": "simple-one-way-switching", "text": "Simple one-way switching"},
+    {"value": "regret-one-way-switching", "text": "Regret one-way switching"},
     {"value": "rsss-minl1-const", "text": "MinL1 with constituency scaling"},
     {"value": "rsss-minl1-double", "text": "MinL1 with double scaling"},
     {"value": "rsss-minl2-const", "text": "MinL2 with constituency scaling"},
@@ -303,6 +304,7 @@ DEMO_TABLE_FORMATS = {
     "optimal-one-way": "",
     "one-way-switching": ("sccc", "clss3", "clsslss3"),
     "simple-one-way-switching": ("sccc", "clss3"),
+    "regret-one-way-switching": ("sccc", "clss3"),
     "seat-share-lp": "",
     "rsss-minl1-const": "",
     "rsss-minl1-double": "",
@@ -391,6 +393,7 @@ ADJUSTMENT_METHODS = {
     "optimal-one-way": one_way,
     "one-way-switching": one_way_switching,
     "simple-one-way-switching": simple_one_way_switching,
+    "regret-one-way-switching": regret_one_way_switching,
     "seat-share-lp": seat_share_lp,
     "rsss-minl1-const": min_l1_const,
     "rsss-minl1-double": min_l1_double,

@@ -12,7 +12,7 @@ const families = {
   optimal: ['optimal-lp', 'optimal-exact-parties', 'optimal-one-way',
     'seat-share-lp', 'rsss-minl1-const', 'rsss-minl1-double',
     'rsss-minl2-const', 'rsss-minl2-double'],
-  approximation: ['switching-flex', 'one-way-switching', 'simple-one-way-switching', 'seat-share-switching',
+  approximation: ['switching-flex', 'one-way-switching', 'simple-one-way-switching', 'regret-one-way-switching', 'seat-share-switching',
     'rsss-minl1-switching-const', 'rsss-minl1-switching-double',
     'rsss-minl2-switching-const', 'rsss-minl2-switching-double'],
   single: ['max-relative-margin', 'max-absolute-margin'],
@@ -120,6 +120,10 @@ const methodDescriptions = {
   'one-way-switching': {
     summary: 'Correct party totals, then improve by restricted one-way exchanges.',
     detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule. Identify initially overrepresented, underrepresented and exactly represented parties by comparison with national targets.\nGreedily transfer seats within constituencies from parties still above their targets to parties still below them, choosing the greatest change in the log quotient product. Then repeatedly choose the best improving rectangular exchange between initially overrepresented or underrepresented parties, including pairs from the same group.\nKeep exactly represented parties intact. Never take an initially overrepresented list above its baseline allocation or an initially underrepresented list below it. Retain protected fixed seats and prescribed constituency and party totals.\nApproximates One-way maximisation; may stop short of its global optimum.',
+  },
+  'regret-one-way-switching': {
+    summary: 'Prioritize recipients whose alternative transfers are worse.',
+    detail: 'Start from the independent constituency allocation, retaining protected fixed seats.\nFor each party below its national target, find its two best currently available transfers from parties above their targets. A transfer’s loss ratio is the outgoing quotient divided by the incoming quotient. Choose the recipient with the largest second-best/best loss ratio, then make its best transfer. Alternatives are distinct constituency/donor pairs.\nA recipient with only one transfer takes priority. Break equal priorities by the smaller immediate loss ratio, then constituency, donor and recipient order. Recalculate after every transfer.\nRetain exactly represented parties and prescribed constituency totals. Stop when party targets are met; no rectangular exchanges. This heuristic need not improve on Simple one-way switching.',
   },
   'simple-one-way-switching': {
     summary: 'Greedily correct party totals from the independent constituency allocation.',

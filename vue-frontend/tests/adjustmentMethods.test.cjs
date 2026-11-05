@@ -97,7 +97,7 @@ test('approximation family includes both one-way methods, no Switching+, and RSS
   const h = await helpers()
   assert.deepEqual(h.methodOptions(options, 'approximation').map(option => option.text),
     ['Entropy switching', 'MinL1 switching', 'MinL2 switching', 'One-way switching',
-      'Seat-share switching', 'Simple one-way switching'])
+      'Regret one-way switching', 'Seat-share switching', 'Simple one-way switching'])
   assert.equal(h.methodFamily('one-way-switching'), 'approximation')
   assert.equal(h.methodFamily('simple-one-way-switching'), 'approximation')
   assert.ok(!options.some(option => option.value === 'switching-plus'))

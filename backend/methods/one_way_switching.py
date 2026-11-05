@@ -12,7 +12,7 @@ from methods.switching_tables import print_initial_allocation
 
 
 def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
-             rectangles=True, **kwargs):
+             rectangles=True, regret=False, **kwargs):
     prior = np.asarray(prior, dtype=int)
     votes, rows, targets, baseline = prepare_baseline(
         votes, row_totals, party_totals, prior, divisor_gen, kwargs)
@@ -41,6 +41,28 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
         c = np.arange(len(rows))
         gains = incoming[c, recipients] - outgoing[c, donors]
         constituency = int(np.argmax(gains))
+        if regret:
+            # Compare the best and second-best currently available transfers
+            # to each recipient (distinct constituency/donor pairs).
+            best = None
+            for q in np.flatnonzero(balance < 0):
+                losses = outgoing - incoming[:, q, None]
+                order = np.argsort(losses.ravel(), kind="stable")
+                order = order[np.isfinite(losses.ravel()[order])]
+                if not len(order):
+                    continue
+                c, p = np.unravel_index(order[0], losses.shape)
+                loss = float(losses[c, p])
+                priority = (float(losses.ravel()[order[1]]) - loss
+                            if len(order) > 1 else np.inf)
+                key = (priority, -loss, -int(c), -int(p), -int(q))
+                if best is None or key > best[0]:
+                    best = key, int(c), int(p), int(q)
+            if best is None:
+                raise RuntimeError("No one-way transfer can satisfy party targets.")
+            _, constituency, p, q = best
+            donors[constituency], recipients[constituency] = p, q
+            gains[constituency] = incoming[constituency, q] - outgoing[constituency, p]
         if not np.isfinite(gains[constituency]):
             raise RuntimeError("No one-way transfer can satisfy party targets.")
         p, q = int(donors[constituency]), int(recipients[constituency])
@@ -83,3 +105,4 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
 
 one_way_switching = partial(allocate, rectangles=True)
 simple_one_way_switching = partial(allocate, rectangles=False)
+regret_one_way_switching = partial(allocate, rectangles=False, regret=True)
