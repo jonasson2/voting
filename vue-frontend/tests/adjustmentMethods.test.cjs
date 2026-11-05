@@ -48,6 +48,7 @@ test('every offered method stays reachable in exactly one family', async () => {
     assert.equal(h.selectMethod(options, choice, option.value), option.value)
   }
   assert.equal(h.methodFamily('switching'), 'other')
+  assert.equal(h.methodFamily('modified-swedish-switching'), 'other')
   assert.equal(h.methodFamily('alternating-scaling'), 'other')
   assert.equal(h.methodFamily('switching-flex'), 'approximation')
   assert.equal(h.methodFamily('max-absolute-margin'), 'single')

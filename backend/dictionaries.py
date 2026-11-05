@@ -26,6 +26,7 @@ from methods.norwegian_law import norwegian_apportionment
 from methods.switching import switching
 from methods.switching_flex import switching_flex
 from methods.swedish_style_switching import switching as swedish_style_switching
+from methods.modified_swedish_switching import switching as modified_swedish_switching
 from methods.max_const_votes import max_const_votes
 from methods.optimal_lp import optimal_lp
 from methods.constituency_optimal import exact_parties_intact, one_way
@@ -249,6 +250,7 @@ ADJUSTMENT_METHOD_NAMES = [
     {"value": "switching",                 "text": "Switching of seats"},
     {"value": "switching-flex",            "text": "Entropy switching"},
     {"value": "swedish-style-switching",   "text": "Swedish-style switching"},
+    {"value": "modified-swedish-switching", "text": "Modified Swedish switching"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     {"value": "relative-superiority",      "text": "Relative superiority"},
     {"value": "party-seats-unbounded",     "text": "Party seats unbounded"},
@@ -293,6 +295,7 @@ DEMO_TABLE_FORMATS = {
     "switching":                 ("sccc","clss3"),
     "switching-flex":            ("clsl3", "clsslss3"),
     "swedish-style-switching":   ("sccc", "clss33"),
+    "modified-swedish-switching": ("sccc", "cll3", "cll3"),
     "max-const-votes":           "clsl3",
     "alternating-scaling":       "",
     "optimal-lp":                "",
@@ -380,6 +383,7 @@ ADJUSTMENT_METHODS = {
     "switching":                 switching,
     "switching-flex":            switching_flex,
     "swedish-style-switching":   swedish_style_switching,
+    "modified-swedish-switching": modified_swedish_switching,
     "max-const-votes":           max_const_votes,
     "alternating-scaling":       alt_scaling,
     "optimal-lp":                optimal_lp,

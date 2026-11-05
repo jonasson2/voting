@@ -201,6 +201,10 @@ const methodDescriptions = {
     summary: 'Remove excess seats, then reassign the vacancies.',
     detail: 'Start from provisional constituency allocations. Remove the weakest removable seats of parties above their targets, then reassign vacancies by next-seat quotients to parties with deficits. Supports fixed or flexible constituency totals and retains protected fixed seats. This adjustment-seat method is separate from the Swedish special rules.',
   },
+  'modified-swedish-switching': {
+    summary: 'Assign missing seats first, then remove surplus seats.',
+    detail: 'Reverses the stages of Swedish-style switching: first assign all missing seats to underrepresented parties, then remove surplus seats from overrepresented parties in the same constituencies.\nStart from the independent constituency allocation, retaining fixed seats under their own rules. Choose additions by the highest next-seat quotient and removals by the lowest allocated-seat quotient, using the selected adjustment-seat divisor rule. Skip any choice that would prevent completion.\nKeep exactly represented parties intact. Requires prescribed constituency and party totals; retains all fixed seats.',
+  },
 }
 
 export function methodHelp(method) {
