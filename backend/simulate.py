@@ -676,7 +676,9 @@ class Simulation():
                     self.sim_settings["use_thresholds"], perturbed.tolist(), party_votes)
                 for index, (base, changed) in enumerate(zip(
                         self.election_handler.elections, self.sensitivity_handler.elections)):
-                    category = single_list_category(base, changed, constituency, party)
+                    category = single_list_category(
+                        base, changed, constituency, party,
+                        perturbed[constituency, party] - votes[constituency][party])
                     values[category, inner, cov_index, index] = 1
         for measure, outcomes in zip(SINGLE_LIST_MEASURES, values):
             self.stat[measure].update(outcomes.mean(axis=0))

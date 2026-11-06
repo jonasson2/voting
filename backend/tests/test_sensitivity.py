@@ -86,15 +86,25 @@ class SensitivityTest(unittest.TestCase):
             return SimpleNamespace(party_vote_info={"specified": False}, results={
                 "all_const_seats": seats, "all_grand_total": np.sum(seats, axis=0)})
         base = election([[2, 2, 2], [2, 2, 2], [2, 2, 2]])
+        unchanged = [[2,2,2], [2,2,2], [2,2,2]]
+        gain = [[3,1,2], [1,3,2], [2,2,2]]
+        loss = [[1,3,2], [3,1,2], [2,2,2]]
         cases = [
-            [[2,2,2], [2,2,2], [2,2,2]],  # unchanged
-            [[2,3,1], [2,1,3], [2,2,2]],  # other parties
-            [[2,2,2], [3,1,2], [1,3,2]],  # selected party elsewhere
-            [[3,1,2], [1,3,2], [2,2,2]],  # selected list
-            [[3,1,2], [2,2,2], [2,2,2]],  # party totals take precedence
+            (unchanged, 1, 0),
+            (unchanged, 0, 0),
+            ([[2,3,1], [2,1,3], [2,2,2]], 1, 1),  # other parties
+            ([[2,2,2], [3,1,2], [1,3,2]], 1, 2),  # selected party elsewhere
+            (gain, 1, 3), (loss, -1, 3),  # monotonic in either direction
+            (gain, -1, 4), (loss, 1, 4),  # reverse in either direction
+            ([[3,1,2], [2,2,2], [2,2,2]], 1, 5),  # party totals take precedence
+            ([[3,1,2], [2,2,2], [2,2,2]], -1, 5),
         ]
-        for expected, seats in enumerate(cases):
-            self.assertEqual(single_list_category(base, election(seats), 0, 0), expected)
+        for seats, vote_change, expected in cases:
+            with self.subTest(seats=seats, vote_change=vote_change):
+                self.assertEqual(single_list_category(
+                    base, election(seats), 0, 0, vote_change), expected)
+        with self.assertRaisesRegex(ValueError, 'without a vote perturbation'):
+            single_list_category(base, election(gain), 0, 0, 0)
 
     def test_single_list_settings_and_independent_execution(self):
         for invalid in (0, -1, 1.5, True):
@@ -114,7 +124,8 @@ class SensitivityTest(unittest.TestCase):
             self.assertEqual("sensitivity_within_parties" in result.stat, ordinary)
             web = result.get_result_web(False)["vuedata"]
             self.assertEqual(web["block_headers"]["singleListNoChange"], "Single-list sensitivity")
-            self.assertTrue(web["singleListSelected"][0]["avg"][0]["percentage"])
+            for group in ("singleListMonotonic", "singleListReverse"):
+                self.assertTrue(web[group][0]["avg"][0]["percentage"])
 
     def test_single_list_parallel_merging(self):
         table = load_votes("../data/2-by-2-example.csv")
@@ -152,13 +163,15 @@ class SensitivityTest(unittest.TestCase):
             write_csv(path / "results.csv", result)
             csv = (path / "results.csv").read_text()
             self.assertIn("Single-list sensitivity", csv)
-            self.assertIn("Changes to selected list", csv)
+            self.assertIn("Monotonic changes to selected list", csv)
+            self.assertIn("Reverse changes to selected list", csv)
             self.assertIn("Single-list perturbations per major simulation,5", csv)
             SimulationWorkbook(result.get_result_web(False), path / "results.xlsx").write()
             sheet = load_workbook(path / "results.xlsx")["Quality measures"]
             titles = [row[0].value for row in sheet]
             self.assertIn("Single-list sensitivity", titles)
-            self.assertIn("Changes to selected list", titles)
+            self.assertIn("Monotonic changes to selected list", titles)
+            self.assertIn("Reverse changes to selected list", titles)
 
     def test_cov_list_sorts_any_order_and_rejects_duplicates(self):
         self.assertEqual(

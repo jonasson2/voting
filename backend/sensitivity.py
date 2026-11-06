@@ -139,10 +139,12 @@ SINGLE_LIST_GROUPS = (
      "Entire allocation unchanged."),
     ("singleListOtherParties", "single_list_other_parties", "Changes confined to other parties",
      "Some seats change, but no list of the selected party changes. All party totals remain unchanged."),
-    ("singleListOtherLists", "single_list_other_lists", "Changes to other lists\nof selected party",
+    ("singleListOtherLists", "single_list_other_lists", "Changes confined to other lists",
      "Other lists of the selected party change, but the selected list does not. Other parties may also change. All party totals remain unchanged."),
-    ("singleListSelected", "single_list_selected", "Changes to selected list",
-     "The selected list's seat count changes; other lists may also change. All party totals remain unchanged."),
+    ("singleListMonotonic", "single_list_monotonic", "Monotonic changes to selected list",
+     "The selected list's seats and votes change in the same direction. All party totals remain unchanged."),
+    ("singleListReverse", "single_list_reverse", "Reverse changes to selected list",
+     "The selected list's seats and votes change in opposite directions. All party totals remain unchanged."),
     ("singleListPartyTotals", "single_list_party_totals", "Party totals change",
      "At least one party's total changes, regardless of which lists change."),
 )
@@ -175,15 +177,19 @@ def single_list_perturbations(votes, count, cov, distribution, rng):
         yield constituency, party, perturbed
 
 
-def single_list_category(base, perturbed, constituency, party):
-    """Return one of five mutually exclusive outcome indices."""
+def single_list_category(base, perturbed, constituency, party, vote_change):
+    """Return one of six exclusive outcomes, using the selected list's vote change."""
     if not np.array_equal(base.results["all_grand_total"],
                           perturbed.results["all_grand_total"]):
-        return 4
+        return 5
     changed = np.asarray(base.results["all_const_seats"]) != np.asarray(
         perturbed.results["all_const_seats"])
     if changed[constituency, party]:
-        return 3
+        seat_change = (perturbed.results["all_const_seats"][constituency][party]
+                       - base.results["all_const_seats"][constituency][party])
+        if vote_change == 0:
+            raise ValueError("Selected list's seats changed without a vote perturbation.")
+        return 3 if (seat_change > 0) == (vote_change > 0) else 4
     if base.party_vote_info["specified"]:
         changed = np.vstack((changed, np.asarray(base.results["all_nat_seats"])
                              != np.asarray(perturbed.results["all_nat_seats"])))
