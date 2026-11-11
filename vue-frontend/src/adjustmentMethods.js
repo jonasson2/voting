@@ -3,18 +3,21 @@ export const methodFamilies = [
   {value: 'country', text: 'Country laws'},
   {value: 'optimal', text: 'Optimal methods'},
   {value: 'approximation', text: 'Approximations to optimal methods'},
+  {value: 'correction', text: 'Correction to pure constituency allocation'},
   {value: 'single', text: 'Single-seat constituency methods'},
   {value: 'other', text: 'Other exploratory methods'},
 ]
 
 const families = {
   country: ['max-const-votes', 'norwegian-law', 'icelandic-law'],
-  optimal: ['optimal-lp', 'optimal-one-way',
+  optimal: ['optimal-lp',
     'seat-share-lp', 'rsss-minl1-const', 'rsss-minl1-double',
     'rsss-minl2-const', 'rsss-minl2-double'],
-  approximation: ['switching-flex', 'one-way-switching', 'simple-one-way-switching', 'regret-one-way-switching', 'seat-share-switching',
+  approximation: ['switching-flex', 'seat-share-switching',
     'rsss-minl1-switching-const', 'rsss-minl1-switching-double',
     'rsss-minl2-switching-const', 'rsss-minl2-switching-double'],
+  correction: ['optimal-one-way', 'one-way-switching', 'simple-one-way-switching',
+    'regret-one-way-switching', 'swedish-style-switching', 'modified-swedish-switching'],
   single: ['max-relative-margin', 'max-absolute-margin'],
 }
 
@@ -75,6 +78,7 @@ export const allocationFamilyHelp = [
   'Country laws: allocation procedures used in national systems; selecting one does not impose the country’s complete legal seat structure.',
   'Optimal methods: optimize a specified objective subject to the seat constraints.',
   'Approximations to optimal methods: improve an allocation by switching seats; may stop short of the global optimum.',
+  'Correction to pure constituency allocation: start by retaining fixed seats and allocating adjustment seats independently within constituencies, then correct party totals; includes exact optimization and approximations.',
   'Single-seat constituency methods: compare the leading list’s margin over its nearest rival.',
   'Other exploratory methods: alternative allocation procedures and comparison baselines.',
   '',
@@ -85,12 +89,12 @@ export const allocationScalingHelp = [
   'Constituency scaling: the list’s share of constituency votes times the constituency’s total seats (fixed + adjustment).',
   'Double scaling: scale rows and columns of the vote table to fit constituency and party seat totals.',
   '',
-  'These fair shares define the MinL1 or MinL2 allocation objective. This choice is independent of which reference scalings are displayed in simulation results.',
+  'These ideal seat shares define the MinL1 or MinL2 allocation objective. This choice is independent of which reference scalings are displayed in simulation results.',
 ].join('\n')
 
 const pairwiseLimit = 'Stops when no improving pairwise exchange remains. A longer cycle may still improve the allocation.'
 const fixedTotals = 'Requires prescribed constituency seat totals. Honour party targets and retain protected fixed seats.'
-const seatShareObjective = 'Minimize sum [d(1) + ... + d(s)]/q over lists. Here s is allocated seats, d(k) the selected divisor, and q the constituency-scaled fair share (fractional seat entitlement).'
+const seatShareObjective = 'Minimize sum [d(1) + ... + d(s)]/q over lists. Here s is allocated seats, d(k) the selected divisor, and q the constituency-scaled ideal seat share (fractional seat entitlement).'
 
 const methodDescriptions = {
   'max-const-votes': {
@@ -99,7 +103,7 @@ const methodDescriptions = {
   },
   'norwegian-law': {
     summary: 'Weight vote-share quotients by fixed constituency seats.',
-    detail: 'Allocate each adjustment seat using the largest score: constituency vote share × fixed constituency seats / next divisor. Respect party targets and constituency seat totals. This is the Norwegian weighted quotient (Norwegian law).',
+    detail: 'Allocate each adjustment seat using the largest score: constituency vote share × fixed constituency seats / next divisor. Respect party targets and constituency seat totals. This is the Norwegian law 62/2023 (Norwegian law).',
   },
   'icelandic-law': {
     summary: 'Choose the party first, then its best vote-share quotient.',
@@ -114,44 +118,44 @@ const methodDescriptions = {
     detail: 'First retain fixed seats and fill the remaining seats independently within each constituency using the selected divisor rule, ignoring national party targets. Keep exactly represented parties intact. Initially overrepresented parties may only lose seats from their lists; initially underrepresented parties may only gain seats.\nMaximize the product of allocated-seat quotients votes/divisor subject to these restrictions using a network LP.\nRequires prescribed constituency and party totals; retains all original fixed seats.',
   },
   'one-way-switching': {
-    summary: 'Correct party totals, then improve by restricted one-way exchanges.',
+    summary: 'Correct party totals, then improve by exchanges preserving minimum displacement.',
     detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule. Identify initially overrepresented, underrepresented and exactly represented parties by comparison with national targets.\nGreedily transfer seats within constituencies from parties still above their targets to parties still below them, choosing the greatest change in the log quotient product. Then repeatedly choose the best improving rectangular exchange between initially overrepresented or underrepresented parties, including pairs from the same group.\nKeep exactly represented parties intact. Never take an initially overrepresented list above its baseline allocation or an initially underrepresented list below it. Retain protected fixed seats and prescribed constituency and party totals.\nApproximates One-way optimization; may stop short of its global optimum.',
   },
   'regret-one-way-switching': {
     summary: 'Prioritize recipients whose alternative transfers are worse.',
-    detail: 'Start from the independent constituency allocation, retaining protected fixed seats.\nFor each party below its national target, find its two best currently available transfers from parties above their targets. A transfer’s loss ratio is the outgoing quotient divided by the incoming quotient. Choose the recipient with the largest second-best/best loss ratio, then make its best transfer. Alternatives are distinct constituency/donor pairs.\nA recipient with only one transfer takes priority. Break equal priorities by the smaller immediate loss ratio, then constituency, donor and recipient order. Recalculate after every transfer.\nRetain exactly represented parties and prescribed constituency totals. Stop when party targets are met; no rectangular exchanges. This heuristic need not improve on Classical switching.',
+    detail: 'Start from the independent constituency allocation, retaining protected fixed seats.\nFor each party below its national target, find its two best currently available transfers from parties above their targets. A transfer’s loss ratio is the outgoing quotient divided by the incoming quotient. Choose the recipient with the largest second-best/best loss ratio, then make its best transfer. Alternatives are distinct constituency/donor pairs.\nA recipient with only one transfer takes priority. Break equal priorities by the smaller immediate loss ratio, then constituency, donor and recipient order. Recalculate after every transfer.\nRetain exactly represented parties and prescribed constituency totals. Stop when party targets are met; no rectangular exchanges. This heuristic need not improve on One-way pairwise correction.',
   },
   'simple-one-way-switching': {
     summary: 'Greedily correct party totals from the independent constituency allocation.',
-    detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule.\nTransfer one seat at a time within a constituency from a party above its national target to a party below its target, choosing the greatest change in the log quotient product. Stop as soon as all party targets are satisfied.\nKeep initially exactly represented parties intact. Initially overrepresented lists may only lose seats; initially underrepresented lists may only gain seats. Retain protected fixed seats and prescribed constituency totals.\nThis is the first phase of One-way cross-switching, without subsequent rectangular exchanges.',
+    detail: 'Retain the fixed seats allocated under their own rules, then allocate adjustment seats as further fixed seats using the selected adjustment-seat divisor rule.\nTransfer one seat at a time within a constituency from a party above its national target to a party below its target, choosing the greatest change in the log quotient product. Stop as soon as all party targets are satisfied.\nKeep initially exactly represented parties intact. Initially overrepresented lists may only lose seats; initially underrepresented lists may only gain seats. Retain protected fixed seats and prescribed constituency totals.\nThis is the first phase of One-way cross-correction, without subsequent rectangular exchanges.',
   },
   'seat-share-lp': {
-    summary: 'Minimize cumulative divisor costs divided by fair shares.',
+    summary: 'Minimize cumulative divisor costs divided by ideal seat shares.',
     detail: `${seatShareObjective}\nFind the minimum using a network LP. With Sainte-Laguë this is sum s²/q, equivalent to minimizing sum (s-q)²/q.\n${fixedTotals}`,
   },
   'rsss-minl1': {
     summary: 'Minimize total absolute list seat deviation.',
-    detail: `Minimize sum abs(s-q), where s is allocated seats and q is the fair share from the selected scaling. Find the minimum using a network LP.\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
+    detail: `Minimize sum abs(s-q), where s is allocated seats and q is the ideal seat share from the selected scaling. Find the minimum using a network LP.\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
   },
   'rsss-minl2': {
     summary: 'Minimize total squared list seat deviation.',
-    detail: `Minimize sum (s-q)², where s is allocated seats and q is the fair share from the selected scaling. Find the minimum using a network LP.\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
+    detail: `Minimize sum (s-q)², where s is allocated seats and q is the ideal seat share from the selected scaling. Find the minimum using a network LP.\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
   },
   'switching-flex': {
     summary: 'Increase the product of allocated-seat quotients.',
     detail: 'Start from a feasible allocation by votes/next-divisor quotients. Repeatedly choose the pairwise exchange or permitted seat move giving the largest increase in the log quotient product. Preserve fixed seats and party totals; constituency totals may be prescribed or flexible.\nStop when no such exchange or move improves the objective. Longer cycles may still improve it.',
   },
   'seat-share-switching': {
-    summary: 'Reduce the same objective as Seat-share optimization.',
-    detail: `${seatShareObjective}\nStart from fair-share/divisor quotients and repeatedly choose the pairwise exchange giving the largest cost reduction.\n${pairwiseLimit}\n${fixedTotals}`,
+    summary: 'Reduce the same objective as Ideal seat share optimization.',
+    detail: `${seatShareObjective}\nStart from ideal-share/divisor quotients and repeatedly choose the pairwise exchange giving the largest cost reduction.\n${pairwiseLimit}\n${fixedTotals}`,
   },
   'rsss-minl1-switching': {
     summary: 'Reduce total absolute list seat deviation.',
-    detail: `Reduce sum abs(s-q), using the same fair shares and objective as exact MinL1. Start from a feasible allocation and repeatedly choose the pairwise exchange giving the greatest reduction.\n${pairwiseLimit}\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
+    detail: `Reduce sum abs(s-q), using the same ideal seat shares and objective as exact MinL1. Start from a feasible allocation and repeatedly choose the pairwise exchange giving the greatest reduction.\n${pairwiseLimit}\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
   },
   'rsss-minl2-switching': {
     summary: 'Reduce total squared list seat deviation.',
-    detail: `Reduce sum (s-q)², using the same fair shares and objective as exact MinL2. Start from a feasible allocation and repeatedly choose the pairwise exchange giving the greatest reduction.\n${pairwiseLimit}\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
+    detail: `Reduce sum (s-q)², using the same ideal seat shares and objective as exact MinL2. Start from a feasible allocation and repeatedly choose the pairwise exchange giving the greatest reduction.\n${pairwiseLimit}\n${fixedTotals}\nNo adjustment-seat divisor rule or extra constituency weights are used.`,
   },
   'max-absolute-margin': {
     summary: 'Choose the largest difference between the top two quotients.',
@@ -170,20 +174,20 @@ const methodDescriptions = {
     detail: 'Iteratively rescale votes and apply divisor allocations to try to satisfy constituency and party totals. This historical implementation is not a guarantee of the optimum found by Biproportional rounding.',
   },
   'ice-shares': {
-    summary: 'Use Icelandic party order with fair-share quotients.',
-    detail: 'Take parties in the national adjustment-seat order, as in the Icelandic procedure. Place each seat using fair share/next divisor instead of vote share/next divisor. This is a hypothetical variant, not Icelandic law.',
+    summary: 'Use Icelandic party order with ideal-share quotients.',
+    detail: 'Take parties in the national adjustment-seat order, as in the Icelandic procedure. Place each seat using ideal seat share/next divisor instead of vote share/next divisor. This is a hypothetical variant, not Icelandic law.',
   },
   'max-const-seat-share': {
-    summary: 'Choose the largest fair-share/divisor quotient.',
-    detail: 'Allocate the next adjustment seat to the eligible list with the largest fair share (fractional seat entitlement) divided by its next divisor.',
+    summary: 'Choose the largest ideal-share/divisor quotient.',
+    detail: 'Allocate the next adjustment seat to the eligible list with the largest ideal seat share (fractional seat entitlement) divided by its next divisor.',
   },
   'max-const-vote-percentage': {
     summary: 'Choose the largest vote-share/divisor quotient.',
     detail: 'Allocate each adjustment seat to the eligible list with the largest constituency vote share divided by its next divisor. Respect party targets and constituency seat bounds.',
   },
   'party-seats-unbounded': {
-    summary: 'Use fair-share quotients without enforcing party targets.',
-    detail: 'Allocate seats using the largest fair-share/next-divisor quotient while filling the prescribed constituency totals. National party targets do not restrict recipients.',
+    summary: 'Use ideal-share quotients without enforcing party targets.',
+    detail: 'Allocate seats using the largest ideal-share/next-divisor quotient while filling the prescribed constituency totals. National party targets do not restrict recipients.',
   },
   'relative-superiority': {
     summary: 'Compare the next quotient with a replacement allocation.',
@@ -203,7 +207,7 @@ const methodDescriptions = {
   },
   'modified-swedish-switching': {
     summary: 'Assign missing seats first, then remove surplus seats.',
-    detail: 'Reverses the stages of Swedish-style switching: first assign all missing seats to underrepresented parties, then remove surplus seats from overrepresented parties in the same constituencies.\nStart from the independent constituency allocation, retaining fixed seats under their own rules. Choose additions by the highest next-seat quotient and removals by the lowest allocated-seat quotient, using the selected adjustment-seat divisor rule. Skip any choice that would prevent completion.\nKeep exactly represented parties intact. Requires prescribed constituency and party totals; retains all fixed seats.',
+    detail: 'Reverses the stages of One-way donors first: first assign all missing seats to underrepresented parties, then remove surplus seats from overrepresented parties in the same constituencies.\nStart from the independent constituency allocation, retaining fixed seats under their own rules. Choose additions by the highest next-seat quotient and removals by the lowest allocated-seat quotient, using the selected adjustment-seat divisor rule. Skip any choice that would prevent completion.\nKeep exactly represented parties intact. Requires prescribed constituency and party totals; retains all fixed seats.',
   },
 }
 

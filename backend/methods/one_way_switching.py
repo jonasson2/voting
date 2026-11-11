@@ -96,7 +96,7 @@ def allocate(votes, row_totals, party_totals, prior, divisor_gen, *,
     if ((allocation < lower).any() or (allocation > upper).any()
             or not np.array_equal(allocation.sum(axis=0), targets)
             or not np.array_equal(allocation.sum(axis=1), rows)):
-        raise RuntimeError("One-way switching violated seat constraints.")
+        raise RuntimeError("One-way correction violated seat constraints.")
     functions = [print_initial_allocation, print_demo_table2]
     if rectangles:
         functions.append(print_exchanges)

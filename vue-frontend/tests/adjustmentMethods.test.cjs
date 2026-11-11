@@ -48,13 +48,13 @@ test('every offered method stays reachable in exactly one family', async () => {
     assert.equal(h.selectMethod(options, choice, option.value), option.value)
   }
   assert.equal(h.methodFamily('switching'), 'other')
-  assert.equal(h.methodFamily('modified-swedish-switching'), 'other')
+  assert.equal(h.methodFamily('modified-swedish-switching'), 'correction')
   assert.equal(h.methodFamily('alternating-scaling'), 'other')
   assert.equal(h.methodFamily('switching-flex'), 'approximation')
   assert.equal(h.methodFamily('max-absolute-margin'), 'single')
   assert.equal(h.methodFamily('norwegian-law'), 'country')
   assert.ok(!options.some(option => option.value === 'optimal-exact-parties'))
-  assert.equal(h.methodFamily('optimal-one-way'), 'optimal')
+  assert.equal(h.methodFamily('optimal-one-way'), 'correction')
 })
 
 test('every method has help and family overviews put each description on its own line', async () => {
@@ -66,8 +66,8 @@ test('every method has help and family overviews put each description on its own
     assert.equal(lines.length, choices.length)
     choices.forEach((choice, i) => assert.ok(lines[i].startsWith(`${choice.text}: `)))
   }
-  assert.match(h.methodOverview(options, 'optimal'), /MinL1: Minimize/)
-  assert.match(h.methodOverview(options, 'approximation'), /MinL1 switching: Reduce/)
+  assert.match(h.methodOverview(options, 'optimal'), /MinL1 \(Ricca et al.\): Minimize/)
+  assert.match(h.methodOverview(options, 'approximation'), /MinL1 cross-correction: Reduce/)
   assert.match(h.methodHelp('adjustment-as-fixed'), /does not enforce/)
   assert.match(h.methodHelp('party-seats-unbounded'), /do not restrict/)
   assert.match(h.allocationRuleHelp('seat-share-switching'), /\nSainte-Laguë:.*\nD’Hondt:.*\nDanish:/)
@@ -79,7 +79,7 @@ test('every method has help and family overviews put each description on its own
 test('RSSS offers two methods and separate scaling, preserving scaling between objectives', async () => {
   const h = await helpers()
   const choices = h.methodOptions(options, 'optimal').filter(option => option.value.startsWith('rsss-'))
-  assert.deepEqual(choices.map(option => option.text), ['MinL1', 'MinL2'])
+  assert.deepEqual(choices.map(option => option.text), ['MinL1 (Ricca et al.)', 'MinL2 (Ricca et al.)'])
   assert.equal(h.selectMethod(options, 'rsss-minl2', 'rsss-minl1-double'), 'rsss-minl2-double')
   assert.equal(h.selectMethod(options, 'rsss-minl1', 'optimal-lp'), 'rsss-minl1-const')
 })
@@ -93,17 +93,17 @@ test('disabled methods remain disabled at every stage', async () => {
   assert.equal(h.selectMethod(disabled, 'rsss-minl1', 'switching-flex'), 'switching-flex')
 })
 
-test('approximation family includes both one-way methods, no Switching+, and RSSS scaling', async () => {
+test('approximation family offers cross-corrections and RSSS scaling', async () => {
   const h = await helpers()
   assert.deepEqual(h.methodOptions(options, 'approximation').map(option => option.text),
-    ['Classical switching', 'Entropy cross-switching', 'MinL1 switching', 'MinL2 switching',
-      'One-way cross-switching', 'Priority switching', 'Seat-share cross-switching'])
-  assert.equal(h.methodFamily('one-way-switching'), 'approximation')
-  assert.equal(h.methodFamily('simple-one-way-switching'), 'approximation')
+    ['Entropy cross-correction', 'Ideal seat share cross-correction',
+      'MinL1 cross-correction', 'MinL2 cross-correction'])
+  assert.equal(h.methodFamily('one-way-switching'), 'correction')
+  assert.equal(h.methodFamily('simple-one-way-switching'), 'correction')
   assert.ok(!options.some(option => option.value === 'switching-plus'))
   const context = await settingsContext()
   context.adjustmentFamily = 'approximation'
-  assert.equal(context.adjustmentChoice, 'simple-one-way-switching')
+  assert.equal(context.adjustmentChoice, 'switching-flex')
   context.adjustmentChoice = 'rsss-minl1-switching'
   context.adjustmentScaling = 'double'
   context.adjustmentChoice = 'rsss-minl2-switching'
@@ -132,4 +132,19 @@ test('real controls round-trip saved methods and follow system and preset change
   assert.equal(context.adjustmentChoice, 'norwegian-law')
   assert.equal(context.adjustmentScaling, null)
   assert.deepEqual(Object.keys(context.systems[1]), ['adjustment_method'])
+})
+
+ test('pure constituency corrections form one family and retired entries are absent', async () => {
+  const h = await helpers()
+  assert.deepEqual(h.methodOptions(options, 'correction').map(option => option.text), [
+    'One-way cross-correction', 'One-way donors first', 'One-way optimization',
+    'One-way pairwise correction', 'One-way recipients first', 'Priority switching',
+  ])
+  for (const method of ['switching', 'ice-shares', 'party-seats-unbounded']) {
+    assert.ok(!options.some(option => option.value === method))
+  }
+  const context = await settingsContext()
+  context.systems[0] = {adjustment_method: 'optimal-one-way'}
+  assert.equal(context.adjustmentFamily, 'correction')
+  assert.equal(context.adjustmentChoice, 'optimal-one-way')
 })

@@ -51,7 +51,7 @@ def switching_fixed(m_votes, v_desired_row_sums, v_desired_col_sums,
             for p, goal in enumerate(party_totals)
         ],
         "switches": switches,
-        "title": "Swedish-style switching of adjustment seats",
+        "title": "One-way donors first of adjustment seats",
     }
     return allocation, {
         "data": steps,
@@ -112,7 +112,7 @@ def switching_with_bounds(m_votes, v_desired_row_sums, v_desired_col_sums,
             or (added > capacity).any() or (allocation < prior).any()
             or (allocation.sum(axis=0) > party_totals).any()):
         raise RuntimeError(
-            "Internal Swedish-style switching error: seat constraints violated.")
+            "Internal One-way donors first error: seat constraints violated.")
 
     steps = {
         "initial_allocation": [

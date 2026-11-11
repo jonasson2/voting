@@ -290,7 +290,7 @@ class Election:
                 f'Adjustment-seat method "{method_name}" does not support '
                 "constituency ranges with a remaining seat pool; it requires "
                 "a predetermined final seat count in each constituency. "
-                "Use Maximum votes or Maximum vote percentage.")
+                "Use Max vote quotient or Max vote percentage quotient.")
 
     def assign_seats(self, use_thresholds=True):
         self._initialize_seat_allocation(use_thresholds)

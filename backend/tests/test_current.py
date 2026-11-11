@@ -563,7 +563,7 @@ class CurrentApplicationTest(unittest.TestCase):
             {method['value'] for method in capabilities['regional_adjustment_methods']},
             {
                 'max-const-votes', 'max-const-vote-percentage',
-                'max-const-seat-share', 'switching',
+                'max-const-seat-share',
                 'swedish-style-switching', 'optimal-lp',
             },
         )
@@ -1995,5 +1995,5 @@ class CurrentApplicationTest(unittest.TestCase):
                     self.assertEqual(len(election.demo_tables), 2)
                     self.assertEqual(
                         election.demo_tables[1]['sup_header'],
-                        'Swedish-style switching of adjustment seats',
+                        'One-way donors first of adjustment seats',
                     )

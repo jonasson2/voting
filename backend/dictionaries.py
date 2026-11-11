@@ -230,36 +230,33 @@ ELECTION_LAW_PRESETS = [
 ADJUSTMENT_METHOD_NAMES = [
     {"value": "optimal-lp",                "text": "Biproportional rounding"},
     {"value": "optimal-one-way", "text": "One-way optimization"},
-    {"value": "one-way-switching", "text": "One-way cross-switching"},
-    {"value": "simple-one-way-switching", "text": "Classical switching"},
+    {"value": "one-way-switching", "text": "One-way cross-correction"},
+    {"value": "simple-one-way-switching", "text": "One-way pairwise correction"},
     {"value": "regret-one-way-switching", "text": "Priority switching"},
-    {"value": "rsss-minl1-const", "text": "MinL1 with constituency scaling"},
-    {"value": "rsss-minl1-double", "text": "MinL1 with double scaling"},
-    {"value": "rsss-minl2-const", "text": "MinL2 with constituency scaling"},
-    {"value": "rsss-minl2-double", "text": "MinL2 with double scaling"},
-    {"value": "seat-share-lp", "text": "Seat-share optimization"},
-    {"value": "seat-share-switching", "text": "Seat-share cross-switching"},
-    {"value": "rsss-minl1-switching-const", "text": "MinL1 switching with constituency scaling"},
-    {"value": "rsss-minl1-switching-double", "text": "MinL1 switching with double scaling"},
-    {"value": "rsss-minl2-switching-const", "text": "MinL2 switching with constituency scaling"},
-    {"value": "rsss-minl2-switching-double", "text": "MinL2 switching with double scaling"},
-    {"value": "alternating-scaling",       "text": "Alternating scaling"},
-    {"value": "max-const-votes",           "text": "Maximum votes"},
-    {"value": "max-const-seat-share",      "text": "Maximum fair share"},
-    {"value": "max-const-vote-percentage", "text": "Maximum vote percentage"},
-    {"value": "switching",                 "text": "Switching of seats"},
-    {"value": "switching-flex",            "text": "Entropy cross-switching"},
-    {"value": "swedish-style-switching",   "text": "Swedish-style switching"},
-    {"value": "modified-swedish-switching", "text": "Modified Swedish switching"},
+    {"value": "rsss-minl1-const", "text": "MinL1 (Ricca et al.) with constituency scaling"},
+    {"value": "rsss-minl1-double", "text": "MinL1 (Ricca et al.) with double scaling"},
+    {"value": "rsss-minl2-const", "text": "MinL2 (Ricca et al.) with constituency scaling"},
+    {"value": "rsss-minl2-double", "text": "MinL2 (Ricca et al.) with double scaling"},
+    {"value": "seat-share-lp", "text": "Ideal seat share optimization"},
+    {"value": "seat-share-switching", "text": "Ideal seat share cross-correction"},
+    {"value": "rsss-minl1-switching-const", "text": "MinL1 cross-correction with constituency scaling"},
+    {"value": "rsss-minl1-switching-double", "text": "MinL1 cross-correction with double scaling"},
+    {"value": "rsss-minl2-switching-const", "text": "MinL2 cross-correction with constituency scaling"},
+    {"value": "rsss-minl2-switching-double", "text": "MinL2 cross-correction with double scaling"},
+    {"value": "alternating-scaling",       "text": "Biproportional by Alternating scaling"},
+    {"value": "max-const-votes",           "text": "Max vote quotient"},
+    {"value": "max-const-seat-share",      "text": "Max ideal share quotient"},
+    {"value": "max-const-vote-percentage", "text": "Max vote percentage quotient"},
+    {"value": "switching-flex",            "text": "Entropy cross-correction"},
+    {"value": "swedish-style-switching",   "text": "One-way donors first"},
+    {"value": "modified-swedish-switching", "text": "One-way recipients first"},
     {"value": "relative-sup-simple",       "text": "Relative superiority, simplified"},
     {"value": "relative-superiority",      "text": "Relative superiority"},
-    {"value": "party-seats-unbounded",     "text": "Party seats unbounded"},
     {"value": "adjustment-as-fixed",       "text": "Adjustment seats as fixed seats"},
-    {"value": "max-relative-margin",       "text": "Maximum relative margin (in single const.)"},
-    {"value": "max-absolute-margin",       "text": "Maximum absolute margin (in single const.)"},
+    {"value": "max-relative-margin",       "text": "Max relative margin"},
+    {"value": "max-absolute-margin",       "text": "Max absolute margin"},
     {"value": "icelandic-law",             "text": "Icelandic law 112/2021"},
-    {"value": "ice-shares",                "text": "Icelandic law based on constituency seat shares"},
-    {"value": "norwegian-law",             "text": "Norwegian weighted quotient"},
+    {"value": "norwegian-law",             "text": "Norwegian law 62/2023"},
     #{"value": "gurobi",                    "text": "Optimal with Gurobi"},    
 ]
 
@@ -270,12 +267,11 @@ SPECIAL_RULE_NAMES = [
 ]
 
 REGIONAL_ADJUSTMENT_METHOD_NAMES = [
-    {"value": "max-const-votes", "text": "Maximum votes"},
+    {"value": "max-const-votes", "text": "Max vote quotient"},
     {"value": "max-const-vote-percentage",
-     "text": "Maximum vote percentage"},
-    {"value": "max-const-seat-share", "text": "Maximum fair share"},
-    {"value": "switching", "text": "Switching of seats"},
-    {"value": "swedish-style-switching", "text": "Swedish-style switching"},
+     "text": "Max vote percentage quotient"},
+    {"value": "max-const-seat-share", "text": "Max ideal share quotient"},
+    {"value": "swedish-style-switching", "text": "One-way donors first"},
     {"value": "optimal-lp", "text": "Biproportional rounding"},
 ]
 
@@ -405,9 +401,13 @@ ADJUSTMENT_METHODS = {
     # "monge": monge,
 }
 
+# Retain the retired identifier for saved regional configurations.
 REGIONAL_ADJUSTMENT_METHODS = {
-    item["value"]: ADJUSTMENT_METHODS[item["value"]]
-    for item in REGIONAL_ADJUSTMENT_METHOD_NAMES
+    "switching": switching,
+    **{
+        item["value"]: ADJUSTMENT_METHODS[item["value"]]
+        for item in REGIONAL_ADJUSTMENT_METHOD_NAMES
+    },
 }
 
 FLEXIBLE_ADJUSTMENT_METHODS = {

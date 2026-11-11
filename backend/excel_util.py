@@ -307,7 +307,7 @@ def _election_information(result):
         ("Rule for allocating adjustment seats:",
          DRN[system["adj_alloc_divider"]]),
         ("Method for allocating adjustment seats:",
-         label(AMN[system["adjustment_method"]])),
+         label(AMN.get(system["adjustment_method"], system["adjustment_method"]))),
     ]
 
 

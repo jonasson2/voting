@@ -149,7 +149,7 @@ class ModifiedSwedishSwitchingTest(unittest.TestCase):
             constituency.update(num_fixed_seats=2, num_adj_seats=2)
         system = ElectionSystem()
         system.copy_info_from_votes(table)
-        system.update(name='Modified Swedish switching',
+        system.update(name='One-way recipients first',
                       adjustment_method='modified-swedish-switching',
                       primary_divider='dhondt', constituency_threshold=50,
                       fixed_seat_threshold_choice=0, adj_alloc_divider='sainte-lague')

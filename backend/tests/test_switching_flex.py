@@ -41,9 +41,8 @@ def feasible_neighbours(allocation, prior, lower, upper):
 class SwitchingFlexTest(unittest.TestCase):
     def test_registration_and_order(self):
         names = [item['value'] for item in ADJUSTMENT_METHOD_NAMES]
-        start = names.index('switching')
-        self.assertEqual(names[start:start + 2],
-                         ['switching', 'switching-flex'])
+        self.assertNotIn('switching', names)
+        self.assertIn('switching-flex', names)
         self.assertIs(ADJUSTMENT_METHODS['switching-flex'], switching_flex)
         self.assertIn('switching-flex', FLEXIBLE_ADJUSTMENT_METHODS)
 

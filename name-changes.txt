@@ -1,0 +1,38 @@
+Method familiy			Allocation method
+
+Currently in Simulator	New names (ordered by)		Currently in Simulator	New names (subordered by)
+Remove:
+Approximation to optimal methods			Switching of seats
+Other exploratory methods			Icelandic law based on constituency seat shares
+Other exploratory methods			Party seats unbounded
+Other exploratory methods			Swedish-style switching
+Other exploratory methods			Switching of seats
+
+Change names:
+Country laws			Maximum votes	Max vote quotient
+Approximation to optimal methods			MinL1 switching	MinL1 cross-correction
+Approximation to optimal methods			MinL2 switching	MinL2 cross-correction
+Approximation to optimal methods	Correction to pure constituency allocation		One-way cross-switching	One-way cross-correction
+Approximation to optimal methods	Correction to pure constituency allocation		Swedish-style switching	One-way donors first
+Optimal methods	Correction to pure constituency allocation		One-way optimization	One-way optimization
+Approximation to optimal methods	Correction to pure constituency allocation		Classical switching	One-way pairwise correction
+Other exploratory methods	Correction to pure constituency allocation		Modified Swedish switching	One-way recipients first
+Country laws			Norwegian weighted quotients	Norwegian law 62/2023
+Optimal methods			Seat-share optimization	Ideal seat share optimization
+Approximation to optimal methods			Seat-share cross-switching	Ideal seat share cross-correction
+Optimal methods			MinL1	MinL1 (Ricca et al.)
+Optimal methods			MinL2	MinL2 (Ricca et al.)
+Other exploratory methods			Alternating scaling	Biproportional by Alternating scaling
+Other exploratory methods			Maximum fair share	Max ideal share quotient
+Other exploratory methods			Maximum vote percentage	Max vote percentage quotient
+Single-seat constituency methods			Maximum absolute margin (in single const.)	Max absolute margin
+Single-seat constituency methods			Maximum relative margin (in single const.)	Max relative margin
+Approximation to optimal methods			Entropy cross-switching	Entropy cross-correction
+Approximation to optimal methods	Correction to pure constituency allocation		Priority switching
+
+Unchanged
+Country laws			Icelandic law 112/2021
+Optimal methods			Biproportional
+Other exploratory methods			Adjustment seats as fixed seats
+Other exploratory methods			Relative superiority
+Other exploratory methods			Relative superiority, simplified

@@ -1,4 +1,4 @@
-"""Recipients-first Swedish-style switching with feasible greedy choices."""
+"""Recipients-first One-way donors first with feasible greedy choices."""
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -42,7 +42,7 @@ def _choose(scores, feasible, on_tie, *, minimum=False):
                 return np.unravel_index(index, scores.shape)
             tied.append(int(index))
     if not tied:
-        raise RuntimeError("Modified Swedish switching has no feasible continuation.")
+        raise RuntimeError("One-way recipients first has no feasible continuation.")
     index = select_tied(tied, float(flat[tied[0]]), on_tie)
     return np.unravel_index(index, scores.shape)
 
@@ -119,7 +119,7 @@ def switching(votes, row_totals, party_totals, prior, divisor_gen, **kwargs):
     if ((allocation < lower).any() or (allocation > upper).any()
             or not np.array_equal(allocation.sum(axis=0), targets)
             or not np.array_equal(allocation.sum(axis=1), rows)):
-        raise RuntimeError("Modified Swedish switching violated seat constraints.")
+        raise RuntimeError("One-way recipients first violated seat constraints.")
     return allocation, {
         "data": steps,
         "functions": [print_initial_allocation, print_additions, print_removal_table],
